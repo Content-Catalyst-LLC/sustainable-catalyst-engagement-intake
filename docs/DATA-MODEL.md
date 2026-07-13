@@ -50,3 +50,26 @@ Examples:
 - `internal_note`
 - `personal_data_erased`
 - Future: `attachment_uploaded`, `attachment_downloaded`, `message_sent`, `retention_scheduled`, `inquiry_deleted`
+
+
+## Microsoft Teams communication and scheduling fields
+
+- Preferred contact method
+- Teams email
+- Phone number
+- IANA time zone
+- City and country
+- Meeting request
+- Preferred weekdays
+- Preferred time windows
+- Preferred duration
+- Participant count
+- Participant emails
+- Accessibility needs
+- Calendar invitation consent
+- Scheduling notes
+- Scheduling status
+- Teams meeting URL
+- Scheduled UTC start and end
+- Scheduled time zone
+- Calendar event ID

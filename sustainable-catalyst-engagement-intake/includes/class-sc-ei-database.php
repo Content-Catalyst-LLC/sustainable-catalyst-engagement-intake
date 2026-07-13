@@ -48,6 +48,27 @@ final class SC_EI_Database {
 			budget_range varchar(120) NOT NULL DEFAULT '',
 			desired_start_date date NULL,
 			deadline_date date NULL,
+			preferred_contact_method varchar(40) NOT NULL DEFAULT 'email',
+			teams_email varchar(191) NOT NULL DEFAULT '',
+			phone_number varchar(80) NOT NULL DEFAULT '',
+			timezone varchar(120) NOT NULL DEFAULT '',
+			city varchar(120) NOT NULL DEFAULT '',
+			country varchar(120) NOT NULL DEFAULT '',
+			meeting_request varchar(20) NOT NULL DEFAULT 'no',
+			preferred_weekdays varchar(255) NOT NULL DEFAULT '[]',
+			preferred_time_windows longtext NULL,
+			preferred_duration smallint(5) unsigned NOT NULL DEFAULT 0,
+			participant_count smallint(5) unsigned NOT NULL DEFAULT 1,
+			participant_emails longtext NULL,
+			accessibility_needs longtext NULL,
+			calendar_invite_consent tinyint(1) unsigned NOT NULL DEFAULT 0,
+			scheduling_notes longtext NULL,
+			scheduling_status varchar(40) NOT NULL DEFAULT 'not_requested',
+			teams_meeting_url text NULL,
+			scheduled_start_utc datetime NULL,
+			scheduled_end_utc datetime NULL,
+			scheduled_timezone varchar(120) NOT NULL DEFAULT '',
+			calendar_event_id varchar(191) NOT NULL DEFAULT '',
 			relevant_links longtext NULL,
 			metadata_json longtext NULL,
 			consent_version varchar(80) NOT NULL DEFAULT '',
@@ -62,6 +83,9 @@ final class SC_EI_Database {
 			KEY status (status),
 			KEY inquiry_type (inquiry_type),
 			KEY contact_email (contact_email),
+			KEY preferred_contact_method (preferred_contact_method),
+			KEY meeting_request (meeting_request),
+			KEY scheduling_status (scheduling_status),
 			KEY assigned_user_id (assigned_user_id),
 			KEY created_at (created_at)
 		) {$charset_collate};";
@@ -131,6 +155,29 @@ final class SC_EI_Database {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
+		}
+
+		return $result;
+	}
+
+	public static function inquiry_columns_exist(): array {
+		global $wpdb;
+
+		$table   = self::table( 'inquiries' );
+		$columns = array(
+			'preferred_contact_method',
+			'teams_email',
+			'timezone',
+			'meeting_request',
+			'scheduling_status',
+			'teams_meeting_url',
+			'scheduled_start_utc',
+		);
+
+		$result = array();
+		foreach ( $columns as $column ) {
+			$found             = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$result[ $column ] = ( $found === $column );
 		}
 
 		return $result;

@@ -1,76 +1,82 @@
 === Sustainable Catalyst Engagement Intake ===
 Contributors: content-catalyst
-Tags: contact, inquiry, consulting, workflow, privacy, audit, forms
+Tags: contact, inquiry, consulting, microsoft teams, scheduling, workflow, privacy, audit, forms
 Requires at least: 6.5
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.2.0
+Stable tag: 0.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Adaptive private contact and engagement intake for Sustainable Catalyst.
+Adaptive private contact and engagement intake with Microsoft Teams communication preferences and scheduling readiness.
 
 == Description ==
 
-Version 0.2.0 adds an accessible public Contact Hub and conditional forms to the private inquiry foundation introduced in v0.1.0.
+Version 0.2.1 extends the Adaptive Contact Hub with Microsoft Teams as the only supported live meeting platform.
 
-Shortcodes:
+Public shortcodes:
 
 * `[sc_contact_hub]`
 * `[sc_contact_form mode="general"]`
 * `[sc_engagement_inquiry mode="consulting"]`
 
-Included:
+New in v0.2.1:
 
-* Adaptive inquiry routing
-* General and consulting modes
-* Conditional engagement and media fields
-* Three-step accessible form flow
-* Review-before-submit
-* JavaScript-enhanced REST submission
-* Non-JavaScript admin-post fallback
-* Private inquiry record creation
-* Human-readable confirmation references
-* Nonce, signed timing, honeypot, rate-limit, and duplicate controls
-* Server-side conditional validation
-* Privacy and authorization consent
-* No public archive
-* No document uploads until secure quarantine is added in v0.3.0
+* Preferred response method: email, Microsoft Teams, phone, or no preference
+* Conditional Teams email and phone fields
+* Microsoft Teams meeting request
+* Browser time-zone suggestion with manual IANA time-zone entry
+* City and country
+* Preferred weekdays and time windows
+* Preferred meeting duration
+* Participant count and participant emails
+* Private accessibility and accommodation field
+* Calendar invitation consent
+* Scheduling notes
+* Teams scheduling statuses
+* Private Teams meeting URL and calendar event metadata
+* UTC-normalized scheduled start and end times
+* Admin filtering and scheduling review
+* Audit events for meeting requests and scheduling changes
+* Teams organizer and default-duration settings
+* No Microsoft Graph connection in this release
+
+Submitting availability does not create a meeting. An administrator reviews the inquiry and updates the Teams scheduling record manually.
 
 == Installation ==
 
 1. Upload and activate the plugin.
 2. Open Engagement Intake → Diagnostics.
-3. Add `[sc_contact_hub]` to the Contact page.
-4. Use the separate general or consulting shortcodes when a narrower form is preferred.
+3. Confirm that the v0.2.1 Teams database columns are present.
+4. Open Engagement Intake → Settings and optionally enter the Teams organizer email.
+5. Add `[sc_contact_hub]` to the Contact page.
 
 == Frequently Asked Questions ==
 
-= Which shortcode should I use on the main Contact page? =
+= Does this version automatically create a Microsoft Teams meeting? =
 
-Use `[sc_contact_hub]`.
+No. v0.2.1 prepares the data, consent, admin workflow, UTC scheduling record, and Teams URL storage. Microsoft Graph event creation is a later integration.
 
-= Can I show only general inquiries? =
+= Does the visitor book directly on the calendar? =
 
-Use `[sc_contact_form mode="general"]`.
+No. The visitor requests or prepares for a meeting and supplies availability. Sustainable Catalyst reviews the inquiry before approving or scheduling a Teams conversation.
 
-= Can I show only consulting and engagement inquiries? =
+= Can visitors choose Zoom or Google Meet? =
 
-Use `[sc_engagement_inquiry mode="consulting"]`.
+No. Microsoft Teams is the only supported live meeting platform.
 
 = Can visitors upload documents? =
 
-Not yet. v0.2.0 explicitly blocks sensitive document submission and accepts public links only. Secure protected uploads arrive in v0.3.0.
-
-= Are submissions private? =
-
-Yes. They are stored in dedicated private tables and are not exposed through a public archive or unauthenticated read endpoint.
+Not yet. Secure protected uploads arrive in v0.3.0.
 
 == Changelog ==
 
+= 0.2.1 =
+* Added Microsoft Teams communication preferences and scheduling readiness.
+* Added time-zone, location, availability, participants, accessibility, consent, scheduling workflow, and admin controls.
+
 = 0.2.0 =
 * Added Adaptive Contact Hub and Conditional Forms.
-* Added public shortcodes, routing cards, conditional fields, review step, AJAX submission, fallback submission, confirmations, and anti-spam controls.
 
 = 0.1.0 =
 * Added private inquiry records, roles, audit history, privacy tools, diagnostics, and administration.

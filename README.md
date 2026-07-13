@@ -1,9 +1,15 @@
 # Sustainable Catalyst Engagement Intake
 
-**Version:** 0.2.0  
-**Release:** Adaptive Contact Hub and Conditional Forms
+**Version:** 0.2.1  
+**Release:** Microsoft Teams Communication Preferences and Scheduling Readiness
 
-A private WordPress contact, consulting, research, media, technical, and institutional inquiry system for Sustainable Catalyst.
+A private WordPress contact and engagement intake system for Sustainable Catalyst.
+
+## Live meeting platform
+
+Microsoft Teams is the only supported live meeting platform in v0.2.1.
+
+This release does not create Teams events automatically. It collects scheduling preferences, records consent, supports private review, stores approved Teams meeting details, normalizes scheduled times to UTC, and maintains an audit history.
 
 ## Public shortcodes
 
@@ -11,33 +17,53 @@ A private WordPress contact, consulting, research, media, technical, and institu
 [sc_contact_hub]
 ```
 
-Complete adaptive contact experience.
-
 ```text
 [sc_contact_form mode="general"]
 ```
-
-General questions, research collaboration, media, speaking, open source, and other non-consulting inquiries.
 
 ```text
 [sc_engagement_inquiry mode="consulting"]
 ```
 
-Consulting, platform work, workshops, monthly advisory, and institutional partnerships.
+## Teams readiness capabilities
 
-## v0.2.0 capabilities
+- Preferred response method
+- Conditional Teams email or phone
+- Teams meeting request
+- Browser time-zone suggestion
+- Manual IANA time zone
+- City and country
+- Preferred weekdays and time windows
+- Preferred duration
+- Participant count and emails
+- Accessibility or accommodation notes
+- Calendar invitation consent
+- Scheduling notes
+- Human-controlled scheduling status
+- Teams meeting URL
+- Local-to-UTC meeting conversion
+- Calendar event ID
+- Admin filtering and audit history
 
-- Conditional public routing
-- Three-step accessible form experience
-- Review-before-submit
-- JavaScript-enhanced REST submission
-- Non-JavaScript fallback
-- Private inquiry records and confirmation references
-- Conditional server-side validation
-- Privacy and authorization acknowledgments
-- Nonce, honeypot, signed timing, email rate limiting, and duplicate controls
-- No public inquiry archive
-- No physical document uploads before v0.3.0 security controls exist
+## Scheduling workflow
+
+```text
+Inquiry submitted
+→ Requested
+→ Under Review
+→ Approved
+→ Times Proposed
+→ Scheduled
+→ Completed
+```
+
+Alternative outcomes:
+
+```text
+Declined
+Cancelled
+Not Requested
+```
 
 ## Recommended Contact page embed
 

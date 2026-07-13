@@ -1,6 +1,6 @@
 # Security Model
 
-## v0.2.0 public form controls
+## v0.2.1 public form controls
 
 - WordPress nonce validation
 - Write-only public REST submission route
@@ -22,7 +22,7 @@
 
 ## Document boundary
 
-v0.2.0 does not accept physical documents. The form warns against credentials, payment data, regulated health records, highly sensitive personal data, export-controlled material, and confidential documents.
+v0.2.1 does not accept physical documents. The form warns against credentials, payment data, regulated health records, highly sensitive personal data, export-controlled material, and confidential documents.
 
 ## Secure upload requirements for v0.3.0
 
@@ -42,3 +42,17 @@ v0.2.0 does not accept physical documents. The form warns against credentials, p
 ## Full-page caching
 
 The shortcode requests dynamic no-cache behavior because WordPress nonces and signed form timing should not be served indefinitely from a static cache. When a CDN ignores WordPress cache controls, exclude the Contact page from full-page HTML caching.
+
+
+## Microsoft Teams scheduling security
+
+- No Microsoft credentials are collected from visitors.
+- No Graph client secret is stored in an inquiry.
+- Teams meeting URLs are validated against an allowlist of Teams hosts.
+- Calendar invitation consent is stored explicitly.
+- Participant emails are normalized and limited.
+- Accessibility notes are private and highlighted as sensitive in administration.
+- Scheduled local times are normalized to UTC.
+- Scheduling changes require `sc_intake_review`.
+- Scheduling changes generate audit events.
+- No calendar event is created automatically in v0.2.1.

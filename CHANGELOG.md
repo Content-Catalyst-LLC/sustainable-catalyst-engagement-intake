@@ -1,30 +1,39 @@
 # Changelog
 
+## 0.2.1 — Microsoft Teams Communication Preferences and Scheduling Readiness
+
+- Limited live meeting support to Microsoft Teams.
+- Added preferred response method: email, Teams, phone, or no preference.
+- Added conditional Microsoft Teams email.
+- Added conditional phone number.
+- Added Teams meeting request choices.
+- Added browser IANA time-zone suggestion.
+- Added manual time-zone entry and validation.
+- Added city and country.
+- Added preferred weekdays.
+- Added preferred date and time windows.
+- Added preferred meeting duration.
+- Added participant count and participant emails.
+- Added private accessibility and accommodation notes.
+- Added calendar invitation consent.
+- Added sender scheduling notes.
+- Added scheduling states: not requested, requested, under review, approved, times proposed, scheduled, completed, declined, and cancelled.
+- Added Teams meeting URL storage with Teams-domain validation.
+- Added UTC-normalized start and end times.
+- Added scheduled time-zone and calendar event ID.
+- Added admin scheduling controls and filtering.
+- Added Teams request and scheduling audit events.
+- Added Teams organizer email and default duration settings.
+- Added database migration diagnostics.
+- Extended privacy export and erasure to Teams scheduling fields.
+- Preserved manual review; no appointment is created automatically.
+- Kept Microsoft Graph integration disabled in this release.
+- Kept physical document uploads disabled until v0.3.0.
+
 ## 0.2.0 — Adaptive Contact Hub and Conditional Forms
 
-- Added `[sc_contact_hub]`.
-- Added `[sc_contact_form mode="general"]`.
-- Added `[sc_engagement_inquiry mode="consulting"]`.
-- Added ten public inquiry routes.
-- Added conditional engagement, timeline, stakeholder, materials, and media fields.
-- Added three-step accessible form flow.
-- Added review-before-submit.
-- Added AJAX submission through a public write-only REST route.
-- Added non-JavaScript `admin-post.php` fallback with all conditional fields exposed safely.
-- Added confirmation references.
-- Added server-side conditional validation.
-- Added nonce validation.
-- Added signed form timing.
-- Added honeypot protection.
-- Added email-based hourly rate limiting.
-- Added duplicate-submission suppression.
-- Added privacy and sharing-authorization consent.
-- Added public form settings and diagnostics.
-- Added dynamic no-cache protection for nonce-bearing public forms.
-- Preserved private tables, roles, audit history, privacy tools, and administration from v0.1.0.
-- Kept physical file uploads disabled until protected storage and quarantine arrive in v0.3.0.
+- Added public routing, adaptive forms, review-before-submit, REST submission, fallback submission, references, and anti-spam controls.
 
 ## 0.1.0 — Private Inquiry Records and Plugin Foundation
 
-- Added dedicated inquiry, attachment metadata, and audit tables.
-- Added private administration, roles, statuses, privacy tools, and diagnostics.
+- Added dedicated private tables, permissions, administration, privacy tools, and audit history.

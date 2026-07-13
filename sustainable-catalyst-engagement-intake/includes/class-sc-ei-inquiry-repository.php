@@ -23,58 +23,81 @@ final class SC_EI_Inquiry_Repository {
 			$type = 'other';
 		}
 
+		$contact_method   = sanitize_key( $input['preferred_contact_method'] ?? 'email' );
+		$meeting_request  = sanitize_key( $input['meeting_request'] ?? 'no' );
+		$scheduling_state = sanitize_key( $input['scheduling_status'] ?? ( 'no' === $meeting_request ? 'not_requested' : 'requested' ) );
+
+		if ( ! array_key_exists( $contact_method, SC_EI_Teams::contact_methods() ) ) {
+			$contact_method = 'email';
+		}
+		if ( ! array_key_exists( $meeting_request, SC_EI_Teams::meeting_requests() ) ) {
+			$meeting_request = 'no';
+		}
+		if ( ! array_key_exists( $scheduling_state, SC_EI_Teams::scheduling_statuses() ) ) {
+			$scheduling_state = 'no' === $meeting_request ? 'not_requested' : 'requested';
+		}
+
+		$weekdays          = SC_EI_Teams::sanitize_weekdays( $input['preferred_weekdays'] ?? array() );
+		$participant_emails= SC_EI_Teams::sanitize_participant_emails( $input['participant_emails'] ?? array() );
+		$timezone          = sanitize_text_field( $input['timezone'] ?? '' );
+		if ( $timezone && ! SC_EI_Teams::valid_timezone( $timezone ) ) {
+			$timezone = '';
+		}
+
 		$data = array(
-			'public_id'          => wp_generate_uuid4(),
-			'reference'          => self::generate_reference(),
-			'inquiry_type'       => $type,
-			'status'             => $status,
-			'contact_name'       => sanitize_text_field( $input['contact_name'] ?? '' ),
-			'contact_email'      => sanitize_email( $input['contact_email'] ?? '' ),
-			'organization'       => sanitize_text_field( $input['organization'] ?? '' ),
-			'role_title'         => sanitize_text_field( $input['role_title'] ?? '' ),
-			'subject'            => sanitize_text_field( $input['subject'] ?? '' ),
-			'message'            => sanitize_textarea_field( $input['message'] ?? '' ),
-			'project_summary'    => sanitize_textarea_field( $input['project_summary'] ?? '' ),
-			'desired_outcome'    => sanitize_textarea_field( $input['desired_outcome'] ?? '' ),
-			'service_interest'   => sanitize_text_field( $input['service_interest'] ?? '' ),
-			'budget_range'       => sanitize_text_field( $input['budget_range'] ?? '' ),
-			'desired_start_date' => self::sanitize_date( $input['desired_start_date'] ?? null ),
-			'deadline_date'      => self::sanitize_date( $input['deadline_date'] ?? null ),
-			'relevant_links'     => self::sanitize_links_json( $input['relevant_links'] ?? array() ),
-			'metadata_json'      => wp_json_encode( self::sanitize_metadata( $input['metadata'] ?? array() ) ),
-			'consent_version'    => sanitize_text_field( $input['consent_version'] ?? '' ),
-			'consent_at'         => ! empty( $input['consent_at'] ) ? sanitize_text_field( $input['consent_at'] ) : null,
-			'assigned_user_id'   => ! empty( $input['assigned_user_id'] ) ? absint( $input['assigned_user_id'] ) : null,
-			'created_at'         => $now,
-			'updated_at'         => $now,
-			'closed_at'          => null,
+			'public_id'               => wp_generate_uuid4(),
+			'reference'               => self::generate_reference(),
+			'inquiry_type'            => $type,
+			'status'                  => $status,
+			'contact_name'            => sanitize_text_field( $input['contact_name'] ?? '' ),
+			'contact_email'           => sanitize_email( $input['contact_email'] ?? '' ),
+			'organization'            => sanitize_text_field( $input['organization'] ?? '' ),
+			'role_title'              => sanitize_text_field( $input['role_title'] ?? '' ),
+			'subject'                 => sanitize_text_field( $input['subject'] ?? '' ),
+			'message'                 => sanitize_textarea_field( $input['message'] ?? '' ),
+			'project_summary'         => sanitize_textarea_field( $input['project_summary'] ?? '' ),
+			'desired_outcome'         => sanitize_textarea_field( $input['desired_outcome'] ?? '' ),
+			'service_interest'        => sanitize_text_field( $input['service_interest'] ?? '' ),
+			'budget_range'            => sanitize_text_field( $input['budget_range'] ?? '' ),
+			'desired_start_date'      => self::sanitize_date( $input['desired_start_date'] ?? null ),
+			'deadline_date'           => self::sanitize_date( $input['deadline_date'] ?? null ),
+			'preferred_contact_method'=> $contact_method,
+			'teams_email'             => sanitize_email( $input['teams_email'] ?? '' ),
+			'phone_number'            => sanitize_text_field( $input['phone_number'] ?? '' ),
+			'timezone'                => $timezone,
+			'city'                    => sanitize_text_field( $input['city'] ?? '' ),
+			'country'                 => sanitize_text_field( $input['country'] ?? '' ),
+			'meeting_request'         => $meeting_request,
+			'preferred_weekdays'      => wp_json_encode( $weekdays ),
+			'preferred_time_windows'  => sanitize_textarea_field( $input['preferred_time_windows'] ?? '' ),
+			'preferred_duration'      => max( 0, min( 180, absint( $input['preferred_duration'] ?? 0 ) ) ),
+			'participant_count'       => max( 1, min( 50, absint( $input['participant_count'] ?? 1 ) ) ),
+			'participant_emails'      => wp_json_encode( $participant_emails ),
+			'accessibility_needs'     => sanitize_textarea_field( $input['accessibility_needs'] ?? '' ),
+			'calendar_invite_consent' => empty( $input['calendar_invite_consent'] ) ? 0 : 1,
+			'scheduling_notes'        => sanitize_textarea_field( $input['scheduling_notes'] ?? '' ),
+			'scheduling_status'       => $scheduling_state,
+			'teams_meeting_url'       => '',
+			'scheduled_start_utc'     => null,
+			'scheduled_end_utc'       => null,
+			'scheduled_timezone'      => $timezone,
+			'calendar_event_id'       => '',
+			'relevant_links'          => self::sanitize_links_json( $input['relevant_links'] ?? array() ),
+			'metadata_json'           => wp_json_encode( self::sanitize_metadata( $input['metadata'] ?? array() ) ),
+			'consent_version'         => sanitize_text_field( $input['consent_version'] ?? '' ),
+			'consent_at'              => ! empty( $input['consent_at'] ) ? sanitize_text_field( $input['consent_at'] ) : null,
+			'assigned_user_id'        => ! empty( $input['assigned_user_id'] ) ? absint( $input['assigned_user_id'] ) : null,
+			'created_at'              => $now,
+			'updated_at'              => $now,
+			'closed_at'               => null,
 		);
 
 		$formats = array(
-			'%s', // public_id.
-			'%s', // reference.
-			'%s', // inquiry_type.
-			'%s', // status.
-			'%s', // contact_name.
-			'%s', // contact_email.
-			'%s', // organization.
-			'%s', // role_title.
-			'%s', // subject.
-			'%s', // message.
-			'%s', // project_summary.
-			'%s', // desired_outcome.
-			'%s', // service_interest.
-			'%s', // budget_range.
-			'%s', // desired_start_date.
-			'%s', // deadline_date.
-			'%s', // relevant_links.
-			'%s', // metadata_json.
-			'%s', // consent_version.
-			'%s', // consent_at.
-			'%d', // assigned_user_id.
-			'%s', // created_at.
-			'%s', // updated_at.
-			'%s', // closed_at.
+			'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',
+			'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',
+			'%s','%s','%s','%s','%d','%d','%s','%d','%s','%s',
+			'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',
+			'%s','%d','%s','%s','%s',
 		);
 
 		$inserted = $wpdb->insert( SC_EI_Database::table( 'inquiries' ), $data, $formats );
@@ -88,9 +111,12 @@ final class SC_EI_Inquiry_Repository {
 			'inquiry_created',
 			'Private inquiry record created.',
 			array(
-				'reference'    => $data['reference'],
-				'inquiry_type' => $type,
-				'status'       => $status,
+				'reference'                => $data['reference'],
+				'inquiry_type'             => $type,
+				'status'                   => $status,
+				'preferred_contact_method' => $contact_method,
+				'meeting_request'          => $meeting_request,
+				'scheduling_status'        => $scheduling_state,
 			),
 			$id
 		);
@@ -126,13 +152,14 @@ final class SC_EI_Inquiry_Repository {
 		global $wpdb;
 
 		$defaults = array(
-			'status'       => '',
-			'inquiry_type' => '',
-			'search'       => '',
-			'page'         => 1,
-			'per_page'     => 20,
-			'orderby'      => 'created_at',
-			'order'        => 'DESC',
+			'status'            => '',
+			'inquiry_type'      => '',
+			'scheduling_status' => '',
+			'search'            => '',
+			'page'              => 1,
+			'per_page'          => 20,
+			'orderby'           => 'created_at',
+			'order'             => 'DESC',
 		);
 		$args     = wp_parse_args( $args, $defaults );
 		$table    = SC_EI_Database::table( 'inquiries' );
@@ -147,9 +174,14 @@ final class SC_EI_Inquiry_Repository {
 			$where[]  = 'inquiry_type = %s';
 			$params[] = sanitize_key( $args['inquiry_type'] );
 		}
+		if ( $args['scheduling_status'] && array_key_exists( sanitize_key( $args['scheduling_status'] ), SC_EI_Teams::scheduling_statuses() ) ) {
+			$where[]  = 'scheduling_status = %s';
+			$params[] = sanitize_key( $args['scheduling_status'] );
+		}
 		if ( $args['search'] ) {
 			$like     = '%' . $wpdb->esc_like( sanitize_text_field( $args['search'] ) ) . '%';
-			$where[]  = '(reference LIKE %s OR contact_name LIKE %s OR contact_email LIKE %s OR organization LIKE %s OR subject LIKE %s)';
+			$where[]  = '(reference LIKE %s OR contact_name LIKE %s OR contact_email LIKE %s OR teams_email LIKE %s OR organization LIKE %s OR subject LIKE %s)';
+			$params[] = $like;
 			$params[] = $like;
 			$params[] = $like;
 			$params[] = $like;
@@ -157,7 +189,7 @@ final class SC_EI_Inquiry_Repository {
 			$params[] = $like;
 		}
 
-		$allowed_orderby = array( 'created_at', 'updated_at', 'status', 'contact_name', 'organization', 'reference' );
+		$allowed_orderby = array( 'created_at', 'updated_at', 'status', 'scheduling_status', 'contact_name', 'organization', 'reference' );
 		$orderby         = in_array( $args['orderby'], $allowed_orderby, true ) ? $args['orderby'] : 'created_at';
 		$order           = 'ASC' === strtoupper( $args['order'] ) ? 'ASC' : 'DESC';
 		$per_page        = max( 1, min( 100, absint( $args['per_page'] ) ) );
@@ -227,6 +259,84 @@ final class SC_EI_Inquiry_Repository {
 			array(
 				'old_status' => $current['status'],
 				'new_status' => $new_status,
+			),
+			$id
+		);
+
+		return true;
+	}
+
+	public static function update_scheduling( int $id, array $input ): bool {
+		global $wpdb;
+
+		$current = self::find( $id );
+		if ( ! $current ) {
+			return false;
+		}
+
+		$status = sanitize_key( $input['scheduling_status'] ?? '' );
+		if ( ! array_key_exists( $status, SC_EI_Teams::scheduling_statuses() ) ) {
+			return false;
+		}
+
+		$timezone = sanitize_text_field( $input['scheduled_timezone'] ?? $current['timezone'] ?? '' );
+		if ( ! SC_EI_Teams::valid_timezone( $timezone ) ) {
+			$timezone = wp_timezone_string();
+		}
+		if ( ! SC_EI_Teams::valid_timezone( $timezone ) ) {
+			$timezone = 'UTC';
+		}
+
+		$teams_url = esc_url_raw( $input['teams_meeting_url'] ?? '' );
+		if ( $teams_url && ! SC_EI_Teams::is_teams_url( $teams_url ) ) {
+			return false;
+		}
+
+		$start_utc = SC_EI_Teams::local_to_utc( (string) ( $input['scheduled_start_local'] ?? '' ), $timezone );
+		$end_utc   = SC_EI_Teams::local_to_utc( (string) ( $input['scheduled_end_local'] ?? '' ), $timezone );
+
+		if ( $start_utc && $end_utc && strtotime( $end_utc . ' UTC' ) <= strtotime( $start_utc . ' UTC' ) ) {
+			return false;
+		}
+
+		if ( 'scheduled' === $status ) {
+			if ( empty( $current['calendar_invite_consent'] ) || ! $teams_url || ! $start_utc || ! $end_utc ) {
+				return false;
+			}
+		}
+
+		$data = array(
+			'scheduling_status'   => $status,
+			'teams_meeting_url'   => $teams_url,
+			'scheduled_start_utc' => $start_utc,
+			'scheduled_end_utc'   => $end_utc,
+			'scheduled_timezone'  => $timezone,
+			'calendar_event_id'   => sanitize_text_field( $input['calendar_event_id'] ?? '' ),
+			'updated_at'          => current_time( 'mysql', true ),
+		);
+
+		$updated = $wpdb->update(
+			SC_EI_Database::table( 'inquiries' ),
+			$data,
+			array( 'id' => $id ),
+			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+
+		if ( false === $updated ) {
+			return false;
+		}
+
+		SC_EI_Audit_Log::record(
+			'teams_scheduling_updated',
+			sanitize_textarea_field( $input['scheduling_admin_note'] ?? 'Microsoft Teams scheduling record updated.' ),
+			array(
+				'old_status'          => $current['scheduling_status'],
+				'new_status'          => $status,
+				'has_teams_url'       => ! empty( $teams_url ),
+				'scheduled_start_utc' => $start_utc,
+				'scheduled_end_utc'   => $end_utc,
+				'scheduled_timezone'  => $timezone,
 			),
 			$id
 		);

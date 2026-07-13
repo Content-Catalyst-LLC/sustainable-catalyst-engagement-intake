@@ -1,43 +1,62 @@
-# Release Notes — v0.2.0
+# Release Notes — v0.2.1
 
 ## Purpose
 
-Turn the private v0.1.0 record foundation into a usable public Contact Hub without introducing document-upload risk before protected storage and quarantine exist.
+Prepare the Contact Hub for a Microsoft Teams-centered communication and scheduling workflow without exposing an unrestricted booking calendar or connecting external Microsoft credentials before the internal workflow is ready.
 
-## Public experiences
+## Public additions
 
-- Adaptive Contact Hub
-- General Contact Form
-- Consulting and Engagement Inquiry
+- Preferred response method
+- Microsoft Teams email
+- Phone number
+- Teams meeting request
+- Time zone
+- City and country
+- Preferred weekdays
+- Preferred time windows
+- Preferred duration
+- Participant count
+- Participant emails
+- Accessibility or accommodation needs
+- Calendar invitation consent
+- Scheduling notes
 
-## Submission path
+## Private workflow
 
-1. Choose inquiry type.
-2. Enter identity and organization context.
-3. Complete conditional fields.
-4. Review the submission.
-5. Accept privacy and authorization terms.
-6. Submit through REST or non-JavaScript fallback.
-7. Receive a human-readable inquiry reference.
-8. Create a private inquiry and audit event.
+Each inquiry receives a scheduling status:
 
-## Security controls
+- Not Requested
+- Requested
+- Under Review
+- Approved
+- Times Proposed
+- Scheduled
+- Completed
+- Declined
+- Cancelled
 
-- WordPress nonce
-- Signed form-start timestamp
-- Minimum completion time
-- Honeypot
-- Email-based rate limit
-- Duplicate suppression
-- Field-length limits
-- URL allowlisting through WordPress sanitization
-- Server-side conditional validation
-- No raw IP storage
-- No public read endpoint
-- No file uploads in this release
-- No-JavaScript form fallback
-- Dynamic page cache protection for nonce-bearing forms
+Authorized reviewers can store:
 
-## Next release
+- Microsoft Teams meeting URL
+- Scheduled local start and end
+- Scheduled time zone
+- Calendar event ID
+- Private scheduling note
 
-v0.3.0 adds secure document intake, quarantine, validation, protected storage, scan state, signed downloads, and attachment audit history.
+Scheduled times are converted to UTC in storage and displayed in the selected time zone.
+
+## Important boundary
+
+v0.2.1 does not:
+
+- expose an unrestricted calendar
+- automatically approve meetings
+- connect to Microsoft Graph
+- create or send Teams invitations
+- accept physical documents
+
+It establishes the fields, consent, migration, review controls, and audit trail needed for those later steps.
+
+## Scheduled-state integrity
+
+A record cannot be moved to Scheduled unless calendar invitation consent is present and the administrator supplies a valid Teams URL, start time, end time, and time zone.

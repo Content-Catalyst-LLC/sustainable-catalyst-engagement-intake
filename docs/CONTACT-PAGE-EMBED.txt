@@ -7,3 +7,5 @@ Optional separate forms:
 [sc_contact_form mode="general" title="Send a General Inquiry"]
 
 [sc_engagement_inquiry mode="consulting" title="Discuss an Engagement"]
+
+Microsoft Teams communication and scheduling-readiness fields are included automatically in v0.2.1.

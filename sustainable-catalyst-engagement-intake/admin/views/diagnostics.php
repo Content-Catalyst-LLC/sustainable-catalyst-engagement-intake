@@ -56,6 +56,31 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</section>
 
 		<section class="sc-ei-admin__card">
+			<h2><?php esc_html_e( 'Teams database migration', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<ul class="sc-ei-checks">
+				<?php foreach ( $diagnostics['teams_columns'] as $column => $ok ) : ?>
+					<li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li>
+				<?php endforeach; ?>
+			</ul>
+		</section>
+
+		<section class="sc-ei-admin__card">
+			<h2><?php esc_html_e( 'Microsoft Teams readiness', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<ul class="sc-ei-checks">
+				<?php foreach ( $diagnostics['teams'] as $control => $value ) : ?>
+					<li>
+						<?php if ( is_bool( $value ) ) : ?>
+							<span class="<?php echo $value ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span>
+						<?php endif; ?>
+						<?php echo esc_html( ucwords( str_replace( '_', ' ', $control ) ) ); ?>:
+						<?php echo esc_html( is_bool( $value ) ? ( $value ? 'yes' : 'no' ) : $value ); ?>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+			<p class="description"><?php esc_html_e( 'Graph API connected: no is expected in v0.2.1. This release prepares and records Teams scheduling without creating external events.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+		</section>
+
+		<section class="sc-ei-admin__card">
 			<h2><?php esc_html_e( 'Secure uploads', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<p><?php echo esc_html( $diagnostics['upload_note'] ); ?></p>
 			<p><strong><?php esc_html_e( 'Current state:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Descriptions and public links only; physical uploads remain disabled.', 'sustainable-catalyst-engagement-intake' ); ?></p>

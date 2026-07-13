@@ -8,8 +8,13 @@
     next: "[data-sc-ei-next]",
     back: "[data-sc-ei-back]",
     type: "[data-sc-ei-type]",
+    contactMethod: "[data-sc-ei-contact-method]",
+    meetingRequest: "[data-sc-ei-meeting-request]",
+    timezone: "[data-sc-ei-timezone]",
     route: "[data-sc-ei-route]",
     conditional: "[data-show-for]",
+    contactConditional: "[data-contact-method-show]",
+    meetingConditional: "[data-meeting-request-show]",
     errors: "[data-sc-ei-errors]",
     progressBar: "[data-sc-ei-progress-bar]",
     progressStep: "[data-sc-ei-progress-step]",
@@ -20,6 +25,7 @@
   };
 
   const visible = (element) => !element.hidden && element.offsetParent !== null;
+  const values = (attribute) => (attribute || "").split(",").map((item) => item.trim()).filter(Boolean);
 
   class EngagementForm {
     constructor(form) {
@@ -28,9 +34,12 @@
       this.steps = Array.from(form.querySelectorAll(selectors.step));
       this.errors = form.querySelector(selectors.errors);
       this.type = form.querySelector(selectors.type);
+      this.contactMethod = form.querySelector(selectors.contactMethod);
+      this.meetingRequest = form.querySelector(selectors.meetingRequest);
       this.success = form.querySelector(selectors.success);
       this.submitButton = form.querySelector(selectors.submit);
       this.bind();
+      this.suggestTimezone();
       this.applyConditions();
       this.showStep(1);
     }
@@ -50,15 +59,17 @@
       });
 
       this.form.addEventListener("change", (event) => {
-        if (event.target.matches(selectors.type)) {
+        if (
+          event.target.matches(selectors.type) ||
+          event.target.matches(selectors.contactMethod) ||
+          event.target.matches(selectors.meetingRequest)
+        ) {
           this.applyConditions();
         }
       });
 
       this.form.addEventListener("submit", (event) => {
-        if (!window.fetch || !config.restUrl) {
-          return;
-        }
+        if (!window.fetch || !config.restUrl) return;
         event.preventDefault();
         this.submit();
       });
@@ -79,34 +90,54 @@
       }
     }
 
-    applyConditions() {
-      const type = this.type ? this.type.value : "";
-      this.form.querySelectorAll(selectors.conditional).forEach((container) => {
-        const allowed = (container.getAttribute("data-show-for") || "")
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean);
-        const shouldShow = allowed.includes(type);
-        container.hidden = !shouldShow;
-        container.querySelectorAll("[data-required-when-visible]").forEach((field) => {
+    suggestTimezone() {
+      const field = this.form.querySelector(selectors.timezone);
+      if (!field || field.value) return;
+      try {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (timezone) field.value = timezone;
+      } catch (error) {
+        // Manual entry remains available.
+      }
+    }
+
+    setConditional(container, shouldShow) {
+      container.hidden = !shouldShow;
+      container.querySelectorAll("input, select, textarea").forEach((field) => {
+        field.disabled = !shouldShow;
+        if (field.hasAttribute("data-required-when-visible")) {
           field.required = shouldShow;
-          field.disabled = !shouldShow;
-        });
-        container.querySelectorAll("input, select, textarea").forEach((field) => {
-          if (!field.hasAttribute("data-required-when-visible")) {
-            field.disabled = !shouldShow;
-          }
-        });
+        }
       });
     }
 
+    applyConditions() {
+      const type = this.type?.value || "";
+      const contact = this.contactMethod?.value || "email";
+      const meeting = this.meetingRequest?.value || "no";
+
+      this.form.querySelectorAll(selectors.conditional).forEach((container) => {
+        this.setConditional(container, values(container.getAttribute("data-show-for")).includes(type));
+      });
+
+      this.form.querySelectorAll(selectors.contactConditional).forEach((container) => {
+        this.setConditional(container, values(container.getAttribute("data-contact-method-show")).includes(contact));
+      });
+
+      this.form.querySelectorAll(selectors.meetingConditional).forEach((container) => {
+        this.setConditional(container, values(container.getAttribute("data-meeting-request-show")).includes(meeting));
+      });
+
+      const teamsEmail = this.form.querySelector("[name='teams_email']");
+      const primaryEmail = this.form.querySelector("[name='contact_email']");
+      if ((meeting === "yes" || meeting === "unsure") && teamsEmail && !teamsEmail.value && primaryEmail?.value) {
+        teamsEmail.value = primaryEmail.value;
+      }
+    }
+
     next() {
-      if (!this.validateStep(this.step)) {
-        return;
-      }
-      if (this.step === 2) {
-        this.buildReview();
-      }
+      if (!this.validateStep(this.step)) return;
+      if (this.step === 2) this.buildReview();
       this.showStep(Math.min(this.steps.length, this.step + 1));
     }
 
@@ -119,9 +150,7 @@
       });
 
       const bar = this.form.querySelector(selectors.progressBar);
-      if (bar) {
-        bar.style.width = `${((step - 1) / (this.steps.length - 1)) * 100}%`;
-      }
+      if (bar) bar.style.width = `${((step - 1) / (this.steps.length - 1)) * 100}%`;
 
       this.form.querySelectorAll(selectors.progressStep).forEach((item) => {
         const number = Number(item.getAttribute("data-sc-ei-progress-step"));
@@ -130,21 +159,17 @@
       });
 
       const activeStep = this.steps.find((section) => Number(section.getAttribute("data-sc-ei-step")) === step);
-      if (activeStep) {
-        const legend = activeStep.querySelector("legend");
-        if (legend) {
-          legend.setAttribute("tabindex", "-1");
-          legend.focus({ preventScroll: true });
-        }
+      const legend = activeStep?.querySelector("legend");
+      if (legend) {
+        legend.setAttribute("tabindex", "-1");
+        legend.focus({ preventScroll: true });
       }
       this.clearErrors();
     }
 
     validateStep(step) {
       const section = this.steps.find((item) => Number(item.getAttribute("data-sc-ei-step")) === step);
-      if (!section) {
-        return true;
-      }
+      if (!section) return true;
 
       const invalid = Array.from(section.querySelectorAll("input, select, textarea"))
         .filter((field) => !field.disabled && visible(field) && !field.checkValidity());
@@ -156,7 +181,7 @@
 
       invalid.forEach((field) => field.setAttribute("aria-invalid", "true"));
       const messages = invalid.map((field) => {
-        const label = this.form.querySelector(`label[for="${CSS.escape(field.id)}"]`);
+        const label = field.id ? this.form.querySelector(`label[for="${CSS.escape(field.id)}"]`) : field.closest("label");
         return label ? label.textContent.replace("*", "").trim() : field.name;
       });
 
@@ -167,36 +192,46 @@
 
     buildReview() {
       const list = this.form.querySelector(selectors.reviewList);
-      if (!list) {
-        return;
-      }
+      if (!list) return;
       list.innerHTML = "";
 
+      const processedCheckboxGroups = new Set();
       const fields = Array.from(this.form.elements).filter((field) => {
         if (!field.name || field.disabled || !visible(field)) return false;
         if (["hidden", "submit", "button"].includes(field.type)) return false;
-        if (field.type === "checkbox" && !field.checked) return false;
+        if ((field.type === "checkbox" || field.type === "radio") && !field.checked) return false;
         return Boolean(field.value);
       });
 
       fields.forEach((field) => {
-        if (["privacy_consent", "authorization_consent", "follow_up_consent", "company_website"].includes(field.name)) {
+        if (["privacy_consent", "authorization_consent", "follow_up_consent", "calendar_invite_consent", "company_website"].includes(field.name)) return;
+
+        if (field.name === "preferred_weekdays[]") {
+          if (processedCheckboxGroups.has(field.name)) return;
+          processedCheckboxGroups.add(field.name);
+          const checked = Array.from(this.form.querySelectorAll("[name='preferred_weekdays[]']:checked"))
+            .map((item) => item.closest("label")?.textContent.trim() || item.value);
+          if (!checked.length) return;
+          this.addReviewItem(list, "Preferred weekdays", checked.join(", "));
           return;
         }
-        const label = this.form.querySelector(`label[for="${CSS.escape(field.id)}"]`);
+
+        const label = field.id ? this.form.querySelector(`label[for="${CSS.escape(field.id)}"]`) : null;
         if (!label) return;
 
-        const dt = document.createElement("dt");
-        const dd = document.createElement("dd");
-        dt.textContent = label.textContent.replace("*", "").trim();
-
-        if (field.tagName === "SELECT") {
-          dd.textContent = field.options[field.selectedIndex]?.text || field.value;
-        } else {
-          dd.textContent = field.value;
-        }
-        list.append(dt, dd);
+        const displayValue = field.tagName === "SELECT"
+          ? (field.options[field.selectedIndex]?.text || field.value)
+          : field.value;
+        this.addReviewItem(list, label.textContent.replace("*", "").trim(), displayValue);
       });
+    }
+
+    addReviewItem(list, label, value) {
+      const dt = document.createElement("dt");
+      const dd = document.createElement("dd");
+      dt.textContent = label;
+      dd.textContent = value;
+      list.append(dt, dd);
     }
 
     showErrors(messages) {
@@ -212,7 +247,6 @@
         ul.appendChild(li);
       });
       this.errors.append(strong, ul);
-      this.errors.focus?.();
     }
 
     clearErrors() {
@@ -224,10 +258,7 @@
     }
 
     async submit() {
-      if (!this.validateStep(3)) {
-        return;
-      }
-
+      if (!this.validateStep(3)) return;
       this.setSubmitting(true);
       this.clearErrors();
 
@@ -236,9 +267,7 @@
           method: "POST",
           body: new FormData(this.form),
           credentials: "same-origin",
-          headers: {
-            "Accept": "application/json"
-          }
+          headers: { "Accept": "application/json" }
         });
 
         const data = await response.json().catch(() => ({}));

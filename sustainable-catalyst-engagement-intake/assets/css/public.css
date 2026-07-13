@@ -487,3 +487,104 @@
     transition: none;
   }
 }
+
+
+/* Microsoft Teams communication and scheduling readiness */
+.sc-ei-communication-box,
+.sc-ei-teams-request {
+  margin: 22px 0;
+  padding: 20px;
+  border: 1px solid var(--sc-ei-border);
+  background: var(--sc-ei-cream-soft);
+}
+
+.sc-ei-communication-box {
+  border-left: 5px solid var(--sc-ei-black);
+}
+
+.sc-ei-teams-request {
+  border-top: 5px solid #4f52b2;
+  background: #f7f7fc;
+}
+
+.sc-ei-communication-box h3,
+.sc-ei-teams-request h3 {
+  margin: 0 0 8px;
+  color: var(--sc-ei-black);
+  font-size: 1.18rem;
+  line-height: 1.25;
+}
+
+.sc-ei-communication-box > p,
+.sc-ei-teams-request > p {
+  margin: 0 0 18px;
+  color: var(--sc-ei-muted);
+  font-size: .86rem;
+  line-height: 1.6;
+}
+
+.sc-ei-section-kicker {
+  margin: 0 0 6px !important;
+  color: #4f52b2 !important;
+  font-size: .7rem !important;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.sc-ei-teams-details {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--sc-ei-border);
+}
+
+.sc-ei-controller-conditional[hidden] {
+  display: none !important;
+}
+
+.sc-ei-checkbox-group {
+  margin: 0 0 20px;
+  padding: 0;
+  border: 0;
+}
+
+.sc-ei-checkbox-group legend {
+  margin: 0 0 9px;
+  color: var(--sc-ei-black);
+  font-size: .86rem;
+  font-weight: 900;
+}
+
+.sc-ei-checkbox-group > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.sc-ei-checkbox-group label {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  padding: 8px 10px;
+  background: var(--sc-ei-white);
+  border: 1px solid var(--sc-ei-border);
+  color: var(--sc-ei-text);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.sc-ei-checkbox-group input {
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .sc-ei-communication-box,
+  .sc-ei-teams-request {
+    padding: 15px;
+  }
+
+  .sc-ei-checkbox-group > div,
+  .sc-ei-checkbox-group label {
+    width: 100%;
+  }
+}

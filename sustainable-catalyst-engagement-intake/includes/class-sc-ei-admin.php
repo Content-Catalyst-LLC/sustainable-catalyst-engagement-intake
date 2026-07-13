@@ -15,6 +15,7 @@ final class SC_EI_Admin {
 		add_action( 'admin_init', array( __CLASS__, 'settings' ) );
 		add_action( 'admin_post_sc_ei_update_status', array( __CLASS__, 'handle_status' ) );
 		add_action( 'admin_post_sc_ei_add_note', array( __CLASS__, 'handle_note' ) );
+		add_action( 'admin_post_sc_ei_update_scheduling', array( __CLASS__, 'handle_scheduling' ) );
 		add_filter( 'set-screen-option', array( __CLASS__, 'screen_option' ), 10, 3 );
 		add_filter( 'plugin_action_links_' . SC_EI_BASENAME, array( __CLASS__, 'plugin_links' ) );
 	}
@@ -105,6 +106,8 @@ final class SC_EI_Admin {
 			'abandoned_draft_days'              => 30,
 			'minimum_completion_seconds'        => 3,
 			'submissions_per_hour'              => 5,
+			'teams_organizer_email'              => '',
+			'default_teams_duration'              => 20,
 		);
 	}
 
@@ -118,6 +121,8 @@ final class SC_EI_Admin {
 			'abandoned_draft_days'              => max( 1, min( 365, absint( $value['abandoned_draft_days'] ?? 30 ) ) ),
 			'minimum_completion_seconds'        => max( 1, min( 30, absint( $value['minimum_completion_seconds'] ?? 3 ) ) ),
 			'submissions_per_hour'              => max( 1, min( 20, absint( $value['submissions_per_hour'] ?? 5 ) ) ),
+			'teams_organizer_email'              => sanitize_email( $value['teams_organizer_email'] ?? '' ),
+			'default_teams_duration'             => in_array( absint( $value['default_teams_duration'] ?? 20 ), array( 20, 30, 45, 60, 90 ), true ) ? absint( $value['default_teams_duration'] ?? 20 ) : 20,
 		);
 	}
 
@@ -207,6 +212,40 @@ final class SC_EI_Admin {
 				'action'    => 'view',
 				'inquiry'   => $id,
 				'sc_ei_msg' => $success ? 'status_updated' : 'error',
+			),
+			admin_url( 'admin.php' )
+		);
+		wp_safe_redirect( $url );
+		exit;
+	}
+
+
+	public static function handle_scheduling(): void {
+		if ( ! current_user_can( 'sc_intake_review' ) ) {
+			wp_die( esc_html__( 'You do not have permission to manage Microsoft Teams scheduling.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		check_admin_referer( 'sc_ei_update_scheduling' );
+
+		$id = isset( $_POST['inquiry_id'] ) ? absint( $_POST['inquiry_id'] ) : 0;
+		$input = array(
+			'scheduling_status'      => isset( $_POST['scheduling_status'] ) ? sanitize_key( wp_unslash( $_POST['scheduling_status'] ) ) : '',
+			'teams_meeting_url'      => isset( $_POST['teams_meeting_url'] ) ? esc_url_raw( wp_unslash( $_POST['teams_meeting_url'] ) ) : '',
+			'scheduled_start_local'  => isset( $_POST['scheduled_start_local'] ) ? sanitize_text_field( wp_unslash( $_POST['scheduled_start_local'] ) ) : '',
+			'scheduled_end_local'    => isset( $_POST['scheduled_end_local'] ) ? sanitize_text_field( wp_unslash( $_POST['scheduled_end_local'] ) ) : '',
+			'scheduled_timezone'     => isset( $_POST['scheduled_timezone'] ) ? sanitize_text_field( wp_unslash( $_POST['scheduled_timezone'] ) ) : '',
+			'calendar_event_id'      => isset( $_POST['calendar_event_id'] ) ? sanitize_text_field( wp_unslash( $_POST['calendar_event_id'] ) ) : '',
+			'scheduling_admin_note'  => isset( $_POST['scheduling_admin_note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['scheduling_admin_note'] ) ) : '',
+		);
+
+		$success = $id && SC_EI_Inquiry_Repository::update_scheduling( $id, $input );
+
+		$url = add_query_arg(
+			array(
+				'page'      => 'sc-engagement-intake',
+				'action'    => 'view',
+				'inquiry'   => $id,
+				'sc_ei_msg' => $success ? 'scheduling_updated' : 'scheduling_error',
 			),
 			admin_url( 'admin.php' )
 		);

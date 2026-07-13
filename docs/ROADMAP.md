@@ -6,7 +6,11 @@ Current release.
 
 ## v0.2.0 — Adaptive Contact Hub and Conditional Forms
 
-Current release. Public routing, general and consulting forms, conditional fields, review step, accessible errors, private submission, and reference confirmation.
+Completed. Public routing, general and consulting forms, conditional fields, review step, accessible errors, private submission, and reference confirmation.
+
+## v0.2.1 — Microsoft Teams Communication Preferences and Scheduling Readiness
+
+Current release. Teams-only response preferences, time-zone and location fields, availability, participants, invitation consent, scheduling statuses, admin meeting records, and audit history.
 
 ## v0.3.0 — Secure Document Intake and Quarantine
 

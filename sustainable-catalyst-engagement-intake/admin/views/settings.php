@@ -5,7 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 <div class="wrap sc-ei-admin">
 	<h1><?php esc_html_e( 'Engagement Intake Settings', 'sustainable-catalyst-engagement-intake' ); ?></h1>
-	<p><?php esc_html_e( 'v0.2.0 keeps conservative data-preservation defaults while adding configurable public-form timing and rate-limit controls. Automated retention processing arrives in a later release.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+	<p><?php esc_html_e( 'v0.2.1 keeps conservative data-preservation defaults while adding Teams communication and scheduling-readiness controls. Automated retention processing arrives in a later release.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 
 	<form method="post" action="options.php">
 		<?php settings_fields( 'sc_ei_settings_group' ); ?>
@@ -41,6 +41,30 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</tr>
 			</table>
 			<p class="description"><?php esc_html_e( 'The public forms also use a nonce, hidden honeypot, signed form timing, duplicate detection, field limits, and conditional server-side validation.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+		</section>
+
+		<section class="sc-ei-admin__card sc-ei-admin__settings-card">
+			<h2><?php esc_html_e( 'Microsoft Teams scheduling readiness', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<p><?php esc_html_e( 'Microsoft Teams is the only supported live meeting platform. v0.2.1 stores preferences and approved meeting records; Microsoft Graph event creation is not enabled yet.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row"><label for="sc-ei-teams-organizer"><?php esc_html_e( 'Teams organizer email', 'sustainable-catalyst-engagement-intake' ); ?></label></th>
+					<td>
+						<input id="sc-ei-teams-organizer" type="email" class="regular-text" name="sc_ei_settings[teams_organizer_email]" value="<?php echo esc_attr( $settings['teams_organizer_email'] ); ?>">
+						<p class="description"><?php esc_html_e( 'Optional administrative organizer identity for future Microsoft Graph integration.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="sc-ei-default-teams-duration"><?php esc_html_e( 'Default Teams duration', 'sustainable-catalyst-engagement-intake' ); ?></label></th>
+					<td>
+						<select id="sc-ei-default-teams-duration" name="sc_ei_settings[default_teams_duration]">
+							<?php foreach ( array( 20, 30, 45, 60, 90 ) as $minutes ) : ?>
+								<option value="<?php echo esc_attr( $minutes ); ?>" <?php selected( $settings['default_teams_duration'], $minutes ); ?>><?php echo esc_html( sprintf( __( '%d minutes', 'sustainable-catalyst-engagement-intake' ), $minutes ) ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</td>
+				</tr>
+			</table>
 		</section>
 
 		<section class="sc-ei-admin__card sc-ei-admin__settings-card">

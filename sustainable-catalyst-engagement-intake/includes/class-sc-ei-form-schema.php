@@ -96,4 +96,20 @@ final class SC_EI_Form_Schema {
 	public static function type_requires_event_fields( string $type ): bool {
 		return 'speaking_media' === $type;
 	}
+
+	public static function contact_methods(): array {
+		return SC_EI_Teams::contact_methods();
+	}
+
+	public static function meeting_requests(): array {
+		return SC_EI_Teams::meeting_requests();
+	}
+
+	public static function duration_options(): array {
+		return SC_EI_Teams::duration_options();
+	}
+
+	public static function weekdays(): array {
+		return SC_EI_Teams::weekdays();
+	}
 }

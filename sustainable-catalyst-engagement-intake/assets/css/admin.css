@@ -188,3 +188,68 @@
     margin-top: 8px;
   }
 }
+
+
+.sc-ei-admin__status-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.sc-ei-admin__card--teams {
+  border-top-color: #4f52b2;
+}
+
+.sc-ei-admin__card-kicker {
+  margin: 0 0 5px;
+  color: #4f52b2;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.sc-ei-status--teams-requested,
+.sc-ei-status--teams-under_review,
+.sc-ei-status--teams-approved,
+.sc-ei-status--teams-times_proposed,
+.sc-ei-status--teams-scheduled {
+  border-color: #4f52b2;
+  background: #f2f2fb;
+}
+
+.sc-ei-status--teams-completed {
+  border-color: #187b32;
+  background: #f2faf4;
+}
+
+.sc-ei-status--teams-declined,
+.sc-ei-status--teams-cancelled {
+  border-color: #8f1515;
+  background: #fff4f4;
+}
+
+.sc-ei-admin__sensitive {
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid #b77b00;
+  border-left: 5px solid #b77b00;
+  background: #fffaf0;
+}
+
+.sc-ei-admin__sensitive strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.sc-ei-admin__sensitive p {
+  margin: 0;
+}
+
+@media (max-width: 782px) {
+  .sc-ei-admin__status-stack {
+    justify-content: flex-start;
+    margin-top: 10px;
+  }
+}

@@ -118,8 +118,9 @@ final class SC_EI_REST {
 			array(
 				'ok'        => true,
 				'reference' => $result['reference'],
-				'status'    => $result['status'],
-				'message'   => __( 'Your private inquiry record has been created.', 'sustainable-catalyst-engagement-intake' ),
+				'status'            => $result['status'],
+				'scheduling_status' => $result['scheduling_status'] ?? 'not_requested',
+				'message'           => __( 'Your private inquiry record has been created.', 'sustainable-catalyst-engagement-intake' ),
 			),
 			201
 		);

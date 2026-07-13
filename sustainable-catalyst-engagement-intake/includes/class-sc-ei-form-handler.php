@@ -78,11 +78,9 @@ final class SC_EI_Form_Handler {
 		if ( ! array_key_exists( $inquiry_type, $allowed ) ) {
 			return new WP_Error( 'invalid_inquiry_type', __( 'Choose a valid inquiry path.', 'sustainable-catalyst-engagement-intake' ) );
 		}
-
 		if ( 'general' === $mode && ! array_key_exists( $inquiry_type, SC_EI_Form_Schema::general_types() ) ) {
 			return new WP_Error( 'invalid_inquiry_type', __( 'Choose a valid general inquiry path.', 'sustainable-catalyst-engagement-intake' ) );
 		}
-
 		if ( 'consulting' === $mode && ! array_key_exists( $inquiry_type, SC_EI_Form_Schema::engagement_types() ) ) {
 			return new WP_Error( 'invalid_inquiry_type', __( 'Choose a valid engagement inquiry path.', 'sustainable-catalyst-engagement-intake' ) );
 		}
@@ -131,6 +129,53 @@ final class SC_EI_Form_Handler {
 			}
 		}
 
+		$contact_method = sanitize_key( (string) ( $raw['preferred_contact_method'] ?? 'email' ) );
+		if ( ! array_key_exists( $contact_method, SC_EI_Teams::contact_methods() ) ) {
+			return new WP_Error( 'contact_method_required', __( 'Choose a valid preferred response method.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		$teams_email = sanitize_email( (string) ( $raw['teams_email'] ?? '' ) );
+		$phone       = self::clean_single( $raw['phone_number'] ?? '', 80 );
+
+		if ( 'teams' === $contact_method && ! is_email( $teams_email ) ) {
+			return new WP_Error( 'teams_email_required', __( 'Enter the email address associated with Microsoft Teams.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		if ( 'phone' === $contact_method && '' === $phone ) {
+			return new WP_Error( 'phone_required', __( 'Enter a phone number or choose another response method.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		$meeting_request = sanitize_key( (string) ( $raw['meeting_request'] ?? 'no' ) );
+		if ( ! array_key_exists( $meeting_request, SC_EI_Teams::meeting_requests() ) ) {
+			return new WP_Error( 'meeting_request_required', __( 'Choose whether you are requesting a Microsoft Teams meeting.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		$timezone = self::clean_single( $raw['timezone'] ?? '', 120 );
+		$calendar_invite_consent = empty( $raw['calendar_invite_consent'] ) ? 0 : 1;
+		$meeting_requested = in_array( $meeting_request, array( 'yes', 'unsure' ), true );
+
+		if ( $meeting_requested ) {
+			if ( ! SC_EI_Teams::valid_timezone( $timezone ) ) {
+				return new WP_Error( 'timezone_required', __( 'Enter a valid IANA time zone, such as America/Chicago.', 'sustainable-catalyst-engagement-intake' ) );
+			}
+			if ( ! $calendar_invite_consent ) {
+				return new WP_Error( 'calendar_consent_required', __( 'Confirm that Sustainable Catalyst may send a Microsoft Teams calendar invitation if a meeting is approved.', 'sustainable-catalyst-engagement-intake' ) );
+			}
+			if ( ! $teams_email ) {
+				$teams_email = $email;
+			}
+		} elseif ( '' === $timezone ) {
+			$timezone = '';
+		}
+
+		$preferred_duration = absint( $raw['preferred_duration'] ?? 0 );
+		if ( ! array_key_exists( (string) $preferred_duration, SC_EI_Teams::duration_options() ) ) {
+			$preferred_duration = 0;
+		}
+
+		$participant_count = max( 1, min( 50, absint( $raw['participant_count'] ?? 1 ) ) );
+		$weekdays          = SC_EI_Teams::sanitize_weekdays( $raw['preferred_weekdays'] ?? array() );
+		$participant_emails= SC_EI_Teams::sanitize_participant_emails( $raw['participant_emails'] ?? '' );
+
 		$rate_check = self::check_rate_limit( $email );
 		if ( is_wp_error( $rate_check ) ) {
 			return $rate_check;
@@ -152,7 +197,8 @@ final class SC_EI_Form_Handler {
 			'audience'           => self::clean_single( $raw['audience'] ?? '', 191 ),
 			'follow_up_consent'  => empty( $raw['follow_up_consent'] ) ? 'no' : 'yes',
 			'source_url'         => esc_url_raw( (string) ( $raw['source_url'] ?? '' ) ),
-			'privacy_notice'     => 'engagement-intake-v0.2.0',
+			'privacy_notice'     => 'engagement-intake-v0.2.1',
+			'meeting_platform'   => 'microsoft_teams',
 		);
 
 		$links = self::clean_links( $raw['relevant_links'] ?? '' );
@@ -160,24 +206,40 @@ final class SC_EI_Form_Handler {
 		try {
 			$id = SC_EI_Inquiry_Repository::create(
 				array(
-					'inquiry_type'       => $inquiry_type,
-					'status'             => 'new',
-					'contact_name'       => $name,
-					'contact_email'      => $email,
-					'organization'       => self::clean_single( $raw['organization'] ?? '', 191 ),
-					'role_title'         => self::clean_single( $raw['role_title'] ?? '', 191 ),
-					'subject'            => $subject,
-					'message'            => $message,
-					'project_summary'    => $project_summary,
-					'desired_outcome'    => $desired_outcome,
-					'service_interest'   => $service_interest,
-					'budget_range'       => $budget_range,
-					'desired_start_date' => self::clean_date( $raw['desired_start_date'] ?? '' ),
-					'deadline_date'      => self::clean_date( $raw['deadline_date'] ?? '' ),
-					'relevant_links'     => $links,
-					'metadata'           => $metadata,
-					'consent_version'    => 'engagement-intake-v0.2.0',
-					'consent_at'         => current_time( 'mysql', true ),
+					'inquiry_type'            => $inquiry_type,
+					'status'                  => 'new',
+					'contact_name'            => $name,
+					'contact_email'           => $email,
+					'organization'            => self::clean_single( $raw['organization'] ?? '', 191 ),
+					'role_title'              => self::clean_single( $raw['role_title'] ?? '', 191 ),
+					'subject'                 => $subject,
+					'message'                 => $message,
+					'project_summary'         => $project_summary,
+					'desired_outcome'         => $desired_outcome,
+					'service_interest'        => $service_interest,
+					'budget_range'            => $budget_range,
+					'desired_start_date'      => self::clean_date( $raw['desired_start_date'] ?? '' ),
+					'deadline_date'           => self::clean_date( $raw['deadline_date'] ?? '' ),
+					'preferred_contact_method'=> $contact_method,
+					'teams_email'             => $teams_email,
+					'phone_number'            => $phone,
+					'timezone'                => $timezone,
+					'city'                    => self::clean_single( $raw['city'] ?? '', 120 ),
+					'country'                 => self::clean_single( $raw['country'] ?? '', 120 ),
+					'meeting_request'         => $meeting_request,
+					'preferred_weekdays'      => $weekdays,
+					'preferred_time_windows'  => self::clean_textarea( $raw['preferred_time_windows'] ?? '' ),
+					'preferred_duration'      => $preferred_duration,
+					'participant_count'       => $participant_count,
+					'participant_emails'      => $participant_emails,
+					'accessibility_needs'     => self::clean_textarea( $raw['accessibility_needs'] ?? '' ),
+					'calendar_invite_consent' => $calendar_invite_consent,
+					'scheduling_notes'        => self::clean_textarea( $raw['scheduling_notes'] ?? '' ),
+					'scheduling_status'       => $meeting_requested ? 'requested' : 'not_requested',
+					'relevant_links'          => $links,
+					'metadata'                => $metadata,
+					'consent_version'         => 'engagement-intake-v0.2.1',
+					'consent_at'              => current_time( 'mysql', true ),
 				)
 			);
 		} catch ( Throwable $exception ) {
@@ -193,13 +255,31 @@ final class SC_EI_Form_Handler {
 			'public_form_submitted',
 			'Inquiry submitted through the adaptive public contact form.',
 			array(
-				'form_mode'    => $mode,
-				'inquiry_type' => $inquiry_type,
+				'form_mode'                => $mode,
+				'inquiry_type'             => $inquiry_type,
+				'preferred_contact_method' => $contact_method,
+				'meeting_request'          => $meeting_request,
+				'timezone'                 => $timezone,
 			),
 			$id,
 			null,
 			null
 		);
+
+		if ( $meeting_requested ) {
+			SC_EI_Audit_Log::record(
+				'teams_meeting_requested',
+				'The sender requested or asked for guidance about a Microsoft Teams meeting.',
+				array(
+					'scheduling_status' => 'requested',
+					'preferred_duration'=> $preferred_duration,
+					'participant_count' => $participant_count,
+				),
+				$id,
+				null,
+				null
+			);
+		}
 
 		set_transient( $duplicate_key, 1, 10 * MINUTE_IN_SECONDS );
 		self::increment_rate_limit( $email );
@@ -207,9 +287,10 @@ final class SC_EI_Form_Handler {
 		do_action( 'sc_ei_public_inquiry_created', $record, $raw );
 
 		return array(
-			'id'        => $id,
-			'reference' => $record['reference'],
-			'status'    => $record['status'],
+			'id'                => $id,
+			'reference'         => $record['reference'],
+			'status'            => $record['status'],
+			'scheduling_status' => $record['scheduling_status'],
 		);
 	}
 
@@ -222,9 +303,9 @@ final class SC_EI_Form_Handler {
 			return new WP_Error( 'form_expired', __( 'The form session is invalid. Reload the page and try again.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 
-		$settings    = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
-		$minimum     = max( 1, absint( $settings['minimum_completion_seconds'] ?? 3 ) );
-		$elapsed     = time() - $started;
+		$settings = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
+		$minimum  = max( 1, absint( $settings['minimum_completion_seconds'] ?? 3 ) );
+		$elapsed  = time() - $started;
 
 		if ( $elapsed < $minimum ) {
 			return new WP_Error( 'too_fast', __( 'The form was submitted too quickly. Review the information and try again.', 'sustainable-catalyst-engagement-intake' ) );

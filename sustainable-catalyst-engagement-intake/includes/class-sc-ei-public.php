@@ -91,8 +91,10 @@ final class SC_EI_Public {
 			$default_type = (string) array_key_first( $types );
 		}
 
-		$started_at = time();
-		$signature  = SC_EI_Form_Handler::timing_signature( $started_at, $form_id );
+		$settings               = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
+		$default_teams_duration = absint( $settings['default_teams_duration'] ?? 20 );
+		$started_at             = time();
+		$signature              = SC_EI_Form_Handler::timing_signature( $started_at, $form_id );
 		$result     = isset( $_GET['sc_ei_result'] ) ? sanitize_key( wp_unslash( $_GET['sc_ei_result'] ) ) : '';
 		$error      = isset( $_GET['sc_ei_error'] ) ? sanitize_key( wp_unslash( $_GET['sc_ei_error'] ) ) : '';
 		$reference  = isset( $_GET['sc_ei_reference'] ) ? sanitize_text_field( wp_unslash( $_GET['sc_ei_reference'] ) ) : '';
@@ -141,7 +143,8 @@ final class SC_EI_Public {
 				<noscript>
 					<style>
 						#<?php echo esc_attr( $form_id ); ?> .sc-ei-step[hidden],
-						#<?php echo esc_attr( $form_id ); ?> .sc-ei-conditional[hidden] {
+						#<?php echo esc_attr( $form_id ); ?> .sc-ei-conditional[hidden],
+						#<?php echo esc_attr( $form_id ); ?> .sc-ei-controller-conditional[hidden] {
 							display: block !important;
 						}
 						#<?php echo esc_attr( $form_id ); ?> .sc-ei-progress,
@@ -206,6 +209,32 @@ final class SC_EI_Public {
 						<div class="sc-ei-field">
 							<label for="<?php echo esc_attr( $form_id . '-role' ); ?>"><?php esc_html_e( 'Role or title', 'sustainable-catalyst-engagement-intake' ); ?></label>
 							<input id="<?php echo esc_attr( $form_id . '-role' ); ?>" type="text" name="role_title" maxlength="191" autocomplete="organization-title">
+						</div>
+					</div>
+
+					<div class="sc-ei-communication-box">
+						<h3><?php esc_html_e( 'Communication preference', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+						<p><?php esc_html_e( 'Email is the default. Microsoft Teams is the only supported live meeting platform in this release.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+
+						<div class="sc-ei-field-grid">
+							<div class="sc-ei-field">
+								<label for="<?php echo esc_attr( $form_id . '-contact-method' ); ?>"><?php esc_html_e( 'Preferred response method', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label>
+								<select id="<?php echo esc_attr( $form_id . '-contact-method' ); ?>" name="preferred_contact_method" required data-sc-ei-contact-method>
+									<?php foreach ( SC_EI_Form_Schema::contact_methods() as $key => $label ) : ?>
+										<option value="<?php echo esc_attr( $key ); ?>" <?php selected( 'email', $key ); ?>><?php echo esc_html( $label ); ?></option>
+									<?php endforeach; ?>
+								</select>
+							</div>
+
+							<div class="sc-ei-field sc-ei-controller-conditional" data-contact-method-show="teams" hidden>
+								<label for="<?php echo esc_attr( $form_id . '-teams-email' ); ?>"><?php esc_html_e( 'Microsoft Teams email', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label>
+								<input id="<?php echo esc_attr( $form_id . '-teams-email' ); ?>" type="email" name="teams_email" maxlength="191" autocomplete="email" data-required-when-visible>
+							</div>
+
+							<div class="sc-ei-field sc-ei-controller-conditional" data-contact-method-show="phone" hidden>
+								<label for="<?php echo esc_attr( $form_id . '-phone' ); ?>"><?php esc_html_e( 'Phone number', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label>
+								<input id="<?php echo esc_attr( $form_id . '-phone' ); ?>" type="tel" name="phone_number" maxlength="80" autocomplete="tel" data-required-when-visible>
+							</div>
 						</div>
 					</div>
 
@@ -309,6 +338,100 @@ final class SC_EI_Public {
 						</div>
 					</div>
 
+					<section class="sc-ei-teams-request" aria-labelledby="<?php echo esc_attr( $form_id . '-teams-heading' ); ?>">
+						<p class="sc-ei-section-kicker"><?php esc_html_e( 'Microsoft Teams Scheduling', 'sustainable-catalyst-engagement-intake' ); ?></p>
+						<h3 id="<?php echo esc_attr( $form_id . '-teams-heading' ); ?>"><?php esc_html_e( 'Request or prepare for a Teams conversation', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+						<p><?php esc_html_e( 'Submitting availability does not book a meeting. Sustainable Catalyst reviews the inquiry first and sends a Teams invitation only when a live conversation is approved.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+
+						<div class="sc-ei-field">
+							<label for="<?php echo esc_attr( $form_id . '-meeting-request' ); ?>"><?php esc_html_e( 'Would you like to request a Microsoft Teams meeting?', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label>
+							<select id="<?php echo esc_attr( $form_id . '-meeting-request' ); ?>" name="meeting_request" required data-sc-ei-meeting-request>
+								<?php foreach ( SC_EI_Form_Schema::meeting_requests() as $key => $label ) : ?>
+									<option value="<?php echo esc_attr( $key ); ?>" <?php selected( 'no', $key ); ?>><?php echo esc_html( $label ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+
+						<div class="sc-ei-controller-conditional sc-ei-teams-details" data-meeting-request-show="yes,unsure" hidden>
+							<div class="sc-ei-field-grid">
+								<div class="sc-ei-field">
+									<label for="<?php echo esc_attr( $form_id . '-timezone' ); ?>"><?php esc_html_e( 'Time zone', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label>
+									<input id="<?php echo esc_attr( $form_id . '-timezone' ); ?>" type="text" name="timezone" maxlength="120" list="<?php echo esc_attr( $form_id . '-timezones' ); ?>" placeholder="America/Chicago" data-sc-ei-timezone data-required-when-visible>
+									<datalist id="<?php echo esc_attr( $form_id . '-timezones' ); ?>">
+										<?php foreach ( SC_EI_Teams::timezone_identifiers() as $timezone_id ) : ?>
+											<option value="<?php echo esc_attr( $timezone_id ); ?>"></option>
+										<?php endforeach; ?>
+									</datalist>
+									<p class="sc-ei-help"><?php esc_html_e( 'Your browser will suggest an IANA time zone. You can change it.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+								</div>
+
+								<div class="sc-ei-field">
+									<label for="<?php echo esc_attr( $form_id . '-duration' ); ?>"><?php esc_html_e( 'Preferred meeting duration', 'sustainable-catalyst-engagement-intake' ); ?></label>
+									<select id="<?php echo esc_attr( $form_id . '-duration' ); ?>" name="preferred_duration">
+										<?php foreach ( SC_EI_Form_Schema::duration_options() as $key => $label ) : ?>
+											<option value="<?php echo esc_attr( $key ); ?>" <?php selected( (string) $default_teams_duration, (string) $key ); ?>><?php echo esc_html( $label ); ?></option>
+										<?php endforeach; ?>
+									</select>
+								</div>
+
+								<div class="sc-ei-field">
+									<label for="<?php echo esc_attr( $form_id . '-city' ); ?>"><?php esc_html_e( 'City', 'sustainable-catalyst-engagement-intake' ); ?></label>
+									<input id="<?php echo esc_attr( $form_id . '-city' ); ?>" type="text" name="city" maxlength="120" autocomplete="address-level2">
+								</div>
+
+								<div class="sc-ei-field">
+									<label for="<?php echo esc_attr( $form_id . '-country' ); ?>"><?php esc_html_e( 'Country', 'sustainable-catalyst-engagement-intake' ); ?></label>
+									<input id="<?php echo esc_attr( $form_id . '-country' ); ?>" type="text" name="country" maxlength="120" autocomplete="country-name">
+								</div>
+							</div>
+
+							<fieldset class="sc-ei-checkbox-group">
+								<legend><?php esc_html_e( 'Preferred weekdays', 'sustainable-catalyst-engagement-intake' ); ?></legend>
+								<div>
+									<?php foreach ( SC_EI_Form_Schema::weekdays() as $key => $label ) : ?>
+										<label>
+											<input type="checkbox" name="preferred_weekdays[]" value="<?php echo esc_attr( $key ); ?>">
+											<span><?php echo esc_html( $label ); ?></span>
+										</label>
+									<?php endforeach; ?>
+								</div>
+							</fieldset>
+
+							<div class="sc-ei-field">
+								<label for="<?php echo esc_attr( $form_id . '-time-windows' ); ?>"><?php esc_html_e( 'Preferred dates and time windows', 'sustainable-catalyst-engagement-intake' ); ?></label>
+								<textarea id="<?php echo esc_attr( $form_id . '-time-windows' ); ?>" name="preferred_time_windows" rows="4" maxlength="12000" placeholder="<?php esc_attr_e( 'Example: July 20–24, 9:00 a.m.–1:00 p.m. America/Chicago', 'sustainable-catalyst-engagement-intake' ); ?>"></textarea>
+							</div>
+
+							<div class="sc-ei-field-grid">
+								<div class="sc-ei-field">
+									<label for="<?php echo esc_attr( $form_id . '-participant-count' ); ?>"><?php esc_html_e( 'Expected participant count', 'sustainable-catalyst-engagement-intake' ); ?></label>
+									<input id="<?php echo esc_attr( $form_id . '-participant-count' ); ?>" type="number" name="participant_count" min="1" max="50" value="1">
+								</div>
+
+								<div class="sc-ei-field">
+									<label for="<?php echo esc_attr( $form_id . '-participant-emails' ); ?>"><?php esc_html_e( 'Additional participant emails', 'sustainable-catalyst-engagement-intake' ); ?></label>
+									<textarea id="<?php echo esc_attr( $form_id . '-participant-emails' ); ?>" name="participant_emails" rows="3" placeholder="<?php esc_attr_e( 'One email per line', 'sustainable-catalyst-engagement-intake' ); ?>"></textarea>
+								</div>
+							</div>
+
+							<div class="sc-ei-field">
+								<label for="<?php echo esc_attr( $form_id . '-accessibility' ); ?>"><?php esc_html_e( 'Accessibility or accommodation needs', 'sustainable-catalyst-engagement-intake' ); ?></label>
+								<textarea id="<?php echo esc_attr( $form_id . '-accessibility' ); ?>" name="accessibility_needs" rows="3" maxlength="12000"></textarea>
+								<p class="sc-ei-help"><?php esc_html_e( 'Share only what is needed to prepare the meeting. This field is private and should not contain medical records.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+							</div>
+
+							<div class="sc-ei-field">
+								<label for="<?php echo esc_attr( $form_id . '-scheduling-notes' ); ?>"><?php esc_html_e( 'Additional scheduling notes', 'sustainable-catalyst-engagement-intake' ); ?></label>
+								<textarea id="<?php echo esc_attr( $form_id . '-scheduling-notes' ); ?>" name="scheduling_notes" rows="3" maxlength="12000"></textarea>
+							</div>
+
+							<label class="sc-ei-check">
+								<input type="checkbox" name="calendar_invite_consent" value="1" data-required-when-visible>
+								<span><?php esc_html_e( 'Sustainable Catalyst may send a Microsoft Teams calendar invitation to me and the participant emails I supplied if the meeting is approved.', 'sustainable-catalyst-engagement-intake' ); ?> <b aria-hidden="true">*</b></span>
+							</label>
+						</div>
+					</section>
+
 					<div class="sc-ei-field">
 						<label for="<?php echo esc_attr( $form_id . '-links' ); ?>"><?php esc_html_e( 'Relevant public links', 'sustainable-catalyst-engagement-intake' ); ?></label>
 						<textarea id="<?php echo esc_attr( $form_id . '-links' ); ?>" name="relevant_links" rows="4" placeholder="<?php esc_attr_e( 'One URL per line', 'sustainable-catalyst-engagement-intake' ); ?>"></textarea>
@@ -342,7 +465,7 @@ final class SC_EI_Public {
 					<div class="sc-ei-privacy-box">
 						<strong><?php esc_html_e( 'Privacy and document boundary', 'sustainable-catalyst-engagement-intake' ); ?></strong>
 						<p>
-							<?php esc_html_e( 'Do not submit passwords, payment-card data, regulated health records, highly sensitive personal information, export-controlled material, or confidential documents through this v0.2.0 form. Secure document intake is introduced in v0.3.0.', 'sustainable-catalyst-engagement-intake' ); ?>
+							<?php esc_html_e( 'Do not submit passwords, payment-card data, regulated health records, highly sensitive personal information, export-controlled material, or confidential documents through this v0.2.1 form. Secure document intake is introduced in v0.3.0.', 'sustainable-catalyst-engagement-intake' ); ?>
 						</p>
 					</div>
 
@@ -371,7 +494,7 @@ final class SC_EI_Public {
 
 				<div class="sc-ei-success" data-sc-ei-success role="status" aria-live="polite" hidden>
 					<p class="sc-ei-success__eyebrow"><?php esc_html_e( 'Inquiry received', 'sustainable-catalyst-engagement-intake' ); ?></p>
-					<h3><?php esc_html_e( 'Your private inquiry record has been created.', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+					<h3><?php esc_html_e( 'Your private inquiry record has been created. A Teams meeting request remains pending until it is reviewed and approved.', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 					<p><?php esc_html_e( 'Save this reference for future communication:', 'sustainable-catalyst-engagement-intake' ); ?></p>
 					<strong data-sc-ei-reference></strong>
 					<p><?php esc_html_e( 'Submission does not create an engagement, confidentiality agreement, acceptance, or obligation to respond.', 'sustainable-catalyst-engagement-intake' ); ?></p>
