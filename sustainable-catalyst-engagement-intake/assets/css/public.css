@@ -588,3 +588,85 @@
     width: 100%;
   }
 }
+
+
+/* Dual intake experiences and conversion guidance */
+.sc-ei-public--compact {
+  width: min(100%, 920px);
+}
+
+.sc-ei-public__header--compact {
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+.sc-ei-form--compact {
+  padding: clamp(18px, 3vw, 28px);
+  border-top-color: var(--sc-ei-red);
+}
+
+.sc-ei-form--compact .sc-ei-field {
+  margin-bottom: 16px;
+}
+
+.sc-ei-form--compact .sc-ei-field textarea {
+  min-height: 96px;
+}
+
+.sc-ei-form--compact .sc-ei-actions {
+  margin-top: 20px;
+}
+
+.sc-ei-form--compact .sc-ei-button--primary {
+  min-width: 230px;
+}
+
+.sc-ei-guidance {
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--sc-ei-border);
+  border-left: 5px solid var(--sc-ei-red);
+  background: #fffaf2;
+  color: var(--sc-ei-text);
+  font-size: .86rem;
+  line-height: 1.6;
+}
+
+.sc-ei-guidance[hidden] {
+  display: none !important;
+}
+
+.sc-ei-guidance p {
+  margin: 0;
+}
+
+.sc-ei-guidance p + p {
+  margin-top: 8px;
+}
+
+.sc-ei-guidance--route {
+  background: var(--sc-ei-cream-soft);
+  border-left-color: var(--sc-ei-black);
+}
+
+.sc-ei-compact-teams {
+  margin: 18px 0;
+  padding: 18px;
+  border: 1px solid #c8c9e9;
+  border-top: 4px solid #4f52b2;
+  background: #f7f7fc;
+}
+
+.sc-ei-privacy-box--compact {
+  margin-top: 18px;
+}
+
+@media (max-width: 760px) {
+  .sc-ei-form--compact .sc-ei-button--primary {
+    min-width: 0;
+  }
+
+  .sc-ei-compact-teams {
+    padding: 14px;
+  }
+}

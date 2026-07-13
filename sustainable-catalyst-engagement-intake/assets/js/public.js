@@ -2,52 +2,187 @@
   "use strict";
 
   const config = window.scEiPublic || {};
-  const selectors = {
-    form: "[data-sc-ei-form]",
-    step: "[data-sc-ei-step]",
-    next: "[data-sc-ei-next]",
-    back: "[data-sc-ei-back]",
-    type: "[data-sc-ei-type]",
-    contactMethod: "[data-sc-ei-contact-method]",
-    meetingRequest: "[data-sc-ei-meeting-request]",
-    timezone: "[data-sc-ei-timezone]",
-    route: "[data-sc-ei-route]",
-    conditional: "[data-show-for]",
-    contactConditional: "[data-contact-method-show]",
-    meetingConditional: "[data-meeting-request-show]",
-    errors: "[data-sc-ei-errors]",
-    progressBar: "[data-sc-ei-progress-bar]",
-    progressStep: "[data-sc-ei-progress-step]",
-    reviewList: "[data-sc-ei-review-list]",
-    success: "[data-sc-ei-success]",
-    reference: "[data-sc-ei-reference]",
-    submit: "[data-sc-ei-submit]"
+  const routeGuidance = config.routeGuidance || {};
+  const pricingGuidance = config.pricingGuidance || {};
+
+  const emit = (name, detail = {}) => {
+    window.dispatchEvent(new CustomEvent(`scEi:${name}`, { detail }));
   };
 
   const visible = (element) => !element.hidden && element.offsetParent !== null;
   const values = (attribute) => (attribute || "").split(",").map((item) => item.trim()).filter(Boolean);
 
-  class EngagementForm {
+  class BaseForm {
     constructor(form) {
       this.form = form;
-      this.step = 1;
-      this.steps = Array.from(form.querySelectorAll(selectors.step));
-      this.errors = form.querySelector(selectors.errors);
-      this.type = form.querySelector(selectors.type);
-      this.contactMethod = form.querySelector(selectors.contactMethod);
-      this.meetingRequest = form.querySelector(selectors.meetingRequest);
-      this.success = form.querySelector(selectors.success);
-      this.submitButton = form.querySelector(selectors.submit);
-      this.bind();
+      this.errors = form.querySelector("[data-sc-ei-errors]");
+      this.success = form.querySelector("[data-sc-ei-success]");
+      this.submitButton = form.querySelector("[data-sc-ei-submit]");
+      this.container = form.closest("[data-sc-ei-hub]");
+      this.variant = form.querySelector("[name='form_variant']")?.value || form.dataset.mode || "advanced";
+      this.source = form.querySelector("[name='source_page']")?.value || this.container?.dataset.sourcePage || "other";
+      this.entryCta = form.querySelector("[name='entry_cta']")?.value || "unspecified";
       this.suggestTimezone();
+      emit("formView", this.eventDetail());
+    }
+
+    eventDetail(extra = {}) {
+      return {
+        variant: this.variant,
+        source: this.source,
+        entryCta: this.entryCta,
+        formId: this.form.id,
+        ...extra
+      };
+    }
+
+    suggestTimezone() {
+      this.form.querySelectorAll("[data-sc-ei-timezone]").forEach((field) => {
+        if (field.value) return;
+        try {
+          const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          if (timezone) field.value = timezone;
+        } catch (error) {
+          // Manual entry remains available.
+        }
+      });
+    }
+
+    setConditional(container, shouldShow) {
+      container.hidden = !shouldShow;
+      container.querySelectorAll("input, select, textarea").forEach((field) => {
+        field.disabled = !shouldShow;
+        if (field.hasAttribute("data-required-when-visible")) {
+          field.required = shouldShow;
+        }
+      });
+    }
+
+    validate(scope = this.form) {
+      const invalid = Array.from(scope.querySelectorAll("input, select, textarea"))
+        .filter((field) => !field.disabled && visible(field) && !field.checkValidity());
+
+      if (!invalid.length) {
+        this.clearErrors();
+        return true;
+      }
+
+      invalid.forEach((field) => field.setAttribute("aria-invalid", "true"));
+      const messages = invalid.map((field) => {
+        const label = field.id
+          ? this.form.querySelector(`label[for="${CSS.escape(field.id)}"]`)
+          : field.closest("label");
+        return label ? label.textContent.replace("*", "").trim() : field.name;
+      });
+
+      this.showErrors(messages);
+      invalid[0].focus();
+      emit("validationError", this.eventDetail({ fields: [...new Set(messages)] }));
+      return false;
+    }
+
+    showErrors(messages) {
+      if (!this.errors) return;
+      this.errors.hidden = false;
+      this.errors.innerHTML = "";
+
+      const strong = document.createElement("strong");
+      strong.textContent = config.i18n?.validationHeading || "Review these fields:";
+      const ul = document.createElement("ul");
+
+      [...new Set(messages)].forEach((message) => {
+        const li = document.createElement("li");
+        li.textContent = message;
+        ul.appendChild(li);
+      });
+
+      this.errors.append(strong, ul);
+    }
+
+    clearErrors() {
+      this.form.querySelectorAll("[aria-invalid='true']").forEach((field) => field.removeAttribute("aria-invalid"));
+      if (this.errors) {
+        this.errors.hidden = true;
+        this.errors.innerHTML = "";
+      }
+    }
+
+    setSubmitting(active) {
+      if (!this.submitButton) return;
+      this.submitButton.disabled = active;
+      const label = this.submitButton.querySelector("span") || this.submitButton;
+      label.textContent = active
+        ? (config.i18n?.submitting || "Submitting…")
+        : (this.variant === "compact"
+          ? (config.i18n?.compactSubmit || "Submit Engagement Inquiry")
+          : (config.i18n?.submit || "Submit Private Inquiry"));
+      this.form.classList.toggle("is-submitting", active);
+    }
+
+    async submit() {
+      if (!this.validate(this.currentValidationScope?.() || this.form)) return;
+
+      this.setSubmitting(true);
+      this.clearErrors();
+      emit("submissionStarted", this.eventDetail());
+
+      try {
+        const response = await fetch(config.restUrl, {
+          method: "POST",
+          body: new FormData(this.form),
+          credentials: "same-origin",
+          headers: { "Accept": "application/json" }
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) {
+          throw new Error(data.message || config.i18n?.genericError || "Submission failed.");
+        }
+
+        this.onSuccess(data);
+        emit("submissionSuccess", this.eventDetail({
+          reference: data.reference || "",
+          conversionRoute: data.conversion_route || "",
+          schedulingStatus: data.scheduling_status || "not_requested"
+        }));
+      } catch (error) {
+        this.showErrors([error.message || config.i18n?.genericError || "Submission failed."]);
+        emit("submissionError", this.eventDetail({ message: error.message || "Submission failed." }));
+      } finally {
+        this.setSubmitting(false);
+      }
+    }
+
+    onSuccess(data) {
+      const reference = this.success?.querySelector("[data-sc-ei-reference]");
+      if (reference) reference.textContent = data.reference || "";
+      if (this.success) {
+        this.success.hidden = false;
+        this.success.setAttribute("tabindex", "-1");
+        this.success.focus();
+      }
+      this.form.reset();
+    }
+  }
+
+  class AdaptiveForm extends BaseForm {
+    constructor(form) {
+      super(form);
+      this.step = 1;
+      this.steps = Array.from(form.querySelectorAll("[data-sc-ei-step]"));
+      this.type = form.querySelector("[data-sc-ei-type]");
+      this.contactMethod = form.querySelector("[data-sc-ei-contact-method]");
+      this.meetingRequest = form.querySelector("[data-sc-ei-meeting-request]");
+      this.bind();
       this.applyConditions();
       this.showStep(1);
     }
 
     bind() {
       this.form.addEventListener("click", (event) => {
-        const next = event.target.closest(selectors.next);
-        const back = event.target.closest(selectors.back);
+        const next = event.target.closest("[data-sc-ei-next]");
+        const back = event.target.closest("[data-sc-ei-back]");
+
         if (next) {
           event.preventDefault();
           this.next();
@@ -60,11 +195,15 @@
 
       this.form.addEventListener("change", (event) => {
         if (
-          event.target.matches(selectors.type) ||
-          event.target.matches(selectors.contactMethod) ||
-          event.target.matches(selectors.meetingRequest)
+          event.target.matches("[data-sc-ei-type]") ||
+          event.target.matches("[data-sc-ei-contact-method]") ||
+          event.target.matches("[data-sc-ei-meeting-request]")
         ) {
           this.applyConditions();
+        }
+
+        if (event.target.matches("[data-sc-ei-type]")) {
+          emit("routeSelected", this.eventDetail({ inquiryType: event.target.value }));
         }
       });
 
@@ -74,9 +213,8 @@
         this.submit();
       });
 
-      const hub = this.form.closest("[data-sc-ei-hub]");
-      if (hub) {
-        hub.querySelectorAll(selectors.route).forEach((button) => {
+      if (this.container) {
+        this.container.querySelectorAll("[data-sc-ei-route]").forEach((button) => {
           button.addEventListener("click", () => {
             const value = button.getAttribute("data-sc-ei-route");
             if (this.type && Array.from(this.type.options).some((option) => option.value === value)) {
@@ -90,41 +228,20 @@
       }
     }
 
-    suggestTimezone() {
-      const field = this.form.querySelector(selectors.timezone);
-      if (!field || field.value) return;
-      try {
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        if (timezone) field.value = timezone;
-      } catch (error) {
-        // Manual entry remains available.
-      }
-    }
-
-    setConditional(container, shouldShow) {
-      container.hidden = !shouldShow;
-      container.querySelectorAll("input, select, textarea").forEach((field) => {
-        field.disabled = !shouldShow;
-        if (field.hasAttribute("data-required-when-visible")) {
-          field.required = shouldShow;
-        }
-      });
-    }
-
     applyConditions() {
       const type = this.type?.value || "";
       const contact = this.contactMethod?.value || "email";
       const meeting = this.meetingRequest?.value || "no";
 
-      this.form.querySelectorAll(selectors.conditional).forEach((container) => {
+      this.form.querySelectorAll("[data-show-for]").forEach((container) => {
         this.setConditional(container, values(container.getAttribute("data-show-for")).includes(type));
       });
 
-      this.form.querySelectorAll(selectors.contactConditional).forEach((container) => {
+      this.form.querySelectorAll("[data-contact-method-show]").forEach((container) => {
         this.setConditional(container, values(container.getAttribute("data-contact-method-show")).includes(contact));
       });
 
-      this.form.querySelectorAll(selectors.meetingConditional).forEach((container) => {
+      this.form.querySelectorAll("[data-meeting-request-show]").forEach((container) => {
         this.setConditional(container, values(container.getAttribute("data-meeting-request-show")).includes(meeting));
       });
 
@@ -133,11 +250,23 @@
       if ((meeting === "yes" || meeting === "unsure") && teamsEmail && !teamsEmail.value && primaryEmail?.value) {
         teamsEmail.value = primaryEmail.value;
       }
+
+      const guidance = this.form.querySelector("[data-sc-ei-route-guidance]");
+      if (guidance) {
+        guidance.textContent = routeGuidance[type] || "";
+        guidance.hidden = !guidance.textContent;
+      }
     }
 
     next() {
-      if (!this.validateStep(this.step)) return;
-      if (this.step === 2) this.buildReview();
+      const section = this.steps.find((item) => Number(item.getAttribute("data-sc-ei-step")) === this.step);
+      if (!this.validate(section || this.form)) return;
+
+      if (this.step === 2) {
+        this.buildReview();
+        emit("reviewOpened", this.eventDetail({ inquiryType: this.type?.value || "" }));
+      }
+
       this.showStep(Math.min(this.steps.length, this.step + 1));
     }
 
@@ -149,10 +278,12 @@
         section.classList.toggle("is-active", active);
       });
 
-      const bar = this.form.querySelector(selectors.progressBar);
-      if (bar) bar.style.width = `${((step - 1) / (this.steps.length - 1)) * 100}%`;
+      const bar = this.form.querySelector("[data-sc-ei-progress-bar]");
+      if (bar && this.steps.length > 1) {
+        bar.style.width = `${((step - 1) / (this.steps.length - 1)) * 100}%`;
+      }
 
-      this.form.querySelectorAll(selectors.progressStep).forEach((item) => {
+      this.form.querySelectorAll("[data-sc-ei-progress-step]").forEach((item) => {
         const number = Number(item.getAttribute("data-sc-ei-progress-step"));
         item.classList.toggle("is-active", number === step);
         item.classList.toggle("is-complete", number < step);
@@ -167,31 +298,12 @@
       this.clearErrors();
     }
 
-    validateStep(step) {
-      const section = this.steps.find((item) => Number(item.getAttribute("data-sc-ei-step")) === step);
-      if (!section) return true;
-
-      const invalid = Array.from(section.querySelectorAll("input, select, textarea"))
-        .filter((field) => !field.disabled && visible(field) && !field.checkValidity());
-
-      if (!invalid.length) {
-        this.clearErrors();
-        return true;
-      }
-
-      invalid.forEach((field) => field.setAttribute("aria-invalid", "true"));
-      const messages = invalid.map((field) => {
-        const label = field.id ? this.form.querySelector(`label[for="${CSS.escape(field.id)}"]`) : field.closest("label");
-        return label ? label.textContent.replace("*", "").trim() : field.name;
-      });
-
-      this.showErrors(messages);
-      invalid[0].focus();
-      return false;
+    currentValidationScope() {
+      return this.steps.find((item) => Number(item.getAttribute("data-sc-ei-step")) === this.step) || this.form;
     }
 
     buildReview() {
-      const list = this.form.querySelector(selectors.reviewList);
+      const list = this.form.querySelector("[data-sc-ei-review-list]");
       if (!list) return;
       list.innerHTML = "";
 
@@ -211,8 +323,7 @@
           processedCheckboxGroups.add(field.name);
           const checked = Array.from(this.form.querySelectorAll("[name='preferred_weekdays[]']:checked"))
             .map((item) => item.closest("label")?.textContent.trim() || item.value);
-          if (!checked.length) return;
-          this.addReviewItem(list, "Preferred weekdays", checked.join(", "));
+          if (checked.length) this.addReviewItem(list, "Preferred weekdays", checked.join(", "));
           return;
         }
 
@@ -222,6 +333,7 @@
         const displayValue = field.tagName === "SELECT"
           ? (field.options[field.selectedIndex]?.text || field.value)
           : field.value;
+
         this.addReviewItem(list, label.textContent.replace("*", "").trim(), displayValue);
       });
     }
@@ -234,80 +346,109 @@
       list.append(dt, dd);
     }
 
-    showErrors(messages) {
-      if (!this.errors) return;
-      this.errors.hidden = false;
-      this.errors.innerHTML = "";
-      const strong = document.createElement("strong");
-      strong.textContent = config.i18n?.validationHeading || "Review these fields:";
-      const ul = document.createElement("ul");
-      [...new Set(messages)].forEach((message) => {
-        const li = document.createElement("li");
-        li.textContent = message;
-        ul.appendChild(li);
+    onSuccess(data) {
+      this.steps.forEach((step) => {
+        step.hidden = true;
+        step.classList.remove("is-active");
       });
-      this.errors.append(strong, ul);
+      const progress = this.form.querySelector(".sc-ei-progress");
+      if (progress) progress.hidden = true;
+      super.onSuccess(data);
+    }
+  }
+
+  class CompactForm extends BaseForm {
+    constructor(form) {
+      super(form);
+      this.nextStep = form.querySelector("[data-sc-ei-compact-next-step]");
+      this.service = form.querySelector("[data-sc-ei-compact-service]");
+      this.budget = form.querySelector("[data-sc-ei-compact-budget]");
+      this.bind();
+      this.applyConditions();
+      this.updateGuidance();
     }
 
-    clearErrors() {
-      this.form.querySelectorAll("[aria-invalid='true']").forEach((field) => field.removeAttribute("aria-invalid"));
-      if (this.errors) {
-        this.errors.hidden = true;
-        this.errors.innerHTML = "";
+    bind() {
+      this.form.addEventListener("change", (event) => {
+        if (event.target.matches("[data-sc-ei-compact-next-step]")) {
+          this.applyConditions();
+          emit("compactNextStepSelected", this.eventDetail({ nextStep: event.target.value }));
+        }
+
+        if (
+          event.target.matches("[data-sc-ei-compact-service]") ||
+          event.target.matches("[data-sc-ei-compact-budget]")
+        ) {
+          this.updateGuidance();
+        }
+      });
+
+      this.form.addEventListener("submit", (event) => {
+        if (!window.fetch || !config.restUrl) return;
+        event.preventDefault();
+        this.submit();
+      });
+    }
+
+    applyConditions() {
+      const nextStep = this.nextStep?.value || "email_first";
+      this.form.querySelectorAll("[data-compact-next-step-show]").forEach((container) => {
+        this.setConditional(container, values(container.getAttribute("data-compact-next-step-show")).includes(nextStep));
+      });
+
+      const teamsEmail = this.form.querySelector("[name='teams_email']");
+      const primaryEmail = this.form.querySelector("[name='contact_email']");
+      if (nextStep === "teams_fit_call" && teamsEmail && !teamsEmail.value && primaryEmail?.value) {
+        teamsEmail.value = primaryEmail.value;
       }
     }
 
-    async submit() {
-      if (!this.validateStep(3)) return;
-      this.setSubmitting(true);
-      this.clearErrors();
+    updateGuidance() {
+      const panel = this.form.querySelector("[data-sc-ei-pricing-guidance]");
+      if (!panel) return;
 
-      try {
-        const response = await fetch(config.restUrl, {
-          method: "POST",
-          body: new FormData(this.form),
-          credentials: "same-origin",
-          headers: { "Accept": "application/json" }
-        });
+      const service = this.service?.value || "";
+      const budget = this.budget?.value || "";
+      const guidance = pricingGuidance[service] || {};
+      const messages = [];
 
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data.ok) {
-          throw new Error(data.message || config.i18n?.genericError || "Submission failed.");
-        }
+      if (guidance.default) messages.push(guidance.default);
 
-        this.steps.forEach((step) => {
-          step.hidden = true;
-          step.classList.remove("is-active");
-        });
-        const progress = this.form.querySelector(".sc-ei-progress");
-        if (progress) progress.hidden = true;
-        if (this.success) {
-          this.success.hidden = false;
-          const reference = this.success.querySelector(selectors.reference);
-          if (reference) reference.textContent = data.reference || "";
-          this.success.setAttribute("tabindex", "-1");
-          this.success.focus();
-        }
-        this.form.reset();
-      } catch (error) {
-        this.showErrors([error.message || config.i18n?.genericError || "Submission failed."]);
-      } finally {
-        this.setSubmitting(false);
+      const lowBuildBudget = ["under_1500", "1500_5000", "5000_10000"].includes(budget);
+      const lowSprintBudget = ["under_1500", "1500_5000"].includes(budget);
+
+      if (
+        (service === "knowledge_platform_build" && lowBuildBudget) ||
+        (service === "strategy_architecture_sprint" && lowSprintBudget)
+      ) {
+        if (guidance.low_budget) messages.push(guidance.low_budget);
+      }
+
+      panel.innerHTML = "";
+      messages.forEach((message) => {
+        const p = document.createElement("p");
+        p.textContent = message;
+        panel.appendChild(p);
+      });
+      panel.hidden = messages.length === 0;
+
+      if (service) {
+        emit("compactServiceSelected", this.eventDetail({ service, budget, guidanceShown: messages.length > 0 }));
       }
     }
 
-    setSubmitting(active) {
-      if (!this.submitButton) return;
-      this.submitButton.disabled = active;
-      const label = this.submitButton.querySelector("span") || this.submitButton;
-      label.textContent = active
-        ? (config.i18n?.submitting || "Submitting…")
-        : (config.i18n?.submit || "Submit Private Inquiry");
-      this.form.classList.toggle("is-submitting", active);
+    onSuccess(data) {
+      Array.from(this.form.children).forEach((element) => {
+        if (element !== this.success && !element.matches?.(".sc-ei-honeypot")) {
+          element.hidden = true;
+        }
+      });
+      super.onSuccess(data);
     }
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(selectors.form).forEach((form) => new EngagementForm(form));
+    document.querySelectorAll("[data-sc-ei-form]").forEach((form) => new AdaptiveForm(form));
+    document.querySelectorAll("[data-sc-ei-compact-form]").forEach((form) => new CompactForm(form));
   });
 })();

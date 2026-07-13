@@ -29,7 +29,8 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'contact'           => __( 'Contact', 'sustainable-catalyst-engagement-intake' ),
 			'organization'      => __( 'Organization', 'sustainable-catalyst-engagement-intake' ),
 			'inquiry_type'      => __( 'Type', 'sustainable-catalyst-engagement-intake' ),
-			'contact_method'    => __( 'Contact Method', 'sustainable-catalyst-engagement-intake' ),
+			'origin'            => __( 'Experience / Source', 'sustainable-catalyst-engagement-intake' ),
+			'conversion_route'  => __( 'Conversion Route', 'sustainable-catalyst-engagement-intake' ),
 			'status'            => __( 'Inquiry Status', 'sustainable-catalyst-engagement-intake' ),
 			'scheduling_status' => __( 'Teams Status', 'sustainable-catalyst-engagement-intake' ),
 			'created_at'        => __( 'Received', 'sustainable-catalyst-engagement-intake' ),
@@ -41,6 +42,7 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'reference'         => array( 'reference', false ),
 			'contact'           => array( 'contact_name', false ),
 			'organization'      => array( 'organization', false ),
+			'conversion_route'  => array( 'conversion_route', false ),
 			'status'            => array( 'status', false ),
 			'scheduling_status' => array( 'scheduling_status', false ),
 			'created_at'        => array( 'created_at', true ),
@@ -55,17 +57,32 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 		switch ( $column_name ) {
 			case 'organization':
 				return esc_html( $item['organization'] ?: '—' );
+
 			case 'inquiry_type':
 				$types = SC_EI_Statuses::inquiry_types();
 				return esc_html( $types[ $item['inquiry_type'] ] ?? $item['inquiry_type'] );
-			case 'contact_method':
-				return esc_html( SC_EI_Teams::label( SC_EI_Teams::contact_methods(), $item['preferred_contact_method'] ?? 'email' ) );
+
+			case 'origin':
+				$variants = SC_EI_Conversion::variants();
+				$sources  = SC_EI_Conversion::sources();
+				$variant  = SC_EI_Conversion::label( $variants, $item['form_variant'] ?? 'advanced' );
+				$source   = SC_EI_Conversion::label( $sources, $item['source_page'] ?? 'other' );
+				return sprintf(
+					'<strong>%1$s</strong><br><span class="description">%2$s</span>',
+					esc_html( $variant ),
+					esc_html( $source )
+				);
+
+			case 'conversion_route':
+				return esc_html( $item['conversion_route'] ? ucwords( str_replace( '_', ' ', $item['conversion_route'] ) ) : '—' );
+
 			case 'status':
 				return sprintf(
 					'<span class="sc-ei-status sc-ei-status--%1$s">%2$s</span>',
 					esc_attr( $item['status'] ),
 					esc_html( SC_EI_Statuses::label( $item['status'] ) )
 				);
+
 			case 'scheduling_status':
 				$value = $item['scheduling_status'] ?? 'not_requested';
 				return sprintf(
@@ -73,8 +90,10 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 					esc_attr( $value ),
 					esc_html( SC_EI_Teams::label( SC_EI_Teams::scheduling_statuses(), $value ) )
 				);
+
 			case 'created_at':
 				return esc_html( get_date_from_gmt( $item['created_at'], 'M j, Y g:i a' ) );
+
 			default:
 				return '';
 		}
@@ -120,6 +139,9 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 		$status            = isset( $_GET['status'] ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : '';
 		$type              = isset( $_GET['inquiry_type'] ) ? sanitize_key( wp_unslash( $_GET['inquiry_type'] ) ) : '';
 		$scheduling_status = isset( $_GET['scheduling_status'] ) ? sanitize_key( wp_unslash( $_GET['scheduling_status'] ) ) : '';
+		$form_variant      = isset( $_GET['form_variant'] ) ? sanitize_key( wp_unslash( $_GET['form_variant'] ) ) : '';
+		$source_page       = isset( $_GET['source_page'] ) ? sanitize_key( wp_unslash( $_GET['source_page'] ) ) : '';
+		$conversion_route  = isset( $_GET['conversion_route'] ) ? sanitize_key( wp_unslash( $_GET['conversion_route'] ) ) : '';
 		$search            = isset( $_REQUEST['s'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['s'] ) ) : '';
 		$orderby           = isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : 'created_at';
 		$order             = isset( $_GET['order'] ) ? sanitize_key( wp_unslash( $_GET['order'] ) ) : 'DESC';
@@ -129,6 +151,9 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 				'status'            => $status,
 				'inquiry_type'      => $type,
 				'scheduling_status' => $scheduling_status,
+				'form_variant'      => $form_variant,
+				'source_page'       => $source_page,
+				'conversion_route'  => $conversion_route,
 				'search'            => $search,
 				'page'              => $page,
 				'per_page'          => $per_page,
@@ -157,9 +182,11 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 		$current_status     = isset( $_GET['status'] ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : '';
 		$current_type       = isset( $_GET['inquiry_type'] ) ? sanitize_key( wp_unslash( $_GET['inquiry_type'] ) ) : '';
 		$current_scheduling = isset( $_GET['scheduling_status'] ) ? sanitize_key( wp_unslash( $_GET['scheduling_status'] ) ) : '';
+		$current_variant    = isset( $_GET['form_variant'] ) ? sanitize_key( wp_unslash( $_GET['form_variant'] ) ) : '';
+		$current_source     = isset( $_GET['source_page'] ) ? sanitize_key( wp_unslash( $_GET['source_page'] ) ) : '';
 		?>
 		<div class="alignleft actions">
-			<label class="screen-reader-text" for="sc-ei-status-filter"><?php esc_html_e( 'Filter by status', 'sustainable-catalyst-engagement-intake' ); ?></label>
+			<label class="screen-reader-text" for="sc-ei-status-filter"><?php esc_html_e( 'Filter by inquiry status', 'sustainable-catalyst-engagement-intake' ); ?></label>
 			<select name="status" id="sc-ei-status-filter">
 				<option value=""><?php esc_html_e( 'All inquiry statuses', 'sustainable-catalyst-engagement-intake' ); ?></option>
 				<?php foreach ( SC_EI_Statuses::all() as $key => $label ) : ?>
@@ -172,6 +199,22 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 				<option value=""><?php esc_html_e( 'All inquiry types', 'sustainable-catalyst-engagement-intake' ); ?></option>
 				<?php foreach ( SC_EI_Statuses::inquiry_types() as $key => $label ) : ?>
 					<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $current_type, $key ); ?>><?php echo esc_html( $label ); ?></option>
+				<?php endforeach; ?>
+			</select>
+
+			<label class="screen-reader-text" for="sc-ei-variant-filter"><?php esc_html_e( 'Filter by intake experience', 'sustainable-catalyst-engagement-intake' ); ?></label>
+			<select name="form_variant" id="sc-ei-variant-filter">
+				<option value=""><?php esc_html_e( 'All intake experiences', 'sustainable-catalyst-engagement-intake' ); ?></option>
+				<?php foreach ( SC_EI_Conversion::variants() as $key => $label ) : ?>
+					<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $current_variant, $key ); ?>><?php echo esc_html( $label ); ?></option>
+				<?php endforeach; ?>
+			</select>
+
+			<label class="screen-reader-text" for="sc-ei-source-filter"><?php esc_html_e( 'Filter by source page', 'sustainable-catalyst-engagement-intake' ); ?></label>
+			<select name="source_page" id="sc-ei-source-filter">
+				<option value=""><?php esc_html_e( 'All source pages', 'sustainable-catalyst-engagement-intake' ); ?></option>
+				<?php foreach ( SC_EI_Conversion::sources() as $key => $label ) : ?>
+					<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $current_source, $key ); ?>><?php echo esc_html( $label ); ?></option>
 				<?php endforeach; ?>
 			</select>
 

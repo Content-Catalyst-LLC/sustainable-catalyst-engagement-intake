@@ -26,7 +26,7 @@ final class SC_EI_Activator {
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Engagement Intake v0.2.1 activated with Microsoft Teams communication preferences and scheduling readiness.',
+			'Engagement Intake v0.2.2 activated with compact Consulting and advanced Contact intake experiences, source attribution, and conversion routing.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}

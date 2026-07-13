@@ -5,7 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 <div class="wrap sc-ei-admin">
 	<h1><?php esc_html_e( 'Engagement Intake Settings', 'sustainable-catalyst-engagement-intake' ); ?></h1>
-	<p><?php esc_html_e( 'v0.2.1 keeps conservative data-preservation defaults while adding Teams communication and scheduling-readiness controls. Automated retention processing arrives in a later release.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+	<p><?php esc_html_e( 'v0.2.2 keeps conservative data-preservation defaults while adding dual intake attribution, conversion routing, and Teams scheduling-readiness controls. Automated retention processing arrives in a later release.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 
 	<form method="post" action="options.php">
 		<?php settings_fields( 'sc_ei_settings_group' ); ?>
@@ -45,7 +45,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 		<section class="sc-ei-admin__card sc-ei-admin__settings-card">
 			<h2><?php esc_html_e( 'Microsoft Teams scheduling readiness', 'sustainable-catalyst-engagement-intake' ); ?></h2>
-			<p><?php esc_html_e( 'Microsoft Teams is the only supported live meeting platform. v0.2.1 stores preferences and approved meeting records; Microsoft Graph event creation is not enabled yet.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<p><?php esc_html_e( 'Microsoft Teams is the only supported live meeting platform. v0.2.2 stores preferences and approved meeting records; Microsoft Graph event creation is not enabled yet.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row"><label for="sc-ei-teams-organizer"><?php esc_html_e( 'Teams organizer email', 'sustainable-catalyst-engagement-intake' ); ?></label></th>

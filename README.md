@@ -1,75 +1,86 @@
 # Sustainable Catalyst Engagement Intake
 
-**Version:** 0.2.1  
-**Release:** Microsoft Teams Communication Preferences and Scheduling Readiness
+**Version:** 0.2.2  
+**Release:** Dual Intake Experiences and Conversion Routing
 
-A private WordPress contact and engagement intake system for Sustainable Catalyst.
+One private WordPress inquiry system now powers two purpose-built public experiences.
 
-## Live meeting platform
-
-Microsoft Teams is the only supported live meeting platform in v0.2.1.
-
-This release does not create Teams events automatically. It collects scheduling preferences, records consent, supports private review, stores approved Teams meeting details, normalizes scheduled times to UTC, and maintains an audit history.
-
-## Public shortcodes
+## Consulting page
 
 ```text
-[sc_contact_hub]
+[sc_engagement_inquiry
+  mode="compact"
+  source="consulting-page"
+  entry_cta="discuss-an-engagement"
+  title="Discuss an Engagement"
+]
 ```
+
+The compact form is designed to convert visitors who have already read the Consulting page. It uses published engagement and fee guidance, asks for a bounded problem and outcome, and offers email-first follow-up or a Microsoft Teams fit-call request.
+
+## Contact page
 
 ```text
-[sc_contact_form mode="general"]
+[sc_contact_hub
+  mode="advanced"
+  source="contact-page"
+  entry_cta="contact-hub"
+  title="Contact Sustainable Catalyst"
+]
 ```
+
+The advanced hub routes general, consulting, research, technical, workshop, advisory, media, open-source, institutional, and other inquiries into conditional fields and a review step.
+
+## Private conversion metadata
+
+Every inquiry can record:
+
+- Form variant
+- Source page
+- Entry CTA
+- Conversion route
+- Guidance flags
+- Referring URL
+- Inquiry type
+- Requested service
+- Budget
+- Teams request and scheduling state
+
+## Guidance boundaries
+
+Published-fee and route guidance is advisory only. It never:
+
+- blocks submission
+- approves or rejects an inquiry
+- calculates a fit score
+- changes status automatically
+- schedules a meeting automatically
+
+## Event hooks
+
+PHP:
+
+```php
+sc_ei_form_rendered
+sc_ei_public_inquiry_created
+sc_ei_conversion_routed
+```
+
+Browser custom events:
 
 ```text
-[sc_engagement_inquiry mode="consulting"]
+scEi:formView
+scEi:routeSelected
+scEi:compactServiceSelected
+scEi:compactNextStepSelected
+scEi:reviewOpened
+scEi:submissionStarted
+scEi:submissionSuccess
+scEi:submissionError
+scEi:validationError
 ```
 
-## Teams readiness capabilities
-
-- Preferred response method
-- Conditional Teams email or phone
-- Teams meeting request
-- Browser time-zone suggestion
-- Manual IANA time zone
-- City and country
-- Preferred weekdays and time windows
-- Preferred duration
-- Participant count and emails
-- Accessibility or accommodation notes
-- Calendar invitation consent
-- Scheduling notes
-- Human-controlled scheduling status
-- Teams meeting URL
-- Local-to-UTC meeting conversion
-- Calendar event ID
-- Admin filtering and audit history
-
-## Scheduling workflow
-
-```text
-Inquiry submitted
-→ Requested
-→ Under Review
-→ Approved
-→ Times Proposed
-→ Scheduled
-→ Completed
-```
-
-Alternative outcomes:
-
-```text
-Declined
-Cancelled
-Not Requested
-```
-
-## Recommended Contact page embed
-
-```text
-[sc_contact_hub title="Contact Sustainable Catalyst"]
-```
+No analytics vendor is hard-coded.
 
 ## Repository
 

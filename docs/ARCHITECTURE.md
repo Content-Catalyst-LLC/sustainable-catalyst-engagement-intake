@@ -42,3 +42,18 @@ Access is controlled by dedicated capabilities:
 v0.2.0 adds conditional public forms.  
 v0.3.0 adds protected document storage and quarantine.  
 Later versions add communication history, retention automation, sender portal, scheduling, proposals, analytics, and Workflow Core.
+
+
+## Dual public experiences
+
+The Consulting page and Contact page use separate public renderers but share:
+
+- validation
+- private inquiry persistence
+- Teams scheduling fields
+- privacy tools
+- audit history
+- administration
+- retention settings
+
+This prevents duplicated records and duplicated plugin maintenance.

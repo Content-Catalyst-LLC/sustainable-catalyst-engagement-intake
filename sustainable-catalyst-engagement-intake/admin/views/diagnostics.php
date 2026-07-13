@@ -5,7 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 <div class="wrap sc-ei-admin">
 	<h1><?php esc_html_e( 'Engagement Intake Diagnostics', 'sustainable-catalyst-engagement-intake' ); ?></h1>
-	<p><?php esc_html_e( 'Foundation checks for private records, permissions, privacy tools, and future secure intake services.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+	<p><?php esc_html_e( 'Checks for dual intake experiences, conversion routing, private records, Teams readiness, permissions, privacy tools, and future secure document intake.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 
 	<div class="sc-ei-health sc-ei-health--<?php echo esc_attr( $status ); ?>">
 		<strong><?php echo esc_html( 'healthy' === $status ? __( 'Foundation healthy', 'sustainable-catalyst-engagement-intake' ) : __( 'Attention required', 'sustainable-catalyst-engagement-intake' ) ); ?></strong>
@@ -56,12 +56,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</section>
 
 		<section class="sc-ei-admin__card">
-			<h2><?php esc_html_e( 'Teams database migration', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<h2><?php esc_html_e( 'Inquiry database migration', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<ul class="sc-ei-checks">
-				<?php foreach ( $diagnostics['teams_columns'] as $column => $ok ) : ?>
+				<?php foreach ( $diagnostics['inquiry_columns'] as $column => $ok ) : ?>
 					<li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li>
 				<?php endforeach; ?>
 			</ul>
+		</section>
+
+		<section class="sc-ei-admin__card">
+			<h2><?php esc_html_e( 'Dual intake and conversion routing', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<ul class="sc-ei-checks">
+				<?php foreach ( $diagnostics['dual_intake'] as $control => $ok ) : ?>
+					<li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( ucwords( str_replace( '_', ' ', $control ) ) ); ?></li>
+				<?php endforeach; ?>
+			</ul>
+			<p class="description"><?php esc_html_e( 'Guidance is advisory and non-blocking. It does not score, approve, reject, or automatically schedule an inquiry.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 		</section>
 
 		<section class="sc-ei-admin__card">
@@ -77,7 +87,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</li>
 				<?php endforeach; ?>
 			</ul>
-			<p class="description"><?php esc_html_e( 'Graph API connected: no is expected in v0.2.1. This release prepares and records Teams scheduling without creating external events.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<p class="description"><?php esc_html_e( 'Graph API connected: no is expected in v0.2.2. This release prepares and records Teams scheduling without creating external events.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 		</section>
 
 		<section class="sc-ei-admin__card">

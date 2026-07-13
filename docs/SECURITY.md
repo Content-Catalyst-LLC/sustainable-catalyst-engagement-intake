@@ -1,6 +1,6 @@
 # Security Model
 
-## v0.2.1 public form controls
+## v0.2.2 public form controls
 
 - WordPress nonce validation
 - Write-only public REST submission route
@@ -22,7 +22,7 @@
 
 ## Document boundary
 
-v0.2.1 does not accept physical documents. The form warns against credentials, payment data, regulated health records, highly sensitive personal data, export-controlled material, and confidential documents.
+v0.2.2 does not accept physical documents. The form warns against credentials, payment data, regulated health records, highly sensitive personal data, export-controlled material, and confidential documents.
 
 ## Secure upload requirements for v0.3.0
 
@@ -55,4 +55,15 @@ The shortcode requests dynamic no-cache behavior because WordPress nonces and si
 - Scheduled local times are normalized to UTC.
 - Scheduling changes require `sc_intake_review`.
 - Scheduling changes generate audit events.
-- No calendar event is created automatically in v0.2.1.
+- No calendar event is created automatically in v0.2.2.
+
+
+## Conversion guidance boundary
+
+- Guidance is computed from allowlisted service and budget keys.
+- Guidance text is escaped before output.
+- Guidance never changes status.
+- Guidance never approves, rejects, or schedules an inquiry.
+- Source and CTA attributes are sanitized before storage.
+- Signed source, CTA, and form-variant attribution is verified before record creation.
+- No analytics vendor receives inquiry content by default.

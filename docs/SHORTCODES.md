@@ -1,49 +1,67 @@
 # Public Shortcodes
 
-## Contact Hub
+## Compact Consulting Intake
 
 ```text
-[sc_contact_hub]
-```
-
-Optional attributes:
-
-```text
-[sc_contact_hub
-  title="Contact Sustainable Catalyst"
-  intro="Choose the inquiry path that best matches your request."
-  default_type="general"
+[sc_engagement_inquiry
+  mode="compact"
+  source="consulting-page"
+  entry_cta="discuss-an-engagement"
+  title="Discuss an Engagement"
+  intro="Share the problem, desired outcome, budget range, and preferred next step."
 ]
 ```
 
-## General Contact
+Use this on the Consulting page.
+
+## Advanced Contact Hub
 
 ```text
-[sc_contact_form mode="general"]
+[sc_contact_hub
+  mode="advanced"
+  source="contact-page"
+  entry_cta="contact-hub"
+  title="Contact Sustainable Catalyst"
+  intro="Choose the inquiry path that best matches your question, project, collaboration, or engagement."
+]
 ```
 
-Supported routes:
+Use this on the Contact page.
 
-- General question
-- Research collaboration
-- Speaking, media, or press
-- Open-source inquiry
-- Other
-
-## Engagement Inquiry
+## General Contact Form
 
 ```text
-[sc_engagement_inquiry mode="consulting"]
+[sc_contact_form
+  mode="general"
+  source="contact-page"
+  entry_cta="general-contact-form"
+]
 ```
 
-Supported routes:
+## Standard Engagement Form
 
-- Consulting or advisory
-- Platform or technical work
-- Workshop or training
-- Monthly advisory
-- Institutional partnership
+```text
+[sc_engagement_inquiry
+  mode="consulting"
+  source="contact-page"
+  entry_cta="standard-engagement-form"
+]
+```
 
-## Privacy
+## Attribution attributes
 
-All shortcodes create private inquiry records. None produces a public inquiry archive.
+`source` records the originating page or site area.
+
+Recommended values:
+
+- consulting-page
+- contact-page
+- research-page
+- platform-page
+- lab-page
+- workbench-page
+- media-page
+
+`entry_cta` records the button or section that opened the form.
+
+Both values are private and are not shown in a public archive.

@@ -9,10 +9,11 @@ $plugin = $root . '/sustainable-catalyst-engagement-intake';
 $required = array(
 	$plugin . '/sustainable-catalyst-engagement-intake.php',
 	$plugin . '/includes/class-sc-ei-database.php',
-	$plugin . '/includes/class-sc-ei-teams.php',
+	$plugin . '/includes/class-sc-ei-conversion.php',
 	$plugin . '/includes/class-sc-ei-form-handler.php',
 	$plugin . '/includes/class-sc-ei-public.php',
 	$plugin . '/includes/class-sc-ei-inquiry-repository.php',
+	$plugin . '/includes/class-sc-ei-admin-list-table.php',
 	$plugin . '/admin/views/inquiry-view.php',
 	$plugin . '/assets/css/public.css',
 	$plugin . '/assets/js/public.js',
@@ -28,39 +29,65 @@ foreach ( $required as $file ) {
 }
 
 $main = file_get_contents( $plugin . '/sustainable-catalyst-engagement-intake.php' );
-if ( false === strpos( $main, 'Version:     0.2.1' ) ) {
+if ( false === strpos( $main, 'Version:     0.2.2' ) ) {
 	$failures[] = 'Version marker missing.';
 }
-if ( false === strpos( $main, 'class-sc-ei-teams.php' ) ) {
-	$failures[] = 'Teams helper not loaded.';
+if ( false === strpos( $main, 'class-sc-ei-conversion.php' ) ) {
+	$failures[] = 'Conversion helper not loaded.';
 }
 
 $database = file_get_contents( $plugin . '/includes/class-sc-ei-database.php' );
-foreach ( array( 'preferred_contact_method', 'teams_email', 'timezone', 'meeting_request', 'scheduling_status', 'teams_meeting_url', 'scheduled_start_utc' ) as $column ) {
+foreach ( array( 'form_variant', 'source_page', 'entry_cta', 'conversion_route', 'guidance_flags' ) as $column ) {
 	if ( false === strpos( $database, $column ) ) {
-		$failures[] = 'Database column missing: ' . $column;
-	}
-}
-
-$handler = file_get_contents( $plugin . '/includes/class-sc-ei-form-handler.php' );
-foreach ( array( 'preferred_contact_method', 'teams_email_required', 'timezone_required', 'calendar_consent_required', 'teams_meeting_requested' ) as $control ) {
-	if ( false === strpos( $handler, $control ) ) {
-		$failures[] = 'Teams form control missing: ' . $control;
+		$failures[] = 'Conversion column missing: ' . $column;
 	}
 }
 
 $public = file_get_contents( $plugin . '/includes/class-sc-ei-public.php' );
-foreach ( array( 'Microsoft Teams email', 'data-sc-ei-meeting-request', 'data-sc-ei-timezone', 'preferred_weekdays[]', 'calendar_invite_consent' ) as $marker ) {
+foreach ( array(
+	"mode=\"compact\"",
+	'render_compact',
+	'render_adaptive',
+	'compact_service_interests',
+	'data-sc-ei-pricing-guidance',
+	'data-sc-ei-route-guidance',
+	'name="source_page"',
+	'name="entry_cta"'
+) as $marker ) {
 	if ( false === strpos( $public, $marker ) ) {
-		$failures[] = 'Public Teams field missing: ' . $marker;
+		$failures[] = 'Dual intake marker missing: ' . $marker;
 	}
 }
 
-$repository = file_get_contents( $plugin . '/includes/class-sc-ei-inquiry-repository.php' );
-foreach ( array( 'update_scheduling', 'teams_scheduling_updated', 'local_to_utc' ) as $marker ) {
-	if ( false === strpos( $repository, $marker ) ) {
-		$failures[] = 'Scheduling repository feature missing: ' . $marker;
+$handler = file_get_contents( $plugin . '/includes/class-sc-ei-form-handler.php' );
+foreach ( array(
+	'compact_next_step',
+	'SC_EI_Conversion::sanitize_variant',
+	'SC_EI_Conversion::sanitize_source',
+	'sc_ei_conversion_routed',
+	'engagement-intake-v0.2.2'
+) as $marker ) {
+	if ( false === strpos( $handler, $marker ) ) {
+		$failures[] = 'Conversion handling missing: ' . $marker;
 	}
+}
+
+$javascript = file_get_contents( $plugin . '/assets/js/public.js' );
+foreach ( array(
+	'class CompactForm',
+	'class AdaptiveForm',
+	'scEi:',
+	'compactServiceSelected',
+	'routeSelected',
+	'submissionSuccess'
+) as $marker ) {
+	if ( false === strpos( $javascript, $marker ) ) {
+		$failures[] = 'Browser event or experience missing: ' . $marker;
+	}
+}
+
+if ( false !== strpos( $public, 'Zoom' ) || false !== strpos( $public, 'Google Meet' ) ) {
+	$failures[] = 'Unsupported meeting platform appeared in public form.';
 }
 
 if ( $failures ) {
@@ -68,4 +95,4 @@ if ( $failures ) {
 	exit( 1 );
 }
 
-echo "Engagement Intake v0.2.1 smoke checks passed." . PHP_EOL;
+echo "Engagement Intake v0.2.2 smoke checks passed." . PHP_EOL;

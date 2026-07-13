@@ -36,6 +36,11 @@ final class SC_EI_Database {
 			reference varchar(40) NOT NULL,
 			inquiry_type varchar(80) NOT NULL DEFAULT 'general',
 			status varchar(80) NOT NULL DEFAULT 'new',
+			form_variant varchar(40) NOT NULL DEFAULT 'advanced',
+			source_page varchar(80) NOT NULL DEFAULT 'other',
+			entry_cta varchar(120) NOT NULL DEFAULT 'unspecified',
+			conversion_route varchar(120) NOT NULL DEFAULT '',
+			guidance_flags longtext NULL,
 			contact_name varchar(191) NOT NULL DEFAULT '',
 			contact_email varchar(191) NOT NULL DEFAULT '',
 			organization varchar(191) NOT NULL DEFAULT '',
@@ -82,6 +87,9 @@ final class SC_EI_Database {
 			UNIQUE KEY reference (reference),
 			KEY status (status),
 			KEY inquiry_type (inquiry_type),
+			KEY form_variant (form_variant),
+			KEY source_page (source_page),
+			KEY conversion_route (conversion_route),
 			KEY contact_email (contact_email),
 			KEY preferred_contact_method (preferred_contact_method),
 			KEY meeting_request (meeting_request),
@@ -165,6 +173,11 @@ final class SC_EI_Database {
 
 		$table   = self::table( 'inquiries' );
 		$columns = array(
+			'form_variant',
+			'source_page',
+			'entry_cta',
+			'conversion_route',
+			'guidance_flags',
 			'preferred_contact_method',
 			'teams_email',
 			'timezone',

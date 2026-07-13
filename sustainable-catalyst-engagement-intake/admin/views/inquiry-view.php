@@ -23,6 +23,15 @@ foreach ( $preferred_weekdays as $weekday ) {
 $participant_emails = json_decode( (string) ( $inquiry['participant_emails'] ?? '[]' ), true );
 $participant_emails = is_array( $participant_emails ) ? $participant_emails : array();
 
+$guidance_flags = json_decode( (string) ( $inquiry['guidance_flags'] ?? '[]' ), true );
+$guidance_flags = is_array( $guidance_flags ) ? $guidance_flags : array();
+$metadata       = json_decode( (string) ( $inquiry['metadata_json'] ?? '{}' ), true );
+$metadata       = is_array( $metadata ) ? $metadata : array();
+$variants       = SC_EI_Conversion::variants();
+$sources        = SC_EI_Conversion::sources();
+$service_labels = array_merge( SC_EI_Form_Schema::service_interests(), SC_EI_Form_Schema::compact_service_interests() );
+$budget_labels  = array_merge( SC_EI_Form_Schema::budget_ranges(), SC_EI_Form_Schema::compact_budget_ranges() );
+
 $display_timezone = $inquiry['scheduled_timezone'] ?: $inquiry['timezone'];
 if ( ! SC_EI_Teams::valid_timezone( $display_timezone ) ) {
 	$display_timezone = wp_timezone_string();
@@ -79,10 +88,10 @@ $scheduled_end_input   = SC_EI_Teams::format_utc_for_input( $inquiry['scheduled_
 					<dd><?php $types = SC_EI_Statuses::inquiry_types(); echo esc_html( $types[ $inquiry['inquiry_type'] ] ?? $inquiry['inquiry_type'] ); ?></dd>
 
 					<dt><?php esc_html_e( 'Service interest', 'sustainable-catalyst-engagement-intake' ); ?></dt>
-					<dd><?php echo esc_html( $inquiry['service_interest'] ?: '—' ); ?></dd>
+					<dd><?php echo esc_html( $inquiry['service_interest'] ? ( $service_labels[ $inquiry['service_interest'] ] ?? ucwords( str_replace( '_', ' ', $inquiry['service_interest'] ) ) ) : '—' ); ?></dd>
 
 					<dt><?php esc_html_e( 'Budget', 'sustainable-catalyst-engagement-intake' ); ?></dt>
-					<dd><?php echo esc_html( $inquiry['budget_range'] ?: '—' ); ?></dd>
+					<dd><?php echo esc_html( $inquiry['budget_range'] ? ( $budget_labels[ $inquiry['budget_range'] ] ?? ucwords( str_replace( '_', ' ', $inquiry['budget_range'] ) ) ) : '—' ); ?></dd>
 
 					<dt><?php esc_html_e( 'Project timeline', 'sustainable-catalyst-engagement-intake' ); ?></dt>
 					<dd><?php echo esc_html( trim( ( $inquiry['desired_start_date'] ?: '' ) . ( $inquiry['deadline_date'] ? ' → ' . $inquiry['deadline_date'] : '' ) ) ?: '—' ); ?></dd>
@@ -90,6 +99,45 @@ $scheduled_end_input   = SC_EI_Teams::format_utc_for_input( $inquiry['scheduled_
 					<dt><?php esc_html_e( 'Received', 'sustainable-catalyst-engagement-intake' ); ?></dt>
 					<dd><?php echo esc_html( get_date_from_gmt( $inquiry['created_at'], 'F j, Y g:i a' ) ); ?></dd>
 				</dl>
+			</section>
+
+			<section class="sc-ei-admin__card sc-ei-admin__card--conversion">
+				<p class="sc-ei-admin__card-kicker sc-ei-admin__card-kicker--conversion"><?php esc_html_e( 'Conversion Routing', 'sustainable-catalyst-engagement-intake' ); ?></p>
+				<h2><?php esc_html_e( 'Intake Experience and Origin', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+				<dl class="sc-ei-admin__details">
+					<dt><?php esc_html_e( 'Form experience', 'sustainable-catalyst-engagement-intake' ); ?></dt>
+					<dd><?php echo esc_html( SC_EI_Conversion::label( $variants, $inquiry['form_variant'] ?? 'advanced' ) ); ?></dd>
+
+					<dt><?php esc_html_e( 'Source page', 'sustainable-catalyst-engagement-intake' ); ?></dt>
+					<dd><?php echo esc_html( SC_EI_Conversion::label( $sources, $inquiry['source_page'] ?? 'other' ) ); ?></dd>
+
+					<dt><?php esc_html_e( 'Entry CTA', 'sustainable-catalyst-engagement-intake' ); ?></dt>
+					<dd><?php echo esc_html( $inquiry['entry_cta'] ? ucwords( str_replace( '-', ' ', $inquiry['entry_cta'] ) ) : '—' ); ?></dd>
+
+					<dt><?php esc_html_e( 'Conversion route', 'sustainable-catalyst-engagement-intake' ); ?></dt>
+					<dd><?php echo esc_html( $inquiry['conversion_route'] ? ucwords( str_replace( '_', ' ', $inquiry['conversion_route'] ) ) : '—' ); ?></dd>
+
+					<dt><?php esc_html_e( 'Referring form URL', 'sustainable-catalyst-engagement-intake' ); ?></dt>
+					<dd>
+						<?php if ( ! empty( $metadata['source_url'] ) ) : ?>
+							<a href="<?php echo esc_url( $metadata['source_url'] ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $metadata['source_url'] ); ?></a>
+						<?php else : ?>
+							—
+						<?php endif; ?>
+					</dd>
+				</dl>
+
+				<?php if ( $guidance_flags ) : ?>
+					<div class="sc-ei-admin__guidance-flags">
+						<strong><?php esc_html_e( 'Non-blocking guidance flags', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+						<ul>
+							<?php foreach ( $guidance_flags as $flag ) : ?>
+								<li><?php echo esc_html( ucwords( str_replace( '_', ' ', $flag ) ) ); ?></li>
+							<?php endforeach; ?>
+						</ul>
+						<p class="description"><?php esc_html_e( 'These flags record guidance shown or implied by the selected service and budget. They do not approve, reject, or score the inquiry.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+					</div>
+				<?php endif; ?>
 			</section>
 
 			<section class="sc-ei-admin__card sc-ei-admin__card--teams">

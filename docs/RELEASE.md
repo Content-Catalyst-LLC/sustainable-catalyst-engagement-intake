@@ -1,62 +1,88 @@
-# Release Notes — v0.2.1
+# Release Notes — v0.2.2
 
 ## Purpose
 
-Prepare the Contact Hub for a Microsoft Teams-centered communication and scheduling workflow without exposing an unrestricted booking calendar or connecting external Microsoft credentials before the internal workflow is ready.
+Create the strongest intake experience for Sustainable Catalyst by separating conversion-focused consulting intake from broad institutional contact routing while preserving one private administrative system.
 
-## Public additions
+## Compact Consulting Intake
 
-- Preferred response method
-- Microsoft Teams email
-- Phone number
-- Teams meeting request
+Designed for visitors who have already reviewed the Consulting page.
+
+It collects:
+
+- Name
+- Email
+- Organization
+- Best-fit engagement
+- Budget range
+- Problem
+- Desired outcome
+- Desired start date
+- Public link
+- Email-first or Teams fit-call next step
+
+A Teams fit-call request reveals only:
+
+- Teams email
 - Time zone
-- City and country
-- Preferred weekdays
-- Preferred time windows
-- Preferred duration
-- Participant count
-- Participant emails
-- Accessibility or accommodation needs
+- General availability
 - Calendar invitation consent
-- Scheduling notes
 
-## Private workflow
+## Advanced Contact Hub
 
-Each inquiry receives a scheduling status:
+Designed for the Contact page.
 
-- Not Requested
-- Requested
-- Under Review
-- Approved
-- Times Proposed
-- Scheduled
-- Completed
-- Declined
-- Cancelled
+It supports ten inquiry routes and conditional detail collection for:
 
-Authorized reviewers can store:
+- General questions
+- Consulting
+- Research collaboration
+- Platform and technical work
+- Workshops and training
+- Monthly advisory
+- Speaking, media, and press
+- Open-source work
+- Institutional partnership
+- Other inquiries
 
-- Microsoft Teams meeting URL
-- Scheduled local start and end
-- Scheduled time zone
-- Calendar event ID
-- Private scheduling note
+## Conversion routing
 
-Scheduled times are converted to UTC in storage and displayed in the selected time zone.
+Private records now include:
 
-## Important boundary
+- `form_variant`
+- `source_page`
+- `entry_cta`
+- `conversion_route`
+- `guidance_flags`
 
-v0.2.1 does not:
+The referring URL remains in private metadata.
 
-- expose an unrestricted calendar
-- automatically approve meetings
-- connect to Microsoft Graph
-- create or send Teams invitations
-- accept physical documents
+## Guidance
 
-It establishes the fields, consent, migration, review controls, and audit trail needed for those later steps.
+The compact form can explain:
 
-## Scheduled-state integrity
+- free fit-call boundaries
+- $375 strategic consultation
+- $1,500 diagnostic
+- $5,000–$8,500 strategy sprint
+- platform builds beginning at $12,000
+- $1,500–$4,500 workshops
+- $2,500–$6,000+ monthly advisory
+- custom institutional partnership scope
 
-A record cannot be moved to Scheduled unless calendar invitation consent is present and the administrator supplies a valid Teams URL, start time, end time, and time zone.
+Guidance is educational and non-blocking.
+
+## Event hooks
+
+The release includes PHP and browser events for privacy-conscious conversion measurement. No GA4, Microsoft, Meta, or other analytics provider is enabled automatically.
+
+## Boundaries
+
+v0.2.2 does not:
+
+- create a fit score
+- automatically approve or reject
+- expose a public inquiry record
+- create a Teams meeting
+- expose live calendar availability
+- accept physical files

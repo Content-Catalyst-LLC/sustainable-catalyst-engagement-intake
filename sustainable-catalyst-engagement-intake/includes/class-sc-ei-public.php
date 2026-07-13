@@ -21,6 +21,9 @@ final class SC_EI_Public {
 	public static function contact_hub( array $atts = array() ): string {
 		$atts = shortcode_atts(
 			array(
+				'mode'         => 'advanced',
+				'source'       => 'contact-page',
+				'entry_cta'    => 'contact-hub',
 				'title'        => __( 'Contact Sustainable Catalyst', 'sustainable-catalyst-engagement-intake' ),
 				'intro'        => __( 'Choose the inquiry path that best matches the question, project, collaboration, or engagement.', 'sustainable-catalyst-engagement-intake' ),
 				'default_type' => 'general',
@@ -29,13 +32,14 @@ final class SC_EI_Public {
 			'sc_contact_hub'
 		);
 
-		$types = SC_EI_Form_Schema::all_public_types();
-		return self::render(
-			'hub',
-			$types,
+		return self::render_adaptive(
+			'advanced',
+			SC_EI_Form_Schema::all_public_types(),
 			sanitize_text_field( $atts['title'] ),
 			sanitize_textarea_field( $atts['intro'] ),
-			sanitize_key( $atts['default_type'] )
+			sanitize_key( $atts['default_type'] ),
+			SC_EI_Conversion::sanitize_source( (string) $atts['source'] ),
+			SC_EI_Conversion::sanitize_entry_cta( (string) $atts['entry_cta'] )
 		);
 	}
 
@@ -43,6 +47,8 @@ final class SC_EI_Public {
 		$atts = shortcode_atts(
 			array(
 				'mode'         => 'general',
+				'source'       => 'contact-page',
+				'entry_cta'    => 'general-contact-form',
 				'title'        => __( 'Send a General Inquiry', 'sustainable-catalyst-engagement-intake' ),
 				'intro'        => __( 'Use this form for general questions, research collaboration, media, speaking, open-source work, or another non-consulting inquiry.', 'sustainable-catalyst-engagement-intake' ),
 				'default_type' => 'general',
@@ -51,12 +57,14 @@ final class SC_EI_Public {
 			'sc_contact_form'
 		);
 
-		return self::render(
+		return self::render_adaptive(
 			'general',
 			SC_EI_Form_Schema::general_types(),
 			sanitize_text_field( $atts['title'] ),
 			sanitize_textarea_field( $atts['intro'] ),
-			sanitize_key( $atts['default_type'] )
+			sanitize_key( $atts['default_type'] ),
+			SC_EI_Conversion::sanitize_source( (string) $atts['source'] ),
+			SC_EI_Conversion::sanitize_entry_cta( (string) $atts['entry_cta'] )
 		);
 	}
 
@@ -64,24 +72,240 @@ final class SC_EI_Public {
 		$atts = shortcode_atts(
 			array(
 				'mode'         => 'consulting',
+				'source'       => 'consulting-page',
+				'entry_cta'    => 'discuss-an-engagement',
 				'title'        => __( 'Discuss an Engagement', 'sustainable-catalyst-engagement-intake' ),
-				'intro'        => __( 'Use this private intake for advisory, diagnostics, strategy sprints, platform work, workshops, monthly advisory, or an institutional partnership.', 'sustainable-catalyst-engagement-intake' ),
+				'intro'        => __( 'Share the problem, desired outcome, budget range, and preferred next step.', 'sustainable-catalyst-engagement-intake' ),
 				'default_type' => 'consulting',
 			),
 			$atts,
 			'sc_engagement_inquiry'
 		);
 
-		return self::render(
+		$mode = sanitize_key( (string) $atts['mode'] );
+		if ( 'compact' === $mode ) {
+			return self::render_compact(
+				sanitize_text_field( $atts['title'] ),
+				sanitize_textarea_field( $atts['intro'] ),
+				SC_EI_Conversion::sanitize_source( (string) $atts['source'] ),
+				SC_EI_Conversion::sanitize_entry_cta( (string) $atts['entry_cta'] )
+			);
+		}
+
+		return self::render_adaptive(
 			'consulting',
 			SC_EI_Form_Schema::engagement_types(),
 			sanitize_text_field( $atts['title'] ),
 			sanitize_textarea_field( $atts['intro'] ),
-			sanitize_key( $atts['default_type'] )
+			sanitize_key( $atts['default_type'] ),
+			SC_EI_Conversion::sanitize_source( (string) $atts['source'] ),
+			SC_EI_Conversion::sanitize_entry_cta( (string) $atts['entry_cta'] )
 		);
 	}
 
-	private static function render( string $mode, array $types, string $title, string $intro, string $default_type ): string {
+	private static function render_compact( string $title, string $intro, string $source, string $entry_cta ): string {
+		self::protect_dynamic_form_page();
+		self::enqueue_assets();
+
+		self::$form_count++;
+		$form_id                = 'sc-ei-compact-' . self::$form_count;
+		$settings               = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
+		$default_teams_duration = absint( $settings['default_teams_duration'] ?? 20 );
+		$started_at             = time();
+		$signature              = SC_EI_Form_Handler::timing_signature( $started_at, $form_id );
+		$attribution_signature  = SC_EI_Form_Handler::attribution_signature( 'compact', $source, $entry_cta, $form_id );
+		$result                 = isset( $_GET['sc_ei_result'] ) ? sanitize_key( wp_unslash( $_GET['sc_ei_result'] ) ) : '';
+		$error                  = isset( $_GET['sc_ei_error'] ) ? sanitize_key( wp_unslash( $_GET['sc_ei_error'] ) ) : '';
+		$reference              = isset( $_GET['sc_ei_reference'] ) ? sanitize_text_field( wp_unslash( $_GET['sc_ei_reference'] ) ) : '';
+
+		ob_start();
+		?>
+		<div class="sc-ei-public sc-ei-public--compact" data-sc-ei-hub>
+			<div class="sc-ei-public__header sc-ei-public__header--compact">
+				<p class="sc-ei-public__eyebrow"><?php esc_html_e( 'Private Consulting Intake', 'sustainable-catalyst-engagement-intake' ); ?></p>
+				<h2><?php echo esc_html( $title ); ?></h2>
+				<p><?php echo esc_html( $intro ); ?></p>
+			</div>
+
+			<?php echo self::render_feedback( $result, $error, $reference ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+
+			<form
+				id="<?php echo esc_attr( $form_id ); ?>"
+				class="sc-ei-form sc-ei-form--compact"
+				method="post"
+				action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
+				data-sc-ei-compact-form
+				data-mode="compact"
+				novalidate
+			>
+				<input type="hidden" name="action" value="sc_ei_submit">
+				<input type="hidden" name="form_mode" value="compact">
+				<input type="hidden" name="form_variant" value="compact">
+				<input type="hidden" name="source_page" value="<?php echo esc_attr( $source ); ?>">
+				<input type="hidden" name="entry_cta" value="<?php echo esc_attr( $entry_cta ); ?>">
+				<input type="hidden" name="attribution_signature" value="<?php echo esc_attr( $attribution_signature ); ?>">
+				<input type="hidden" name="inquiry_type" value="consulting">
+				<input type="hidden" name="form_id" value="<?php echo esc_attr( $form_id ); ?>">
+				<input type="hidden" name="form_started_at" value="<?php echo esc_attr( $started_at ); ?>">
+				<input type="hidden" name="form_signature" value="<?php echo esc_attr( $signature ); ?>">
+				<input type="hidden" name="redirect_to" value="<?php echo esc_url( self::current_url() ); ?>">
+				<input type="hidden" name="source_url" value="<?php echo esc_url( self::current_url() ); ?>">
+				<input type="hidden" name="preferred_duration" value="<?php echo esc_attr( $default_teams_duration ); ?>">
+				<input type="hidden" name="participant_count" value="1">
+				<?php wp_nonce_field( SC_EI_Form_Handler::nonce_action(), 'sc_ei_nonce' ); ?>
+
+				<noscript>
+					<style>
+						#<?php echo esc_attr( $form_id ); ?> .sc-ei-controller-conditional[hidden] {
+							display: block !important;
+						}
+					</style>
+					<div class="sc-ei-feedback">
+						<strong><?php esc_html_e( 'JavaScript is disabled.', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+						<span><?php esc_html_e( 'The optional Teams fields are visible. Complete them only when requesting a Teams fit call.', 'sustainable-catalyst-engagement-intake' ); ?></span>
+					</div>
+				</noscript>
+
+				<div class="sc-ei-honeypot" aria-hidden="true">
+					<label for="<?php echo esc_attr( $form_id . '-website' ); ?>">Website</label>
+					<input id="<?php echo esc_attr( $form_id . '-website' ); ?>" type="text" name="company_website" tabindex="-1" autocomplete="off">
+				</div>
+
+				<div class="sc-ei-form__errors" data-sc-ei-errors role="alert" aria-live="assertive" hidden></div>
+
+				<div class="sc-ei-field-grid">
+					<div class="sc-ei-field">
+						<label for="<?php echo esc_attr( $form_id . '-name' ); ?>"><?php esc_html_e( 'Name', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label>
+						<input id="<?php echo esc_attr( $form_id . '-name' ); ?>" type="text" name="contact_name" maxlength="191" autocomplete="name" required>
+					</div>
+					<div class="sc-ei-field">
+						<label for="<?php echo esc_attr( $form_id . '-email' ); ?>"><?php esc_html_e( 'Email', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label>
+						<input id="<?php echo esc_attr( $form_id . '-email' ); ?>" type="email" name="contact_email" maxlength="191" autocomplete="email" required>
+					</div>
+				</div>
+
+				<div class="sc-ei-field">
+					<label for="<?php echo esc_attr( $form_id . '-organization' ); ?>"><?php esc_html_e( 'Organization', 'sustainable-catalyst-engagement-intake' ); ?></label>
+					<input id="<?php echo esc_attr( $form_id . '-organization' ); ?>" type="text" name="organization" maxlength="191" autocomplete="organization">
+				</div>
+
+				<div class="sc-ei-field-grid">
+					<div class="sc-ei-field">
+						<label for="<?php echo esc_attr( $form_id . '-service' ); ?>"><?php esc_html_e( 'Best-fit engagement', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label>
+						<select id="<?php echo esc_attr( $form_id . '-service' ); ?>" name="service_interest" required data-sc-ei-compact-service>
+							<option value=""><?php esc_html_e( 'Choose the closest match', 'sustainable-catalyst-engagement-intake' ); ?></option>
+							<?php foreach ( SC_EI_Form_Schema::compact_service_interests() as $key => $label ) : ?>
+								<option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</div>
+					<div class="sc-ei-field">
+						<label for="<?php echo esc_attr( $form_id . '-budget' ); ?>"><?php esc_html_e( 'Available budget range', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label>
+						<select id="<?php echo esc_attr( $form_id . '-budget' ); ?>" name="budget_range" required data-sc-ei-compact-budget>
+							<option value=""><?php esc_html_e( 'Choose a range', 'sustainable-catalyst-engagement-intake' ); ?></option>
+							<?php foreach ( SC_EI_Form_Schema::compact_budget_ranges() as $key => $label ) : ?>
+								<option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</div>
+				</div>
+
+				<div class="sc-ei-guidance sc-ei-guidance--compact" data-sc-ei-pricing-guidance aria-live="polite" hidden></div>
+
+				<div class="sc-ei-field">
+					<label for="<?php echo esc_attr( $form_id . '-project' ); ?>"><?php esc_html_e( 'What problem are you trying to solve?', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label>
+					<textarea id="<?php echo esc_attr( $form_id . '-project' ); ?>" name="project_summary" rows="5" maxlength="12000" required></textarea>
+				</div>
+
+				<div class="sc-ei-field">
+					<label for="<?php echo esc_attr( $form_id . '-outcome' ); ?>"><?php esc_html_e( 'What outcome or decision would make this useful?', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label>
+					<textarea id="<?php echo esc_attr( $form_id . '-outcome' ); ?>" name="desired_outcome" rows="4" maxlength="12000" required></textarea>
+				</div>
+
+				<div class="sc-ei-field-grid">
+					<div class="sc-ei-field">
+						<label for="<?php echo esc_attr( $form_id . '-start' ); ?>"><?php esc_html_e( 'Desired start date', 'sustainable-catalyst-engagement-intake' ); ?></label>
+						<input id="<?php echo esc_attr( $form_id . '-start' ); ?>" type="date" name="desired_start_date">
+					</div>
+					<div class="sc-ei-field">
+						<label for="<?php echo esc_attr( $form_id . '-link' ); ?>"><?php esc_html_e( 'Most relevant public link', 'sustainable-catalyst-engagement-intake' ); ?></label>
+						<input id="<?php echo esc_attr( $form_id . '-link' ); ?>" type="url" name="relevant_links" placeholder="https://">
+					</div>
+				</div>
+
+				<div class="sc-ei-field">
+					<label for="<?php echo esc_attr( $form_id . '-next-step' ); ?>"><?php esc_html_e( 'Preferred next step', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label>
+					<select id="<?php echo esc_attr( $form_id . '-next-step' ); ?>" name="compact_next_step" required data-sc-ei-compact-next-step>
+						<option value="email_first"><?php esc_html_e( 'Continue by email first', 'sustainable-catalyst-engagement-intake' ); ?></option>
+						<option value="teams_fit_call"><?php esc_html_e( 'Request a Microsoft Teams fit call', 'sustainable-catalyst-engagement-intake' ); ?></option>
+					</select>
+				</div>
+
+				<div class="sc-ei-controller-conditional sc-ei-compact-teams" data-compact-next-step-show="teams_fit_call" hidden>
+					<div class="sc-ei-field-grid">
+						<div class="sc-ei-field">
+							<label for="<?php echo esc_attr( $form_id . '-teams-email' ); ?>"><?php esc_html_e( 'Microsoft Teams email', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label>
+							<input id="<?php echo esc_attr( $form_id . '-teams-email' ); ?>" type="email" name="teams_email" maxlength="191" autocomplete="email" data-required-when-visible>
+						</div>
+						<div class="sc-ei-field">
+							<label for="<?php echo esc_attr( $form_id . '-timezone' ); ?>"><?php esc_html_e( 'Time zone', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label>
+							<input id="<?php echo esc_attr( $form_id . '-timezone' ); ?>" type="text" name="timezone" maxlength="120" list="<?php echo esc_attr( $form_id . '-timezones' ); ?>" placeholder="America/Chicago" data-sc-ei-timezone data-required-when-visible>
+							<datalist id="<?php echo esc_attr( $form_id . '-timezones' ); ?>">
+								<?php foreach ( SC_EI_Teams::timezone_identifiers() as $timezone_id ) : ?>
+									<option value="<?php echo esc_attr( $timezone_id ); ?>"></option>
+								<?php endforeach; ?>
+							</datalist>
+						</div>
+					</div>
+
+					<div class="sc-ei-field">
+						<label for="<?php echo esc_attr( $form_id . '-availability' ); ?>"><?php esc_html_e( 'General availability', 'sustainable-catalyst-engagement-intake' ); ?></label>
+						<textarea id="<?php echo esc_attr( $form_id . '-availability' ); ?>" name="preferred_time_windows" rows="3" maxlength="12000" placeholder="<?php esc_attr_e( 'Example: Weekdays, 9:00 a.m.–1:00 p.m. America/Chicago', 'sustainable-catalyst-engagement-intake' ); ?>"></textarea>
+					</div>
+
+					<label class="sc-ei-check">
+						<input type="checkbox" name="calendar_invite_consent" value="1" data-required-when-visible>
+						<span><?php esc_html_e( 'Sustainable Catalyst may send a Microsoft Teams calendar invitation if the fit call is approved.', 'sustainable-catalyst-engagement-intake' ); ?> <b aria-hidden="true">*</b></span>
+					</label>
+				</div>
+
+				<div class="sc-ei-privacy-box sc-ei-privacy-box--compact">
+					<strong><?php esc_html_e( 'Private inquiry boundary', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+					<p><?php esc_html_e( 'Do not submit confidential documents or sensitive regulated information in this form. Secure document intake arrives in v0.3.0.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+				</div>
+
+				<label class="sc-ei-check">
+					<input type="checkbox" name="privacy_consent" value="1" required>
+					<span><?php esc_html_e( 'I authorize Sustainable Catalyst to process this inquiry and respond about relevant next steps.', 'sustainable-catalyst-engagement-intake' ); ?> <b aria-hidden="true">*</b></span>
+				</label>
+				<label class="sc-ei-check">
+					<input type="checkbox" name="authorization_consent" value="1" required>
+					<span><?php esc_html_e( 'I am authorized to share the information and public links included here.', 'sustainable-catalyst-engagement-intake' ); ?> <b aria-hidden="true">*</b></span>
+				</label>
+				<input type="hidden" name="follow_up_consent" value="1">
+
+				<div class="sc-ei-actions">
+					<button type="submit" class="sc-ei-button sc-ei-button--primary" data-sc-ei-submit>
+						<span><?php esc_html_e( 'Submit Engagement Inquiry', 'sustainable-catalyst-engagement-intake' ); ?></span>
+					</button>
+				</div>
+
+				<div class="sc-ei-success" data-sc-ei-success role="status" aria-live="polite" hidden>
+					<p class="sc-ei-success__eyebrow"><?php esc_html_e( 'Engagement inquiry received', 'sustainable-catalyst-engagement-intake' ); ?></p>
+					<h3><?php esc_html_e( 'Your private consulting inquiry has been recorded.', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+					<p><?php esc_html_e( 'Save this reference:', 'sustainable-catalyst-engagement-intake' ); ?></p>
+					<strong data-sc-ei-reference></strong>
+					<p><?php esc_html_e( 'A Teams fit-call request remains pending until the inquiry is reviewed and approved.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+				</div>
+			</form>
+		</div>
+		<?php
+		do_action( 'sc_ei_form_rendered', 'compact', $source, $entry_cta );
+		return (string) ob_get_clean();
+	}
+
+
+	private static function render_adaptive( string $mode, array $types, string $title, string $intro, string $default_type, string $source, string $entry_cta ): string {
 		self::protect_dynamic_form_page();
 		self::enqueue_assets();
 
@@ -95,13 +319,14 @@ final class SC_EI_Public {
 		$default_teams_duration = absint( $settings['default_teams_duration'] ?? 20 );
 		$started_at             = time();
 		$signature              = SC_EI_Form_Handler::timing_signature( $started_at, $form_id );
+		$attribution_signature = SC_EI_Form_Handler::attribution_signature( $mode, $source, $entry_cta, $form_id );
 		$result     = isset( $_GET['sc_ei_result'] ) ? sanitize_key( wp_unslash( $_GET['sc_ei_result'] ) ) : '';
 		$error      = isset( $_GET['sc_ei_error'] ) ? sanitize_key( wp_unslash( $_GET['sc_ei_error'] ) ) : '';
 		$reference  = isset( $_GET['sc_ei_reference'] ) ? sanitize_text_field( wp_unslash( $_GET['sc_ei_reference'] ) ) : '';
 
 		ob_start();
 		?>
-		<div class="sc-ei-public sc-ei-public--<?php echo esc_attr( $mode ); ?>" data-sc-ei-hub>
+		<div class="sc-ei-public sc-ei-public--<?php echo esc_attr( $mode ); ?>" data-sc-ei-hub data-form-variant="<?php echo esc_attr( $mode ); ?>" data-source-page="<?php echo esc_attr( $source ); ?>">
 			<div class="sc-ei-public__header">
 				<p class="sc-ei-public__eyebrow"><?php esc_html_e( 'Private Contact and Engagement Intake', 'sustainable-catalyst-engagement-intake' ); ?></p>
 				<h2><?php echo esc_html( $title ); ?></h2>
@@ -110,7 +335,7 @@ final class SC_EI_Public {
 
 			<?php echo self::render_feedback( $result, $error, $reference ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 
-			<?php if ( 'hub' === $mode ) : ?>
+			<?php if ( 'advanced' === $mode ) : ?>
 				<div class="sc-ei-route-grid" aria-label="<?php esc_attr_e( 'Choose an inquiry path', 'sustainable-catalyst-engagement-intake' ); ?>">
 					<?php foreach ( $types as $key => $label ) : ?>
 						<button type="button" class="sc-ei-route-card" data-sc-ei-route="<?php echo esc_attr( $key ); ?>">
@@ -133,6 +358,10 @@ final class SC_EI_Public {
 			>
 				<input type="hidden" name="action" value="sc_ei_submit">
 				<input type="hidden" name="form_mode" value="<?php echo esc_attr( $mode ); ?>">
+				<input type="hidden" name="form_variant" value="<?php echo esc_attr( $mode ); ?>">
+				<input type="hidden" name="source_page" value="<?php echo esc_attr( $source ); ?>">
+				<input type="hidden" name="entry_cta" value="<?php echo esc_attr( $entry_cta ); ?>">
+				<input type="hidden" name="attribution_signature" value="<?php echo esc_attr( $attribution_signature ); ?>">
 				<input type="hidden" name="form_id" value="<?php echo esc_attr( $form_id ); ?>">
 				<input type="hidden" name="form_started_at" value="<?php echo esc_attr( $started_at ); ?>">
 				<input type="hidden" name="form_signature" value="<?php echo esc_attr( $signature ); ?>">
@@ -189,6 +418,8 @@ final class SC_EI_Public {
 						</select>
 						<p class="sc-ei-help"><?php esc_html_e( 'The selection changes which details are requested. It does not automatically determine fit or acceptance.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 					</div>
+
+					<div class="sc-ei-guidance sc-ei-guidance--route" data-sc-ei-route-guidance aria-live="polite"></div>
 
 					<div class="sc-ei-field-grid">
 						<div class="sc-ei-field">
@@ -465,7 +696,7 @@ final class SC_EI_Public {
 					<div class="sc-ei-privacy-box">
 						<strong><?php esc_html_e( 'Privacy and document boundary', 'sustainable-catalyst-engagement-intake' ); ?></strong>
 						<p>
-							<?php esc_html_e( 'Do not submit passwords, payment-card data, regulated health records, highly sensitive personal information, export-controlled material, or confidential documents through this v0.2.1 form. Secure document intake is introduced in v0.3.0.', 'sustainable-catalyst-engagement-intake' ); ?>
+							<?php esc_html_e( 'Do not submit passwords, payment-card data, regulated health records, highly sensitive personal information, export-controlled material, or confidential documents through this v0.2.2 form. Secure document intake is introduced in v0.3.0.', 'sustainable-catalyst-engagement-intake' ); ?>
 						</p>
 					</div>
 
@@ -502,6 +733,7 @@ final class SC_EI_Public {
 			</form>
 		</div>
 		<?php
+		do_action( 'sc_ei_form_rendered', $mode, $source, $entry_cta );
 		return (string) ob_get_clean();
 	}
 
@@ -532,6 +764,7 @@ final class SC_EI_Public {
 			'too_fast'             => __( 'The form was submitted too quickly. Review the information and try again.', 'sustainable-catalyst-engagement-intake' ),
 			'rate_limited'         => __( 'Too many submissions were sent in a short period. Try again later.', 'sustainable-catalyst-engagement-intake' ),
 			'duplicate_submission' => __( 'This inquiry appears to have already been submitted.', 'sustainable-catalyst-engagement-intake' ),
+			'attribution_invalid'  => __( 'The form attribution check failed. Reload the page and try again.', 'sustainable-catalyst-engagement-intake' ),
 			'storage_error'        => __( 'The inquiry could not be stored. Try again or use another contact route.', 'sustainable-catalyst-engagement-intake' ),
 		);
 
@@ -605,6 +838,8 @@ final class SC_EI_Public {
 			'scEiPublic',
 			array(
 				'restUrl' => esc_url_raw( rest_url( 'sc-engagement-intake/v1/submit' ) ),
+				'routeGuidance'  => SC_EI_Conversion::route_guidance(),
+				'pricingGuidance'=> SC_EI_Conversion::compact_guidance(),
 				'i18n'    => array(
 					'validationHeading' => __( 'Review these fields:', 'sustainable-catalyst-engagement-intake' ),
 					'submitting'        => __( 'Submitting…', 'sustainable-catalyst-engagement-intake' ),

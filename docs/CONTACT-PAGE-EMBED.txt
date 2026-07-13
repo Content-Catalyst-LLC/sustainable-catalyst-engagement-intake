@@ -1,11 +1,18 @@
-Primary Contact page shortcode:
+CONSULTING PAGE — COMPACT INTAKE
 
-[sc_contact_hub title="Contact Sustainable Catalyst" intro="Choose the inquiry path that best matches your question, project, collaboration, or engagement."]
+[sc_engagement_inquiry mode="compact" source="consulting-page" entry_cta="discuss-an-engagement" title="Discuss an Engagement" intro="Share the problem, desired outcome, budget range, and preferred next step."]
 
-Optional separate forms:
 
-[sc_contact_form mode="general" title="Send a General Inquiry"]
+CONTACT PAGE — ADVANCED CONTACT HUB
 
-[sc_engagement_inquiry mode="consulting" title="Discuss an Engagement"]
+[sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst" intro="Choose the inquiry path that best matches your question, project, collaboration, or engagement."]
 
-Microsoft Teams communication and scheduling-readiness fields are included automatically in v0.2.1.
+
+OPTIONAL GENERAL-ONLY FORM
+
+[sc_contact_form mode="general" source="contact-page" entry_cta="general-contact-form" title="Send a General Inquiry"]
+
+
+OPTIONAL STANDARD ENGAGEMENT FORM
+
+[sc_engagement_inquiry mode="consulting" source="contact-page" entry_cta="standard-engagement-form" title="Discuss an Engagement"]

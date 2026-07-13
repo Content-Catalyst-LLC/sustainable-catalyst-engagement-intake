@@ -73,3 +73,13 @@ Examples:
 - Scheduled UTC start and end
 - Scheduled time zone
 - Calendar event ID
+
+
+## Conversion routing fields
+
+- Form variant
+- Source page
+- Entry CTA
+- Conversion route
+- Guidance flags
+- Referring form URL in private metadata

@@ -34,6 +34,8 @@ final class SC_EI_REST {
 				'args'                => array(
 					'status'       => array( 'sanitize_callback' => 'sanitize_key' ),
 					'inquiry_type' => array( 'sanitize_callback' => 'sanitize_key' ),
+					'form_variant' => array( 'sanitize_callback' => 'sanitize_key' ),
+					'source_page'   => array( 'sanitize_callback' => 'sanitize_key' ),
 					'search'       => array( 'sanitize_callback' => 'sanitize_text_field' ),
 					'page'         => array( 'sanitize_callback' => 'absint', 'default' => 1 ),
 					'per_page'     => array( 'sanitize_callback' => 'absint', 'default' => 20 ),
@@ -82,6 +84,8 @@ final class SC_EI_REST {
 			array(
 				'status'       => $request->get_param( 'status' ),
 				'inquiry_type' => $request->get_param( 'inquiry_type' ),
+				'form_variant' => $request->get_param( 'form_variant' ),
+				'source_page'   => $request->get_param( 'source_page' ),
 				'search'       => $request->get_param( 'search' ),
 				'page'         => $request->get_param( 'page' ),
 				'per_page'     => $request->get_param( 'per_page' ),
@@ -120,6 +124,8 @@ final class SC_EI_REST {
 				'reference' => $result['reference'],
 				'status'            => $result['status'],
 				'scheduling_status' => $result['scheduling_status'] ?? 'not_requested',
+				'form_variant'      => $result['form_variant'] ?? 'advanced',
+				'conversion_route'  => $result['conversion_route'] ?? '',
 				'message'           => __( 'Your private inquiry record has been created.', 'sustainable-catalyst-engagement-intake' ),
 			),
 			201

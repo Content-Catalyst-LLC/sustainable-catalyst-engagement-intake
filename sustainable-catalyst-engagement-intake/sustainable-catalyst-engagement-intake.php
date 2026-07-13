@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Sustainable Catalyst Engagement Intake
  * Plugin URI:  https://sustainablecatalyst.com/
- * Description: Adaptive private contact and engagement intake with Microsoft Teams communication preferences, scheduling readiness, conditional forms, private records, audit history, privacy tools, and administrative workflow.
- * Version:     0.2.1
+ * Description: Dual private intake experiences with a compact Consulting form, an advanced Contact Hub, conversion routing, Microsoft Teams scheduling readiness, audit history, privacy tools, and administrative workflow.
+ * Version:     0.2.2
  * Author:      Content Catalyst LLC
  * Author URI:  https://sustainablecatalyst.com/
  * Text Domain: sustainable-catalyst-engagement-intake
@@ -18,8 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SC_EI_VERSION', '0.2.1' );
-define( 'SC_EI_DB_VERSION', '0.2.1' );
+define( 'SC_EI_VERSION', '0.2.2' );
+define( 'SC_EI_DB_VERSION', '0.2.2' );
 define( 'SC_EI_FILE', __FILE__ );
 define( 'SC_EI_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SC_EI_URL', plugin_dir_url( __FILE__ ) );
@@ -29,6 +29,7 @@ require_once SC_EI_DIR . 'includes/class-sc-ei-database.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-statuses.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-capabilities.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-teams.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-conversion.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-audit-log.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-inquiry-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-attachment-repository.php';

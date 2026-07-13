@@ -23,6 +23,16 @@ final class SC_EI_Inquiry_Repository {
 			$type = 'other';
 		}
 
+		$form_variant     = SC_EI_Conversion::sanitize_variant( (string) ( $input['form_variant'] ?? 'advanced' ) );
+		$source_page      = SC_EI_Conversion::sanitize_source( (string) ( $input['source_page'] ?? 'other' ) );
+		$entry_cta        = SC_EI_Conversion::sanitize_entry_cta( (string) ( $input['entry_cta'] ?? 'unspecified' ) );
+		$conversion_route = SC_EI_Conversion::route( $type, (string) ( $input['service_interest'] ?? '' ), $form_variant );
+		$guidance_flags   = SC_EI_Conversion::guidance_flags(
+			(string) ( $input['service_interest'] ?? '' ),
+			(string) ( $input['budget_range'] ?? '' ),
+			(string) ( $input['message'] ?? '' )
+		);
+
 		$contact_method   = sanitize_key( $input['preferred_contact_method'] ?? 'email' );
 		$meeting_request  = sanitize_key( $input['meeting_request'] ?? 'no' );
 		$scheduling_state = sanitize_key( $input['scheduling_status'] ?? ( 'no' === $meeting_request ? 'not_requested' : 'requested' ) );
@@ -49,6 +59,11 @@ final class SC_EI_Inquiry_Repository {
 			'reference'               => self::generate_reference(),
 			'inquiry_type'            => $type,
 			'status'                  => $status,
+			'form_variant'            => $form_variant,
+			'source_page'             => $source_page,
+			'entry_cta'               => $entry_cta,
+			'conversion_route'        => $conversion_route,
+			'guidance_flags'          => wp_json_encode( $guidance_flags ),
 			'contact_name'            => sanitize_text_field( $input['contact_name'] ?? '' ),
 			'contact_email'           => sanitize_email( $input['contact_email'] ?? '' ),
 			'organization'            => sanitize_text_field( $input['organization'] ?? '' ),
@@ -92,12 +107,15 @@ final class SC_EI_Inquiry_Repository {
 			'closed_at'               => null,
 		);
 
-		$formats = array(
-			'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',
-			'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',
-			'%s','%s','%s','%s','%d','%d','%s','%d','%s','%s',
-			'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',
-			'%s','%d','%s','%s','%s',
+		$integer_fields = array(
+			'preferred_duration',
+			'participant_count',
+			'calendar_invite_consent',
+			'assigned_user_id',
+		);
+		$formats = array_map(
+			static fn( string $key ): string => in_array( $key, $integer_fields, true ) ? '%d' : '%s',
+			array_keys( $data )
 		);
 
 		$inserted = $wpdb->insert( SC_EI_Database::table( 'inquiries' ), $data, $formats );
@@ -114,6 +132,11 @@ final class SC_EI_Inquiry_Repository {
 				'reference'                => $data['reference'],
 				'inquiry_type'             => $type,
 				'status'                   => $status,
+				'form_variant'             => $form_variant,
+				'source_page'              => $source_page,
+				'entry_cta'                => $entry_cta,
+				'conversion_route'         => $conversion_route,
+				'guidance_flags'           => $guidance_flags,
 				'preferred_contact_method' => $contact_method,
 				'meeting_request'          => $meeting_request,
 				'scheduling_status'        => $scheduling_state,
@@ -155,6 +178,9 @@ final class SC_EI_Inquiry_Repository {
 			'status'            => '',
 			'inquiry_type'      => '',
 			'scheduling_status' => '',
+			'form_variant'      => '',
+			'source_page'       => '',
+			'conversion_route'  => '',
 			'search'            => '',
 			'page'              => 1,
 			'per_page'          => 20,
@@ -178,9 +204,23 @@ final class SC_EI_Inquiry_Repository {
 			$where[]  = 'scheduling_status = %s';
 			$params[] = sanitize_key( $args['scheduling_status'] );
 		}
+		if ( $args['form_variant'] && array_key_exists( sanitize_key( $args['form_variant'] ), SC_EI_Conversion::variants() ) ) {
+			$where[]  = 'form_variant = %s';
+			$params[] = sanitize_key( $args['form_variant'] );
+		}
+		if ( $args['source_page'] ) {
+			$where[]  = 'source_page = %s';
+			$params[] = SC_EI_Conversion::sanitize_source( (string) $args['source_page'] );
+		}
+		if ( $args['conversion_route'] ) {
+			$where[]  = 'conversion_route = %s';
+			$params[] = sanitize_key( $args['conversion_route'] );
+		}
 		if ( $args['search'] ) {
 			$like     = '%' . $wpdb->esc_like( sanitize_text_field( $args['search'] ) ) . '%';
-			$where[]  = '(reference LIKE %s OR contact_name LIKE %s OR contact_email LIKE %s OR teams_email LIKE %s OR organization LIKE %s OR subject LIKE %s)';
+			$where[]  = '(reference LIKE %s OR contact_name LIKE %s OR contact_email LIKE %s OR teams_email LIKE %s OR organization LIKE %s OR subject LIKE %s OR source_page LIKE %s OR conversion_route LIKE %s)';
+			$params[] = $like;
+			$params[] = $like;
 			$params[] = $like;
 			$params[] = $like;
 			$params[] = $like;
@@ -189,7 +229,7 @@ final class SC_EI_Inquiry_Repository {
 			$params[] = $like;
 		}
 
-		$allowed_orderby = array( 'created_at', 'updated_at', 'status', 'scheduling_status', 'contact_name', 'organization', 'reference' );
+		$allowed_orderby = array( 'created_at', 'updated_at', 'status', 'scheduling_status', 'form_variant', 'source_page', 'conversion_route', 'contact_name', 'organization', 'reference' );
 		$orderby         = in_array( $args['orderby'], $allowed_orderby, true ) ? $args['orderby'] : 'created_at';
 		$order           = 'ASC' === strtoupper( $args['order'] ) ? 'ASC' : 'DESC';
 		$per_page        = max( 1, min( 100, absint( $args['per_page'] ) ) );

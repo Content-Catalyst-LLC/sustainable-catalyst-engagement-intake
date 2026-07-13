@@ -58,6 +58,38 @@ final class SC_EI_Form_Schema {
 		);
 	}
 
+	public static function compact_service_interests(): array {
+		return apply_filters(
+			'sc_ei_compact_service_interests',
+			array(
+				'initial_fit_call'             => __( 'Initial fit call — free 20 minutes', 'sustainable-catalyst-engagement-intake' ),
+				'strategic_consultation'       => __( 'Strategic advisory consultation — $375', 'sustainable-catalyst-engagement-intake' ),
+				'evidence_systems_diagnostic'  => __( 'Evidence and systems diagnostic — $1,500', 'sustainable-catalyst-engagement-intake' ),
+				'strategy_architecture_sprint' => __( 'Strategy and architecture sprint — $5,000–$8,500', 'sustainable-catalyst-engagement-intake' ),
+				'knowledge_platform_build'     => __( 'Knowledge platform or workflow build — starting at $12,000', 'sustainable-catalyst-engagement-intake' ),
+				'training_workshop'            => __( 'Training or workshop — $1,500–$4,500', 'sustainable-catalyst-engagement-intake' ),
+				'monthly_advisory'             => __( 'Monthly advisory — $2,500–$6,000+', 'sustainable-catalyst-engagement-intake' ),
+				'institutional_partnership'    => __( 'Institutional platform partnership — custom scope', 'sustainable-catalyst-engagement-intake' ),
+				'not_sure'                     => __( 'Not sure — recommend the best starting point', 'sustainable-catalyst-engagement-intake' ),
+			)
+		);
+	}
+
+	public static function compact_budget_ranges(): array {
+		return apply_filters(
+			'sc_ei_compact_budget_ranges',
+			array(
+				'under_1500'   => __( 'Under $1,500', 'sustainable-catalyst-engagement-intake' ),
+				'1500_5000'    => __( '$1,500–$5,000', 'sustainable-catalyst-engagement-intake' ),
+				'5000_10000'   => __( '$5,000–$10,000', 'sustainable-catalyst-engagement-intake' ),
+				'10000_25000'  => __( '$10,000–$25,000', 'sustainable-catalyst-engagement-intake' ),
+				'25000_plus'   => __( '$25,000+', 'sustainable-catalyst-engagement-intake' ),
+				'monthly'      => __( 'Monthly advisory budget', 'sustainable-catalyst-engagement-intake' ),
+				'not_sure'     => __( 'Not sure yet', 'sustainable-catalyst-engagement-intake' ),
+			)
+		);
+	}
+
 	public static function budget_ranges(): array {
 		return apply_filters(
 			'sc_ei_budget_ranges',

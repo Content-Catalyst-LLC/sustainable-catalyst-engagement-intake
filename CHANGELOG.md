@@ -1,39 +1,41 @@
 # Changelog
 
+## 0.2.2 — Dual Intake Experiences and Conversion Routing
+
+- Added compact Consulting-page intake mode.
+- Added advanced Contact Hub mode.
+- Added consulting-specific engagement choices based on published offerings.
+- Added compact budget ranges.
+- Added non-blocking published-fee guidance.
+- Added lower-budget starting-point guidance for platform builds and strategy sprints.
+- Added fit-call scope guidance flags.
+- Added route-specific guidance to the advanced Contact Hub.
+- Added source-page attribution.
+- Added entry-CTA attribution.
+- Added form-variant attribution.
+- Added conversion-route records.
+- Added guidance-flags records.
+- Added referring form URL retention in private metadata.
+- Added separate compact and advanced confirmation experiences.
+- Added admin experience/source filters.
+- Added conversion-route administration column.
+- Added private conversion-routing review card.
+- Added PHP conversion event hooks.
+- Added browser custom conversion events without binding to an analytics vendor.
+- Added REST source and variant filters.
+- Extended privacy export with intake-origin metadata.
+- Preserved Microsoft Teams-only scheduling readiness.
+- Kept guidance advisory and human-controlled.
+- Kept physical document uploads disabled until v0.3.0.
+
 ## 0.2.1 — Microsoft Teams Communication Preferences and Scheduling Readiness
 
-- Limited live meeting support to Microsoft Teams.
-- Added preferred response method: email, Teams, phone, or no preference.
-- Added conditional Microsoft Teams email.
-- Added conditional phone number.
-- Added Teams meeting request choices.
-- Added browser IANA time-zone suggestion.
-- Added manual time-zone entry and validation.
-- Added city and country.
-- Added preferred weekdays.
-- Added preferred date and time windows.
-- Added preferred meeting duration.
-- Added participant count and participant emails.
-- Added private accessibility and accommodation notes.
-- Added calendar invitation consent.
-- Added sender scheduling notes.
-- Added scheduling states: not requested, requested, under review, approved, times proposed, scheduled, completed, declined, and cancelled.
-- Added Teams meeting URL storage with Teams-domain validation.
-- Added UTC-normalized start and end times.
-- Added scheduled time-zone and calendar event ID.
-- Added admin scheduling controls and filtering.
-- Added Teams request and scheduling audit events.
-- Added Teams organizer email and default duration settings.
-- Added database migration diagnostics.
-- Extended privacy export and erasure to Teams scheduling fields.
-- Preserved manual review; no appointment is created automatically.
-- Kept Microsoft Graph integration disabled in this release.
-- Kept physical document uploads disabled until v0.3.0.
+- Added Teams-only communication and scheduling readiness.
 
 ## 0.2.0 — Adaptive Contact Hub and Conditional Forms
 
-- Added public routing, adaptive forms, review-before-submit, REST submission, fallback submission, references, and anti-spam controls.
+- Added adaptive public forms and private submission.
 
 ## 0.1.0 — Private Inquiry Records and Plugin Foundation
 
-- Added dedicated private tables, permissions, administration, privacy tools, and audit history.
+- Added private tables, permissions, administration, privacy tools, and audit history.
