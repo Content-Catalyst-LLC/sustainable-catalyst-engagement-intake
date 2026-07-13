@@ -1,0 +1,306 @@
+<?php
+/**
+ * Inquiry persistence.
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+final class SC_EI_Inquiry_Repository {
+
+	public static function create( array $input ): int {
+		global $wpdb;
+
+		$now    = current_time( 'mysql', true );
+		$status = sanitize_key( $input['status'] ?? 'new' );
+		$type   = sanitize_key( $input['inquiry_type'] ?? 'general' );
+
+		if ( ! SC_EI_Statuses::is_valid( $status ) ) {
+			$status = 'new';
+		}
+		if ( ! array_key_exists( $type, SC_EI_Statuses::inquiry_types() ) ) {
+			$type = 'other';
+		}
+
+		$data = array(
+			'public_id'          => wp_generate_uuid4(),
+			'reference'          => self::generate_reference(),
+			'inquiry_type'       => $type,
+			'status'             => $status,
+			'contact_name'       => sanitize_text_field( $input['contact_name'] ?? '' ),
+			'contact_email'      => sanitize_email( $input['contact_email'] ?? '' ),
+			'organization'       => sanitize_text_field( $input['organization'] ?? '' ),
+			'role_title'         => sanitize_text_field( $input['role_title'] ?? '' ),
+			'subject'            => sanitize_text_field( $input['subject'] ?? '' ),
+			'message'            => sanitize_textarea_field( $input['message'] ?? '' ),
+			'project_summary'    => sanitize_textarea_field( $input['project_summary'] ?? '' ),
+			'desired_outcome'    => sanitize_textarea_field( $input['desired_outcome'] ?? '' ),
+			'service_interest'   => sanitize_text_field( $input['service_interest'] ?? '' ),
+			'budget_range'       => sanitize_text_field( $input['budget_range'] ?? '' ),
+			'desired_start_date' => self::sanitize_date( $input['desired_start_date'] ?? null ),
+			'deadline_date'      => self::sanitize_date( $input['deadline_date'] ?? null ),
+			'relevant_links'     => self::sanitize_links_json( $input['relevant_links'] ?? array() ),
+			'metadata_json'      => wp_json_encode( self::sanitize_metadata( $input['metadata'] ?? array() ) ),
+			'consent_version'    => sanitize_text_field( $input['consent_version'] ?? '' ),
+			'consent_at'         => ! empty( $input['consent_at'] ) ? sanitize_text_field( $input['consent_at'] ) : null,
+			'assigned_user_id'   => ! empty( $input['assigned_user_id'] ) ? absint( $input['assigned_user_id'] ) : null,
+			'created_at'         => $now,
+			'updated_at'         => $now,
+			'closed_at'          => null,
+		);
+
+		$formats = array(
+			'%s', // public_id.
+			'%s', // reference.
+			'%s', // inquiry_type.
+			'%s', // status.
+			'%s', // contact_name.
+			'%s', // contact_email.
+			'%s', // organization.
+			'%s', // role_title.
+			'%s', // subject.
+			'%s', // message.
+			'%s', // project_summary.
+			'%s', // desired_outcome.
+			'%s', // service_interest.
+			'%s', // budget_range.
+			'%s', // desired_start_date.
+			'%s', // deadline_date.
+			'%s', // relevant_links.
+			'%s', // metadata_json.
+			'%s', // consent_version.
+			'%s', // consent_at.
+			'%d', // assigned_user_id.
+			'%s', // created_at.
+			'%s', // updated_at.
+			'%s', // closed_at.
+		);
+
+		$inserted = $wpdb->insert( SC_EI_Database::table( 'inquiries' ), $data, $formats );
+		if ( false === $inserted ) {
+			throw new RuntimeException( 'Unable to create inquiry record.' );
+		}
+
+		$id = (int) $wpdb->insert_id;
+
+		SC_EI_Audit_Log::record(
+			'inquiry_created',
+			'Private inquiry record created.',
+			array(
+				'reference'    => $data['reference'],
+				'inquiry_type' => $type,
+				'status'       => $status,
+			),
+			$id
+		);
+
+		return $id;
+	}
+
+	public static function find( int $id ): ?array {
+		global $wpdb;
+
+		$table = SC_EI_Database::table( 'inquiries' );
+		$row   = $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			ARRAY_A
+		);
+
+		return $row ?: null;
+	}
+
+	public static function find_by_reference( string $reference ): ?array {
+		global $wpdb;
+
+		$table = SC_EI_Database::table( 'inquiries' );
+		$row   = $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE reference = %s", sanitize_text_field( $reference ) ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			ARRAY_A
+		);
+
+		return $row ?: null;
+	}
+
+	public static function query( array $args = array() ): array {
+		global $wpdb;
+
+		$defaults = array(
+			'status'       => '',
+			'inquiry_type' => '',
+			'search'       => '',
+			'page'         => 1,
+			'per_page'     => 20,
+			'orderby'      => 'created_at',
+			'order'        => 'DESC',
+		);
+		$args     = wp_parse_args( $args, $defaults );
+		$table    = SC_EI_Database::table( 'inquiries' );
+		$where    = array( '1=1' );
+		$params   = array();
+
+		if ( $args['status'] && SC_EI_Statuses::is_valid( sanitize_key( $args['status'] ) ) ) {
+			$where[]  = 'status = %s';
+			$params[] = sanitize_key( $args['status'] );
+		}
+		if ( $args['inquiry_type'] && array_key_exists( sanitize_key( $args['inquiry_type'] ), SC_EI_Statuses::inquiry_types() ) ) {
+			$where[]  = 'inquiry_type = %s';
+			$params[] = sanitize_key( $args['inquiry_type'] );
+		}
+		if ( $args['search'] ) {
+			$like     = '%' . $wpdb->esc_like( sanitize_text_field( $args['search'] ) ) . '%';
+			$where[]  = '(reference LIKE %s OR contact_name LIKE %s OR contact_email LIKE %s OR organization LIKE %s OR subject LIKE %s)';
+			$params[] = $like;
+			$params[] = $like;
+			$params[] = $like;
+			$params[] = $like;
+			$params[] = $like;
+		}
+
+		$allowed_orderby = array( 'created_at', 'updated_at', 'status', 'contact_name', 'organization', 'reference' );
+		$orderby         = in_array( $args['orderby'], $allowed_orderby, true ) ? $args['orderby'] : 'created_at';
+		$order           = 'ASC' === strtoupper( $args['order'] ) ? 'ASC' : 'DESC';
+		$per_page        = max( 1, min( 100, absint( $args['per_page'] ) ) );
+		$page            = max( 1, absint( $args['page'] ) );
+		$offset          = ( $page - 1 ) * $per_page;
+
+		$where_sql = implode( ' AND ', $where );
+		$count_sql = "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$data_sql  = "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$count_params = $params;
+		$data_params  = array_merge( $params, array( $per_page, $offset ) );
+
+		$total = $params
+			? (int) $wpdb->get_var( $wpdb->prepare( $count_sql, $count_params ) ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			: (int) $wpdb->get_var( $count_sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		$items = (array) $wpdb->get_results(
+			$wpdb->prepare( $data_sql, $data_params ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			ARRAY_A
+		);
+
+		return array(
+			'items'       => $items,
+			'total'       => $total,
+			'page'        => $page,
+			'per_page'    => $per_page,
+			'total_pages' => (int) ceil( $total / $per_page ),
+		);
+	}
+
+	public static function update_status( int $id, string $new_status, string $note = '' ): bool {
+		global $wpdb;
+
+		$new_status = sanitize_key( $new_status );
+		if ( ! SC_EI_Statuses::is_valid( $new_status ) ) {
+			return false;
+		}
+
+		$current = self::find( $id );
+		if ( ! $current ) {
+			return false;
+		}
+
+		$now       = current_time( 'mysql', true );
+		$closed_at = in_array( $new_status, array( 'closed', 'not_a_fit', 'withdrawn' ), true ) ? $now : null;
+
+		$updated = $wpdb->update(
+			SC_EI_Database::table( 'inquiries' ),
+			array(
+				'status'     => $new_status,
+				'updated_at' => $now,
+				'closed_at'  => $closed_at,
+			),
+			array( 'id' => $id ),
+			array( '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+
+		if ( false === $updated ) {
+			return false;
+		}
+
+		SC_EI_Audit_Log::record(
+			'status_changed',
+			$note ? $note : 'Inquiry status changed.',
+			array(
+				'old_status' => $current['status'],
+				'new_status' => $new_status,
+			),
+			$id
+		);
+
+		return true;
+	}
+
+	public static function add_internal_note( int $id, string $note ): int {
+		$note = sanitize_textarea_field( $note );
+		if ( '' === $note ) {
+			return 0;
+		}
+
+		return SC_EI_Audit_Log::record(
+			'internal_note',
+			$note,
+			array( 'visibility' => 'private' ),
+			$id
+		);
+	}
+
+	private static function generate_reference(): string {
+		global $wpdb;
+
+		$table = SC_EI_Database::table( 'inquiries' );
+		for ( $attempt = 0; $attempt < 10; $attempt++ ) {
+			$token     = strtoupper( wp_generate_password( 6, false, false ) );
+			$reference = 'SC-' . gmdate( 'Ymd' ) . '-' . $token;
+			$exists    = $wpdb->get_var(
+				$wpdb->prepare( "SELECT id FROM {$table} WHERE reference = %s LIMIT 1", $reference ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			);
+			if ( ! $exists ) {
+				return $reference;
+			}
+		}
+
+		return 'SC-' . gmdate( 'YmdHis' ) . '-' . wp_rand( 1000, 9999 );
+	}
+
+	private static function sanitize_date( $value ): ?string {
+		if ( empty( $value ) ) {
+			return null;
+		}
+
+		$value = sanitize_text_field( (string) $value );
+		$date  = DateTimeImmutable::createFromFormat( 'Y-m-d', $value );
+		return $date && $date->format( 'Y-m-d' ) === $value ? $value : null;
+	}
+
+	private static function sanitize_links_json( $links ): string {
+		if ( is_string( $links ) ) {
+			$links = preg_split( '/\R+/', $links );
+		}
+		$clean = array();
+		foreach ( (array) $links as $link ) {
+			$url = esc_url_raw( trim( (string) $link ) );
+			if ( $url ) {
+				$clean[] = $url;
+			}
+		}
+		return wp_json_encode( array_values( array_unique( $clean ) ) );
+	}
+
+	private static function sanitize_metadata( $metadata ): array {
+		$clean = array();
+		foreach ( (array) $metadata as $key => $value ) {
+			$key = sanitize_key( (string) $key );
+			if ( '' === $key ) {
+				continue;
+			}
+			if ( is_scalar( $value ) || null === $value ) {
+				$clean[ $key ] = sanitize_text_field( (string) $value );
+			}
+		}
+		return $clean;
+	}
+}

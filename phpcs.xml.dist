@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<ruleset name="Sustainable Catalyst Engagement Intake">
+	<description>WordPress coding standards for Engagement Intake.</description>
+	<file>sustainable-catalyst-engagement-intake</file>
+	<arg name="extensions" value="php"/>
+	<rule ref="WordPress"/>
+	<exclude-pattern>vendor/*</exclude-pattern>
+</ruleset>

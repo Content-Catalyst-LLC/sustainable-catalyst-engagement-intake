@@ -1,0 +1,190 @@
+.sc-ei-admin {
+  --sc-ei-black: #111111;
+  --sc-ei-red: #8f1515;
+  --sc-ei-cream: #f7f3ea;
+  --sc-ei-border: #d8d1c3;
+  --sc-ei-muted: #5c5c5c;
+  max-width: 1440px;
+}
+
+.sc-ei-admin__notice,
+.sc-ei-health {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 18px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--sc-ei-border);
+  background: var(--sc-ei-cream);
+}
+
+.sc-ei-admin__notice strong,
+.sc-ei-health strong {
+  color: var(--sc-ei-black);
+}
+
+.sc-ei-admin__notice span,
+.sc-ei-health span {
+  color: var(--sc-ei-muted);
+}
+
+.sc-ei-health--healthy {
+  border-left: 5px solid #187b32;
+}
+
+.sc-ei-health--attention {
+  border-left: 5px solid var(--sc-ei-red);
+}
+
+.sc-ei-admin__header {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin: 18px 0;
+}
+
+.sc-ei-admin__header h1 {
+  margin-top: 2px;
+}
+
+.sc-ei-admin__eyebrow {
+  margin: 0;
+  color: var(--sc-ei-red);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.sc-ei-admin__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
+}
+
+.sc-ei-admin__main,
+.sc-ei-admin__aside {
+  min-width: 0;
+}
+
+.sc-ei-admin__card {
+  margin-bottom: 18px;
+  padding: 20px;
+  border: 1px solid var(--sc-ei-border);
+  border-top: 4px solid var(--sc-ei-black);
+  background: #ffffff;
+}
+
+.sc-ei-admin__card h2 {
+  margin-top: 0;
+}
+
+.sc-ei-admin__settings-card {
+  max-width: 980px;
+}
+
+.sc-ei-admin__details {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 12px 18px;
+  margin: 0;
+}
+
+.sc-ei-admin__details dt {
+  font-weight: 700;
+  color: var(--sc-ei-black);
+}
+
+.sc-ei-admin__details dd {
+  margin: 0;
+}
+
+.sc-ei-admin__prose {
+  max-width: 900px;
+  line-height: 1.65;
+}
+
+.sc-ei-status {
+  display: inline-block;
+  padding: 5px 8px;
+  border: 1px solid var(--sc-ei-border);
+  background: var(--sc-ei-cream);
+  color: var(--sc-ei-black);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.sc-ei-status--new,
+.sc-ei-status--fit_call_recommended,
+.sc-ei-status--consultation_recommended,
+.sc-ei-status--proposal_requested,
+.sc-ei-status--proposal_sent,
+.sc-ei-status--accepted {
+  border-color: var(--sc-ei-red);
+}
+
+.sc-ei-audit {
+  margin-left: 18px;
+}
+
+.sc-ei-audit li {
+  margin-bottom: 14px;
+}
+
+.sc-ei-audit span {
+  display: block;
+  margin-top: 2px;
+  color: var(--sc-ei-muted);
+  font-size: 12px;
+}
+
+.sc-ei-audit p {
+  margin: 5px 0 0;
+}
+
+.sc-ei-diagnostics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.sc-ei-checks {
+  margin: 0;
+}
+
+.sc-ei-check--ok {
+  color: #187b32;
+}
+
+.sc-ei-check--bad {
+  color: var(--sc-ei-red);
+}
+
+@media (max-width: 1100px) {
+  .sc-ei-admin__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sc-ei-diagnostics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 782px) {
+  .sc-ei-admin__header {
+    display: block;
+  }
+
+  .sc-ei-admin__details,
+  .sc-ei-diagnostics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sc-ei-admin__details dt {
+    margin-top: 8px;
+  }
+}

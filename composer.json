@@ -1,0 +1,13 @@
+{
+  "name": "content-catalyst-llc/sustainable-catalyst-engagement-intake",
+  "description": "Private inquiry records and workflow foundation for Sustainable Catalyst.",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "require": {
+    "php": ">=8.1"
+  },
+  "scripts": {
+    "lint": "find sustainable-catalyst-engagement-intake -name '*.php' -print0 | xargs -0 -n1 php -l",
+    "test": "php tests/smoke.php"
+  }
+}
