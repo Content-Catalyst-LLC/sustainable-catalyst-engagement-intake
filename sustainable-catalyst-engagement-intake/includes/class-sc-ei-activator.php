@@ -19,6 +19,8 @@ final class SC_EI_Activator {
 		SC_EI_Capabilities::install();
 		SC_EI_Storage::ensure();
 		SC_EI_Retention::schedule();
+		SC_EI_Notification_Service::schedule();
+		SC_EI_Template_Repository::seed_defaults();
 
 		if ( false === get_option( 'sc_ei_settings', false ) ) {
 			add_option( 'sc_ei_settings', SC_EI_Admin::default_settings(), '', false );
@@ -28,12 +30,13 @@ final class SC_EI_Activator {
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Engagement Intake v0.4.0 activated with a human-controlled Administrative Review Workspace, assignments, due-date visibility, manual fit and risk judgments, review checklists, escalation, immutable snapshots, private review packet export, quarantine operations, and reliable protected storage.',
+			'Engagement Intake v0.5.0 activated with opt-in notifications, plain-text sender messages, communication history, versioned templates, inbound and external interaction logging, follow-up controls, mail transport events, administrative review, quarantine operations, and reliable protected storage.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}
 
 	public static function deactivate(): void {
 		SC_EI_Retention::unschedule();
+		SC_EI_Notification_Service::unschedule();
 	}
 }

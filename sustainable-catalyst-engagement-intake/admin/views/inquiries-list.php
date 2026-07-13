@@ -10,8 +10,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</p>
 
 	<div class="sc-ei-admin__notice">
-		<strong><?php esc_html_e( 'v0.4.0 administrative review workspace active', 'sustainable-catalyst-engagement-intake' ); ?></strong>
-		<span><?php esc_html_e( 'Human review assignment, SLA visibility, fit and risk judgments, checklists, escalation, immutable review snapshots, review packet export, quarantine operations, Teams readiness, and protected storage are active.', 'sustainable-catalyst-engagement-intake' ); ?></span>
+		<strong><?php esc_html_e( 'v0.5.0 notifications and communication history active', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+		<span><?php esc_html_e( 'Reviewed plain-text messages, opt-in notifications, communication timelines, follow-up and suppression controls, human review, quarantine operations, Teams readiness, and protected storage are active.', 'sustainable-catalyst-engagement-intake' ); ?></span>
 	</div>
 
 	<form method="get">

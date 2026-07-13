@@ -46,7 +46,7 @@ v0.3.0 added protected document storage and quarantine.
 v0.3.1 adds atomic storage commits, request-envelope reliability, reconciliation, integrity tracking, retention previews, and cache/CDN hardening.  
 v0.3.2 adds a cross-inquiry quarantine operations layer, scanner readiness and retry, guarded bulk file actions, access reporting, and isolation guidance.  
 v0.4.0 adds a human-controlled administrative review layer with ownership, due dates, manual judgments, checklists, escalation, immutable snapshots, and explicit handoff recommendations.  
-Later versions add communication history, sender portal, connected scheduling, proposals, analytics, and Workflow Core.
+v0.5.0 adds reviewed communications, immutable transport events, versioned templates, opt-in notifications, follow-up state, and manual inbound and Teams interaction records. Later versions add sender portal, connected scheduling, proposals, analytics, and Workflow Core.
 
 
 ## Dual public experiences
@@ -130,3 +130,55 @@ Public Forms
 ```
 
 Risky file operations remain in Quarantine and the full inquiry record. Review Workspace links to those surfaces instead of duplicating download or deletion controls.
+
+
+## Communication architecture
+
+The communication layer separates current thread state from immutable message and transport history.
+
+```text
+Inquiry communication state
+→ version-locked draft
+→ explicit reviewed send
+→ mail transport
+→ immutable communication event
+→ inquiry aggregate and follow-up
+```
+
+Tables:
+
+```text
+communications
+communication_events
+communication_templates
+```
+
+`communications` stores the message or interaction record.
+
+`communication_events` stores creation, edit, send attempt, accepted, failed, suppression, retry, and cancellation events.
+
+`communication_templates` stores immutable versions. New versions archive earlier active versions rather than rewriting them.
+
+## Automation architecture
+
+```text
+explicit setting
+→ trigger
+→ dedupe key
+→ rendered versioned template
+→ normal communication record
+→ normal mailer
+→ normal events and audit
+```
+
+Automation does not have a separate hidden delivery path.
+
+All notification policies default to off.
+
+## External-system boundary
+
+v0.5.0 uses WordPress `wp_mail()` and records only transport acceptance or failure.
+
+It does not read a mailbox, consume bounce webhooks, prove delivery, or create Microsoft Teams meetings.
+
+Teams, phone, and in-person interactions are manually recorded in the same private timeline.

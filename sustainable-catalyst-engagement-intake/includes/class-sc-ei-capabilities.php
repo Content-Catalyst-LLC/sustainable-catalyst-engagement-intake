@@ -27,6 +27,13 @@ final class SC_EI_Capabilities {
 		'sc_intake_add_notes',
 		'sc_intake_change_status',
 		'sc_intake_communicate',
+		'sc_intake_view_communications',
+		'sc_intake_compose_communications',
+		'sc_intake_send_communications',
+		'sc_intake_record_inbound',
+		'sc_intake_manage_templates',
+		'sc_intake_manage_notifications',
+		'sc_intake_export_communications',
 		'sc_intake_export',
 		'sc_intake_delete',
 		'sc_intake_manage_settings',
@@ -52,7 +59,13 @@ final class SC_EI_Capabilities {
 				'sc_intake_escalate_review'     => true,
 				'sc_intake_export_review_packet'=> true,
 				'sc_intake_add_notes'           => true,
-				'sc_intake_change_status' => true,
+				'sc_intake_change_status'       => true,
+				'sc_intake_communicate'           => true,
+				'sc_intake_view_communications'   => true,
+				'sc_intake_compose_communications'=> true,
+				'sc_intake_send_communications'   => true,
+				'sc_intake_record_inbound'        => true,
+				'sc_intake_export_communications' => true,
 			)
 		);
 
@@ -77,14 +90,21 @@ final class SC_EI_Capabilities {
 				'sc_intake_view_file_audit'      => true,
 				'sc_intake_add_notes'            => true,
 				'sc_intake_change_status'  => true,
-				'sc_intake_communicate'    => true,
-				'sc_intake_export'         => true,
+				'sc_intake_communicate'            => true,
+				'sc_intake_view_communications'    => true,
+				'sc_intake_compose_communications' => true,
+				'sc_intake_send_communications'    => true,
+				'sc_intake_record_inbound'         => true,
+				'sc_intake_manage_templates'       => true,
+				'sc_intake_manage_notifications'   => true,
+				'sc_intake_export_communications'  => true,
+				'sc_intake_export'                 => true,
 			)
 		);
 
 		$reviewer = get_role( 'sc_engagement_reviewer' );
 		if ( $reviewer ) {
-			foreach ( array( 'read', 'sc_intake_view', 'sc_intake_review', 'sc_intake_manage_review', 'sc_intake_manage_review_priority', 'sc_intake_escalate_review', 'sc_intake_export_review_packet', 'sc_intake_add_notes', 'sc_intake_change_status' ) as $capability ) {
+			foreach ( array( 'read', 'sc_intake_view', 'sc_intake_review', 'sc_intake_manage_review', 'sc_intake_manage_review_priority', 'sc_intake_escalate_review', 'sc_intake_export_review_packet', 'sc_intake_add_notes', 'sc_intake_change_status', 'sc_intake_communicate', 'sc_intake_view_communications', 'sc_intake_compose_communications', 'sc_intake_send_communications', 'sc_intake_record_inbound', 'sc_intake_export_communications' ) as $capability ) {
 				$reviewer->add_cap( $capability );
 			}
 		}
@@ -111,6 +131,13 @@ final class SC_EI_Capabilities {
 					'sc_intake_add_notes',
 					'sc_intake_change_status',
 					'sc_intake_communicate',
+					'sc_intake_view_communications',
+					'sc_intake_compose_communications',
+					'sc_intake_send_communications',
+					'sc_intake_record_inbound',
+					'sc_intake_manage_templates',
+					'sc_intake_manage_notifications',
+					'sc_intake_export_communications',
 					'sc_intake_export',
 				) as $capability
 			) {

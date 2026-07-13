@@ -1,122 +1,149 @@
 === Sustainable Catalyst Engagement Intake ===
 Contributors: content-catalyst
-Tags: contact, consulting, intake, administrative review, assignment, secure upload, quarantine, microsoft teams, privacy
+Tags: contact, consulting, communications, notifications, administrative review, secure upload, quarantine, microsoft teams, privacy
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.4.0
+Stable tag: 0.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Private consulting and contact intake with a human-controlled Administrative Review Workspace, secure document quarantine, scanner readiness, Microsoft Teams scheduling readiness, privacy tools, and audit history.
+Private consulting and contact intake with reviewed communications, opt-in notifications, human administrative review, secure document quarantine, Microsoft Teams readiness, privacy tools, and audit history.
 
 == Description ==
 
-Version 0.4.0 adds the Administrative Review Workspace above the dual public intake, reliable protected storage, and Quarantine Operations layers.
+Version 0.5.0 adds Notifications and Communication History to the existing dual intake, protected document quarantine, scanner readiness, and Administrative Review Workspace.
 
 Recommended shortcodes:
 
 * Consulting page: `[sc_engagement_inquiry mode="compact" source="consulting-page" entry_cta="discuss-an-engagement" title="Discuss an Engagement"]`
 * Contact page: `[sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst"]`
 
-The Review Workspace includes:
+Communication capabilities:
 
-* Open, assigned-to-me, unassigned, escalation, and completed queues
-* Review ownership and self-claim controls
-* Manager assignment and unassignment
-* Configurable normal, high, low, and urgent due windows
-* Overdue, due-soon, stale, and aging indicators
-* Manual fit decision and confidence
-* Manual risk, evidence-readiness, and scope-clarity judgments
-* Explicit recommended next step
-* Explicit inquiry status selection
-* Review summary and decision rationale
-* Information-gap and conflict/independence notes
-* Administrative checklist
-* Escalation request, active review, and resolution
-* Optimistic version locking against silent reviewer overwrites
-* Immutable review snapshots
-* Guarded bulk assignment, priority, stage, due-date, and escalation actions
-* Private JSON review packet export
-* Request, document, scheduling, conversion, and audit context
-* Review health metrics in Diagnostics
-* WordPress privacy export and erasure for review narratives
+* Cross-inquiry communication history
+* Inquiry-specific private timeline
+* Version-locked email drafts
+* Separate reviewed send action
+* Plain-text WordPress email transport
+* Honest accepted, failed, suppressed, received, recorded, draft, and canceled states
+* Immutable delivery and change events
+* Retry for failed messages
+* Manual inbound email logging
+* Manual Microsoft Teams message and meeting logging
+* Phone, video, in-person, and other interaction logging
+* Follow-up dates and due queues
+* Communication thread state
+* Unread inbound counts
+* Sender email suppression with required reason
+* Versioned plain-text templates
+* Template variable allowlist
+* Private CSV communication export
+* Communication history in private review packets
+* WordPress privacy export and erasure
+* Notification transport and cron diagnostics
 
-The review layer is human-authored. It does not calculate a fit score, automatically accept or reject an inquiry, infer an inquiry status, send a message, schedule a meeting, generate a proposal, or disclose a document.
+Automated notification policies are disabled by default:
+
+* Sender acknowledgment
+* Internal new-inquiry alert
+* Assigned-reviewer due reminder
+* Internal follow-up reminder
+* Internal escalation alert
+
+Enabling automation requires a valid sender name, sender email, and reply-to email.
+
+The plugin uses `wp_mail()` as the transport boundary. A successful result means WordPress accepted the email for its configured transport. It does not prove delivery, inbox placement, opening, or reading.
+
+No email attachments are supported. Private documents remain in protected storage and are never copied into notification emails.
+
+Microsoft Teams remains the only live meeting platform represented in the intake workflow. v0.5.0 records Teams communications and approved meeting information, but does not create meetings through Microsoft Graph.
 
 == Installation ==
 
-1. Back up the WordPress database and private storage directory.
-2. Upload and activate v0.4.0.
+1. Back up the WordPress database and protected storage directory.
+2. Upload and activate v0.5.0.
 3. Open Engagement Intake → Diagnostics.
-4. Confirm database version 0.4.0.
-5. Confirm the `reviews` table and review fields.
-6. Open Engagement Intake → Review Workspace.
-7. Review unassigned and overdue queues.
-8. Configure review deadlines and completion safeguards in Settings.
-9. Claim or assign an inquiry.
-10. Complete a test review using non-sensitive data.
-11. Confirm a review snapshot appears.
-12. Export a private review packet.
-13. Verify reviewer and manager permissions.
+4. Confirm database version 0.5.0.
+5. Confirm communication, communication-event, and template tables.
+6. Open Engagement Intake → Settings.
+7. Configure an authorized sender and reply-to address.
+8. Leave automated policies disabled until the mail transport test succeeds.
+9. Open Engagement Intake → Communications → Notification Policy.
+10. Send the plain-text transport test.
+11. Confirm receipt separately; the plugin cannot prove delivery.
+12. Test draft save, edit, reviewed send, failure, retry, cancellation, inbound logging, suppression, and follow-up.
+13. Enable only the notification policies needed.
 
-== Upgrade from 0.3.2 ==
+== Upgrade from 0.4.0 ==
 
-The upgrade preserves inquiries, documents, storage, scanner, quarantine, Teams, conversion, privacy, retention, and audit data.
+The upgrade preserves inquiry, review, quarantine, storage, scanner, Teams, conversion, retention, privacy, and audit data.
 
 It adds:
 
-* Current review fields to the inquiry table
-* A dedicated immutable review snapshot table
-* Review assignment and due-date fields
-* Manual fit, risk, evidence, and scope fields
-* Checklist, escalation, rationale, and information-gap fields
-* Review version and completion timestamps
-* Reviewer and manager capabilities
-* Review settings
+* Current communication state fields to inquiries
+* Communications table
+* Immutable communication event table
+* Versioned communication templates table
+* Default templates
+* Hourly notification reminder cron
+* Communication and notification capabilities
+* Communication privacy export and erasure
+* Communication diagnostics
 
-Existing open inquiries without a due date receive a due date based on the normal-priority review window. Existing inquiry statuses are not converted into fit decisions or completed reviews.
+All automated policies remain disabled after migration. No historical message is fabricated and no email is sent merely because the plugin was upgraded.
 
 == Frequently Asked Questions ==
 
-= Does the plugin score inquiry fit? =
+= Does “accepted” mean the email was delivered? =
 
-No. Fit decision, confidence, risk, evidence readiness, and scope clarity are explicit human judgments.
+No. It means the configured WordPress mail transport accepted the message. Delivery and reading are not independently confirmed.
 
-= Does selecting a recommended next step change the inquiry status? =
+= Are automatic messages enabled after upgrade? =
 
-No. The reviewer must explicitly select the inquiry status. The next-step field does not send a message, schedule a meeting, or create a proposal.
+No. Every automated policy defaults to disabled.
 
-= How are conflicting edits handled? =
+= Can saving a draft send it? =
 
-Every current review has a version number. A save based on an older version is rejected and the reviewer must reload the current review.
+No. Saving and sending are separate actions. Manual sending requires an explicit confirmation checkbox.
 
-= Are review changes preserved? =
+= Can the plugin attach uploaded documents to email? =
 
-Yes. Each successful save writes an immutable structured snapshot in addition to updating the current review state.
+No. Email attachments are deliberately unsupported.
 
-= Can reviewers edit each other's work? =
+= Can it receive email automatically? =
 
-By default, a reviewer can edit an unassigned inquiry or the inquiry assigned to them. Managers can reassign and edit any inquiry. This restriction is configurable.
+No. Inbound email is recorded manually in v0.5.0. A future secure sender portal may provide a controlled reply channel.
 
-= What does completion require? =
+= Can it send Teams messages or create Teams meetings? =
 
-By default, a completed review requires the full checklist, an explicit fit decision, a non-default next step, and a recorded rationale.
+No. Teams messages, calls, and meetings can be recorded in history. Microsoft Graph integration is not enabled.
 
-= Does a completed review contact the sender? =
+= Can a failed message be retried? =
 
-No. Sender communications arrive in a later release.
+Yes. The failed record retains attempts and error details and can be retried by an authorized user.
 
-= Does the review packet include document contents? =
+= How are duplicate reminders prevented? =
 
-No. It includes private inquiry, review, attachment metadata, and audit history in JSON. Physical file contents are not embedded.
+Automated notifications use unique deduplication keys. Due and follow-up reminders are limited to one matching record per inquiry, day, and recipient.
+
+= What happens when do-not-email is enabled? =
+
+Sender-facing email is suppressed until an authorized user deliberately clears the control. A reason is required.
+
+= Are templates editable in place? =
+
+No. Saving a template creates a new version and archives the previous active version.
 
 == Changelog ==
 
+= 0.5.0 =
+* Added reviewed plain-text communications, notification controls, communication history, immutable transport events, inbound and Teams interaction logging, follow-up and suppression controls, versioned templates, private exports, privacy integration, and diagnostics.
+
 = 0.4.0 =
-* Added the human-controlled Administrative Review Workspace, assignments, due-date and aging visibility, manual fit and risk judgments, review checklist, escalation, immutable snapshots, bulk review operations, private review packet export, privacy integration, and diagnostics.
+* Added the human-controlled Administrative Review Workspace.
 
 = 0.3.2 =
-* Added cross-inquiry Quarantine Operations and scanner readiness.
+* Added Quarantine Operations and scanner readiness.
 
 = 0.3.1 =
 * Added production storage and upload reliability.

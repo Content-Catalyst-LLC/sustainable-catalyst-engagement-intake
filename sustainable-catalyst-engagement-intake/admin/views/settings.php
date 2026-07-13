@@ -7,7 +7,7 @@ $scanner_readiness = SC_EI_Scanner_Operations::readiness( $settings );
 ?>
 <div class="wrap sc-ei-admin">
 	<h1><?php esc_html_e( 'Engagement Intake Settings', 'sustainable-catalyst-engagement-intake' ); ?></h1>
-	<p><?php esc_html_e( 'v0.4.0 adds a human-controlled Administrative Review Workspace with assignment, SLA visibility, manual fit and risk judgments, structured checklists, escalation, immutable snapshots, and review packet export.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+	<p><?php esc_html_e( 'v0.5.0 adds opt-in sender and internal notifications, reviewed plain-text email sends, delivery-event history, inbound and Teams interaction logging, follow-up controls, email suppression, and versioned communication templates.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 
 	<form method="post" action="options.php">
 		<?php settings_fields( 'sc_ei_settings_group' ); ?>
@@ -43,6 +43,29 @@ $scanner_readiness = SC_EI_Scanner_Operations::readiness( $settings );
 				</tr>
 			</table>
 			<p class="description"><?php esc_html_e( 'The public forms also use a nonce, hidden honeypot, signed form timing, duplicate detection, field limits, and conditional server-side validation.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+		</section>
+
+		<section class="sc-ei-admin__card sc-ei-admin__settings-card">
+			<h2><?php esc_html_e( 'Notifications and communication transport', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<p><?php esc_html_e( 'All automatic policies default to off. Email is plain text and contains no file attachments. An accepted wp_mail() result is not proof of inbox delivery.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<table class="form-table" role="presentation">
+				<tr><th scope="row"><label for="sc-ei-communication-sender-name"><?php esc_html_e( 'Sender name', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-communication-sender-name" type="text" class="regular-text" name="sc_ei_settings[communication_sender_name]" value="<?php echo esc_attr( $settings['communication_sender_name'] ); ?>" required></td></tr>
+				<tr><th scope="row"><label for="sc-ei-communication-sender-email"><?php esc_html_e( 'Sender email', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-communication-sender-email" type="email" class="regular-text" name="sc_ei_settings[communication_sender_email]" value="<?php echo esc_attr( $settings['communication_sender_email'] ); ?>" required><p class="description"><?php esc_html_e( 'Use an address authorized by the site’s mail transport and domain policy.', 'sustainable-catalyst-engagement-intake' ); ?></p></td></tr>
+				<tr><th scope="row"><label for="sc-ei-communication-reply-email"><?php esc_html_e( 'Reply-to email', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-communication-reply-email" type="email" class="regular-text" name="sc_ei_settings[communication_reply_to_email]" value="<?php echo esc_attr( $settings['communication_reply_to_email'] ); ?>" required></td></tr>
+				<tr><th scope="row"><label for="sc-ei-notification-internal"><?php esc_html_e( 'Internal notification recipients', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-notification-internal" type="text" class="large-text" name="sc_ei_settings[notification_internal_recipients]" value="<?php echo esc_attr( $settings['notification_internal_recipients'] ); ?>" placeholder="reviewer@example.com, manager@example.com"><p class="description"><?php esc_html_e( 'Maximum 10. If empty, new-inquiry and unassigned follow-up alerts fall back to the WordPress administration email.', 'sustainable-catalyst-engagement-intake' ); ?></p></td></tr>
+				<tr><th scope="row"><label for="sc-ei-notification-escalation"><?php esc_html_e( 'Escalation recipients', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-notification-escalation" type="text" class="large-text" name="sc_ei_settings[notification_escalation_recipients]" value="<?php echo esc_attr( $settings['notification_escalation_recipients'] ); ?>"><p class="description"><?php esc_html_e( 'Maximum 10. Falls back to the internal recipient list.', 'sustainable-catalyst-engagement-intake' ); ?></p></td></tr>
+				<tr><th scope="row"><?php esc_html_e( 'Automatic policies', 'sustainable-catalyst-engagement-intake' ); ?></th><td>
+					<label class="sc-ei-settings-check"><input type="checkbox" name="sc_ei_settings[sender_acknowledgment_enabled]" value="1" <?php checked( $settings['sender_acknowledgment_enabled'], 1 ); ?>> <?php esc_html_e( 'Send a plain-text acknowledgment to the sender after successful intake', 'sustainable-catalyst-engagement-intake' ); ?></label><br>
+					<label class="sc-ei-settings-check"><input type="checkbox" name="sc_ei_settings[internal_new_inquiry_enabled]" value="1" <?php checked( $settings['internal_new_inquiry_enabled'], 1 ); ?>> <?php esc_html_e( 'Send an internal new-inquiry alert', 'sustainable-catalyst-engagement-intake' ); ?></label><br>
+					<label class="sc-ei-settings-check"><input type="checkbox" name="sc_ei_settings[review_due_reminders_enabled]" value="1" <?php checked( $settings['review_due_reminders_enabled'], 1 ); ?>> <?php esc_html_e( 'Send internal review due and overdue reminders to the assigned reviewer', 'sustainable-catalyst-engagement-intake' ); ?></label><br>
+					<label class="sc-ei-settings-check"><input type="checkbox" name="sc_ei_settings[follow_up_reminders_enabled]" value="1" <?php checked( $settings['follow_up_reminders_enabled'], 1 ); ?>> <?php esc_html_e( 'Send internal reminders when a communication follow-up is due', 'sustainable-catalyst-engagement-intake' ); ?></label><br>
+					<label class="sc-ei-settings-check"><input type="checkbox" name="sc_ei_settings[escalation_notifications_enabled]" value="1" <?php checked( $settings['escalation_notifications_enabled'], 1 ); ?>> <?php esc_html_e( 'Send an internal alert when a review enters an active escalation state', 'sustainable-catalyst-engagement-intake' ); ?></label>
+					<p class="description"><?php esc_html_e( 'Enabling a policy does not bypass email suppression, deduplication, capabilities, or message history.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+				</td></tr>
+				<tr><th scope="row"><label for="sc-ei-review-reminder-lead"><?php esc_html_e( 'Review reminder lead', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-review-reminder-lead" type="number" min="0" max="168" name="sc_ei_settings[review_reminder_lead_hours]" value="<?php echo esc_attr( $settings['review_reminder_lead_hours'] ); ?>"> <?php esc_html_e( 'hours before due', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+				<tr><th scope="row"><label for="sc-ei-notification-batch"><?php esc_html_e( 'Reminder batch limit', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-notification-batch" type="number" min="1" max="100" name="sc_ei_settings[notification_batch_limit]" value="<?php echo esc_attr( $settings['notification_batch_limit'] ); ?>"> <?php esc_html_e( 'records per hourly run', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+			</table>
+			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-communications&view=policy' ) ); ?>"><?php esc_html_e( 'Open Notification Policy and Transport Test', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
 		</section>
 
 		<section class="sc-ei-admin__card sc-ei-admin__settings-card">
@@ -149,7 +172,7 @@ $scanner_readiness = SC_EI_Scanner_Operations::readiness( $settings );
 
 		<section class="sc-ei-admin__card sc-ei-admin__settings-card">
 			<h2><?php esc_html_e( 'Microsoft Teams scheduling readiness', 'sustainable-catalyst-engagement-intake' ); ?></h2>
-			<p><?php esc_html_e( 'Microsoft Teams is the only supported live meeting platform. v0.4.0 stores preferences and approved meeting records; Microsoft Graph event creation is not enabled yet.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<p><?php esc_html_e( 'Microsoft Teams is the only supported live meeting platform. v0.5.0 stores preferences and approved meeting records; Microsoft Graph event creation is not enabled yet.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row"><label for="sc-ei-teams-organizer"><?php esc_html_e( 'Teams organizer email', 'sustainable-catalyst-engagement-intake' ); ?></label></th>

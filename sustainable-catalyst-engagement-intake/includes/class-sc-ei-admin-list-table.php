@@ -33,6 +33,7 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'conversion_route'  => __( 'Conversion Route', 'sustainable-catalyst-engagement-intake' ),
 			'review'            => __( 'Administrative Review', 'sustainable-catalyst-engagement-intake' ),
 			'review_due'        => __( 'Review Due', 'sustainable-catalyst-engagement-intake' ),
+			'communication'     => __( 'Communication', 'sustainable-catalyst-engagement-intake' ),
 			'documents'         => __( 'Documents', 'sustainable-catalyst-engagement-intake' ),
 			'status'            => __( 'Inquiry Status', 'sustainable-catalyst-engagement-intake' ),
 			'scheduling_status' => __( 'Teams Status', 'sustainable-catalyst-engagement-intake' ),
@@ -48,6 +49,7 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'conversion_route'  => array( 'conversion_route', false ),
 			'review'            => array( 'review_stage', false ),
 			'review_due'        => array( 'review_due_at', false ),
+			'communication'     => array( 'last_communication_at', false ),
 			'status'            => array( 'status', false ),
 			'scheduling_status' => array( 'scheduling_status', false ),
 			'created_at'        => array( 'created_at', true ),
@@ -101,6 +103,18 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 					$item['review_due_at'] ? esc_html( get_date_from_gmt( $item['review_due_at'], 'M j, Y g:i a' ) ) : esc_html__( 'No due date', 'sustainable-catalyst-engagement-intake' )
 				);
 
+			case 'communication':
+				$follow_up_due = ! empty( $item['next_follow_up_at'] ) && strtotime( $item['next_follow_up_at'] . ' UTC' ) <= time();
+				return sprintf(
+					'<span class="sc-ei-comm-status sc-ei-comm-status--%1$s">%2$s</span><br><span class="%3$s">%4$s</span><br><span class="description">%5$d records · %6$d unread</span>',
+					esc_attr( $item['communication_status'] ?: 'open' ),
+					esc_html( SC_EI_Communication_Schema::label( SC_EI_Communication_Schema::communication_states(), $item['communication_status'] ?: 'open' ) ),
+					$follow_up_due ? 'sc-ei-inline-warning' : 'description',
+					$item['next_follow_up_at'] ? esc_html( get_date_from_gmt( $item['next_follow_up_at'], 'M j, Y g:i a' ) ) : esc_html__( 'No follow-up', 'sustainable-catalyst-engagement-intake' ),
+					absint( $item['communication_count'] ),
+					absint( $item['unread_inbound_count'] )
+				);
+
 			case 'documents':
 				$count = SC_EI_Attachment_Repository::count_for_inquiry( absint( $item['id'] ) );
 				return $count
@@ -143,6 +157,7 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 		$actions = array(
 			'view'   => sprintf( '<a href="%s">%s</a>', esc_url( $url ), esc_html__( 'View', 'sustainable-catalyst-engagement-intake' ) ),
 			'review' => sprintf( '<a href="%s">%s</a>', esc_url( SC_EI_Review_Admin::detail_url( absint( $item['id'] ) ) ), esc_html__( 'Review', 'sustainable-catalyst-engagement-intake' ) ),
+			'communications' => sprintf( '<a href="%s">%s</a>', esc_url( SC_EI_Communication_Admin::thread_url( absint( $item['id'] ) ) ), esc_html__( 'Communications', 'sustainable-catalyst-engagement-intake' ) ),
 		);
 
 		return sprintf(

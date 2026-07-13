@@ -59,6 +59,21 @@ final class SC_EI_Audit_Log {
 		);
 	}
 
+	public static function communication_event_types(): array {
+		return array(
+			'communication_draft_saved'             => __( 'Communication Draft Saved', 'sustainable-catalyst-engagement-intake' ),
+			'communication_draft_canceled'          => __( 'Communication Draft Canceled', 'sustainable-catalyst-engagement-intake' ),
+			'communication_mail_accepted'           => __( 'Mail Transport Accepted', 'sustainable-catalyst-engagement-intake' ),
+			'communication_mail_failed'             => __( 'Mail Transport Failed', 'sustainable-catalyst-engagement-intake' ),
+			'communication_interaction_recorded'    => __( 'Interaction Recorded', 'sustainable-catalyst-engagement-intake' ),
+			'communication_thread_state_updated'    => __( 'Communication Thread Updated', 'sustainable-catalyst-engagement-intake' ),
+			'communication_template_version_created'=> __( 'Template Version Created', 'sustainable-catalyst-engagement-intake' ),
+			'notification_transport_tested'         => __( 'Notification Transport Tested', 'sustainable-catalyst-engagement-intake' ),
+			'notification_creation_failed'          => __( 'Notification Creation Failed', 'sustainable-catalyst-engagement-intake' ),
+			'communication_history_exported'        => __( 'Communication History Exported', 'sustainable-catalyst-engagement-intake' ),
+		);
+	}
+
 	public static function query_file_events( array $args = array() ): array {
 		global $wpdb;
 

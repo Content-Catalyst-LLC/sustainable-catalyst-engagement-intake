@@ -104,6 +104,13 @@ final class SC_EI_REST {
 		$record['attachments'] = SC_EI_Attachment_Repository::for_inquiry( absint( $request['id'] ) );
 		$record['audit_log']   = SC_EI_Audit_Log::for_inquiry( absint( $request['id'] ) );
 
+		if ( current_user_can( 'sc_intake_manage_review' ) ) {
+			$record['review_history'] = SC_EI_Review_Repository::history( absint( $request['id'] ), 500 );
+		}
+		if ( current_user_can( 'sc_intake_view_communications' ) ) {
+			$record['communications'] = SC_EI_Communication_Repository::for_inquiry( absint( $request['id'] ), 500, true );
+		}
+
 		return new WP_REST_Response( $record );
 	}
 

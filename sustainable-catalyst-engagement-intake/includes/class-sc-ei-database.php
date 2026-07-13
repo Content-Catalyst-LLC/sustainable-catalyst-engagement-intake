@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'communications', 'communication_events', 'communication_templates', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -29,6 +29,9 @@ final class SC_EI_Database {
 		$inquiries      = self::table( 'inquiries' );
 		$attachments    = self::table( 'attachments' );
 		$reviews        = self::table( 'reviews' );
+		$communications = self::table( 'communications' );
+		$communication_events = self::table( 'communication_events' );
+		$communication_templates = self::table( 'communication_templates' );
 		$audit_log      = self::table( 'audit_log' );
 
 		$sql_inquiries = "CREATE TABLE {$inquiries} (
@@ -104,6 +107,17 @@ final class SC_EI_Database {
 			decision_at datetime NULL,
 			review_completed_at datetime NULL,
 			review_version int(10) unsigned NOT NULL DEFAULT 0,
+			communication_status varchar(30) NOT NULL DEFAULT 'open',
+			next_follow_up_at datetime NULL,
+			last_communication_at datetime NULL,
+			last_outbound_at datetime NULL,
+			last_inbound_at datetime NULL,
+			last_notification_at datetime NULL,
+			communication_count int(10) unsigned NOT NULL DEFAULT 0,
+			unread_inbound_count int(10) unsigned NOT NULL DEFAULT 0,
+			do_not_email tinyint(1) unsigned NOT NULL DEFAULT 0,
+			do_not_email_reason text NULL,
+			communication_version int(10) unsigned NOT NULL DEFAULT 0,
 			created_at datetime NOT NULL,
 			updated_at datetime NOT NULL,
 			closed_at datetime NULL,
@@ -129,6 +143,10 @@ final class SC_EI_Database {
 			KEY escalation_status (escalation_status),
 			KEY last_reviewed_by (last_reviewed_by),
 			KEY last_reviewed_at (last_reviewed_at),
+			KEY communication_status (communication_status),
+			KEY next_follow_up_at (next_follow_up_at),
+			KEY last_communication_at (last_communication_at),
+			KEY do_not_email (do_not_email),
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
@@ -229,6 +247,113 @@ final class SC_EI_Database {
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
+
+		$sql_communications = "CREATE TABLE {$communications} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			public_id char(36) NOT NULL,
+			thread_key varchar(80) NOT NULL DEFAULT '',
+			reply_to_id bigint(20) unsigned NULL,
+			direction varchar(20) NOT NULL DEFAULT 'outbound',
+			channel varchar(30) NOT NULL DEFAULT 'email',
+			communication_type varchar(60) NOT NULL DEFAULT 'general_response',
+			status varchar(30) NOT NULL DEFAULT 'draft',
+			subject varchar(255) NOT NULL DEFAULT '',
+			body_text longtext NULL,
+			sender_user_id bigint(20) unsigned NULL,
+			sender_name varchar(191) NOT NULL DEFAULT '',
+			sender_email varchar(191) NOT NULL DEFAULT '',
+			recipient_name varchar(191) NOT NULL DEFAULT '',
+			recipient_email varchar(191) NOT NULL DEFAULT '',
+			cc_json longtext NULL,
+			template_key varchar(80) NOT NULL DEFAULT '',
+			template_version int(10) unsigned NOT NULL DEFAULT 0,
+			is_automated tinyint(1) unsigned NOT NULL DEFAULT 0,
+			requires_approval tinyint(1) unsigned NOT NULL DEFAULT 1,
+			approved_by bigint(20) unsigned NULL,
+			approved_at datetime NULL,
+			provider varchar(80) NOT NULL DEFAULT '',
+			provider_message_id varchar(191) NOT NULL DEFAULT '',
+			attempt_count int(10) unsigned NOT NULL DEFAULT 0,
+			last_attempt_at datetime NULL,
+			accepted_at datetime NULL,
+			failed_at datetime NULL,
+			error_code varchar(120) NOT NULL DEFAULT '',
+			error_message text NULL,
+			occurred_at datetime NULL,
+			scheduled_for datetime NULL,
+			privacy_classification varchar(30) NOT NULL DEFAULT 'private',
+			message_hash char(64) NOT NULL DEFAULT '',
+			dedupe_key varchar(191) NULL,
+			metadata_json longtext NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			deleted_at datetime NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY dedupe_key (dedupe_key),
+			KEY inquiry_id (inquiry_id),
+			KEY thread_key (thread_key),
+			KEY reply_to_id (reply_to_id),
+			KEY direction (direction),
+			KEY channel (channel),
+			KEY communication_type (communication_type),
+			KEY status (status),
+			KEY sender_user_id (sender_user_id),
+			KEY recipient_email (recipient_email),
+			KEY accepted_at (accepted_at),
+			KEY occurred_at (occurred_at),
+			KEY scheduled_for (scheduled_for),
+			KEY created_at (created_at),
+			KEY deleted_at (deleted_at)
+		) {$charset_collate};";
+
+		$sql_communication_events = "CREATE TABLE {$communication_events} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			communication_id bigint(20) unsigned NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			actor_user_id bigint(20) unsigned NULL,
+			event_type varchar(60) NOT NULL DEFAULT '',
+			from_status varchar(30) NOT NULL DEFAULT '',
+			to_status varchar(30) NOT NULL DEFAULT '',
+			provider varchar(80) NOT NULL DEFAULT '',
+			provider_message_id varchar(191) NOT NULL DEFAULT '',
+			error_code varchar(120) NOT NULL DEFAULT '',
+			error_message text NULL,
+			context_json longtext NULL,
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			KEY communication_id (communication_id),
+			KEY inquiry_id (inquiry_id),
+			KEY actor_user_id (actor_user_id),
+			KEY event_type (event_type),
+			KEY to_status (to_status),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql_communication_templates = "CREATE TABLE {$communication_templates} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			template_key varchar(80) NOT NULL,
+			version int(10) unsigned NOT NULL DEFAULT 1,
+			name varchar(191) NOT NULL DEFAULT '',
+			communication_type varchar(60) NOT NULL DEFAULT 'general_response',
+			subject_template text NULL,
+			body_template longtext NULL,
+			status varchar(20) NOT NULL DEFAULT 'active',
+			is_system tinyint(1) unsigned NOT NULL DEFAULT 0,
+			created_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY template_version (template_key, version),
+			KEY template_key (template_key),
+			KEY communication_type (communication_type),
+			KEY status (status),
+			KEY created_by (created_by),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
 		$sql_audit = "CREATE TABLE {$audit_log} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			inquiry_id bigint(20) unsigned NULL,
@@ -249,9 +374,13 @@ final class SC_EI_Database {
 		dbDelta( $sql_inquiries );
 		dbDelta( $sql_attachments );
 		dbDelta( $sql_reviews );
+		dbDelta( $sql_communications );
+		dbDelta( $sql_communication_events );
+		dbDelta( $sql_communication_templates );
 		dbDelta( $sql_audit );
 
 		self::backfill_review_defaults();
+		self::backfill_communication_defaults();
 		update_option( 'sc_ei_db_version', SC_EI_DB_VERSION, false );
 	}
 
@@ -287,6 +416,17 @@ final class SC_EI_Database {
 		);
 	}
 
+	private static function backfill_communication_defaults(): void {
+		global $wpdb;
+
+		$table = self::table( 'inquiries' );
+		$wpdb->query(
+			"UPDATE {$table}
+			SET communication_status = 'open'
+			WHERE communication_status IS NULL OR communication_status = ''" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		);
+	}
+
 	public static function maybe_upgrade(): void {
 		$current = (string) get_option( 'sc_ei_db_version', '' );
 		if ( version_compare( $current, SC_EI_DB_VERSION, '<' ) ) {
@@ -298,7 +438,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'communications', 'communication_events', 'communication_templates', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -348,6 +488,17 @@ final class SC_EI_Database {
 			'decision_at',
 			'review_completed_at',
 			'review_version',
+			'communication_status',
+			'next_follow_up_at',
+			'last_communication_at',
+			'last_outbound_at',
+			'last_inbound_at',
+			'last_notification_at',
+			'communication_count',
+			'unread_inbound_count',
+			'do_not_email',
+			'do_not_email_reason',
+			'communication_version',
 		);
 
 		$result = array();
@@ -401,6 +552,42 @@ final class SC_EI_Database {
 		return $result;
 	}
 
+	public static function communication_columns_exist(): array {
+		global $wpdb;
+
+		$tables = array(
+			'communications' => array(
+				'inquiry_id', 'public_id', 'thread_key', 'reply_to_id', 'direction', 'channel',
+				'communication_type', 'status', 'subject', 'body_text', 'sender_user_id',
+				'sender_name', 'sender_email', 'recipient_name', 'recipient_email', 'cc_json',
+				'template_key', 'template_version', 'is_automated', 'requires_approval',
+				'approved_by', 'approved_at', 'provider', 'provider_message_id', 'attempt_count',
+				'last_attempt_at', 'accepted_at', 'failed_at', 'error_code', 'error_message',
+				'occurred_at', 'scheduled_for', 'privacy_classification', 'message_hash',
+				'dedupe_key', 'metadata_json', 'row_version', 'created_at', 'updated_at', 'deleted_at',
+			),
+			'communication_events' => array(
+				'communication_id', 'inquiry_id', 'actor_user_id', 'event_type', 'from_status',
+				'to_status', 'provider', 'provider_message_id', 'error_code', 'error_message',
+				'context_json', 'created_at',
+			),
+			'communication_templates' => array(
+				'template_key', 'version', 'name', 'communication_type', 'subject_template',
+				'body_template', 'status', 'is_system', 'created_by', 'created_at', 'updated_at',
+			),
+		);
+
+		$result = array();
+		foreach ( $tables as $table_name => $columns ) {
+			$table = self::table( $table_name );
+			foreach ( $columns as $column ) {
+				$found = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$result[ $table_name . '.' . $column ] = ( $found === $column );
+			}
+		}
+		return $result;
+	}
+
 	public static function attachment_columns_exist(): array {
 		global $wpdb;
 
@@ -445,7 +632,7 @@ final class SC_EI_Database {
 	public static function drop_all(): void {
 		global $wpdb;
 
-		foreach ( array( 'audit_log', 'reviews', 'attachments', 'inquiries' ) as $name ) {
+		foreach ( array( 'audit_log', 'communication_events', 'communications', 'communication_templates', 'reviews', 'attachments', 'inquiries' ) as $name ) {
 			$table = self::table( $name );
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}

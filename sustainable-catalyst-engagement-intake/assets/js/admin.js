@@ -139,4 +139,70 @@
     });
     updateProgress();
   }
+
+  const composeForm = document.querySelector("[data-sc-ei-compose-form]");
+  if (composeForm) {
+    const templateSelect = composeForm.querySelector("[data-sc-ei-template-select]");
+    const templateVersion = composeForm.querySelector("[data-sc-ei-template-version]");
+    const communicationType = composeForm.querySelector("[data-sc-ei-communication-type]");
+    const subject = composeForm.querySelector("[data-sc-ei-subject]");
+    const body = composeForm.querySelector("[data-sc-ei-body]");
+    const dataNode = document.getElementById("sc-ei-template-data");
+    let templates = {};
+    let dirty = false;
+
+    try {
+      templates = dataNode ? JSON.parse(dataNode.textContent || "{}") : {};
+    } catch (error) {
+      templates = {};
+    }
+
+    templateSelect?.addEventListener("change", () => {
+      const template = templates[templateSelect.value];
+      if (!template) return;
+
+      const hasContent = Boolean((subject?.value || "").trim() || (body?.value || "").trim());
+      if (hasContent && !window.confirm("Replace the current subject and message with the selected rendered template?")) {
+        templateSelect.value = "";
+        return;
+      }
+
+      if (subject) subject.value = template.subject || "";
+      if (body) body.value = template.body || "";
+      if (communicationType) communicationType.value = template.type || "general_response";
+      if (templateVersion) templateVersion.value = String(template.version || 0);
+      dirty = true;
+    });
+
+    composeForm.addEventListener("input", () => {
+      dirty = true;
+    });
+    composeForm.addEventListener("change", () => {
+      dirty = true;
+    });
+    composeForm.addEventListener("submit", () => {
+      dirty = false;
+    });
+    window.addEventListener("beforeunload", (event) => {
+      if (!dirty) return;
+      event.preventDefault();
+      event.returnValue = "";
+    });
+  }
+
+  const doNotEmail = document.querySelector("[data-sc-ei-do-not-email]");
+  if (doNotEmail) {
+    const form = doNotEmail.closest("form");
+    const reason = form?.querySelector("textarea[name='do_not_email_reason']");
+
+    const syncSuppression = () => {
+      if (!reason) return;
+      reason.required = doNotEmail.checked;
+      reason.setAttribute("aria-required", doNotEmail.checked ? "true" : "false");
+    };
+
+    doNotEmail.addEventListener("change", syncSuppression);
+    syncSuppression();
+  }
+
 })();

@@ -1,16 +1,18 @@
 # Sustainable Catalyst Engagement Intake
 
-**Version:** 0.4.0  
-**Release:** Administrative Review Workspace
+**Version:** 0.5.0  
+**Release:** Notifications and Communication History
 
-v0.4.0 adds the human administrative decision layer above:
+v0.5.0 adds a private communication operating layer:
 
 ```text
-Dual public intake
-→ private inquiry records
-→ protected document quarantine
-→ scanner and storage operations
-→ administrative review
+Public intake
+→ protected inquiry
+→ quarantine and review
+→ communication draft
+→ human review and explicit send
+→ transport event history
+→ follow-up
 ```
 
 ## Public shortcodes
@@ -23,213 +25,297 @@ Dual public intake
 [sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst"]
 ```
 
-## Administrative Review Workspace
+## Communications workspace
 
 Open:
 
 ```text
-Engagement Intake → Review Workspace
+Engagement Intake → Communications
 ```
 
 Views:
 
-- Open Queue
-- My Reviews
-- Unassigned
-- Escalations
-- Completed
-- Review Method
+- All History
+- Drafts
+- Failed
+- Inbound
+- Follow-up Due
+- Notifications
+- Templates
+- Notification Policy
 
-The workspace summarizes:
+Each inquiry has a private communication thread containing:
 
-- assignment
-- review stage
-- priority and due date
-- age and idle time
-- fit decision and confidence
-- risk
-- evidence readiness
-- scope clarity
-- recommended next step
-- checklist progress
-- escalation
-- inquiry status
-- document attention
-- Teams request state
+- version-locked drafts
+- reviewed send preview
+- outbound email
+- inbound email records
+- Teams message and meeting records
+- phone, video, and in-person records
+- internal notes
+- delivery and change events
+- follow-up state
+- unread inbound count
+- do-not-email control
+- transport attempts and failures
 
-## Human-authored review model
+## Delivery truthfulness
 
-v0.4.0 intentionally does **not** include automated fit scoring.
-
-Reviewers explicitly record:
+The plugin records:
 
 ```text
-fit_decision
-fit_confidence
-risk_level
-evidence_readiness
-scope_clarity
-recommended_next_step
-review_summary
-decision_rationale
-information_gaps
-conflict_notes
-review_checklist
-escalation_status
-escalation_reason
+accepted = WordPress mail transport accepted the message
+failed   = WordPress mail transport returned failure
 ```
 
-A recommended next step does not automatically:
-
-- change the inquiry status
-- send correspondence
-- schedule a Teams meeting
-- accept work
-- create a proposal
-- release a document
-
-The inquiry status has its own explicit field.
-
-## Current state and immutable history
-
-The inquiry table stores the current review state for fast queue operations.
-
-The `sc_ei_reviews` table stores immutable structured snapshots:
+It does not claim:
 
 ```text
-current review save
-→ optimistic version check
-→ current inquiry update
-→ review snapshot insert
-→ commit
-→ audit events
+delivered
+in inbox
+opened
+read
+clicked
 ```
 
-If another reviewer saved first, the stale save is rejected with `review_conflict`.
+Those states require a separately configured mail provider and verified webhook integration, neither of which is bundled in v0.5.0.
 
-## Assignment model
-
-Reviewer:
-
-- can see the workspace
-- can claim unassigned work when allowed
-- can edit their assigned review
-- can record review fields, checklist, rationale, and escalation
-- cannot assign another person or run bulk review actions by default
-
-Manager:
-
-- can assign and unassign
-- can edit any review
-- can run guarded bulk operations
-- can export review packets
-
-Default roles remain:
+## Human-controlled send sequence
 
 ```text
-Engagement Reviewer
-Engagement Manager
-Administrator
+compose
+→ save draft
+→ review recipient, subject, body, privacy classification, and suppression
+→ check explicit send confirmation
+→ send
+→ record accepted or failed transport event
 ```
 
-## Completion safeguards
+Saving a draft never sends it.
 
-Configurable safeguards default to enabled:
+Accepted, received, recorded, canceled, and suppressed communication records are immutable through normal editing.
 
-- rationale required for a fit decision
-- rationale required for active escalation
-- rationale required for completion
-- full checklist required for completion
-- explicit fit decision required
-- explicit non-default next step required
+## Plain text and no attachments
 
-## Review deadlines
+All plugin email is plain text.
 
-Defaults:
+The communication layer never accepts an attachment argument and never copies quarantined documents into email.
+
+Private documents remain available only through the authenticated document workflow.
+
+## Automated notifications
+
+All automated policies default to `false`:
 
 ```text
-normal: 3 days
-high: 1 day
-low: 7 days
-urgent: 4 hours
-stale: 7 idle days
+sender_acknowledgment_enabled
+internal_new_inquiry_enabled
+review_due_reminders_enabled
+follow_up_reminders_enabled
+escalation_notifications_enabled
 ```
 
-These are operational targets, not automated promises to the sender. Notifications arrive in v0.5.0.
+Automation cannot be enabled with an invalid:
 
-## Guarded bulk actions
+- sender name
+- sender email
+- reply-to email
 
-Manager-only bulk actions:
+Enabled reminders run through an hourly WordPress cron event with:
 
-- assign reviewer
-- unassign
-- set priority
-- set review stage
-- set due date
-- request escalation
-- resolve escalation
+- a 30-minute cron lock
+- configurable batch limit
+- stable deduplication keys
+- immutable records and events
+- normal mail failure history
+- no document attachments
 
-Controls:
+## Default notification templates
 
-- configurable limit
-- hard maximum of 50 selected inquiries
-- nonce
-- capability checks
-- current review version on each record
-- per-inquiry validation
-- result summary
-- audit event
+- sender acknowledgment
+- internal new inquiry
+- internal review due
+- internal follow-up due
+- internal escalation
 
-A bulk request to mark reviews completed still fails for records that lack required checklist, fit, next-step, or rationale data.
+Sender-facing operational templates include:
 
-## Private review packet
+- general response
+- request more information
+- Teams fit-call invitation
+- Teams confirmation
+- paid consultation invitation
+- referral
+- decline
 
-Authorized users can export:
+Templates are versioned. A new save archives the previous active version instead of rewriting history.
+
+## Template variables
+
+Only allowlisted variables are rendered, including:
 
 ```text
-sc-engagement-intake-review-packet/1.0
+{contact_name}
+{first_name}
+{reference}
+{organization}
+{subject}
+{inquiry_type}
+{service_interest}
+{review_stage}
+{fit_decision}
+{recommended_next_step}
+{teams_duration}
+{teams_meeting_url}
+{scheduled_start}
+{scheduled_timezone}
+{site_name}
+{site_url}
+{sender_name}
+{reply_email}
+{reviewer_name}
+{review_due}
+{next_follow_up}
 ```
 
-The JSON packet contains:
+Unknown variables are rejected. Templates do not execute PHP, shortcodes, JavaScript, or arbitrary expressions.
 
-- inquiry record
-- structured review history
-- sanitized attachment metadata
-- audit history
+## Communication state
 
-It does not include physical document contents.
+Inquiry-level fields:
+
+```text
+communication_status
+next_follow_up_at
+last_communication_at
+last_outbound_at
+last_inbound_at
+last_notification_at
+communication_count
+unread_inbound_count
+do_not_email
+do_not_email_reason
+communication_version
+```
+
+States:
+
+```text
+open
+waiting_on_sender
+waiting_on_internal
+follow_up_due
+paused
+closed
+```
+
+## Draft concurrency
+
+Each draft has `row_version`.
+
+When two sessions edit the same draft, the first successful save increments the version. The stale second save is rejected.
+
+## Mail send locking
+
+A short-lived option lock prevents the same communication from being sent twice concurrently.
+
+A stale lock can be reclaimed after five minutes.
+
+## Inbound and external interaction logging
+
+v0.5.0 does not ingest email or Teams messages automatically.
+
+Authorized users can record:
+
+- inbound email
+- outbound email completed elsewhere
+- Teams message
+- Teams meeting
+- phone
+- video
+- in-person
+- internal note
+- other interaction
+
+An inbound record can be marked as needing a response, which sets the thread to `waiting_on_internal`.
+
+## Email suppression
+
+`do_not_email` blocks email to the inquiry contact address.
+
+A reason is required. The send attempt becomes `suppressed` and remains in history.
+
+Internal notifications to other authorized recipients are not blocked by sender suppression.
+
+## Private communication export
+
+Authorized users can export communication history as CSV.
+
+The export includes message content and is therefore private. Spreadsheet formula-leading characters are neutralized.
 
 ## Privacy
 
-WordPress privacy export includes current administrative review fields and structured review snapshots associated with the inquiry.
+WordPress privacy export includes:
+
+- inquiry communication state
+- communication records
+- delivery and change events
+- sender and recipient information
+- message content
+- templates used
+- attempts and error states
 
 Privacy erasure removes:
 
-- current review narratives
-- rationale
-- information gaps
-- conflict notes
-- escalation narrative
-- review snapshot narratives and event notes
+- communication subjects and bodies
+- sender and recipient names and emails
+- CC recipients
+- provider message IDs
+- transport error messages
+- message hashes
+- deduplication keys
+- event context
+- suppression rationale
+- review narratives
+- scheduling personal data
+- physical uploaded documents
 
-Categorical operational history is retained for accountability unless the entire plugin data set is explicitly removed through uninstall configuration.
+Categorical event type, status, channel, timestamps, and internal actor IDs may remain for accountability.
 
-## Existing secure-document layer
+## Microsoft Teams boundary
 
-v0.4.0 retains:
+Microsoft Teams is the only live meeting platform represented in the public workflow.
 
-- no Media Library attachment
-- no public file URL
-- strict document validator
-- protected storage
-- atomic file commit
+v0.5.0 can:
+
+- store Teams preferences
+- store approved Teams meeting links and times
+- create Teams message and meeting history records
+- use Teams information in reviewed templates
+
+It cannot:
+
+- authenticate with Microsoft Graph
+- send Teams messages
+- create meetings
+- read Teams replies
+- synchronize calendars
+
+## Review packet
+
+The private review packet now includes communication history in addition to inquiry, review, attachment metadata, and audit history.
+
+Physical documents remain excluded.
+
+## Existing safety layers retained
+
+- human administrative review
+- no automated fit score
+- no automatic inquiry status inference
+- secure document quarantine
+- scanner readiness and retries
+- atomic protected storage
 - SHA-256 verification
-- scanner readiness and retry
-- Quarantine Operations
 - retention controls
-- access audit
-- Cloudflare and cache no-store controls
-
-## Release boundary
-
-This release creates internal review recommendations. It does not implement sender notifications, correspondence history, sender portal access, Microsoft Graph scheduling, proposal delivery, or contracting.
+- privacy export and erasure
+- Microsoft Teams-only meeting boundary

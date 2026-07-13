@@ -295,6 +295,8 @@ final class SC_EI_Review_Repository {
 			);
 		}
 
+		do_action( 'sc_ei_review_saved', $fresh, $current, $actor_user_id );
+
 		return array(
 			'ok'             => true,
 			'inquiry_id'     => $inquiry_id,
@@ -604,8 +606,9 @@ final class SC_EI_Review_Repository {
 			'generated_at' => current_time( 'mysql', true ),
 			'inquiry'      => $inquiry,
 			'reviews'      => self::history( $inquiry_id, 500 ),
-			'attachments'  => $attachments,
-			'audit'        => SC_EI_Audit_Log::for_inquiry( $inquiry_id, 500 ),
+			'attachments'    => $attachments,
+			'communications' => SC_EI_Communication_Repository::for_inquiry( $inquiry_id, 500, true ),
+			'audit'          => SC_EI_Audit_Log::for_inquiry( $inquiry_id, 500 ),
 		);
 	}
 

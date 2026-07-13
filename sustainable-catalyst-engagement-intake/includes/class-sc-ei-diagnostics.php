@@ -14,6 +14,7 @@ final class SC_EI_Diagnostics {
 		$inquiry_columns    = SC_EI_Database::inquiry_columns_exist();
 		$attachment_columns = SC_EI_Database::attachment_columns_exist();
 		$review_columns     = SC_EI_Database::review_columns_exist();
+		$communication_columns = SC_EI_Database::communication_columns_exist();
 		$admin              = get_role( 'administrator' );
 		$settings           = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
@@ -32,6 +33,20 @@ final class SC_EI_Diagnostics {
 		$probe             = SC_EI_Storage::latest_probe();
 		$database_totals   = SC_EI_Attachment_Repository::storage_totals();
 		$review_metrics    = SC_EI_Review_Repository::metrics( get_current_user_id() );
+		$communication_metrics = SC_EI_Communication_Repository::metrics();
+		$communication_templates = SC_EI_Template_Repository::active_templates();
+
+		$notification_policies = array(
+			'sender_acknowledgment' => ! empty( $settings['sender_acknowledgment_enabled'] ),
+			'internal_new_inquiry'  => ! empty( $settings['internal_new_inquiry_enabled'] ),
+			'review_due_reminders'  => ! empty( $settings['review_due_reminders_enabled'] ),
+			'follow_up_reminders'   => ! empty( $settings['follow_up_reminders_enabled'] ),
+			'escalation_alerts'     => ! empty( $settings['escalation_notifications_enabled'] ),
+		);
+		$notification_automation_enabled = in_array( true, $notification_policies, true );
+		$notification_sender_ready = '' !== trim( (string) ( $settings['communication_sender_name'] ?? '' ) )
+			&& is_email( (string) ( $settings['communication_sender_email'] ?? '' ) )
+			&& is_email( (string) ( $settings['communication_reply_to_email'] ?? '' ) );
 
 		$capabilities = array();
 		foreach ( SC_EI_Capabilities::ALL as $cap ) {
@@ -48,6 +63,34 @@ final class SC_EI_Diagnostics {
 			'review_columns'       => $review_columns,
 			'review_metrics'       => $review_metrics,
 			'review_schema_version'=> SC_EI_REVIEW_SCHEMA_VERSION,
+			'communication_columns'=> $communication_columns,
+			'communication_metrics'=> $communication_metrics,
+			'communication_schema_version' => SC_EI_COMMUNICATION_SCHEMA_VERSION,
+			'communication_templates' => array(
+				'active_count' => count( $communication_templates ),
+				'keys'         => array_keys( $communication_templates ),
+			),
+			'notifications' => array(
+				'policies'                    => $notification_policies,
+				'automation_enabled'          => $notification_automation_enabled,
+				'sender_ready'                => $notification_sender_ready,
+				'sender_name'                 => sanitize_text_field( (string) ( $settings['communication_sender_name'] ?? '' ) ),
+				'sender_email'                => sanitize_email( (string) ( $settings['communication_sender_email'] ?? '' ) ),
+				'reply_to_email'              => sanitize_email( (string) ( $settings['communication_reply_to_email'] ?? '' ) ),
+				'internal_recipient_count'    => count( SC_EI_Communication_Schema::sanitize_emails( $settings['notification_internal_recipients'] ?? '', 10 ) ),
+				'escalation_recipient_count'  => count( SC_EI_Communication_Schema::sanitize_emails( $settings['notification_escalation_recipients'] ?? '', 10 ) ),
+				'cron_scheduled'              => (bool) wp_next_scheduled( SC_EI_Notification_Service::CRON_HOOK ),
+				'next_cron_utc'               => wp_next_scheduled( SC_EI_Notification_Service::CRON_HOOK )
+					? gmdate( 'Y-m-d H:i:s', (int) wp_next_scheduled( SC_EI_Notification_Service::CRON_HOOK ) )
+					: '',
+				'last_reminder_run'           => sanitize_text_field( (string) get_option( 'sc_ei_last_notification_reminder_run', '' ) ),
+				'review_reminder_lead_hours'  => absint( $settings['review_reminder_lead_hours'] ?? 24 ),
+				'batch_limit'                 => absint( $settings['notification_batch_limit'] ?? 25 ),
+				'mail_transport'              => 'wordpress_wp_mail',
+				'delivery_confirmation'       => false,
+				'plain_text_only'             => true,
+				'attachments_supported'       => false,
+			),
 			'capabilities'         => $capabilities,
 			'privacy_exporter'     => true,
 			'privacy_eraser'       => true,
@@ -124,6 +167,7 @@ final class SC_EI_Diagnostics {
 		$inquiry_ok     = ! in_array( false, $results['inquiry_columns'], true );
 		$attachments_ok = ! in_array( false, $results['attachment_columns'], true );
 		$reviews_ok     = ! in_array( false, $results['review_columns'], true );
+		$communications_ok = ! in_array( false, $results['communication_columns'], true );
 		$caps_ok        = ! in_array( false, $results['capabilities'], true );
 
 		$storage_ok = ! empty( $results['storage']['exists'] )
@@ -176,7 +220,14 @@ final class SC_EI_Diagnostics {
 		$disk_ok = empty( $results['storage']['disk_free_bytes'] )
 			|| (int) $results['storage']['disk_free_bytes'] >= 100 * MB_IN_BYTES;
 
-		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok )
+		$notifications_ok = true;
+		if ( ! empty( $results['notifications']['automation_enabled'] ) ) {
+			$notifications_ok = ! empty( $results['notifications']['sender_ready'] )
+				&& ! empty( $results['notifications']['cron_scheduled'] )
+				&& ! empty( $results['communication_templates']['active_count'] );
+		}
+
+		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
 			? 'healthy'
 			: 'attention';
 	}

@@ -1,109 +1,98 @@
-# Release Notes — v0.4.0
+# Release Notes — v0.5.0
 
 ## Purpose
 
-Create a serious internal workspace for human review of consulting, collaboration, technical, institutional, media, workshop, and general inquiries.
+Create a private, auditable correspondence layer that connects inquiry intake and human review to sender communication without turning the plugin into an uncontrolled email automation system.
 
-The workspace is designed to help reviewers reason consistently without pretending that fit can be reduced to an automated score.
+## Operating boundary
 
-## Review queue
+The communication layer is designed around four rules:
 
-The queue supports:
+1. saving is not sending
+2. transport acceptance is not delivery
+3. private documents are not email attachments
+4. automated policies are opt-in
 
-- ownership
-- review stage
-- priority
-- due date
-- fit decision
-- risk
-- evidence readiness
-- scope clarity
-- next step
-- document attention
-- inquiry status
-- age and idle time
-- search and filtering
+## Manual email workflow
 
-## Review detail
+An authorized user:
 
-The detail workspace combines:
+1. opens the inquiry communication thread
+2. selects or writes a plain-text message
+3. saves a version-locked draft
+4. reviews the rendered recipient, subject, body, and privacy classification
+5. confirms the send
+6. receives either an accepted or failed mail-transport result
+7. reviews immutable delivery events and attempts
 
-- current review form
-- assignment
-- due state
-- inquiry and sender context
-- deterministic intake-routing context
-- Teams request state
-- document readiness summary
-- checklist
-- escalation
-- immutable review history
-- recent audit events
-- private review packet export
+## Automatic policy workflow
 
-Document scan, download, approval, retention, and deletion controls remain in the full inquiry and Quarantine workspaces. The review workspace links to them rather than duplicating risky operations.
+An enabled policy:
 
-## Concurrency
+1. evaluates a specific trigger
+2. creates a deduplicated immutable communication
+3. renders a versioned template
+4. uses the same mail transport and event recording
+5. records accepted, failed, or suppressed state
+6. never attaches a file
+7. never changes inquiry fit or status
 
-The current inquiry row contains `review_version`.
+## Communication history
 
-Every save includes the version rendered to the reviewer. The database update requires that version to remain current and increments it on success.
+History includes messages sent from WordPress and manually recorded interactions completed elsewhere.
 
-```text
-expected version matches
-→ current state update
-→ immutable snapshot insert
-→ commit
-```
+This allows Teams, phone, video, and in-person activity to be represented without claiming a live external integration.
 
-A stale save rolls back and returns a conflict message.
+## Follow-up
 
-## Completion
+Each inquiry can hold:
 
-When safeguards are enabled, review completion requires:
+- communication state
+- next follow-up date
+- last communication timestamps
+- unread inbound count
+- do-not-email state and reason
 
-- all checklist items
-- fit decision other than undecided
-- recommended next step other than continue review
-- recorded decision rationale
+Internal follow-up reminders can be enabled separately.
 
-## Escalation
+## Templates
 
-Active escalation requires a reason.
+Templates are plain text and versioned.
 
-Escalation is a review state, not a message or notification. Notification and communication history are scheduled for v0.5.0.
-
-## Bulk operations
-
-Bulk operations are manager-only and preserve per-inquiry validation.
-
-A bulk completion operation does not bypass completion requirements.
+The template used by a message is retained by key and version even after a new version becomes active.
 
 ## Migration
 
-Existing open inquiries receive a normal-priority due date calculated from their original creation time.
+v0.5.0 creates three tables and adds communication fields to inquiries.
 
-Existing inquiry statuses are not translated into fit decisions. No review is marked completed automatically.
+Migration does not:
 
-## Live verification checklist
+- send email
+- enable automation
+- create historical messages
+- mark email delivered
+- import mailboxes
+- connect Microsoft Graph
+
+## Recommended live verification
 
 1. Back up database and protected storage.
-2. Upgrade to v0.4.0.
-3. Confirm `reviews` table in Diagnostics.
-4. Confirm all review columns.
-5. Confirm reviewer and manager role capabilities.
-6. Open the Review Workspace.
-7. Claim an unassigned inquiry.
-8. Test manager reassignment.
-9. Save a partial review.
-10. Confirm snapshot v1.
-11. Open the same review in two browser sessions.
-12. Save session one.
-13. Confirm session two receives a conflict.
-14. Test checklist completion safeguard.
-15. Test rationale safeguard.
-16. Test escalation reason safeguard.
-17. Test bulk assignment.
-18. Test review packet export.
+2. Upgrade to v0.5.0.
+3. Confirm database and communication table migration.
+4. Confirm templates were seeded.
+5. Configure a domain-authorized sender and reply-to address.
+6. Keep automated policies off.
+7. Run the transport test.
+8. Confirm actual receipt separately.
+9. Create and edit a draft.
+10. Open the same draft in two sessions and confirm stale-save rejection.
+11. Send a test message.
+12. Test an invalid mail transport in staging and confirm failure history.
+13. Test retry.
+14. Test cancel.
+15. Enable do-not-email and confirm suppression.
+16. Record inbound email and Teams meeting history.
+17. Set follow-up and test the hourly reminder in staging.
+18. Export communication CSV.
 19. Test privacy export.
 20. Test privacy erasure in staging.

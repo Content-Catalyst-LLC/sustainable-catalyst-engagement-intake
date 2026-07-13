@@ -185,3 +185,81 @@ created_at
 ```
 
 `review_version` on the inquiry row is used for optimistic concurrency.
+
+
+## Inquiry communication state
+
+```text
+communication_status
+next_follow_up_at
+last_communication_at
+last_outbound_at
+last_inbound_at
+last_notification_at
+communication_count
+unread_inbound_count
+do_not_email
+do_not_email_reason
+communication_version
+```
+
+## Communication records
+
+`{prefix}sc_ei_communications` stores:
+
+```text
+inquiry_id
+public_id
+thread_key
+reply_to_id
+direction
+channel
+communication_type
+status
+subject
+body_text
+sender_user_id
+sender_name
+sender_email
+recipient_name
+recipient_email
+cc_json
+template_key
+template_version
+is_automated
+requires_approval
+approved_by
+approved_at
+provider
+provider_message_id
+attempt_count
+last_attempt_at
+accepted_at
+failed_at
+error_code
+error_message
+occurred_at
+scheduled_for
+privacy_classification
+message_hash
+dedupe_key
+metadata_json
+row_version
+created_at
+updated_at
+deleted_at
+```
+
+## Communication events
+
+`{prefix}sc_ei_communication_events` is append-only through normal operations and stores status transitions and transport context.
+
+## Communication templates
+
+`{prefix}sc_ei_communication_templates` stores each template version.
+
+The compound unique key is:
+
+```text
+template_key + version
+```

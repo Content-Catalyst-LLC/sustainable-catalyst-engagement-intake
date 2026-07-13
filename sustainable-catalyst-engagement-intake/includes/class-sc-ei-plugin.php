@@ -39,10 +39,13 @@ final class SC_EI_Plugin {
 		SC_EI_Form_Handler::register();
 		SC_EI_Public::register();
 		SC_EI_Retention::register();
+		SC_EI_Mailer::register();
+		SC_EI_Notification_Service::register();
 
 		if ( is_admin() ) {
 			SC_EI_Admin::register();
 			SC_EI_Review_Admin::register();
+			SC_EI_Communication_Admin::register();
 		}
 
 		do_action( 'sc_ei_loaded', $this );

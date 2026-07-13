@@ -133,6 +133,17 @@ final class SC_EI_Inquiry_Repository {
 			'decision_at'             => null,
 			'review_completed_at'     => null,
 			'review_version'          => 0,
+			'communication_status'    => 'open',
+			'next_follow_up_at'       => null,
+			'last_communication_at'   => null,
+			'last_outbound_at'        => null,
+			'last_inbound_at'         => null,
+			'last_notification_at'    => null,
+			'communication_count'     => 0,
+			'unread_inbound_count'    => 0,
+			'do_not_email'            => 0,
+			'do_not_email_reason'     => '',
+			'communication_version'   => 0,
 			'created_at'              => $now,
 			'updated_at'              => $now,
 			'closed_at'               => null,
@@ -146,6 +157,10 @@ final class SC_EI_Inquiry_Repository {
 			'assignment_by',
 			'last_reviewed_by',
 			'review_version',
+			'communication_count',
+			'unread_inbound_count',
+			'do_not_email',
+			'communication_version',
 		);
 		$formats = array_map(
 			static fn( string $key ): string => in_array( $key, $integer_fields, true ) ? '%d' : '%s',
@@ -177,6 +192,7 @@ final class SC_EI_Inquiry_Repository {
 				'review_stage'             => 'intake',
 				'review_priority'          => $initial_priority,
 				'review_due_at'            => $data['review_due_at'],
+				'communication_status'      => 'open',
 			),
 			$id
 		);
@@ -266,7 +282,7 @@ final class SC_EI_Inquiry_Repository {
 			$params[] = $like;
 		}
 
-		$allowed_orderby = array( 'created_at', 'updated_at', 'status', 'scheduling_status', 'form_variant', 'source_page', 'conversion_route', 'contact_name', 'organization', 'reference', 'review_stage', 'review_priority', 'review_due_at', 'fit_decision', 'risk_level', 'last_reviewed_at' );
+		$allowed_orderby = array( 'created_at', 'updated_at', 'status', 'scheduling_status', 'form_variant', 'source_page', 'conversion_route', 'contact_name', 'organization', 'reference', 'review_stage', 'review_priority', 'review_due_at', 'fit_decision', 'risk_level', 'last_reviewed_at', 'communication_status', 'next_follow_up_at', 'last_communication_at' );
 		$orderby         = in_array( $args['orderby'], $allowed_orderby, true ) ? $args['orderby'] : 'created_at';
 		$order           = 'ASC' === strtoupper( $args['order'] ) ? 'ASC' : 'DESC';
 		$per_page        = max( 1, min( 100, absint( $args['per_page'] ) ) );

@@ -15,7 +15,7 @@ $effective       = $diagnostics['effective_limits'];
 ?>
 <div class="wrap sc-ei-admin">
 	<h1><?php esc_html_e( 'Engagement Intake Production Diagnostics', 'sustainable-catalyst-engagement-intake' ); ?></h1>
-	<p><?php esc_html_e( 'Verify protected storage, PHP upload limits, cache bypass, database migrations, file integrity, reconciliation, and retention behavior before relying on production document intake.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+	<p><?php esc_html_e( 'Verify protected storage, upload limits, database migrations, review state, notification transport readiness, communication history, file integrity, reconciliation, and retention before relying on production intake operations.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 
 	<?php if ( 'storage_probe_passed' === $message ) : ?>
 		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Protected storage write, read, rename, and delete probe passed.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
@@ -231,6 +231,39 @@ $effective       = $diagnostics['effective_limits'];
 		</section>
 
 		<section class="sc-ei-admin__card sc-ei-admin__card--wide">
+			<p class="sc-ei-admin__card-kicker"><?php esc_html_e( 'Communications', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<h2><?php esc_html_e( 'Notification and Communication Health', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<div class="sc-ei-diagnostic-metrics">
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['communication_metrics']['drafts'] ) ); ?></strong><span><?php esc_html_e( 'drafts', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['communication_metrics']['failed'] ) ); ?></strong><span><?php esc_html_e( 'failed', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['communication_metrics']['follow_up_due'] ) ); ?></strong><span><?php esc_html_e( 'follow-up due', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['communication_metrics']['unread_inbound'] ) ); ?></strong><span><?php esc_html_e( 'unread inbound', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['communication_templates']['active_count'] ) ); ?></strong><span><?php esc_html_e( 'active templates', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( $diagnostics['communication_schema_version'] ); ?></strong><span><?php esc_html_e( 'communication schema', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+			</div>
+			<ul class="sc-ei-checks">
+				<li><span class="<?php echo $diagnostics['notifications']['sender_ready'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'valid sender name, sender email, and reply-to email', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['notifications']['cron_scheduled'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'hourly reminder cron scheduled', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['communication_templates']['active_count'] > 0 ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'active versioned templates available', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="sc-ei-check--ok">●</span> <?php esc_html_e( 'plain-text messages only; file attachments disabled', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="sc-ei-check--ok">●</span> <?php esc_html_e( 'mail transport acceptance is not represented as delivery confirmation', 'sustainable-catalyst-engagement-intake' ); ?></li>
+			</ul>
+			<dl class="sc-ei-admin__details">
+				<dt><?php esc_html_e( 'Automation enabled', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo $diagnostics['notifications']['automation_enabled'] ? esc_html__( 'yes', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'no — default-safe state', 'sustainable-catalyst-engagement-intake' ); ?></dd>
+				<dt><?php esc_html_e( 'Sender', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $diagnostics['notifications']['sender_name'] ?: '—' ); ?> · <?php echo esc_html( $diagnostics['notifications']['sender_email'] ?: '—' ); ?></dd>
+				<dt><?php esc_html_e( 'Reply-to', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $diagnostics['notifications']['reply_to_email'] ?: '—' ); ?></dd>
+				<dt><?php esc_html_e( 'Internal recipients', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( $diagnostics['notifications']['internal_recipient_count'] ) ); ?></dd>
+				<dt><?php esc_html_e( 'Escalation recipients', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( $diagnostics['notifications']['escalation_recipient_count'] ) ); ?></dd>
+				<dt><?php esc_html_e( 'Next reminder run UTC', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $diagnostics['notifications']['next_cron_utc'] ?: __( 'Not scheduled', 'sustainable-catalyst-engagement-intake' ) ); ?></dd>
+				<dt><?php esc_html_e( 'Last reminder run UTC', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $diagnostics['notifications']['last_reminder_run'] ?: __( 'Never', 'sustainable-catalyst-engagement-intake' ) ); ?></dd>
+			</dl>
+			<?php if ( $diagnostics['notifications']['automation_enabled'] && ( ! $diagnostics['notifications']['sender_ready'] || ! $diagnostics['notifications']['cron_scheduled'] || empty( $diagnostics['communication_templates']['active_count'] ) ) ) : ?>
+				<div class="sc-ei-diagnostic-warning"><strong><?php esc_html_e( 'Action required:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'An automatic notification policy is enabled without a complete sender, cron, or active-template foundation. Disable automation or repair the missing dependency.', 'sustainable-catalyst-engagement-intake' ); ?></div>
+			<?php endif; ?>
+			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-communications&view=policy' ) ); ?>"><?php esc_html_e( 'Open Notification Policy', 'sustainable-catalyst-engagement-intake' ); ?></a> <a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-communications' ) ); ?>"><?php esc_html_e( 'Open Communication History', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
+		</section>
+
+		<section class="sc-ei-admin__card sc-ei-admin__card--wide">
 			<p class="sc-ei-admin__card-kicker"><?php esc_html_e( 'Administrative Review', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<h2><?php esc_html_e( 'Review Workspace Health', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<div class="sc-ei-diagnostic-metrics">
@@ -246,6 +279,12 @@ $effective       = $diagnostics['effective_limits'];
 					<li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li>
 				<?php endforeach; ?>
 			</ul>
+			<h3><?php esc_html_e( 'Communication tables and fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<ul class="sc-ei-checks sc-ei-checks--columns">
+				<?php foreach ( $diagnostics['communication_columns'] as $column => $ok ) : ?>
+					<li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li>
+				<?php endforeach; ?>
+			</ul>
 			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-review' ) ); ?>"><?php esc_html_e( 'Open Administrative Review Workspace', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
 			<p class="description"><?php esc_html_e( 'Review metrics are operational signals. The plugin never creates an automated fit score or silently changes an inquiry status from these metrics.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 		</section>
@@ -254,7 +293,7 @@ $effective       = $diagnostics['effective_limits'];
 			<h2><?php esc_html_e( 'Database Migrations', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<h3><?php esc_html_e( 'Tables', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['tables'] as $name => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $name ); ?></li><?php endforeach; ?></ul>
-			<h3><?php esc_html_e( 'v0.4.0 attachment, scanner, and review fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<h3><?php esc_html_e( 'v0.5.0 inquiry, attachment, review, and communication fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['attachment_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
 		</section>
 

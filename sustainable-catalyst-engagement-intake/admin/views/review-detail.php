@@ -51,6 +51,7 @@ $links = is_array( $links ) ? $links : array();
 	<p class="sc-ei-admin__breadcrumb">
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-review' ) ); ?>">← <?php esc_html_e( 'Back to Review Workspace', 'sustainable-catalyst-engagement-intake' ); ?></a>
 		· <a href="<?php echo esc_url( $full_record_url ); ?>"><?php esc_html_e( 'Full inquiry record', 'sustainable-catalyst-engagement-intake' ); ?></a>
+		· <a href="<?php echo esc_url( SC_EI_Communication_Admin::thread_url( absint( $inquiry['id'] ) ) ); ?>"><?php esc_html_e( 'Communications', 'sustainable-catalyst-engagement-intake' ); ?></a>
 		· <a href="<?php echo esc_url( $quarantine_url ); ?>"><?php esc_html_e( 'Related quarantine records', 'sustainable-catalyst-engagement-intake' ); ?></a>
 	</p>
 

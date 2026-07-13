@@ -92,7 +92,7 @@ final class SC_EI_Scanner_Operations {
 					'extension'         => 'txt',
 					'size_bytes'        => strlen( $content ),
 					'sha256'            => hash( 'sha256', $content ),
-					'generated_by'      => 'engagement-intake-v0.4.0',
+					'generated_by'      => 'engagement-intake-v0.5.0',
 					'contains_user_data'=> 'no',
 				)
 			);

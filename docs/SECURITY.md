@@ -201,3 +201,32 @@ For higher-risk intake:
 - categorical review history is retained for accountability
 - unsaved-change warning reduces accidental browser navigation loss
 - review metrics are operational signals and never trigger status changes
+
+
+## v0.5.0 communication and notification controls
+
+- automated notification settings default to disabled
+- automation cannot be enabled with an invalid sender name, sender email, or reply-to email
+- all plugin email is plain text
+- file attachments are unsupported
+- drafts use optimistic row-version locking
+- saving a draft cannot send it
+- manual send requires a separate capability, nonce, and explicit confirmation
+- short-lived send locks reduce concurrent duplicate sends
+- failed transport attempts remain visible and auditable
+- transport acceptance is never labeled delivery
+- accepted and externally recorded history is immutable through normal editing
+- automated notifications use unique deduplication keys
+- reminder cron uses a stale-recoverable lock and a configurable batch limit
+- sender-facing email respects per-inquiry do-not-email suppression
+- a suppression reason is required
+- template variables are allowlisted
+- unknown variables are rejected
+- template versions are immutable
+- communication CSV export requires a dedicated capability and nonce
+- spreadsheet formula-leading values are neutralized
+- communication REST history requires an authenticated communication capability
+- privacy export includes communication content and events
+- privacy erasure redacts message bodies, parties, transport IDs, errors, hashes, dedupe keys, and event context
+- internal and sender notification recipients are sanitized and limited
+- no mailbox, Microsoft Graph, Zoom, or Google Meet integration is implied

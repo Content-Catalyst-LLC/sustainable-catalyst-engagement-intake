@@ -69,6 +69,7 @@ final class SC_EI_Admin {
 		);
 
 		SC_EI_Review_Admin::submenu();
+		SC_EI_Communication_Admin::submenu();
 
 		$quarantine_hook = add_submenu_page(
 			'sc-engagement-intake',
@@ -150,6 +151,33 @@ final class SC_EI_Admin {
 	}
 
 	public static function default_settings(): array {
+		$sender_name  = sanitize_text_field( (string) ( $value['communication_sender_name'] ?? get_bloginfo( 'name' ) ) );
+		$sender_email = sanitize_email( (string) ( $value['communication_sender_email'] ?? get_option( 'admin_email' ) ) );
+		$reply_email  = sanitize_email( (string) ( $value['communication_reply_to_email'] ?? $sender_email ) );
+		$internal_recipients = implode( ', ', SC_EI_Communication_Schema::sanitize_emails( $value['notification_internal_recipients'] ?? '', 10 ) );
+		$escalation_recipients = implode( ', ', SC_EI_Communication_Schema::sanitize_emails( $value['notification_escalation_recipients'] ?? '', 10 ) );
+
+		$sender_ready = '' !== $sender_name && is_email( $sender_email ) && is_email( $reply_email );
+		$sender_ack_enabled = empty( $value['sender_acknowledgment_enabled'] ) ? 0 : 1;
+		$internal_new_enabled = empty( $value['internal_new_inquiry_enabled'] ) ? 0 : 1;
+		$review_reminders_enabled = empty( $value['review_due_reminders_enabled'] ) ? 0 : 1;
+		$follow_up_reminders_enabled = empty( $value['follow_up_reminders_enabled'] ) ? 0 : 1;
+		$escalation_enabled = empty( $value['escalation_notifications_enabled'] ) ? 0 : 1;
+
+		if ( ! $sender_ready && ( $sender_ack_enabled || $internal_new_enabled || $review_reminders_enabled || $follow_up_reminders_enabled || $escalation_enabled ) ) {
+			$sender_ack_enabled = 0;
+			$internal_new_enabled = 0;
+			$review_reminders_enabled = 0;
+			$follow_up_reminders_enabled = 0;
+			$escalation_enabled = 0;
+			add_settings_error(
+				'sc_ei_settings',
+				'communication_sender_required',
+				__( 'Automatic notification policies were not enabled because the sender name, sender email, or reply-to email is invalid.', 'sustainable-catalyst-engagement-intake' ),
+				'error'
+			);
+		}
+
 		return array(
 			'delete_data_on_uninstall'         => 0,
 			'default_unaccepted_retention_days'=> 365,
@@ -177,6 +205,18 @@ final class SC_EI_Admin {
 			'restrict_review_to_assignee'          => 1,
 			'require_review_rationale'             => 1,
 			'require_completion_checklist'         => 1,
+			'communication_sender_name'             => wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
+			'communication_sender_email'            => sanitize_email( get_option( 'admin_email' ) ),
+			'communication_reply_to_email'          => sanitize_email( get_option( 'admin_email' ) ),
+			'notification_internal_recipients'      => '',
+			'notification_escalation_recipients'    => '',
+			'sender_acknowledgment_enabled'         => 0,
+			'internal_new_inquiry_enabled'          => 0,
+			'review_due_reminders_enabled'          => 0,
+			'follow_up_reminders_enabled'           => 0,
+			'escalation_notifications_enabled'      => 0,
+			'review_reminder_lead_hours'            => 24,
+			'notification_batch_limit'              => 25,
 		);
 	}
 
@@ -237,6 +277,18 @@ final class SC_EI_Admin {
 			'restrict_review_to_assignee'        => empty( $value['restrict_review_to_assignee'] ) ? 0 : 1,
 			'require_review_rationale'           => empty( $value['require_review_rationale'] ) ? 0 : 1,
 			'require_completion_checklist'       => empty( $value['require_completion_checklist'] ) ? 0 : 1,
+			'communication_sender_name'           => $sender_name,
+			'communication_sender_email'          => $sender_email,
+			'communication_reply_to_email'        => $reply_email,
+			'notification_internal_recipients'    => $internal_recipients,
+			'notification_escalation_recipients'  => $escalation_recipients,
+			'sender_acknowledgment_enabled'       => $sender_ack_enabled,
+			'internal_new_inquiry_enabled'        => $internal_new_enabled,
+			'review_due_reminders_enabled'        => $review_reminders_enabled,
+			'follow_up_reminders_enabled'         => $follow_up_reminders_enabled,
+			'escalation_notifications_enabled'    => $escalation_enabled,
+			'review_reminder_lead_hours'          => max( 0, min( 168, absint( $value['review_reminder_lead_hours'] ?? 24 ) ) ),
+			'notification_batch_limit'            => max( 1, min( 100, absint( $value['notification_batch_limit'] ?? 25 ) ) ),
 		);
 	}
 
@@ -279,11 +331,13 @@ final class SC_EI_Admin {
 		array_unshift(
 			$links,
 			sprintf(
-				'<a href="%1$s">%2$s</a> · <a href="%3$s">%4$s</a> · <a href="%5$s">%6$s</a>',
+				'<a href="%1$s">%2$s</a> · <a href="%3$s">%4$s</a> · <a href="%5$s">%6$s</a> · <a href="%7$s">%8$s</a>',
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake' ) ),
 				esc_html__( 'Inquiries', 'sustainable-catalyst-engagement-intake' ),
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-review' ) ),
 				esc_html__( 'Review Workspace', 'sustainable-catalyst-engagement-intake' ),
+				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-communications' ) ),
+				esc_html__( 'Communications', 'sustainable-catalyst-engagement-intake' ),
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-quarantine' ) ),
 				esc_html__( 'Quarantine', 'sustainable-catalyst-engagement-intake' )
 			)
@@ -1126,6 +1180,24 @@ final class SC_EI_Admin {
 		$note = isset( $_POST['internal_note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['internal_note'] ) ) : '';
 
 		$success = $id && SC_EI_Inquiry_Repository::add_internal_note( $id, $note );
+		if ( $success && '' !== trim( $note ) ) {
+			SC_EI_Communication_Repository::record_interaction(
+				$id,
+				array(
+					'direction'          => 'internal',
+					'channel'            => 'other',
+					'communication_type' => 'internal_note',
+					'subject'            => __( 'Internal inquiry note', 'sustainable-catalyst-engagement-intake' ),
+					'body_text'          => $note,
+					'party_name'         => wp_get_current_user()->display_name,
+					'party_email'        => wp_get_current_user()->user_email,
+					'occurred_at_local'  => current_time( 'Y-m-d\TH:i' ),
+					'needs_response'     => 0,
+					'privacy_classification' => 'private',
+				),
+				get_current_user_id()
+			);
+		}
 
 		$url = add_query_arg(
 			array(
