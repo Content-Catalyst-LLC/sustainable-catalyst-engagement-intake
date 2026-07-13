@@ -9,6 +9,8 @@ $result_messages = array(
 	'portal_documents_uploaded'      => __( 'Accepted documents were placed in protected quarantine for review.', 'sustainable-catalyst-engagement-intake' ),
 	'portal_contact_updated'         => __( 'Contact preferences were updated.', 'sustainable-catalyst-engagement-intake' ),
 	'portal_scheduling_updated'      => __( 'Microsoft Teams scheduling preferences were updated. No meeting was booked automatically.', 'sustainable-catalyst-engagement-intake' ),
+	'portal_meeting_response_saved'  => __( 'Your meeting response was recorded. No external calendar event was created automatically.', 'sustainable-catalyst-engagement-intake' ),
+	'portal_proposal_response_saved' => __( 'Your proposal response was recorded. Acceptance is pending external contracting and is not an electronic signature.', 'sustainable-catalyst-engagement-intake' ),
 	'portal_privacy_request_created' => __( 'Your privacy request was recorded for identity and human review.', 'sustainable-catalyst-engagement-intake' ),
 	'portal_withdrawal_requested'    => __( 'Your withdrawal request was recorded. It does not erase records or bypass legal holds.', 'sustainable-catalyst-engagement-intake' ),
 	'portal_withdrawal_canceled'     => __( 'The pending withdrawal request was canceled.', 'sustainable-catalyst-engagement-intake' ),
@@ -30,6 +32,22 @@ $error_messages = array(
 	'portal_withdrawal_reason_required'     => __( 'Explain the withdrawal request briefly.', 'sustainable-catalyst-engagement-intake' ),
 	'portal_withdrawal_confirmation_failed' => __( 'The withdrawal confirmation did not match.', 'sustainable-catalyst-engagement-intake' ),
 	'portal_revoke_confirmation_failed'     => __( 'The access-revocation confirmation did not match.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_meeting_unavailable'            => __( 'This meeting offer is unavailable or no longer open.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_meeting_expired'                => __( 'This meeting offer expired.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_slot_invalid'                   => __( 'Choose one of the offered meeting times.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_slot_elapsed'                   => __( 'That proposed meeting time has already passed.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_alternative_note_required'      => __( 'Describe the alternative time you need.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_meeting_response_invalid'       => __( 'Choose a valid meeting response.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_ics_unavailable'                => __( 'The calendar file is not available for this meeting.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_proposal_unavailable'           => __( 'This proposal is unavailable or no longer open.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_proposal_expired'               => __( 'This proposal expired.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_proposal_response_disabled'     => __( 'Proposal responses are temporarily disabled.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_proposal_confirmation_failed'   => __( 'The typed proposal confirmation did not match.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_proposal_authority_required'    => __( 'Confirm that you are authorized to respond for the sender organization.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_proposal_boundary_required'     => __( 'Acknowledge that portal acceptance is not an executed contract.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_proposal_note_required'         => __( 'Add a brief response note.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_proposal_response_invalid'      => __( 'Choose a valid proposal response.', 'sustainable-catalyst-engagement-intake' ),
+	'workflow_proposal_conflict'              => __( 'The proposal changed before your response was recorded. Reload and try again.', 'sustainable-catalyst-engagement-intake' ),
 );
 $weekdays = json_decode( (string) $inquiry['preferred_weekdays'], true ) ?: array();
 $participant_emails = json_decode( (string) $inquiry['participant_emails'], true ) ?: array();
@@ -60,7 +78,7 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 		<div class="sc-ei-portal-notice sc-ei-portal-notice--error" role="alert"><?php echo esc_html( $error_messages[ $error_code ] ?? __( 'The secure portal action could not be completed.', 'sustainable-catalyst-engagement-intake' ) ); ?></div>
 	<?php endif; ?>
 	<?php if ( $privacy_restricted ) : ?>
-		<div class="sc-ei-portal-notice sc-ei-portal-notice--warning"><strong><?php esc_html_e( 'Processing restriction active.', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Status viewing, existing secure messages, privacy requests, and access revocation remain available. New messages, documents, and preference changes are blocked.', 'sustainable-catalyst-engagement-intake' ); ?></div>
+		<div class="sc-ei-portal-notice sc-ei-portal-notice--warning"><strong><?php esc_html_e( 'Processing restriction active.', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Status viewing, existing secure messages, meeting and proposal records, privacy requests, and access revocation remain available. New messages, responses, documents, and preference changes are blocked.', 'sustainable-catalyst-engagement-intake' ); ?></div>
 	<?php endif; ?>
 
 	<nav class="sc-ei-portal-nav" aria-label="<?php esc_attr_e( 'Sender portal sections', 'sustainable-catalyst-engagement-intake' ); ?>">
@@ -70,6 +88,8 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 				'overview' => 'view_status',
 				'messages' => 'view_messages',
 				'documents' => 'view_documents',
+				'meetings' => 'view_meetings',
+				'proposals' => 'view_proposals',
 				'preferences' => 'update_contact',
 				'privacy' => 'privacy_requests',
 				'access' => 'revoke_access',
@@ -94,6 +114,8 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 						<dt><?php esc_html_e( 'Service interest', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $inquiry['service_interest'] ? ucwords( str_replace( '_', ' ', $inquiry['service_interest'] ) ) : __( 'Not specified', 'sustainable-catalyst-engagement-intake' ) ); ?></dd>
 						<dt><?php esc_html_e( 'Secure messages', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $messages ) ) ); ?></dd>
 						<dt><?php esc_html_e( 'Active private documents', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $attachments ) ) ); ?></dd>
+						<dt><?php esc_html_e( 'Meeting records', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $meeting_offers ) ) ); ?></dd>
+						<dt><?php esc_html_e( 'Proposal records', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $proposals ) ) ); ?></dd>
 						<dt><?php esc_html_e( 'Withdrawal state', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( SC_EI_Portal_Schema::label( SC_EI_Portal_Schema::withdrawal_statuses(), $inquiry['sender_withdrawal_status'] ) ); ?></dd>
 					</dl>
 					<?php if ( $inquiry['project_summary'] ) : ?><h4><?php esc_html_e( 'Submitted project summary', 'sustainable-catalyst-engagement-intake' ); ?></h4><p><?php echo nl2br( esc_html( $inquiry['project_summary'] ) ); ?></p><?php endif; ?>
@@ -185,6 +207,101 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 				</form>
 			</section>
 		<?php endif; ?>
+	<?php elseif ( 'meetings' === $view ) : ?>
+		<section class="sc-ei-portal-card">
+			<h3><?php esc_html_e( 'Microsoft Teams meetings', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<p><?php esc_html_e( 'Sustainable Catalyst may offer human-approved times. Selecting a time records your choice; it does not create an external Microsoft calendar event automatically.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<?php if ( ! $meeting_offers ) : ?><p><?php esc_html_e( 'No meeting offers or scheduled meetings are available.', 'sustainable-catalyst-engagement-intake' ); ?></p><?php endif; ?>
+			<div class="sc-ei-workflow-portal-list">
+				<?php foreach ( $meeting_offers as $meeting ) : $slots = json_decode( (string) $meeting['slots_json'], true ) ?: array(); ?>
+					<article class="sc-ei-portal-card sc-ei-portal-workflow-card">
+						<header class="sc-ei-portal-workflow-header">
+							<div><p class="sc-ei-portal__eyebrow"><?php echo esc_html( $meeting['offer_number'] ); ?></p><h4><?php echo esc_html( $meeting['title'] ); ?></h4></div>
+							<span class="sc-ei-portal-workflow-state"><?php echo esc_html( SC_EI_Workflow_Schema::label( SC_EI_Workflow_Schema::meeting_statuses(), $meeting['status'] ) ); ?></span>
+						</header>
+						<p><?php echo nl2br( esc_html( $meeting['purpose'] ) ); ?></p>
+						<dl class="sc-ei-portal-details">
+							<dt><?php esc_html_e( 'Duration', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( absint( $meeting['duration_minutes'] ) . ' minutes' ); ?></dd>
+							<dt><?php esc_html_e( 'Timezone', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $meeting['timezone'] ); ?></dd>
+							<dt><?php esc_html_e( 'Offer expires', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( get_date_from_gmt( $meeting['expires_at'], 'M j, Y g:i a' ) . ' UTC' ); ?></dd>
+						</dl>
+						<?php if ( 'offered' === $meeting['status'] && ! $privacy_restricted && ! empty( $permissions['respond_meetings'] ) ) : ?>
+							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-portal-form sc-ei-portal-meeting-response">
+								<input type="hidden" name="action" value="sc_ei_portal_respond_meeting"><input type="hidden" name="portal_csrf" value="<?php echo esc_attr( $csrf_token ); ?>"><input type="hidden" name="meeting_offer_id" value="<?php echo esc_attr( $meeting['id'] ); ?>">
+								<fieldset><legend><?php esc_html_e( 'Choose a proposed time', 'sustainable-catalyst-engagement-intake' ); ?></legend>
+									<?php foreach ( $slots as $slot ) : ?>
+										<label class="sc-ei-portal-slot"><input type="radio" name="meeting_slot_key" value="<?php echo esc_attr( $slot['key'] ); ?>"><span><strong><?php echo esc_html( SC_EI_Teams::format_utc_for_input( $slot['start_utc'], $meeting['timezone'] ) ); ?></strong><small><?php echo esc_html( $meeting['timezone'] ); ?></small></span></label>
+									<?php endforeach; ?>
+								</fieldset>
+								<label><span><?php esc_html_e( 'Response', 'sustainable-catalyst-engagement-intake' ); ?></span><select name="meeting_response" data-sc-ei-meeting-response><?php foreach ( SC_EI_Workflow_Schema::sender_meeting_responses() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
+								<label><span><?php esc_html_e( 'Note or alternative time request', 'sustainable-catalyst-engagement-intake' ); ?></span><textarea name="meeting_note" rows="4" maxlength="5000"></textarea></label>
+								<button type="submit" class="sc-ei-button sc-ei-button--primary"><?php esc_html_e( 'Record Meeting Response', 'sustainable-catalyst-engagement-intake' ); ?></button>
+							</form>
+						<?php elseif ( in_array( $meeting['status'], array( 'accepted_pending_link', 'scheduled' ), true ) ) : ?>
+							<div class="sc-ei-portal-notice sc-ei-portal-notice--success">
+								<strong><?php esc_html_e( 'Selected time:', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+								<?php echo esc_html( SC_EI_Teams::format_utc_for_input( $meeting['selected_start_utc'], $meeting['timezone'] ) . ' · ' . $meeting['timezone'] ); ?>
+							</div>
+							<?php if ( 'scheduled' === $meeting['status'] && SC_EI_Teams::is_teams_url( (string) $meeting['teams_url'] ) ) : ?>
+								<div class="sc-ei-portal-action-row">
+									<a class="sc-ei-button sc-ei-button--primary" href="<?php echo esc_url( $meeting['teams_url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Open Microsoft Teams', 'sustainable-catalyst-engagement-intake' ); ?></a>
+									<?php if ( ! empty( $workflow_settings['workflow_allow_sender_ics'] ) ) : ?><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="sc_ei_portal_download_meeting_ics"><input type="hidden" name="portal_csrf" value="<?php echo esc_attr( $csrf_token ); ?>"><input type="hidden" name="meeting_offer_id" value="<?php echo esc_attr( $meeting['id'] ); ?>"><button type="submit" class="sc-ei-button"><?php esc_html_e( 'Download Calendar File', 'sustainable-catalyst-engagement-intake' ); ?></button></form><?php endif; ?>
+								</div>
+							<?php else : ?>
+								<p><?php esc_html_e( 'Your selected time is recorded. Sustainable Catalyst must add and finalize the Microsoft Teams link.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+							<?php endif; ?>
+						<?php elseif ( 'alternative_requested' === $meeting['status'] ) : ?>
+							<div class="sc-ei-portal-notice sc-ei-portal-notice--warning"><strong><?php esc_html_e( 'Alternative requested.', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo nl2br( esc_html( $meeting['alternative_request'] ) ); ?></div>
+						<?php elseif ( 'declined' === $meeting['status'] ) : ?>
+							<p><?php esc_html_e( 'You declined this meeting offer.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+						<?php endif; ?>
+					</article>
+				<?php endforeach; ?>
+			</div>
+		</section>
+	<?php elseif ( 'proposals' === $view ) : ?>
+		<section class="sc-ei-portal-card">
+			<h3><?php esc_html_e( 'Proposals', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<div class="sc-ei-portal-notice sc-ei-portal-notice--warning"><strong><?php esc_html_e( 'Important boundary:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Portal acceptance records intent to proceed to contracting. It is not an electronic signature, executed contract, payment authorization, or active engagement.', 'sustainable-catalyst-engagement-intake' ); ?></div>
+			<?php if ( ! $proposals ) : ?><p><?php esc_html_e( 'No proposals are available.', 'sustainable-catalyst-engagement-intake' ); ?></p><?php endif; ?>
+			<div class="sc-ei-workflow-portal-list">
+				<?php foreach ( $proposals as $proposal ) : $scope = json_decode( (string) $proposal['scope_json'], true ) ?: array(); $deliverables = json_decode( (string) $proposal['deliverables_json'], true ) ?: array(); $exclusions = json_decode( (string) $proposal['exclusions_json'], true ) ?: array(); $assumptions = json_decode( (string) $proposal['assumptions_json'], true ) ?: array(); ?>
+					<article class="sc-ei-portal-card sc-ei-portal-workflow-card">
+						<header class="sc-ei-portal-workflow-header">
+							<div><p class="sc-ei-portal__eyebrow"><?php echo esc_html( $proposal['proposal_number'] . ' · v' . absint( $proposal['version_number'] ) ); ?></p><h4><?php echo esc_html( $proposal['title'] ); ?></h4></div>
+							<span class="sc-ei-portal-workflow-state"><?php echo esc_html( SC_EI_Workflow_Schema::label( SC_EI_Workflow_Schema::proposal_statuses(), $proposal['status'] ) ); ?></span>
+						</header>
+						<p><?php echo nl2br( esc_html( $proposal['executive_summary'] ) ); ?></p>
+						<dl class="sc-ei-portal-details"><dt><?php esc_html_e( 'Value', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( SC_EI_Workflow_Schema::money_display( absint( $proposal['total_minor'] ), $proposal['currency'] ) ); ?></dd><dt><?php esc_html_e( 'Expires', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( get_date_from_gmt( $proposal['expires_at'], 'M j, Y g:i a' ) . ' UTC' ); ?></dd><dt><?php esc_html_e( 'Content integrity', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><code><?php echo esc_html( substr( $proposal['content_hash'], 0, 16 ) ); ?>…</code></dd></dl>
+						<div class="sc-ei-portal-proposal-columns">
+							<div><h5><?php esc_html_e( 'Scope', 'sustainable-catalyst-engagement-intake' ); ?></h5><ul><?php foreach ( $scope as $item ) : ?><li><?php echo esc_html( $item ); ?></li><?php endforeach; ?></ul></div>
+							<div><h5><?php esc_html_e( 'Deliverables', 'sustainable-catalyst-engagement-intake' ); ?></h5><ul><?php foreach ( $deliverables as $item ) : ?><li><?php echo esc_html( $item ); ?></li><?php endforeach; ?></ul></div>
+						</div>
+						<?php if ( $exclusions ) : ?><details><summary><?php esc_html_e( 'Exclusions', 'sustainable-catalyst-engagement-intake' ); ?></summary><ul><?php foreach ( $exclusions as $item ) : ?><li><?php echo esc_html( $item ); ?></li><?php endforeach; ?></ul></details><?php endif; ?>
+						<?php if ( $assumptions ) : ?><details><summary><?php esc_html_e( 'Assumptions', 'sustainable-catalyst-engagement-intake' ); ?></summary><ul><?php foreach ( $assumptions as $item ) : ?><li><?php echo esc_html( $item ); ?></li><?php endforeach; ?></ul></details><?php endif; ?>
+						<?php foreach ( array( 'timeline_text' => __( 'Timeline', 'sustainable-catalyst-engagement-intake' ), 'fee_summary' => __( 'Fee summary', 'sustainable-catalyst-engagement-intake' ), 'payment_terms' => __( 'Payment terms', 'sustainable-catalyst-engagement-intake' ), 'legal_terms' => __( 'Terms and boundaries', 'sustainable-catalyst-engagement-intake' ) ) as $field => $label ) : if ( empty( $proposal[ $field ] ) ) continue; ?><details><summary><?php echo esc_html( $label ); ?></summary><p><?php echo nl2br( esc_html( $proposal[ $field ] ) ); ?></p></details><?php endforeach; ?>
+						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-portal-print-form"><input type="hidden" name="action" value="sc_ei_portal_print_proposal"><input type="hidden" name="portal_csrf" value="<?php echo esc_attr( $csrf_token ); ?>"><input type="hidden" name="proposal_id" value="<?php echo esc_attr( $proposal['id'] ); ?>"><button type="submit" class="sc-ei-button"><?php esc_html_e( 'Open Print View', 'sustainable-catalyst-engagement-intake' ); ?></button></form>
+						<?php if ( 'published' === $proposal['status'] && ! $privacy_restricted && ! empty( $permissions['respond_proposals'] ) && ! empty( $workflow_settings['workflow_allow_proposal_acceptance'] ) ) : ?>
+							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-portal-form sc-ei-portal-proposal-response" data-proposal-number="<?php echo esc_attr( strtoupper( $proposal['proposal_number'] ) ); ?>">
+								<input type="hidden" name="action" value="sc_ei_portal_respond_proposal"><input type="hidden" name="portal_csrf" value="<?php echo esc_attr( $csrf_token ); ?>"><input type="hidden" name="proposal_id" value="<?php echo esc_attr( $proposal['id'] ); ?>">
+								<label><span><?php esc_html_e( 'Response', 'sustainable-catalyst-engagement-intake' ); ?></span><select name="proposal_response" data-sc-ei-proposal-response><?php foreach ( SC_EI_Workflow_Schema::sender_proposal_responses() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
+								<label><span><?php esc_html_e( 'Response note', 'sustainable-catalyst-engagement-intake' ); ?></span><textarea name="proposal_response_note" rows="4" maxlength="5000"></textarea></label>
+								<label class="sc-ei-check"><input type="checkbox" name="proposal_authority_attested" value="1"><span><?php esc_html_e( 'I am authorized to record this response for the sender organization.', 'sustainable-catalyst-engagement-intake' ); ?></span></label>
+								<label class="sc-ei-check"><input type="checkbox" name="proposal_boundary_acknowledged" value="1"><span><?php esc_html_e( 'I understand acceptance is pending external contracting and is not a signature, contract, payment, or active engagement.', 'sustainable-catalyst-engagement-intake' ); ?></span></label>
+								<label><span data-sc-ei-proposal-confirm-label><?php echo esc_html( 'Type ACCEPT ' . strtoupper( $proposal['proposal_number'] ) ); ?></span><input type="text" name="proposal_confirmation" required autocomplete="off"></label>
+								<button type="submit" class="sc-ei-button sc-ei-button--primary"><?php esc_html_e( 'Record Proposal Response', 'sustainable-catalyst-engagement-intake' ); ?></button>
+							</form>
+						<?php elseif ( 'accepted_pending_contract' === $proposal['status'] ) : ?>
+							<div class="sc-ei-portal-notice sc-ei-portal-notice--success"><strong><?php esc_html_e( 'Accepted for contracting.', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'No engagement is active until Sustainable Catalyst records an executed external contract.', 'sustainable-catalyst-engagement-intake' ); ?></div>
+						<?php elseif ( 'contracted' === $proposal['status'] ) : ?>
+							<div class="sc-ei-portal-notice sc-ei-portal-notice--success"><strong><?php esc_html_e( 'External contract recorded.', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Refer to the separately executed agreement for binding terms.', 'sustainable-catalyst-engagement-intake' ); ?></div>
+						<?php elseif ( 'declined' === $proposal['status'] ) : ?>
+							<p><?php esc_html_e( 'You declined this proposal.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+						<?php endif; ?>
+					</article>
+				<?php endforeach; ?>
+			</div>
+		</section>
 	<?php elseif ( 'preferences' === $view ) : ?>
 		<?php if ( ! $privacy_restricted && ! empty( $permissions['update_contact'] ) && ! empty( $settings['portal_allow_contact_updates'] ) ) : ?>
 			<section class="sc-ei-portal-card">

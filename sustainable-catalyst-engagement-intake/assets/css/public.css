@@ -1079,3 +1079,100 @@
 .sc-ei-portal--login .sc-ei-portal-security-grid {
   max-width: 980px;
 }
+
+
+/* v0.9.0 Teams scheduling and proposal workflow */
+.sc-ei-workflow-portal-list {
+  display: grid;
+  gap: 18px;
+}
+
+.sc-ei-portal-workflow-card {
+  border-top: 5px solid var(--portal-maroon);
+}
+
+.sc-ei-portal-workflow-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.sc-ei-portal-workflow-header h4 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.sc-ei-portal-workflow-state {
+  display: inline-block;
+  padding: 7px 10px;
+  background: var(--portal-cream);
+  border: 1px solid var(--portal-line);
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.sc-ei-portal-slot {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid var(--portal-line);
+  background: var(--portal-cream);
+  margin-bottom: 8px;
+}
+
+.sc-ei-portal-slot span,
+.sc-ei-portal-slot small {
+  display: block;
+}
+
+.sc-ei-portal-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.sc-ei-portal-action-row form,
+.sc-ei-portal-print-form {
+  margin: 0;
+}
+
+.sc-ei-portal-proposal-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 18px 0;
+}
+
+.sc-ei-portal-workflow-card details {
+  margin: 10px 0;
+  border: 1px solid var(--portal-line);
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.sc-ei-portal-workflow-card summary {
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.sc-ei-portal-proposal-response,
+.sc-ei-portal-meeting-response {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--portal-line);
+}
+
+@media (max-width: 700px) {
+  .sc-ei-portal-workflow-header,
+  .sc-ei-portal-proposal-columns {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .sc-ei-portal-workflow-state {
+    white-space: normal;
+  }
+}

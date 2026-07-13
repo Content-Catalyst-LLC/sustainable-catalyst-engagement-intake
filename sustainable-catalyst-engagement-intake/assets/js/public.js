@@ -623,4 +623,61 @@
     });
   });
 
+  document.querySelectorAll(".sc-ei-portal-meeting-response").forEach((form) => {
+    const response = form.querySelector("[data-sc-ei-meeting-response]");
+    const radios = Array.from(form.querySelectorAll("input[name='meeting_slot_key']"));
+    const sync = () => {
+      const accepting = response?.value === "accept";
+      radios.forEach((radio, index) => {
+        radio.required = accepting && index === 0 && !radios.some((item) => item.checked);
+      });
+    };
+    response?.addEventListener("change", sync);
+    radios.forEach((radio) => radio.addEventListener("change", sync));
+    form.addEventListener("submit", (event) => {
+      if (response?.value === "accept" && !radios.some((radio) => radio.checked)) {
+        event.preventDefault();
+        window.alert("Choose one of the offered meeting times.");
+        radios[0]?.focus();
+      }
+    });
+    sync();
+  });
+
+  document.querySelectorAll(".sc-ei-portal-proposal-response").forEach((form) => {
+    const proposalNumber = form.dataset.proposalNumber || "";
+    const response = form.querySelector("[data-sc-ei-proposal-response]");
+    const label = form.querySelector("[data-sc-ei-proposal-confirm-label]");
+    const input = form.querySelector("input[name='proposal_confirmation']");
+    const authority = form.querySelector("input[name='proposal_authority_attested']");
+    const boundary = form.querySelector("input[name='proposal_boundary_acknowledged']");
+    const note = form.querySelector("textarea[name='proposal_response_note']");
+    const sync = () => {
+      const accepting = response?.value === "accept";
+      const verb = accepting ? "ACCEPT" : "DECLINE";
+      const expected = `${verb} ${proposalNumber}`;
+      if (label) label.textContent = `Type ${expected}`;
+      if (input) input.placeholder = expected;
+      if (authority) authority.required = accepting;
+      if (boundary) boundary.required = accepting;
+      if (note) note.required = !accepting;
+    };
+    response?.addEventListener("change", sync);
+    form.addEventListener("submit", (event) => {
+      const verb = response?.value === "decline" ? "DECLINE" : "ACCEPT";
+      const expected = `${verb} ${proposalNumber}`;
+      if (!input || input.value.trim().toUpperCase() !== expected) {
+        event.preventDefault();
+        window.alert(`Type ${expected} exactly.`);
+        input?.focus();
+        return;
+      }
+      const message = verb === "ACCEPT"
+        ? "Record acceptance for external contracting? This is not an electronic signature or executed contract."
+        : "Record that you decline this proposal?";
+      if (!window.confirm(message)) event.preventDefault();
+    });
+    sync();
+  });
+
 })();

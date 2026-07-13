@@ -285,3 +285,19 @@ generic public request
 ```
 
 The recovery workflow never calls mail transport.
+
+
+## v0.9.0 Teams scheduling and proposal architecture
+
+```text
+workflow schema
+→ meeting and proposal repositories
+→ capability-gated administrator actions
+→ secure sender portal actions
+→ workflow event ledger
+→ audit, privacy, review, REST, and Diagnostics
+```
+
+Meeting and proposal records are separate from inquiry review and portal authentication records.
+
+Proposal versions are immutable. Published and pending version pointers prevent a draft revision from replacing sender-visible content before publication.

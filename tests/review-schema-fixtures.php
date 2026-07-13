@@ -123,4 +123,4 @@ if ( 'completed' !== $completed['due_state'] ) {
 }
 pass_review_schema( 'completed review suppresses overdue state' );
 
-echo "Engagement Intake v0.8.1 review schema fixtures passed.\n";
+echo "Engagement Intake v0.9.0 review schema fixtures passed.\n";

@@ -24,6 +24,10 @@ final class SC_EI_Portal_Public {
 				'sc_ei_portal_upload_documents'  => 'handle_upload',
 				'sc_ei_portal_update_contact'    => 'handle_contact',
 				'sc_ei_portal_update_scheduling' => 'handle_scheduling',
+				'sc_ei_portal_respond_meeting'   => 'handle_meeting_response',
+				'sc_ei_portal_download_meeting_ics' => 'handle_meeting_ics',
+				'sc_ei_portal_respond_proposal'  => 'handle_proposal_response',
+				'sc_ei_portal_print_proposal'    => 'handle_proposal_print',
 				'sc_ei_portal_privacy_request'   => 'handle_privacy_request',
 				'sc_ei_portal_withdrawal'        => 'handle_withdrawal',
 				'sc_ei_portal_revoke_access'     => 'handle_revoke_access',
@@ -104,6 +108,9 @@ final class SC_EI_Portal_Public {
 		$csrf_token = SC_EI_Portal_Session::csrf_token( $context );
 		$messages = SC_EI_Portal_Repository::portal_messages( absint( $inquiry['id'] ), 500 );
 		$attachments = SC_EI_Attachment_Repository::for_inquiry( absint( $inquiry['id'] ), false );
+		$workflow_settings = SC_EI_Workflow_Repository::settings();
+		$meeting_offers = SC_EI_Workflow_Repository::meeting_offers_for_inquiry( absint( $inquiry['id'] ), true );
+		$proposals = SC_EI_Workflow_Repository::proposals_for_inquiry( absint( $inquiry['id'] ), true );
 		$portal_url = SC_EI_Portal_Schema::sanitize_portal_page_url( (string) $settings['portal_page_url'] );
 		$effective_upload_limits = SC_EI_Upload_Environment::effective_limits( $settings );
 		$upload_extensions = array_values(
@@ -296,6 +303,177 @@ final class SC_EI_Portal_Public {
 		self::redirect( 'preferences', is_wp_error( $result ) ? '' : 'portal_scheduling_updated', is_wp_error( $result ) ? $result->get_error_code() : '' );
 	}
 
+	public static function handle_meeting_response(): void {
+		$context = self::require_context( 'respond_meetings' );
+		if ( is_wp_error( $context ) ) {
+			self::redirect( 'meetings', '', $context->get_error_code() );
+		}
+		if ( ! self::valid_csrf( $context ) ) {
+			self::redirect( 'meetings', '', 'portal_csrf_failed' );
+		}
+		if ( self::update_rate_limited( $context ) ) {
+			self::redirect( 'meetings', '', 'portal_rate_limited' );
+		}
+		$id = absint( $_POST['meeting_offer_id'] ?? 0 );
+		$offer = SC_EI_Workflow_Repository::find_meeting_offer( $id );
+		if ( ! $offer || absint( $offer['inquiry_id'] ) !== absint( $context['inquiry']['id'] ) ) {
+			self::redirect( 'meetings', '', 'workflow_meeting_unavailable' );
+		}
+		$result = SC_EI_Workflow_Repository::respond_to_meeting(
+			$id,
+			isset( $_POST['meeting_response'] ) ? sanitize_key( wp_unslash( $_POST['meeting_response'] ) ) : '',
+			isset( $_POST['meeting_slot_key'] ) ? sanitize_key( wp_unslash( $_POST['meeting_slot_key'] ) ) : '',
+			isset( $_POST['meeting_note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['meeting_note'] ) ) : '',
+			absint( $context['session']['id'] )
+		);
+		if ( ! is_wp_error( $result ) ) {
+			SC_EI_Portal_Repository::record_event(
+				'meeting_response_recorded',
+				absint( $context['inquiry']['id'] ),
+				absint( $context['access']['id'] ),
+				absint( $context['session']['id'] ),
+				'meeting',
+				$id,
+				'success',
+				array( 'status' => $result['status'], 'automatic_booking' => false )
+			);
+		}
+		self::redirect( 'meetings', is_wp_error( $result ) ? '' : 'portal_meeting_response_saved', is_wp_error( $result ) ? $result->get_error_code() : '' );
+	}
+
+	public static function handle_meeting_ics(): void {
+		$context = self::require_context( 'view_meetings' );
+		if ( is_wp_error( $context ) ) {
+			self::redirect( 'meetings', '', $context->get_error_code() );
+		}
+		if ( ! self::valid_csrf( $context ) ) {
+			self::redirect( 'meetings', '', 'portal_csrf_failed' );
+		}
+		$id = absint( $_POST['meeting_offer_id'] ?? 0 );
+		$offer = SC_EI_Workflow_Repository::find_meeting_offer( $id );
+		if (
+			! $offer
+			|| absint( $offer['inquiry_id'] ) !== absint( $context['inquiry']['id'] )
+			|| 'scheduled' !== $offer['status']
+			|| empty( $offer['selected_start_utc'] )
+			|| empty( $offer['selected_end_utc'] )
+			|| ! SC_EI_Teams::is_teams_url( (string) $offer['teams_url'] )
+			|| empty( SC_EI_Workflow_Repository::settings()['workflow_allow_sender_ics'] )
+		) {
+			self::redirect( 'meetings', '', 'workflow_ics_unavailable' );
+		}
+		SC_EI_Workflow_Repository::note_portal_activity(
+			absint( $offer['inquiry_id'] ),
+			absint( $context['session']['id'] ),
+			'meeting',
+			$id,
+			'meeting_ics_downloaded',
+			array( 'offer_number' => $offer['offer_number'] )
+		);
+		SC_EI_Portal_Repository::record_event(
+			'meeting_ics_downloaded',
+			absint( $context['inquiry']['id'] ),
+			absint( $context['access']['id'] ),
+			absint( $context['session']['id'] ),
+			'meeting',
+			$id,
+			'success'
+		);
+		nocache_headers();
+		header( 'Content-Type: text/calendar; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . sanitize_file_name( strtolower( $offer['offer_number'] ) . '.ics' ) . '"' );
+		header( 'X-Content-Type-Options: nosniff' );
+		echo SC_EI_Workflow_Repository::meeting_ics( $offer, $context['inquiry'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		exit;
+	}
+
+	public static function handle_proposal_response(): void {
+		$context = self::require_context( 'respond_proposals' );
+		if ( is_wp_error( $context ) ) {
+			self::redirect( 'proposals', '', $context->get_error_code() );
+		}
+		if ( ! self::valid_csrf( $context ) ) {
+			self::redirect( 'proposals', '', 'portal_csrf_failed' );
+		}
+		if ( self::update_rate_limited( $context ) ) {
+			self::redirect( 'proposals', '', 'portal_rate_limited' );
+		}
+		if ( empty( SC_EI_Workflow_Repository::settings()['workflow_allow_proposal_acceptance'] ) ) {
+			self::redirect( 'proposals', '', 'workflow_proposal_response_disabled' );
+		}
+		$id = absint( $_POST['proposal_id'] ?? 0 );
+		$proposal = SC_EI_Workflow_Repository::find_proposal( $id, true );
+		if ( ! $proposal || absint( $proposal['inquiry_id'] ) !== absint( $context['inquiry']['id'] ) ) {
+			self::redirect( 'proposals', '', 'workflow_proposal_unavailable' );
+		}
+		$result = SC_EI_Workflow_Repository::respond_to_proposal(
+			$id,
+			isset( $_POST['proposal_response'] ) ? sanitize_key( wp_unslash( $_POST['proposal_response'] ) ) : '',
+			isset( $_POST['proposal_response_note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['proposal_response_note'] ) ) : '',
+			! empty( $_POST['proposal_authority_attested'] ),
+			! empty( $_POST['proposal_boundary_acknowledged'] ),
+			isset( $_POST['proposal_confirmation'] ) ? sanitize_text_field( wp_unslash( $_POST['proposal_confirmation'] ) ) : '',
+			absint( $context['session']['id'] )
+		);
+		if ( ! is_wp_error( $result ) ) {
+			SC_EI_Portal_Repository::record_event(
+				'proposal_response_recorded',
+				absint( $context['inquiry']['id'] ),
+				absint( $context['access']['id'] ),
+				absint( $context['session']['id'] ),
+				'proposal',
+				$id,
+				'success',
+				array( 'status' => $result['status'], 'automatic_contract' => false, 'automatic_payment' => false )
+			);
+		}
+		self::redirect( 'proposals', is_wp_error( $result ) ? '' : 'portal_proposal_response_saved', is_wp_error( $result ) ? $result->get_error_code() : '' );
+	}
+
+	public static function handle_proposal_print(): void {
+		$context = self::require_context( 'view_proposals' );
+		if ( is_wp_error( $context ) ) {
+			self::redirect( 'proposals', '', $context->get_error_code() );
+		}
+		if ( ! self::valid_csrf( $context ) ) {
+			self::redirect( 'proposals', '', 'portal_csrf_failed' );
+		}
+		$id = absint( $_POST['proposal_id'] ?? 0 );
+		$proposal = SC_EI_Workflow_Repository::find_proposal( $id, true );
+		if (
+			! $proposal
+			|| absint( $proposal['inquiry_id'] ) !== absint( $context['inquiry']['id'] )
+			|| ! in_array( $proposal['status'], array( 'published', 'accepted_pending_contract', 'declined', 'contracted', 'withdrawn', 'expired', 'superseded' ), true )
+		) {
+			self::redirect( 'proposals', '', 'workflow_proposal_unavailable' );
+		}
+		SC_EI_Workflow_Repository::note_portal_activity(
+			absint( $proposal['inquiry_id'] ),
+			absint( $context['session']['id'] ),
+			'proposal',
+			$id,
+			'proposal_print_viewed',
+			array( 'proposal_number' => $proposal['proposal_number'] )
+		);
+		SC_EI_Portal_Repository::record_event(
+			'proposal_print_viewed',
+			absint( $context['inquiry']['id'] ),
+			absint( $context['access']['id'] ),
+			absint( $context['session']['id'] ),
+			'proposal',
+			$id,
+			'success'
+		);
+		nocache_headers();
+		header( 'Content-Type: text/html; charset=utf-8' );
+		header( 'Content-Security-Policy: default-src \'none\'; style-src \'unsafe-inline\'; img-src data:; base-uri \'none\'; form-action \'none\'; frame-ancestors \'none\'' );
+		header( 'Referrer-Policy: no-referrer' );
+		header( 'X-Frame-Options: DENY' );
+		$inquiry = $context['inquiry'];
+		include SC_EI_DIR . 'public/views/proposal-print.php';
+		exit;
+	}
+
 	public static function handle_privacy_request(): void {
 		$context = self::require_context( 'privacy_requests' );
 		if ( is_wp_error( $context ) ) {
@@ -391,7 +569,7 @@ final class SC_EI_Portal_Public {
 		$settings = SC_EI_Portal_Repository::settings();
 		$limited = SC_EI_Portal_Repository::rate_limited(
 			absint( $context['session']['id'] ),
-			array( 'contact_updated', 'scheduling_updated', 'privacy_request_created', 'withdrawal_requested', 'withdrawal_canceled', 'document_uploaded' ),
+			array( 'contact_updated', 'scheduling_updated', 'meeting_response_recorded', 'proposal_response_recorded', 'privacy_request_created', 'withdrawal_requested', 'withdrawal_canceled', 'document_uploaded' ),
 			absint( $settings['portal_update_rate_limit_hour'] )
 		);
 		if ( $limited ) {

@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-VERSION="0.8.1"
+VERSION="0.9.0"
 PLUGIN_SLUG="sustainable-catalyst-engagement-intake"
 REPO_ARCHIVE_BASENAME="${PLUGIN_SLUG}-v${VERSION}-repo.zip"
 
@@ -16,7 +16,7 @@ SKIP_PUSH="${SC_EI_SKIP_PUSH:-0}"
 SKIP_REMOTE_CHECK="${SC_EI_SKIP_REMOTE_CHECK:-0}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v081.XXXXXX")"
+WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v090.XXXXXX")"
 
 cleanup() {
   rm -rf "${WORK_DIR}"
@@ -118,53 +118,56 @@ find_source_directory() {
 validate_release_markers() {
   local main_file="${REPO_DIR}/${PLUGIN_SLUG}/${PLUGIN_SLUG}.php"
   local database="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-database.php"
-  local portal_schema="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-portal-schema.php"
-  local portal_repo="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-portal-repository.php"
-  local portal_session="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-portal-session.php"
+  local workflow_schema="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-workflow-schema.php"
+  local workflow_repo="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-workflow-repository.php"
+  local workflow_admin="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-workflow-admin.php"
   local portal_public="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-portal-public.php"
-  local portal_admin="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-portal-admin.php"
+  local portal_view="${REPO_DIR}/${PLUGIN_SLUG}/public/views/sender-portal.php"
+  local proposal_print="${REPO_DIR}/${PLUGIN_SLUG}/public/views/proposal-print.php"
 
   grep -Fq "Version:     ${VERSION}" "${main_file}" || die "Plugin version marker is missing."
-  grep -Fq "SC_EI_DB_VERSION', '0.8.1'" "${main_file}" || die "Database version marker 0.8.1 is missing."
-  grep -Fq "SC_EI_PORTAL_SCHEMA_VERSION', '1.1.0'" "${main_file}" || die "Portal schema marker 1.1.0 is missing."
+  grep -Fq "SC_EI_DB_VERSION', '0.9.0'" "${main_file}" || die "Database version marker 0.9.0 is missing."
+  grep -Fq "SC_EI_PORTAL_SCHEMA_VERSION', '1.2.0'" "${main_file}" || die "Portal schema marker 1.2.0 is missing."
+  grep -Fq "SC_EI_WORKFLOW_SCHEMA_VERSION', '1.0.0'" "${main_file}" || die "Workflow schema marker 1.0.0 is missing."
 
-  grep -Fq '$sql_portal_recovery_requests' "${database}" || die "Portal recovery table declaration is missing."
-  grep -Fq 'dbDelta( $sql_portal_recovery_requests )' "${database}" || die "Portal recovery table installation is missing."
+  grep -Fq '$sql_meeting_offers' "${database}" || die "Meeting-offer table declaration is missing."
+  grep -Fq '$sql_proposals' "${database}" || die "Proposal table declaration is missing."
+  grep -Fq '$sql_proposal_versions' "${database}" || die "Proposal-version table declaration is missing."
+  grep -Fq '$sql_workflow_events' "${database}" || die "Workflow-event table declaration is missing."
+  grep -Fq 'pending_version_id bigint' "${database}" || die "Pending proposal version pointer is missing."
 
-  grep -Fq "__Host-sc_ei_sender_session" "${portal_schema}" || die "__Host production cookie marker is missing."
-  grep -Fq "LEGACY_COOKIE_NAME" "${portal_schema}" || die "Legacy-cookie migration marker is missing."
-  grep -Fq "portal_require_https" "${portal_schema}" || die "HTTPS authentication policy is missing."
+  grep -Fq "'workflow_no_auto_calendar'         => 1" "${workflow_schema}" || die "No-calendar safeguard is missing."
+  grep -Fq "'workflow_no_auto_contract'         => 1" "${workflow_schema}" || die "No-contract safeguard is missing."
+  grep -Fq "'workflow_no_auto_payment'          => 1" "${workflow_schema}" || die "No-payment safeguard is missing."
 
-  grep -Fq "inspect_invitation" "${portal_repo}" || die "Invitation-state inspection is missing."
-  grep -Fq "START TRANSACTION" "${portal_repo}" || die "Atomic activation transaction is missing."
-  grep -Fq "create_session( \$fresh_access, false )" "${portal_repo}" || die "Session creation is outside the activation transaction."
-  grep -Fq "activation_rolled_back" "${portal_repo}" || die "Safe activation rollback evidence is missing."
-  grep -Fq "'lockout_incremented' => false" "${portal_repo}" || die "Wrong-token lockout isolation is missing."
-  grep -Fq "request_recovery" "${portal_repo}" || die "Sender recovery request implementation is missing."
-  grep -Fq "review_recovery" "${portal_repo}" || die "Human recovery review implementation is missing."
-  grep -Fq "event_type IN ('recovery_requested','recovery_request_unmatched')" "${portal_repo}" \
-    || die "Matched and unmatched recovery attempts do not share throttling."
+  grep -Fq "SC_EI_Teams::is_teams_url" "${workflow_repo}" || die "Teams URL validation is missing."
+  grep -Fq "METHOD:PUBLISH" "${workflow_repo}" || die "Authenticated ICS generation is missing."
+  grep -Fq "'content_hash'       => hash( 'sha256'" "${workflow_repo}" || die "Proposal content hashing is missing."
+  grep -Fq "COALESCE(p.pending_version_id, p.current_version_id)" "${workflow_repo}" || die "Administrative pending-version lookup is missing."
+  grep -Fq "'current_version_id' => absint( \$proposal['pending_version_id'] )" "${workflow_repo}" || die "Proposal version promotion is missing."
+  grep -Fq "'status'          => 'accepted_pending_contract'" "${workflow_repo}" || die "Non-contract proposal acceptance state is missing."
+  grep -Fq "'automatic_contract'  => false" "${workflow_repo}" || die "Automatic-contract prohibition is missing."
+  grep -Fq "'automatic_payment'   => false" "${workflow_repo}" || die "Automatic-payment prohibition is missing."
 
-  grep -Fq "'secure'   => true" "${portal_session}" || die "Secure production cookie is missing."
-  grep -Fq "'httponly' => true" "${portal_session}" || die "HttpOnly cookie is missing."
-  grep -Fq "'samesite' => 'Strict'" "${portal_session}" || die "SameSite Strict cookie is missing."
-  if grep -Fq "'domain'" "${portal_session}"; then
-    die "__Host cookie implementation contains a Domain attribute."
+  grep -Fq "'SCHEDULE ' . strtoupper" "${workflow_admin}" || die "Typed meeting finalization is missing."
+  grep -Fq "'CONTRACT ' : 'WITHDRAW '" "${workflow_admin}" || die "Typed proposal contract or withdrawal control is missing."
+
+  grep -Fq "sc_ei_portal_respond_meeting" "${portal_public}" || die "Portal meeting response action is missing."
+  grep -Fq "sc_ei_portal_respond_proposal" "${portal_public}" || die "Portal proposal response action is missing."
+  grep -Fq "handle_proposal_print" "${portal_public}" || die "Authenticated proposal print action is missing."
+  grep -Fq "Content-Security-Policy" "${portal_public}" || die "Proposal print CSP is missing."
+
+  grep -Fq "not an electronic signature, executed contract, payment authorization, or active engagement" "${portal_view}" \
+    || die "Sender-facing proposal boundary is missing."
+  if grep -Fq "onclick=" "${proposal_print}"; then
+    die "Proposal print view contains inline script."
   fi
 
-  grep -Fq "redirect_activation" "${portal_public}" || die "Correctable activation redirect is missing."
-  grep -Fq "sc_ei_portal_recovery" "${portal_public}" || die "Public recovery action is missing."
-  grep -Fq "portal_activation_form_expired" "${portal_public}" || die "Expired activation form recovery is missing."
-
-  grep -Fq "'RECOVER ' : 'DECLINE '" "${portal_admin}" || die "Typed recovery decision is missing."
-  grep -Fq "'UNLOCK ' . \$access_id" "${portal_admin}" || die "Typed invitation unlock is missing."
-  grep -Fq "sc_intake_manage_portal_recovery" "${portal_admin}" || die "Recovery management capability boundary is missing."
-
-  if grep -Fq "wp_create_user" "${portal_repo}" || grep -Fq "wp_insert_user" "${portal_repo}"; then
-    die "The portal repository contains WordPress sender-user creation."
+  if grep -Fq "graph.microsoft.com" "${workflow_repo}"; then
+    die "Workflow repository contains Microsoft Graph booking."
   fi
-  if grep -Fq "wp_mail(" "${portal_repo}"; then
-    die "The portal repository contains automatic email delivery."
+  if grep -Fq "wp_mail(" "${workflow_repo}"; then
+    die "Workflow repository contains automatic email delivery."
   fi
 }
 
@@ -188,6 +191,8 @@ run_release_tests() {
     "tests/portal-schema-fixtures.php"
     "tests/portal-operations.php"
     "tests/portal-auth-recovery.php"
+    "tests/workflow-schema-fixtures.php"
+    "tests/workflow-operations.php"
     "tests/schema-mapping.php"
   )
 
@@ -276,7 +281,7 @@ validate_release_markers
 log "Running push-safe secret scan..."
 if grep -RInE -I \
   --exclude-dir=.git \
-  --exclude='PUSH_ENGAGEMENT_INTAKE_V081_CLEAN.sh' \
+  --exclude='PUSH_ENGAGEMENT_INTAKE_V090_CLEAN.sh' \
   '(AIza[0-9A-Za-z_-]{20,}|sk-[0-9A-Za-z]{20,}|ghp_[0-9A-Za-z]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' \
   "${REPO_DIR}"
 then

@@ -354,4 +354,30 @@
     });
   });
 
+  document.querySelectorAll(".sc-ei-inline-confirm-form").forEach((form) => {
+    const meetingStatus = form.querySelector("select[name='meeting_status']");
+    const meetingConfirmation = form.querySelector("input[name='meeting_confirmation']");
+    const meetingId = form.querySelector("input[name='meeting_offer_id']")?.value || "";
+    const syncMeeting = () => {
+      if (!meetingStatus || !meetingConfirmation) return;
+      const record = form.closest(".sc-ei-workflow-record")?.querySelector("header strong")?.textContent?.split(" · ")[0] || meetingId;
+      const verb = meetingStatus.value === "canceled" ? "CANCEL" : "COMPLETE";
+      meetingConfirmation.placeholder = `${verb} ${record}`;
+    };
+    meetingStatus?.addEventListener("change", syncMeeting);
+    syncMeeting();
+  });
+
+  document.querySelectorAll(".sc-ei-workflow-admin form").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      const publishNow = form.querySelector("input[name='publish_now']");
+      const publishConfirmation = form.querySelector("input[name='publish_confirmation']");
+      if (publishNow?.checked && publishConfirmation && !publishConfirmation.value.trim()) {
+        event.preventDefault();
+        window.alert("Enter the required PUBLISH confirmation.");
+        publishConfirmation.focus();
+      }
+    });
+  });
+
 })();

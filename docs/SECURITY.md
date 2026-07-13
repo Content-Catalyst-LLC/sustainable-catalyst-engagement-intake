@@ -330,3 +330,31 @@ For higher-risk intake:
 - typed recovery and unlock confirmations
 - no automatic invitation email
 - recovery privacy export and erasure
+
+
+## v0.9.0 Teams and proposal controls
+
+- Microsoft Teams only
+- no Microsoft Graph booking
+- no automatic calendar event
+- no automatic workflow email
+- capability-gated draft creation
+- separate publication capabilities
+- typed publication and finalization
+- validated Teams URLs
+- portal CSRF and permission checks
+- inquiry ownership checks
+- privacy-state response blocking
+- optimistic status and row-version updates
+- authenticated ICS
+- authenticated no-store proposal print
+- immutable proposal versions
+- SHA-256 proposal hashes
+- separate published and pending version pointers
+- typed sender acceptance and decline
+- authority attestation
+- non-contract acknowledgment
+- no electronic signature
+- no payment collection
+- human external-contract attestation
+- workflow privacy export and erasure

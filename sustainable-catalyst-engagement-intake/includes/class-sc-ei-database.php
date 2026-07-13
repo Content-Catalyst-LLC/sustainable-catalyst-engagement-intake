@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'proposals', 'proposal_versions', 'workflow_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -38,6 +38,10 @@ final class SC_EI_Database {
 		$portal_sessions = self::table( 'portal_sessions' );
 		$portal_events = self::table( 'portal_events' );
 		$portal_recovery_requests = self::table( 'portal_recovery_requests' );
+		$meeting_offers = self::table( 'meeting_offers' );
+		$proposals = self::table( 'proposals' );
+		$proposal_versions = self::table( 'proposal_versions' );
+		$workflow_events = self::table( 'workflow_events' );
 		$communication_templates = self::table( 'communication_templates' );
 		$privacy_requests = self::table( 'privacy_requests' );
 		$consent_events = self::table( 'consent_events' );
@@ -534,6 +538,149 @@ final class SC_EI_Database {
 			KEY completed_at (completed_at)
 		) {$charset_collate};";
 
+
+		$sql_meeting_offers = "CREATE TABLE {$meeting_offers} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			access_id bigint(20) unsigned NOT NULL,
+			offer_number varchar(40) NOT NULL DEFAULT '',
+			status varchar(40) NOT NULL DEFAULT 'draft',
+			title varchar(255) NOT NULL DEFAULT '',
+			purpose longtext NULL,
+			duration_minutes smallint(5) unsigned NOT NULL DEFAULT 30,
+			timezone varchar(120) NOT NULL DEFAULT '',
+			slots_json longtext NULL,
+			selected_slot_key varchar(40) NOT NULL DEFAULT '',
+			selected_start_utc datetime NULL,
+			selected_end_utc datetime NULL,
+			teams_url text NULL,
+			sender_note longtext NULL,
+			alternative_request longtext NULL,
+			admin_note longtext NULL,
+			expires_at datetime NOT NULL,
+			published_by bigint(20) unsigned NULL,
+			published_at datetime NULL,
+			responded_at datetime NULL,
+			finalized_by bigint(20) unsigned NULL,
+			finalized_at datetime NULL,
+			completed_at datetime NULL,
+			canceled_at datetime NULL,
+			cancellation_reason longtext NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY offer_number (offer_number),
+			KEY inquiry_id (inquiry_id),
+			KEY access_id (access_id),
+			KEY status (status),
+			KEY expires_at (expires_at),
+			KEY selected_start_utc (selected_start_utc),
+			KEY published_by (published_by),
+			KEY finalized_by (finalized_by),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql_proposals = "CREATE TABLE {$proposals} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			access_id bigint(20) unsigned NOT NULL,
+			proposal_number varchar(40) NOT NULL DEFAULT '',
+			status varchar(40) NOT NULL DEFAULT 'draft',
+			current_version_id bigint(20) unsigned NULL,
+			pending_version_id bigint(20) unsigned NULL,
+			currency char(3) NOT NULL DEFAULT 'USD',
+			total_minor bigint(20) unsigned NOT NULL DEFAULT 0,
+			expires_at datetime NOT NULL,
+			published_by bigint(20) unsigned NULL,
+			published_at datetime NULL,
+			sender_response varchar(30) NOT NULL DEFAULT '',
+			sender_response_note longtext NULL,
+			sender_authority_attested tinyint(1) unsigned NOT NULL DEFAULT 0,
+			boundary_acknowledged tinyint(1) unsigned NOT NULL DEFAULT 0,
+			responded_at datetime NULL,
+			accepted_at datetime NULL,
+			declined_at datetime NULL,
+			withdrawn_at datetime NULL,
+			superseded_by_id bigint(20) unsigned NULL,
+			contract_reference varchar(191) NOT NULL DEFAULT '',
+			contracted_by bigint(20) unsigned NULL,
+			contracted_at datetime NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY proposal_number (proposal_number),
+			KEY inquiry_id (inquiry_id),
+			KEY access_id (access_id),
+			KEY status (status),
+			KEY current_version_id (current_version_id),
+			KEY pending_version_id (pending_version_id),
+			KEY expires_at (expires_at),
+			KEY published_by (published_by),
+			KEY superseded_by_id (superseded_by_id),
+			KEY contracted_by (contracted_by),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql_proposal_versions = "CREATE TABLE {$proposal_versions} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			proposal_id bigint(20) unsigned NOT NULL,
+			version_number int(10) unsigned NOT NULL DEFAULT 1,
+			title varchar(255) NOT NULL DEFAULT '',
+			executive_summary longtext NULL,
+			scope_json longtext NULL,
+			deliverables_json longtext NULL,
+			exclusions_json longtext NULL,
+			assumptions_json longtext NULL,
+			timeline_text longtext NULL,
+			fee_summary longtext NULL,
+			payment_terms longtext NULL,
+			legal_terms longtext NULL,
+			version_note longtext NULL,
+			content_hash char(64) NOT NULL DEFAULT '',
+			created_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY proposal_version (proposal_id, version_number),
+			KEY proposal_id (proposal_id),
+			KEY version_number (version_number),
+			KEY content_hash (content_hash),
+			KEY created_by (created_by),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql_workflow_events = "CREATE TABLE {$workflow_events} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			actor_type varchar(30) NOT NULL DEFAULT 'system',
+			actor_id bigint(20) unsigned NULL,
+			object_type varchar(30) NOT NULL DEFAULT '',
+			object_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			event_type varchar(80) NOT NULL DEFAULT '',
+			from_status varchar(40) NOT NULL DEFAULT '',
+			to_status varchar(40) NOT NULL DEFAULT '',
+			context_json longtext NULL,
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY inquiry_id (inquiry_id),
+			KEY actor_type (actor_type),
+			KEY actor_id (actor_id),
+			KEY object_type_id (object_type, object_id),
+			KEY event_type (event_type),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
 		$sql_communications = "CREATE TABLE {$communications} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			inquiry_id bigint(20) unsigned NOT NULL,
@@ -827,6 +974,10 @@ final class SC_EI_Database {
 		dbDelta( $sql_portal_sessions );
 		dbDelta( $sql_portal_events );
 		dbDelta( $sql_portal_recovery_requests );
+		dbDelta( $sql_meeting_offers );
+		dbDelta( $sql_proposals );
+		dbDelta( $sql_proposal_versions );
+		dbDelta( $sql_workflow_events );
 		dbDelta( $sql_communications );
 		dbDelta( $sql_communication_events );
 		dbDelta( $sql_communication_templates );
@@ -952,7 +1103,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'proposals', 'proposal_versions', 'workflow_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -1207,6 +1358,51 @@ final class SC_EI_Database {
 		return $result;
 	}
 
+	public static function workflow_columns_exist(): array {
+		global $wpdb;
+
+		$tables = array(
+			'meeting_offers' => array(
+				'public_id', 'inquiry_id', 'access_id', 'offer_number', 'status', 'title',
+				'purpose', 'duration_minutes', 'timezone', 'slots_json', 'selected_slot_key',
+				'selected_start_utc', 'selected_end_utc', 'teams_url', 'sender_note',
+				'alternative_request', 'admin_note', 'expires_at', 'published_by',
+				'published_at', 'responded_at', 'finalized_by', 'finalized_at',
+				'completed_at', 'canceled_at', 'cancellation_reason', 'row_version',
+				'created_by', 'created_at', 'updated_at',
+			),
+			'proposals' => array(
+				'public_id', 'inquiry_id', 'access_id', 'proposal_number', 'status',
+				'current_version_id', 'pending_version_id', 'currency', 'total_minor', 'expires_at', 'published_by',
+				'published_at', 'sender_response', 'sender_response_note',
+				'sender_authority_attested', 'boundary_acknowledged', 'responded_at',
+				'accepted_at', 'declined_at', 'withdrawn_at', 'superseded_by_id',
+				'contract_reference', 'contracted_by', 'contracted_at', 'row_version',
+				'created_by', 'created_at', 'updated_at',
+			),
+			'proposal_versions' => array(
+				'public_id', 'proposal_id', 'version_number', 'title', 'executive_summary',
+				'scope_json', 'deliverables_json', 'exclusions_json', 'assumptions_json',
+				'timeline_text', 'fee_summary', 'payment_terms', 'legal_terms', 'version_note',
+				'content_hash', 'created_by', 'created_at',
+			),
+			'workflow_events' => array(
+				'public_id', 'inquiry_id', 'actor_type', 'actor_id', 'object_type',
+				'object_id', 'event_type', 'from_status', 'to_status', 'context_json',
+				'created_at',
+			),
+		);
+		$result = array();
+		foreach ( $tables as $table_name => $columns ) {
+			$table = self::table( $table_name );
+			foreach ( $columns as $column ) {
+				$found = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$result[ $table_name . '.' . $column ] = ( $found === $column );
+			}
+		}
+		return $result;
+	}
+
 	public static function privacy_columns_exist(): array {
 		global $wpdb;
 
@@ -1296,7 +1492,7 @@ final class SC_EI_Database {
 	public static function drop_all(): void {
 		global $wpdb;
 
-		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
+		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'workflow_events', 'proposal_versions', 'proposals', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
 			$table = self::table( $name );
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}

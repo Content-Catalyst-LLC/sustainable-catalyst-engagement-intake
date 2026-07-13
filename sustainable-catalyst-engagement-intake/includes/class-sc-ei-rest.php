@@ -113,6 +113,9 @@ final class SC_EI_REST {
 		if ( current_user_can( 'sc_intake_view_sender_portal' ) ) {
 			$record['sender_portal'] = SC_EI_Portal_Repository::export_for_inquiry( absint( $request['id'] ) );
 		}
+		if ( current_user_can( 'sc_intake_view_workflow' ) ) {
+			$record['teams_proposal_workflow'] = SC_EI_Workflow_Repository::export_for_inquiry( absint( $request['id'] ) );
+		}
 		if ( current_user_can( 'sc_intake_view_fit_assessments' ) ) {
 			$record['fit_assessment'] = ! empty( $record['current_fit_assessment_id'] )
 				? SC_EI_Fit_Repository::find( absint( $record['current_fit_assessment_id'] ) )

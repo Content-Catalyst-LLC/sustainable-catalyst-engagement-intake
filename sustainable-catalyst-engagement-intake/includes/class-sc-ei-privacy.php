@@ -325,6 +325,103 @@ final class SC_EI_Privacy {
 				);
 			}
 
+			$workflow = SC_EI_Workflow_Repository::export_for_inquiry( $inquiry_id );
+			foreach ( (array) ( $workflow['meeting_offers'] ?? array() ) as $meeting ) {
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-teams-meetings',
+					'group_label' => __( 'Engagement Intake Microsoft Teams Scheduling', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-meeting-' . $meeting['id'],
+					'data'        => self::export_fields(
+						$meeting,
+						array(
+							'offer_number'       => 'Meeting offer number',
+							'status'             => 'Meeting state',
+							'title'              => 'Meeting title',
+							'purpose'            => 'Meeting purpose',
+							'duration_minutes'   => 'Duration in minutes',
+							'timezone'           => 'Timezone',
+							'slots_json'         => 'Proposed times',
+							'selected_start_utc' => 'Selected start UTC',
+							'selected_end_utc'   => 'Selected end UTC',
+							'teams_url'          => 'Microsoft Teams URL',
+							'sender_note'        => 'Sender response note',
+							'alternative_request'=> 'Alternative time request',
+							'expires_at'         => 'Offer expires at',
+							'published_at'       => 'Published at',
+							'responded_at'       => 'Responded at',
+							'finalized_at'       => 'Finalized at',
+							'completed_at'       => 'Completed at',
+							'canceled_at'        => 'Canceled at',
+							'cancellation_reason'=> 'Cancellation reason',
+							'created_at'         => 'Created at',
+							'updated_at'         => 'Updated at',
+						)
+					),
+				);
+			}
+			foreach ( (array) ( $workflow['proposals'] ?? array() ) as $proposal ) {
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-proposals',
+					'group_label' => __( 'Engagement Intake Proposals', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-proposal-' . $proposal['id'],
+					'data'        => self::export_fields(
+						$proposal,
+						array(
+							'proposal_number'            => 'Proposal number',
+							'status'                     => 'Proposal state',
+							'version_number'             => 'Current version',
+							'title'                      => 'Proposal title',
+							'executive_summary'          => 'Executive summary',
+							'scope_json'                 => 'Scope',
+							'deliverables_json'          => 'Deliverables',
+							'exclusions_json'            => 'Exclusions',
+							'assumptions_json'           => 'Assumptions',
+							'timeline_text'              => 'Timeline',
+							'fee_summary'                => 'Fee summary',
+							'payment_terms'              => 'Payment terms',
+							'legal_terms'                => 'Terms and boundaries',
+							'currency'                   => 'Currency',
+							'total_minor'                => 'Total minor currency units',
+							'expires_at'                 => 'Proposal expires at',
+							'published_at'               => 'Published at',
+							'sender_response'            => 'Sender response',
+							'sender_response_note'       => 'Sender response note',
+							'sender_authority_attested'  => 'Authority attested',
+							'boundary_acknowledged'      => 'Non-contract boundary acknowledged',
+							'responded_at'               => 'Responded at',
+							'accepted_at'                => 'Accepted at',
+							'declined_at'                => 'Declined at',
+							'withdrawn_at'               => 'Withdrawn at',
+							'contract_reference'         => 'External contract reference',
+							'contracted_at'              => 'External contract recorded at',
+							'content_hash'               => 'Current version content hash',
+							'created_at'                 => 'Created at',
+							'updated_at'                 => 'Updated at',
+						)
+					),
+				);
+			}
+			foreach ( (array) ( $workflow['events'] ?? array() ) as $workflow_event ) {
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-workflow-events',
+					'group_label' => __( 'Engagement Intake Scheduling and Proposal Events', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-workflow-event-' . $workflow_event['id'],
+					'data'        => self::export_fields(
+						$workflow_event,
+						array(
+							'actor_type'   => 'Actor type',
+							'object_type'  => 'Object type',
+							'object_id'    => 'Object ID',
+							'event_type'   => 'Event type',
+							'from_status'  => 'Previous state',
+							'to_status'    => 'New state',
+							'context_json' => 'Event context',
+							'created_at'   => 'Occurred at',
+						)
+					),
+				);
+			}
+
 			foreach ( SC_EI_Attachment_Repository::for_inquiry( $inquiry_id, true ) as $attachment ) {
 				$data[] = array(
 					'group_id'    => 'sc-engagement-intake-documents',
@@ -476,7 +573,7 @@ final class SC_EI_Privacy {
 	/**
 	 * WordPress eraser bridge.
 	 *
-	 * v0.8.1 retains the queue-only behavior introduced in v0.6.0 and does not erase synchronously. It creates a tracked case and queues
+	 * v0.9.0 retains the queue-only behavior introduced in v0.6.0 and does not erase synchronously. It creates a tracked case and queues
 	 * legal-hold-aware lifecycle actions for human approval and verified execution.
 	 */
 	public static function erase_by_email( string $email_address, int $page = 1 ): array {

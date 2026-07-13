@@ -75,4 +75,9 @@ Completed. Passwordless one-time invitations, email challenge, revocable session
 
 ## v0.8.1 — Portal Authentication and Recovery Patch
 
-Current release. Atomic invitation activation, wrong-token lockout isolation, `__Host-` cookie migration, invitation-state recovery, non-enumerating sender recovery requests, human approval and decline, typed lockout reset, recovery privacy controls, and authentication diagnostics.
+Completed. Atomic invitation activation, wrong-token lockout isolation, `__Host-` cookie migration, invitation-state recovery, non-enumerating sender recovery requests, human approval and decline, typed lockout reset, recovery privacy controls, and authentication diagnostics.
+
+
+## v0.9.0 — Teams Scheduling and Proposal Workflow
+
+Current release. Human-published Microsoft Teams offers, sender slot responses, human-finalized meeting records, authenticated ICS, structured versioned proposals, stable published revisions, typed sender intent responses, external contract attestation, workflow events, privacy lifecycle integration, and strict no-calendar/no-contract/no-payment automation boundaries.

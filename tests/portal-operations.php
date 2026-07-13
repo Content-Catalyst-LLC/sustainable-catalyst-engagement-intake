@@ -17,9 +17,9 @@ $login_view = file_get_contents( $plugin . '/public/views/sender-portal-login.ph
 $portal_view= file_get_contents( $plugin . '/public/views/sender-portal.php' );
 
 $checks = array(
-	'v0.8.1 plugin and DB markers' => strpos( $main, 'Version:     0.8.1' ) !== false
-		&& strpos( $main, "SC_EI_DB_VERSION', '0.8.1'" ) !== false,
-	'portal schema 1.1.0' => strpos( $main, "SC_EI_PORTAL_SCHEMA_VERSION', '1.1.0'" ) !== false,
+	'v0.9.0 plugin and DB markers' => strpos( $main, 'Version:     0.9.0' ) !== false
+		&& strpos( $main, "SC_EI_DB_VERSION', '0.9.0'" ) !== false,
+	'portal schema 1.2.0' => strpos( $main, "SC_EI_PORTAL_SCHEMA_VERSION', '1.2.0'" ) !== false,
 	'four portal tables declared' => strpos( $db, '$sql_portal_access' ) !== false
 		&& strpos( $db, '$sql_portal_sessions' ) !== false
 		&& strpos( $db, '$sql_portal_events' ) !== false
@@ -117,4 +117,4 @@ if ( $failed ) {
 foreach ( $checks as $label => $passed ) {
 	echo 'PASS: ' . $label . PHP_EOL;
 }
-echo "Engagement Intake v0.8.1 portal authentication and recovery operation checks passed.\n";
+echo "Engagement Intake v0.9.0 portal authentication and recovery operation checks passed.\n";

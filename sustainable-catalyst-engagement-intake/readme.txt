@@ -1,217 +1,227 @@
 === Sustainable Catalyst Engagement Intake ===
 Contributors: content-catalyst
-Tags: contact, consulting, sender portal, authentication recovery, secure messaging, privacy, retention, secure upload, quarantine, microsoft teams
+Tags: contact, consulting, microsoft teams, scheduling, proposal workflow, sender portal, privacy, secure upload, quarantine
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.8.1
+Stable tag: 0.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Private consulting and contact intake with patched passwordless portal authentication, human-reviewed recovery, secure messages, protected document quarantine, privacy governance, fit assessment, and Microsoft Teams readiness.
+Private engagement intake with human-approved Microsoft Teams scheduling offers, versioned proposals, sender-safe portal responses, privacy governance, secure messaging, and protected document quarantine.
 
 == Description ==
 
-Version 0.8.1 is a focused Portal Authentication and Recovery Patch for the Secure Sender Portal introduced in v0.8.0.
+Version 0.9.0 adds a controlled Microsoft Teams Scheduling and Proposal Workflow to the Secure Sender Portal and administrative engagement workspace.
 
-It preserves the existing public intake, protected documents, quarantine operations, Administrative Review Workspace, Communication History, Privacy and Retention Center, and Human-Controlled Fit Assessment.
+It preserves all earlier intake, authentication, recovery, review, fit assessment, communication, privacy, retention, quarantine, scanner, and protected-storage capabilities.
 
 Recommended shortcodes:
 
 * Consulting page: `[sc_engagement_inquiry mode="compact" source="consulting-page" entry_cta="discuss-an-engagement" title="Discuss an Engagement"]`
 * Contact page: `[sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst"]`
-* Private sender portal page: `[sc_sender_portal title="Secure Sender Portal"]`
+* Secure sender portal: `[sc_sender_portal title="Secure Sender Portal"]`
 
-== Authentication repairs ==
+== Teams scheduling ==
 
-v0.8.1 adds:
+Authorized staff can create:
 
-* Atomic invitation activation
-* Rollback when access, inquiry, or session persistence fails
-* Invitation preservation after safe rollback
-* Correctable activation failures that return to the same invitation
-* Safe handling of expired activation-form nonces
-* Verified invitation-state inspection
-* HTTPS enforcement for production authentication and recovery
-* `__Host-sc_ei_sender_session` production cookie
-* Migration support for active v0.8.0 legacy cookies
-* Explicit session-cookie establishment recovery
-* Optimistic access and inquiry version checks
+* Draft meeting offers
+* Up to the configured number of proposed time slots
+* UTC-backed slot records with a sender timezone
+* Purpose and preparation notes
+* Expiration dates
+* Optional Microsoft Teams URL
+* Human-published portal offers
 
-The invitation is consumed only after:
+The sender can:
 
-1. the access record updates successfully
-2. the inquiry portal state updates successfully
-3. the session record is created successfully
+* Accept one offered time
+* Request an alternative time
+* Decline the meeting
+* Open the finalized Microsoft Teams link
+* Download an authenticated ICS file after final scheduling
 
-A failure in any stage rolls the transaction back.
+The plugin does not:
 
-== Lockout correction ==
+* Create a Microsoft 365 calendar event
+* Call Microsoft Graph
+* Send an invitation automatically
+* Support Zoom or Google Meet
+* Treat a selected time as final when a Teams link is still pending
 
-An incorrect invitation token never increments the sender's email-challenge lockout.
+A staff member must finalize the accepted slot and record the Teams URL.
 
-Lockout applies only when:
+== Proposal workflow ==
 
-1. the invitation public ID exists
-2. the invitation token is correct
-3. the email challenge is incorrect
+Authorized staff can create structured proposals containing:
 
-This prevents denial-of-service attempts using only a leaked invitation identifier.
+* Title and executive summary
+* Scope
+* Deliverables
+* Exclusions
+* Assumptions
+* Timeline
+* Fee summary
+* Payment terms
+* Proposal terms and boundaries
+* Currency and total value
+* Expiration date
+* Version note
 
-Authorized managers can reset a verified email-challenge lockout after human review using:
+Each version is immutable and receives:
 
-`UNLOCK <ACCESS-ID>`
+* Sequential version number
+* SHA-256 content hash
+* Creator and creation time
 
-== Sender recovery ==
+Published proposal content remains visible while staff prepares an unpublished revision. The revision replaces the sender-visible version only after a deliberate publish action.
 
-The public portal now contains a recovery form for expired, consumed, lost, locked, revoked, or browser-bound access.
+== Sender proposal response ==
 
-The public response is always generic. It does not reveal whether:
+The sender can:
 
-* an inquiry reference exists
-* an email address exists
-* portal access exists
-* a recovery request matched
-* a request was deduplicated or throttled
+* Accept for external contracting
+* Decline with a note
+* Open an authenticated print-friendly view
 
-Matched requests enter:
+Acceptance requires:
 
-`Engagement Intake → Sender Portal → Authentication Recovery Queue`
-
-Recovery requires:
-
-* a dedicated management capability
-* an unexpired pending request
-* human review
-* written rationale
-* typed confirmation
-
-Approval requires:
-
-`RECOVER <RECOVERY-ID>`
+* Typed `ACCEPT <PROPOSAL-NUMBER>` confirmation
+* Authority attestation
+* Acknowledgment that portal acceptance is not an executed contract
 
 Decline requires:
 
-`DECLINE <RECOVERY-ID>`
+* Typed `DECLINE <PROPOSAL-NUMBER>` confirmation
+* A response note
 
-Approval issues a new one-time invitation, revokes existing sessions through the normal invitation-reissue path, and displays the raw link once to the authorized administrator.
+Portal acceptance records intent to proceed to contracting. It is not:
 
-It does not send the invitation automatically.
+* An electronic signature
+* An executed contract
+* A payment authorization
+* An invoice
+* An active engagement
 
-== Recovery abuse controls ==
+== External contract boundary ==
 
-* Keyed-IP hourly rate limit
-* Matched and unmatched attempts share the same limit
-* Generic response after throttling
-* Honeypot field
-* Minimum reason length
-* Request deduplication
-* Expiring review queue
-* Hashed reference, email, IP, and browser values
-* No unmatched identity record is persisted
-* No public access link is generated
+Only authorized staff can mark a proposal contracted.
 
-== Cookie migration ==
+The administrator must:
 
-Production HTTPS uses:
+* Record an external contract reference
+* Add an administrative note
+* Type `CONTRACT <PROPOSAL-NUMBER>`
 
-`__Host-sc_ei_sender_session`
+This action attests that an agreement was executed outside the plugin.
 
-The cookie has:
+The plugin does not generate, sign, or store an electronic signature contract and does not collect payment.
 
-* Secure
-* HttpOnly
-* SameSite Strict
-* Path `/`
-* No Domain attribute
+== Workflow expiration ==
 
-During the patch transition, an active v0.8.0 `sc_ei_sender_session` cookie can be read and migrated to the new `__Host-` cookie.
+Hourly cleanup marks stale:
 
-The legacy cookie is cleared after successful migration.
+* Published meeting offers as expired
+* Published proposals as expired
+
+The cleanup does not:
+
+* Delete workflow history
+* Cancel a finalized meeting
+* Withdraw an accepted proposal
+* Delete proposal versions
+* Change an inquiry to accepted automatically
 
 == Privacy and audit ==
 
-Portal recovery records are included in:
+Meeting offers, proposals, versions, and workflow events are included in:
 
-* private data inventory
+* Private data inventory
 * WordPress privacy export
-* portal audit export
+* Authenticated workflow export
+* Review packet context
+* Authenticated REST context
 * Diagnostics
-* approved inquiry erasure
+* Approved inquiry erasure
 
-Approved erasure clears:
+Approved erasure removes personal workflow narratives such as:
 
-* reference and email hashes
-* recovery reason
-* hashed IP and browser values
-* human decision notes
+* Sender scheduling notes
+* Alternative-time requests
+* Administrative meeting notes
+* Cancellation reasons
+* Sender proposal response notes
+* External contract references
+* Workflow event context
 
-Limited categorical lifecycle and audit tombstones can remain.
+Categorical lifecycle evidence and content hashes can remain as limited audit tombstones.
 
 == Installation ==
 
 1. Back up the database and protected storage.
-2. Upgrade directly from v0.8.0 to v0.8.1.
+2. Upgrade from v0.8.1 to v0.9.0.
 3. Keep the existing sender portal page and shortcode.
-4. Confirm the portal is served over HTTPS.
-5. Clear page, object, CDN, and browser caches.
-6. Open Engagement Intake → Diagnostics.
-7. Confirm database version `0.8.1`.
-8. Confirm portal schema version `1.1.0`.
-9. Confirm the portal recovery table and fields.
-10. Confirm the hourly cleanup event.
-11. Open Engagement Intake → Sender Portal.
-12. Review authentication recovery policy settings.
-13. Test a v0.8.0 active session cookie in staging.
-14. Test a fresh invitation.
-15. Test an incorrect token and confirm lockout does not increment.
-16. Test a correct token with an incorrect email and confirm lockout increments.
-17. Test a failed activation transaction and confirm the invitation remains usable.
-18. Test generic recovery responses for matched and unmatched details.
-19. Test human approval, decline, typed unlock, and one-time link display.
-20. Test privacy export and approved erasure in staging.
+4. Clear WordPress, object, host, reverse-proxy, CDN, and browser caches.
+5. Open Engagement Intake → Diagnostics.
+6. Confirm database version `0.9.0`.
+7. Confirm portal schema version `1.2.0`.
+8. Confirm workflow schema version `1.0.0`.
+9. Confirm all four workflow tables.
+10. Confirm the hourly workflow cleanup event.
+11. Open Engagement Intake → Teams & Proposals.
+12. Test a draft meeting offer.
+13. Publish proposed Teams times.
+14. Test sender acceptance and alternative request.
+15. Finalize a Teams link and test the ICS file.
+16. Create and publish a proposal.
+17. Create an unpublished revision and confirm the previous version remains visible.
+18. Publish the revision.
+19. Test sender acceptance and decline.
+20. Test external-contract attestation.
+21. Test privacy export and approved erasure in staging.
 
 == Changelog ==
 
+= 0.9.0 =
+* Added Teams Scheduling and Proposal Workflow.
+* Added human-published meeting offers with multiple UTC-backed slots.
+* Added sender accept, alternative, and decline responses.
+* Added human meeting finalization with validated Microsoft Teams links.
+* Added authenticated ICS download after final scheduling.
+* Added structured versioned proposals with SHA-256 content hashes.
+* Added pending proposal versions that do not disrupt published content.
+* Added typed sender acceptance and decline.
+* Added authority and non-contract boundary attestations.
+* Added human-recorded external contract references.
+* Added workflow events, metrics, exports, privacy integration, erasure, expiration, capabilities, and Diagnostics.
+* Preserved no Graph booking, no automatic email, no electronic signature, no payment, and no automatic engagement activation.
+
 = 0.8.1 =
-* Added atomic invitation activation and rollback.
-* Preserved invitations after session or inquiry persistence failure.
-* Preserved invitation context after correctable activation errors.
-* Added safe expired-form recovery.
-* Prevented incorrect tokens from incrementing email lockout.
-* Added verified invitation states.
-* Added HTTPS enforcement.
-* Added `__Host-` production cookie.
-* Added v0.8.0 legacy-cookie migration.
-* Added generic sender recovery requests.
-* Added shared throttling for matched and unmatched recovery attempts.
-* Added deduplication and expiring recovery review.
-* Added human recovery approval and decline.
-* Added typed invitation lockout reset.
-* Added recovery privacy export, erasure, inventory, audit, and Diagnostics integration.
+* Added Portal Authentication and Recovery Patch.
 
 = 0.8.0 =
-* Added the Secure Sender Portal.
+* Added Secure Sender Portal.
 
 = 0.7.0 =
 * Added Human-Controlled Fit Assessment.
 
 = 0.6.0 =
-* Added the Privacy and Retention Center.
+* Added Privacy and Retention Center.
 
 = 0.5.0 =
 * Added Notifications and Communication History.
 
 = 0.4.0 =
-* Added the Administrative Review Workspace.
+* Added Administrative Review Workspace.
 
 = 0.3.2 =
-* Added Quarantine Operations and scanner readiness.
+* Added Quarantine Operations and Scanner Readiness.
 
 = 0.3.1 =
-* Added production storage and upload reliability.
+* Added Production Storage and Upload Reliability.
 
 = 0.3.0 =
-* Added secure document intake and quarantine.
+* Added Secure Document Intake and Quarantine.
 
 = 0.2.2 =
-* Added dual intake experiences and conversion routing.
+* Added Dual Intake Experiences and Conversion Routing.

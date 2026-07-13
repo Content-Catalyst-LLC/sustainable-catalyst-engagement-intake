@@ -612,6 +612,9 @@ final class SC_EI_Review_Repository {
 			'sender_portal' => current_user_can( 'sc_intake_view_sender_portal' )
 				? SC_EI_Portal_Repository::export_for_inquiry( $inquiry_id )
 				: null,
+			'teams_proposal_workflow' => current_user_can( 'sc_intake_view_workflow' )
+				? SC_EI_Workflow_Repository::export_for_inquiry( $inquiry_id )
+				: null,
 			'attachments'    => $attachments,
 			'communications' => SC_EI_Communication_Repository::for_inquiry( $inquiry_id, 500, true ),
 			'privacy'        => array(

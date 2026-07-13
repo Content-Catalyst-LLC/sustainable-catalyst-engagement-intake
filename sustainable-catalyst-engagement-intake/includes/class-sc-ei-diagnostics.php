@@ -18,6 +18,7 @@ final class SC_EI_Diagnostics {
 		$privacy_columns       = SC_EI_Database::privacy_columns_exist();
 		$fit_columns           = SC_EI_Database::fit_columns_exist();
 		$portal_columns        = SC_EI_Database::portal_columns_exist();
+		$workflow_columns      = SC_EI_Database::workflow_columns_exist();
 		$admin              = get_role( 'administrator' );
 		$settings           = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
@@ -43,6 +44,7 @@ final class SC_EI_Diagnostics {
 		$retention_policies = SC_EI_Retention_Policy_Repository::active();
 		$fit_metrics = SC_EI_Fit_Repository::metrics();
 		$portal_metrics = SC_EI_Portal_Repository::metrics();
+		$workflow_metrics = SC_EI_Workflow_Repository::metrics();
 
 		$notification_policies = array(
 			'sender_acknowledgment' => ! empty( $settings['sender_acknowledgment_enabled'] ),
@@ -106,6 +108,28 @@ final class SC_EI_Diagnostics {
 				'noindex'               => ! empty( $settings['portal_noindex'] ),
 				'no_store'              => ! empty( $settings['portal_no_store'] ),
 				'page_url'              => (string) $settings['portal_page_url'],
+			),
+			'workflow_columns'       => $workflow_columns,
+			'workflow_schema_version'=> SC_EI_WORKFLOW_SCHEMA_VERSION,
+			'workflow_metrics'       => $workflow_metrics,
+			'workflow_controls'      => array(
+				'cleanup_scheduled'       => (bool) wp_next_scheduled( 'sc_ei_workflow_cleanup' ),
+				'next_cleanup_utc'        => ( $workflow_next = wp_next_scheduled( 'sc_ei_workflow_cleanup' ) ) ? gmdate( 'Y-m-d H:i:s', $workflow_next ) : null,
+				'last_cleanup'            => get_option( 'sc_ei_last_workflow_cleanup', array() ),
+				'microsoft_teams_only'    => true,
+				'automatic_calendar'      => false,
+				'graph_api_connected'     => false,
+				'automatic_email'         => false,
+				'automatic_contract'      => false,
+				'automatic_payment'       => false,
+				'portal_acceptance_signature' => false,
+				'proposal_version_hash'   => true,
+				'human_publish_required'  => true,
+				'human_contract_attestation'=> true,
+				'sender_ics_enabled'      => ! empty( $settings['workflow_allow_sender_ics'] ),
+				'max_meeting_slots'       => absint( $settings['workflow_max_meeting_slots'] ?? 5 ),
+				'meeting_expiry_days'     => absint( $settings['workflow_meeting_offer_expiry_days'] ?? 7 ),
+				'proposal_expiry_days'    => absint( $settings['workflow_proposal_expiry_days'] ?? 14 ),
 			),
 			'fit_columns'            => $fit_columns,
 			'fit_schema_version'     => SC_EI_FIT_SCHEMA_VERSION,
@@ -227,6 +251,12 @@ final class SC_EI_Diagnostics {
 				'timezone_detection'    => true,
 				'availability_fields'   => true,
 				'admin_status_workflow' => true,
+				'time_offer_workflow'   => true,
+				'sender_slot_selection' => true,
+				'secure_ics_export'     => ! empty( $settings['workflow_allow_sender_ics'] ),
+				'proposal_workflow'     => true,
+				'proposal_versioning'   => true,
+				'proposal_acceptance_is_signature' => false,
 				'graph_api_connected'   => false,
 				'organizer_configured'  => ! empty( $settings['teams_organizer_email'] ),
 			),
@@ -263,6 +293,16 @@ final class SC_EI_Diagnostics {
 			&& empty( $results['portal_security']['recovery_auto_email'] )
 			&& ! empty( $results['portal_security']['noindex'] )
 			&& ! empty( $results['portal_security']['no_store'] );
+		$workflow_ok = ! in_array( false, $results['workflow_columns'], true )
+			&& ! empty( $results['workflow_controls']['cleanup_scheduled'] )
+			&& ! empty( $results['workflow_controls']['microsoft_teams_only'] )
+			&& empty( $results['workflow_controls']['automatic_calendar'] )
+			&& empty( $results['workflow_controls']['automatic_contract'] )
+			&& empty( $results['workflow_controls']['automatic_payment'] )
+			&& empty( $results['workflow_controls']['portal_acceptance_signature'] )
+			&& ! empty( $results['workflow_controls']['proposal_version_hash'] )
+			&& ! empty( $results['workflow_controls']['human_publish_required'] )
+			&& ! empty( $results['workflow_controls']['human_contract_attestation'] );
 		$fit_ok = ! in_array( false, $results['fit_columns'], true )
 			&& empty( $results['fit_human_control']['automatic_recommendation'] )
 			&& empty( $results['fit_human_control']['automatic_acceptance'] )
@@ -333,7 +373,7 @@ final class SC_EI_Diagnostics {
 				&& ! empty( $results['communication_templates']['active_count'] );
 		}
 
-		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $portal_ok && $fit_ok && $privacy_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
+		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $portal_ok && $workflow_ok && $fit_ok && $privacy_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
 			? 'healthy'
 			: 'attention';
 	}

@@ -1,22 +1,9 @@
 # Sustainable Catalyst Engagement Intake
 
-**Version:** 0.8.1  
-**Release:** Portal Authentication and Recovery Patch
+**Version:** 0.9.0  
+**Release:** Teams Scheduling and Proposal Workflow
 
-## Scope
-
-v0.8.1 patches the v0.8.0 Secure Sender Portal without changing its sender-safe data boundary.
-
-```text
-v0.8.0 portal
-+ atomic activation
-+ corrected lockout
-+ __Host cookie migration
-+ non-enumerating recovery
-+ human-approved fresh invitation
-```
-
-## Shortcodes
+## Public surfaces
 
 ```text
 [sc_engagement_inquiry mode="compact" source="consulting-page" entry_cta="discuss-an-engagement" title="Discuss an Engagement"]
@@ -24,291 +11,275 @@ v0.8.0 portal
 [sc_sender_portal title="Secure Sender Portal"]
 ```
 
-## Atomic activation
-
-The v0.8.1 activation transaction covers:
+## Workflow architecture
 
 ```text
-portal access transition
-inquiry portal transition
-session creation
+public intake
+→ administrative review
+→ human fit assessment
+→ secure sender portal
+→ human-published Teams offer
+→ sender response
+→ human-finalized Teams record
+→ human-authored proposal
+→ sender intent response
+→ external contract attestation
 ```
 
-The one-time invitation hash is cleared inside the transaction.
+No workflow stage automatically creates the next legally or operationally significant stage.
 
-A failure in any stage performs:
+## Teams scheduling
 
-```text
-ROLLBACK
-→ invitation remains invited
-→ raw invitation can be retried
-→ activation_rolled_back event
-```
-
-Successful activation performs:
+Meeting offer states:
 
 ```text
-COMMIT
-→ session cookie
-→ invitation_activated event
-```
-
-## Lockout correction
-
-The authentication order is:
-
-```text
-find public access ID
-→ constant-work token hash check
-→ reject incorrect token without lockout
-→ verify invitation state
-→ verify email challenge
-→ increment lockout only for incorrect email
-```
-
-This closes an identifier-only denial-of-service path.
-
-## Invitation states
-
-A verified invitation can present:
-
-```text
-valid
+draft
+offered
+accepted_pending_link
+scheduled
+alternative_requested
+declined
+completed
+canceled
 expired
-locked
-inactive
+superseded
 ```
 
-An unverified credential presents only:
+Staff creates one or more time slots. Slots are stored in UTC and displayed using the offer timezone.
+
+Sender responses:
 
 ```text
-invalid
+accept a selected slot
+request an alternative
+decline
 ```
 
-The UI never distinguishes why an unverified credential failed.
+A selected slot becomes `accepted_pending_link` unless a valid Teams URL is already present.
 
-## Production cookie
+Only an authorized staff member can finalize:
 
 ```text
-__Host-sc_ei_sender_session
+SCHEDULE <MEETING-OFFER-NUMBER>
 ```
 
-Attributes:
+The URL must pass the existing Microsoft Teams URL validator.
+
+The system never calls Microsoft Graph or creates a Microsoft 365 calendar event.
+
+## Authenticated ICS
+
+A sender can download an ICS file only when:
 
 ```text
-Secure
-HttpOnly
-SameSite=Strict
-Path=/
-No Domain
+portal session active
++ view_meetings permission
++ inquiry ownership
++ meeting status scheduled
++ selected start and end present
++ valid Microsoft Teams URL
 ```
 
-The patch can read the v0.8.0 cookie:
+The file uses `METHOD:PUBLISH`; it is not a server-created calendar invitation.
+
+## Proposal model
+
+Proposal record:
 
 ```text
-sc_ei_sender_session
-```
-
-On a valid HTTPS request, it migrates the same active session credential into the `__Host-` cookie and clears the legacy cookie.
-
-## Correctable activation failures
-
-These failures preserve or replace usable invitation context:
-
-```text
-expired WordPress activation nonce
-terms not accepted
-temporary optimistic conflict
-inquiry persistence failure
-session persistence failure
-browser cookie establishment failure
-```
-
-A stale form returns to the original invitation.
-
-A transactional persistence failure rolls back the invitation.
-
-A cookie-establishment failure revokes the unusable session and generates a fresh invitation.
-
-## Recovery request
-
-The public recovery form accepts:
-
-```text
-inquiry reference
-inquiry email
-recovery reason
-```
-
-Its response is always:
-
-```text
-The request was received.
-If the details match an eligible record, it will be reviewed.
-No access link is issued automatically.
-```
-
-The response is the same for:
-
-```text
-matched request
-unmatched request
-invalid input
-honeypot submission
-deduplicated request
-throttled request
-```
-
-## Recovery controls
-
-```text
-keyed-IP hourly limit
-matched and unmatched event counting
-minimum reason length
-honeypot
-pending-request deduplication
-review expiry
-hashed reference
-hashed email
-hashed IP
-hashed browser
-```
-
-Unmatched attempts generate security events but do not create an identity-bearing recovery row.
-
-## Human review
-
-Reviewers with the view capability can inspect matched recovery requests.
-
-Only managers with:
-
-```text
-sc_intake_manage_portal_recovery
-```
-
-can approve, decline, or reset lockout.
-
-Approval:
-
-```text
-RECOVER <RECOVERY-ID>
-```
-
-Decline:
-
-```text
-DECLINE <RECOVERY-ID>
-```
-
-Lockout reset:
-
-```text
-UNLOCK <ACCESS-ID>
-```
-
-Every action requires a human rationale.
-
-Recovery approval calls the normal invitation reissue path, preserving access permissions and revoking active sessions.
-
-No email is sent automatically.
-
-## New table
-
-```text
-{prefix}sc_ei_portal_recovery_requests
-```
-
-Fields:
-
-```text
-public_id
-inquiry_id
-access_id
 status
-match_status
-reference_hash
-email_hash
-recovery_reason
-request_ip_hash
-request_user_agent_hash
-request_count
-requested_at
-last_requested_at
-expires_at
-reviewed_by
-reviewed_at
-decision_note
-completed_at
-row_version
-created_at
-updated_at
+sender response
+current published version
+pending unpublished version
+currency and total
+expiration
+publication metadata
+external contract metadata
+```
+
+Proposal version:
+
+```text
+version number
+structured content
+version note
+SHA-256 content hash
+creator
+created timestamp
+```
+
+## Stable published revisions
+
+Published and draft content are separated:
+
+```text
+current_version_id → sender-visible published version
+pending_version_id → administrative unpublished revision
+```
+
+Creating a new version does not hide or mutate the published version.
+
+Publishing performs:
+
+```text
+pending_version_id → current_version_id
+pending_version_id → null
+status → published
+publication audit
+```
+
+## Sender proposal response
+
+Acceptance confirmation:
+
+```text
+ACCEPT <PROPOSAL-NUMBER>
+```
+
+Decline confirmation:
+
+```text
+DECLINE <PROPOSAL-NUMBER>
+```
+
+Acceptance requires:
+
+```text
+authority attestation
+non-contract acknowledgment
+typed confirmation
+active portal session
+respond_proposals permission
+unrestricted privacy state
+unexpired published proposal
+optimistic row version
+```
+
+Acceptance results in:
+
+```text
+accepted_pending_contract
+```
+
+It does not create an active engagement or executed agreement.
+
+## External contract recording
+
+Only authorized staff can use:
+
+```text
+CONTRACT <PROPOSAL-NUMBER>
+```
+
+Required:
+
+```text
+external contract reference
+administrative note
+record-contract capability
+accepted_pending_contract state
+```
+
+The record means an agreement was executed outside the plugin.
+
+The plugin does not perform:
+
+```text
+electronic signature
+contract generation
+payment collection
+invoice creation
+automatic acceptance
+```
+
+## Proposal print view
+
+The print-friendly view requires the sender portal session and proposal ownership.
+
+Headers include:
+
+```text
+Cache-Control: no-store
+Referrer-Policy: no-referrer
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+Content-Security-Policy with default-src none
+```
+
+No inline script is used.
+
+## New tables
+
+```text
+{prefix}sc_ei_meeting_offers
+{prefix}sc_ei_proposals
+{prefix}sc_ei_proposal_versions
+{prefix}sc_ei_workflow_events
 ```
 
 ## New capabilities
 
 ```text
-sc_intake_view_portal_recovery
-sc_intake_manage_portal_recovery
+sc_intake_view_workflow
+sc_intake_manage_workflow
+sc_intake_create_meeting_offers
+sc_intake_publish_meeting_offers
+sc_intake_finalize_meetings
+sc_intake_create_proposals
+sc_intake_publish_proposals
+sc_intake_record_contracts
+sc_intake_export_workflow
 ```
 
-Engagement Reviewers receive view access.
+Reviewers can view workflow records and prepare drafts.
 
-Engagement Managers receive view and management access.
+Managers can publish offers, finalize meetings, publish proposals, and record externally executed contracts.
 
-## Recovery lifecycle
+## Portal permissions
 
 ```text
-pending
-→ completed
-→ declined
-→ expired
-→ canceled
+view_meetings
+respond_meetings
+view_proposals
+respond_proposals
 ```
 
-Hourly portal cleanup marks expired pending requests.
-
-It does not delete audit history.
+Privacy restrictions preserve read access while blocking new meeting and proposal responses.
 
 ## Privacy
 
-WordPress privacy export includes:
+Workflow export includes:
 
-```text
-recovery state
-recovery reason
-request count
-review timestamps
-decision note
-completion state
-```
+- meeting slots and responses
+- final Teams record
+- proposal metadata
+- all proposal versions
+- version hashes
+- sender response
+- external contract state
+- workflow events
 
-Approved inquiry erasure clears:
+Approved erasure redacts personal narratives while preserving limited categorical lifecycle evidence.
 
-```text
-reference hash
-email hash
-recovery reason
-IP hash
-browser hash
-decision note
-```
-
-## Upgrade checklist
+## Production checklist
 
 1. Back up database and protected storage.
-2. Upgrade from v0.8.0 to v0.8.1.
-3. Confirm HTTPS.
-4. Keep the existing sender portal URL.
-5. Clear caches.
-6. Confirm DB `0.8.1`.
-7. Confirm portal schema `1.1.0`.
-8. Confirm the recovery table.
-9. Confirm recovery capabilities.
-10. Confirm hourly cleanup.
-11. Test v0.8.0 legacy-cookie migration.
-12. Test incorrect-token behavior.
-13. Test email-challenge lockout.
-14. Test transactional rollback.
-15. Test generic matched and unmatched recovery.
-16. Test approval, decline, unlock, and link display.
-17. Test privacy export and erasure.
+2. Upgrade to v0.9.0.
+3. Clear all caches.
+4. Confirm DB 0.9.0.
+5. Confirm portal schema 1.2.0.
+6. Confirm workflow schema 1.0.0.
+7. Confirm four workflow tables.
+8. Confirm workflow capabilities.
+9. Confirm hourly cleanup.
+10. Test Teams offer publication.
+11. Test sender slot response.
+12. Test final Teams URL.
+13. Test authenticated ICS.
+14. Test initial proposal publication.
+15. Test unpublished revision stability.
+16. Test revision publication.
+17. Test typed acceptance and decline.
+18. Test contract attestation.
+19. Test expiration.
+20. Test privacy export and erasure.

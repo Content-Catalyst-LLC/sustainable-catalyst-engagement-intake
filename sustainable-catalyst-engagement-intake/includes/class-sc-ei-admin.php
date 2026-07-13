@@ -71,6 +71,7 @@ final class SC_EI_Admin {
 		SC_EI_Review_Admin::submenu();
 		SC_EI_Fit_Admin::submenu();
 		SC_EI_Portal_Admin::submenu();
+		SC_EI_Workflow_Admin::submenu();
 		SC_EI_Communication_Admin::submenu();
 		SC_EI_Privacy_Admin::submenu();
 
@@ -194,7 +195,8 @@ final class SC_EI_Admin {
 			),
 			SC_EI_Privacy_Schema::default_settings(),
 			SC_EI_Fit_Schema::default_settings(),
-			SC_EI_Portal_Schema::default_settings()
+			SC_EI_Portal_Schema::default_settings(),
+			SC_EI_Workflow_Schema::default_settings()
 		);
 	}
 
@@ -298,6 +300,18 @@ final class SC_EI_Admin {
 			'portal_cookie_httponly'            => 1,
 			'portal_noindex'                    => 1,
 			'portal_no_store'                   => 1,
+			'workflow_enabled'                   => 1,
+			'workflow_meeting_offer_expiry_days' => max( 1, min( 90, absint( $value['workflow_meeting_offer_expiry_days'] ?? $current['workflow_meeting_offer_expiry_days'] ) ) ),
+			'workflow_proposal_expiry_days'      => max( 1, min( 180, absint( $value['workflow_proposal_expiry_days'] ?? $current['workflow_proposal_expiry_days'] ) ) ),
+			'workflow_max_meeting_slots'         => max( 1, min( 10, absint( $value['workflow_max_meeting_slots'] ?? $current['workflow_max_meeting_slots'] ) ) ),
+			'workflow_require_teams_url'         => empty( $value['workflow_require_teams_url'] ) ? 0 : 1,
+			'workflow_allow_sender_ics'          => empty( $value['workflow_allow_sender_ics'] ) ? 0 : 1,
+			'workflow_allow_proposal_acceptance' => empty( $value['workflow_allow_proposal_acceptance'] ) ? 0 : 1,
+			'workflow_require_authority_attestation' => 1,
+			'workflow_require_boundary_acknowledgment'=> 1,
+			'workflow_no_auto_calendar'          => 1,
+			'workflow_no_auto_contract'          => 1,
+			'workflow_no_auto_payment'           => 1,
 			'delete_data_on_uninstall'           => empty( $value['delete_data_on_uninstall'] ) ? 0 : 1,
 			'default_unaccepted_retention_days'  => max( 30, min( 3650, absint( $value['default_unaccepted_retention_days'] ?? $current['default_unaccepted_retention_days'] ) ) ),
 			'withdrawn_retention_days'           => max( 1, min( 3650, absint( $value['withdrawn_retention_days'] ?? $current['withdrawn_retention_days'] ) ) ),

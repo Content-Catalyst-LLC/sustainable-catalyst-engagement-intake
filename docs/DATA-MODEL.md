@@ -372,3 +372,23 @@ It stores hashed matching evidence, sender reason, rate and deduplication state,
 Unmatched public attempts are represented only as sanitized portal security events.
 
 The session table remains unchanged; active v0.8.0 sessions migrate at the cookie layer.
+
+
+## v0.9.0 workflow data model
+
+New tables:
+
+```text
+meeting_offers
+proposals
+proposal_versions
+workflow_events
+```
+
+A meeting offer stores slot JSON, sender response, selected UTC interval, Teams URL, publication, finalization, and lifecycle state.
+
+A proposal stores workflow state and pointers to its current published and pending unpublished versions.
+
+A proposal version stores structured content and a SHA-256 hash.
+
+Workflow events preserve actor type, actor identifier, target, state transition, and sanitized context.

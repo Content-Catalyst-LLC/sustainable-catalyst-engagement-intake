@@ -37,7 +37,7 @@ $show_recovery = ! empty( $settings['portal_recovery_enabled'] ) && SC_EI_Portal
 		</div>
 		<div class="sc-ei-portal__status">
 			<span><?php esc_html_e( 'Authentication patch', 'sustainable-catalyst-engagement-intake' ); ?></span>
-			<strong><?php esc_html_e( 'v0.8.1 secure recovery', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+			<strong><?php esc_html_e( 'v0.9.0 secure engagement workflow', 'sustainable-catalyst-engagement-intake' ); ?></strong>
 		</div>
 	</header>
 

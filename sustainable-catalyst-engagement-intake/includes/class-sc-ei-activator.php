@@ -21,6 +21,7 @@ final class SC_EI_Activator {
 		SC_EI_Retention::schedule();
 		SC_EI_Notification_Service::schedule();
 		SC_EI_Portal_Repository::schedule();
+		SC_EI_Workflow_Repository::schedule();
 		SC_EI_Template_Repository::seed_defaults();
 		SC_EI_Retention_Policy_Repository::seed_defaults();
 
@@ -32,10 +33,11 @@ final class SC_EI_Activator {
 		update_option( 'sc_ei_privacy_schema_version', SC_EI_PRIVACY_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_fit_schema_version', SC_EI_FIT_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_portal_schema_version', SC_EI_PORTAL_SCHEMA_VERSION, false );
+		update_option( 'sc_ei_workflow_schema_version', SC_EI_WORKFLOW_SCHEMA_VERSION, false );
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Engagement Intake v0.8.1 activated with atomic portal authentication, __Host session cookies, legacy-session migration, wrong-token lockout protection, human-reviewed recovery and fresh-invitation reissue, plus all v0.8.0 secure sender portal, fit assessment, privacy, communication, quarantine, and storage controls.',
+			'Engagement Intake v0.9.0 activated with human-approved Microsoft Teams scheduling offers, sender time selection, secure calendar-file export, versioned proposal drafting and publication, sender acceptance or decline records, external-contract attestation, and all prior portal, privacy, review, communication, quarantine, and storage controls.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}
@@ -44,5 +46,6 @@ final class SC_EI_Activator {
 		SC_EI_Retention::unschedule();
 		SC_EI_Notification_Service::unschedule();
 		SC_EI_Portal_Repository::unschedule();
+		SC_EI_Workflow_Repository::unschedule();
 	}
 }

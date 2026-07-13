@@ -271,6 +271,35 @@ $effective       = $diagnostics['effective_limits'];
 		</section>
 
 		<section class="sc-ei-admin__card sc-ei-admin__card--wide">
+			<p class="sc-ei-admin__card-kicker"><?php esc_html_e( 'Teams and Proposal Operations', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<h2><?php esc_html_e( 'Scheduling and Proposal Workflow Health', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<div class="sc-ei-diagnostic-metrics">
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['workflow_metrics']['meeting_offered'] ) ); ?></strong><span><?php esc_html_e( 'meeting offers', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['workflow_metrics']['meeting_scheduled'] ) ); ?></strong><span><?php esc_html_e( 'scheduled Teams meetings', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['workflow_metrics']['meeting_followup'] ) ); ?></strong><span><?php esc_html_e( 'meeting follow-up', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['workflow_metrics']['proposal_open'] ) ); ?></strong><span><?php esc_html_e( 'published proposals', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['workflow_metrics']['proposal_accepted'] ) ); ?></strong><span><?php esc_html_e( 'accepted pending contract', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( $diagnostics['workflow_schema_version'] ); ?></strong><span><?php esc_html_e( 'workflow schema', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+			</div>
+			<ul class="sc-ei-checks">
+				<li><span class="<?php echo $diagnostics['workflow_controls']['cleanup_scheduled'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'hourly meeting-offer and proposal expiration scheduled', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['workflow_controls']['microsoft_teams_only'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'Microsoft Teams is the only supported meeting platform', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo ! $diagnostics['workflow_controls']['automatic_calendar'] && ! $diagnostics['workflow_controls']['graph_api_connected'] && ! $diagnostics['workflow_controls']['automatic_email'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'no automatic calendar creation, Graph API booking, or workflow email', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo ! $diagnostics['workflow_controls']['automatic_contract'] && ! $diagnostics['workflow_controls']['automatic_payment'] && ! $diagnostics['workflow_controls']['portal_acceptance_signature'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'portal acceptance is not a contract, signature, invoice, or payment', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['workflow_controls']['proposal_version_hash'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'proposal versions retain SHA-256 content hashes', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['workflow_controls']['human_publish_required'] && $diagnostics['workflow_controls']['human_contract_attestation'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'human publication and external-contract attestation required', 'sustainable-catalyst-engagement-intake' ); ?></li>
+			</ul>
+			<dl class="sc-ei-admin__details">
+				<dt><?php esc_html_e( 'Maximum offered slots', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( $diagnostics['workflow_controls']['max_meeting_slots'] ) ); ?></dd>
+				<dt><?php esc_html_e( 'Meeting offer expiry', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( sprintf( __( '%d days', 'sustainable-catalyst-engagement-intake' ), absint( $diagnostics['workflow_controls']['meeting_expiry_days'] ) ) ); ?></dd>
+				<dt><?php esc_html_e( 'Proposal expiry', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( sprintf( __( '%d days', 'sustainable-catalyst-engagement-intake' ), absint( $diagnostics['workflow_controls']['proposal_expiry_days'] ) ) ); ?></dd>
+				<dt><?php esc_html_e( 'Sender calendar file', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo $diagnostics['workflow_controls']['sender_ics_enabled'] ? esc_html__( 'enabled after final Teams scheduling', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'disabled', 'sustainable-catalyst-engagement-intake' ); ?></dd>
+				<dt><?php esc_html_e( 'Next cleanup UTC', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $diagnostics['workflow_controls']['next_cleanup_utc'] ?: __( 'Not scheduled', 'sustainable-catalyst-engagement-intake' ) ); ?></dd>
+			</dl>
+			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-workflow' ) ); ?>"><?php esc_html_e( 'Open Teams and Proposal Workflow', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
+		</section>
+
+		<section class="sc-ei-admin__card sc-ei-admin__card--wide">
 			<p class="sc-ei-admin__card-kicker"><?php esc_html_e( 'Human-Controlled Assessment', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<h2><?php esc_html_e( 'Fit Assessment Health', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<div class="sc-ei-diagnostic-metrics">
@@ -386,10 +415,12 @@ $effective       = $diagnostics['effective_limits'];
 			<h2><?php esc_html_e( 'Database Migrations', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<h3><?php esc_html_e( 'Tables', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['tables'] as $name => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $name ); ?></li><?php endforeach; ?></ul>
-			<h3><?php esc_html_e( 'v0.8.1 inquiry, attachment, review, fit assessment, sender portal authentication and recovery, communication, and privacy fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<h3><?php esc_html_e( 'v0.9.0 inquiry, attachment, review, fit assessment, sender portal, Teams scheduling, proposal workflow, communication, and privacy fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['attachment_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
 			<h3><?php esc_html_e( 'Sender portal tables and fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks sc-ei-checks--columns"><?php foreach ( $diagnostics['portal_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
+			<h3><?php esc_html_e( 'Teams scheduling and proposal workflow tables and fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<ul class="sc-ei-checks sc-ei-checks--columns"><?php foreach ( $diagnostics['workflow_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
 			<h3><?php esc_html_e( 'Fit assessment tables and fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks sc-ei-checks--columns"><?php foreach ( $diagnostics['fit_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
 			<h3><?php esc_html_e( 'Privacy lifecycle tables and fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>

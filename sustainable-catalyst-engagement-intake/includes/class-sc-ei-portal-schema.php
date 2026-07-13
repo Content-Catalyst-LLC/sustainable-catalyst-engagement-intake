@@ -74,6 +74,8 @@ final class SC_EI_Portal_Schema {
 			'overview'    => __( 'Overview', 'sustainable-catalyst-engagement-intake' ),
 			'messages'    => __( 'Secure Messages', 'sustainable-catalyst-engagement-intake' ),
 			'documents'   => __( 'Private Documents', 'sustainable-catalyst-engagement-intake' ),
+			'meetings'    => __( 'Teams Meetings', 'sustainable-catalyst-engagement-intake' ),
+			'proposals'   => __( 'Proposals', 'sustainable-catalyst-engagement-intake' ),
 			'preferences' => __( 'Contact and Scheduling', 'sustainable-catalyst-engagement-intake' ),
 			'privacy'     => __( 'Privacy and Withdrawal', 'sustainable-catalyst-engagement-intake' ),
 			'access'      => __( 'Access and Security', 'sustainable-catalyst-engagement-intake' ),
@@ -87,6 +89,10 @@ final class SC_EI_Portal_Schema {
 			'send_messages'     => __( 'Send secure portal messages', 'sustainable-catalyst-engagement-intake' ),
 			'view_documents'    => __( 'View private document metadata', 'sustainable-catalyst-engagement-intake' ),
 			'upload_documents'  => __( 'Upload private follow-up documents', 'sustainable-catalyst-engagement-intake' ),
+			'view_meetings'     => __( 'View Microsoft Teams offers and scheduled meetings', 'sustainable-catalyst-engagement-intake' ),
+			'respond_meetings'  => __( 'Respond to Microsoft Teams time offers', 'sustainable-catalyst-engagement-intake' ),
+			'view_proposals'    => __( 'View published proposals', 'sustainable-catalyst-engagement-intake' ),
+			'respond_proposals' => __( 'Accept or decline published proposals', 'sustainable-catalyst-engagement-intake' ),
 			'update_contact'    => __( 'Update contact preferences', 'sustainable-catalyst-engagement-intake' ),
 			'update_scheduling' => __( 'Update Microsoft Teams scheduling preferences', 'sustainable-catalyst-engagement-intake' ),
 			'privacy_requests'  => __( 'Submit privacy requests', 'sustainable-catalyst-engagement-intake' ),
@@ -131,6 +137,10 @@ final class SC_EI_Portal_Schema {
 			'document_uploaded'          => __( 'Portal Document Uploaded', 'sustainable-catalyst-engagement-intake' ),
 			'contact_updated'            => __( 'Contact Preferences Updated', 'sustainable-catalyst-engagement-intake' ),
 			'scheduling_updated'         => __( 'Scheduling Preferences Updated', 'sustainable-catalyst-engagement-intake' ),
+			'meeting_response_recorded'  => __( 'Meeting Offer Response Recorded', 'sustainable-catalyst-engagement-intake' ),
+			'meeting_ics_downloaded'     => __( 'Meeting Calendar File Downloaded', 'sustainable-catalyst-engagement-intake' ),
+			'proposal_response_recorded' => __( 'Proposal Response Recorded', 'sustainable-catalyst-engagement-intake' ),
+			'proposal_print_viewed'      => __( 'Proposal Print View Opened', 'sustainable-catalyst-engagement-intake' ),
 			'privacy_request_created'    => __( 'Portal Privacy Request Created', 'sustainable-catalyst-engagement-intake' ),
 			'withdrawal_requested'       => __( 'Inquiry Withdrawal Requested', 'sustainable-catalyst-engagement-intake' ),
 			'withdrawal_canceled'        => __( 'Inquiry Withdrawal Canceled', 'sustainable-catalyst-engagement-intake' ),
@@ -249,7 +259,7 @@ final class SC_EI_Portal_Schema {
 			return true;
 		}
 		if ( in_array( $status, array( 'restricted', 'erasure_requested' ), true ) ) {
-			return ! in_array( $action, array( 'view_status', 'view_messages', 'privacy_requests', 'revoke_access' ), true );
+			return ! in_array( $action, array( 'view_status', 'view_messages', 'view_meetings', 'view_proposals', 'privacy_requests', 'revoke_access' ), true );
 		}
 		return false;
 	}
