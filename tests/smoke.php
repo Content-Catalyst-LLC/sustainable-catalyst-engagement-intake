@@ -8,6 +8,12 @@ $plugin = $root . '/sustainable-catalyst-engagement-intake';
 
 $required = array(
 	$plugin . '/sustainable-catalyst-engagement-intake.php',
+	$plugin . '/includes/class-sc-ei-review-schema.php',
+	$plugin . '/includes/class-sc-ei-review-repository.php',
+	$plugin . '/includes/class-sc-ei-review-list-table.php',
+	$plugin . '/includes/class-sc-ei-review-admin.php',
+	$plugin . '/admin/views/review-workspace.php',
+	$plugin . '/admin/views/review-detail.php',
 	$plugin . '/includes/class-sc-ei-upload-environment.php',
 	$plugin . '/includes/class-sc-ei-storage.php',
 	$plugin . '/includes/class-sc-ei-storage-reconciler.php',
@@ -24,8 +30,6 @@ $required = array(
 	$plugin . '/includes/class-sc-ei-privacy.php',
 	$plugin . '/includes/class-sc-ei-quarantine-list-table.php',
 	$plugin . '/includes/class-sc-ei-file-access-list-table.php',
-	$plugin . '/admin/views/inquiry-view.php',
-	$plugin . '/admin/views/diagnostics.php',
 	$plugin . '/admin/views/quarantine.php',
 	$plugin . '/assets/js/public.js',
 	$plugin . '/assets/js/admin.js',
@@ -43,41 +47,38 @@ foreach ( $required as $file ) {
 
 $main       = file_get_contents( $plugin . '/sustainable-catalyst-engagement-intake.php' );
 $database   = file_get_contents( $plugin . '/includes/class-sc-ei-database.php' );
-$scanner    = file_get_contents( $plugin . '/includes/class-sc-ei-scanner-operations.php' );
-$repository = file_get_contents( $plugin . '/includes/class-sc-ei-attachment-repository.php' );
-$audit      = file_get_contents( $plugin . '/includes/class-sc-ei-audit-log.php' );
-$admin      = file_get_contents( $plugin . '/includes/class-sc-ei-admin.php' );
-$view       = file_get_contents( $plugin . '/admin/views/quarantine.php' );
+$review     = file_get_contents( $plugin . '/includes/class-sc-ei-review-repository.php' );
+$review_admin = file_get_contents( $plugin . '/includes/class-sc-ei-review-admin.php' );
+$review_view  = file_get_contents( $plugin . '/admin/views/review-detail.php' );
+$privacy    = file_get_contents( $plugin . '/includes/class-sc-ei-privacy.php' );
 $manager    = file_get_contents( $plugin . '/includes/class-sc-ei-upload-manager.php' );
 $public     = file_get_contents( $plugin . '/includes/class-sc-ei-public.php' );
 $storage    = file_get_contents( $plugin . '/includes/class-sc-ei-storage.php' );
 $javascript = file_get_contents( $plugin . '/assets/js/admin.js' );
 
 $markers = array(
-	'Version:     0.3.2'                       => $main,
-	"SC_EI_DB_VERSION', '0.3.2'"              => $main,
-	'class-sc-ei-scanner-operations.php'       => $main,
-	'class-sc-ei-quarantine-list-table.php'    => $main,
-	'class-sc-ei-file-access-list-table.php'   => $main,
-	'scan_attempts'                            => $database,
-	'last_scanned_at'                          => $database,
-	'last_scanned_by'                          => $database,
-	'run_readiness_test'                       => $scanner,
-	'bulk_rescan'                              => $scanner,
-	'configuration_match'                      => $scanner,
-	'query_operations'                         => $repository,
-	'operational_summary'                      => $repository,
-	'update_scan_result'                       => $repository,
-	'query_file_events'                        => $audit,
-	'file_event_summary'                       => $audit,
-	'sc_ei_run_scanner_readiness_test'         => $admin,
-	'sc_ei_quarantine_bulk'                    => $admin,
-	'REJECT SELECTED'                          => $admin,
-	'handle_file_audit_export'                 => $admin,
-	'Quarantine Operations and Scanner Readiness' => $view,
-	'Untrusted Document Isolation Guidance'    => $view,
-	'data-sc-ei-bulk-controls'                 => $javascript,
-	'scan_attempts'                            => $manager,
+	'Version:     0.4.0'                          => $main,
+	"SC_EI_DB_VERSION', '0.4.0'"                 => $main,
+	"SC_EI_REVIEW_SCHEMA_VERSION', '1.0.0'"      => $main,
+	'class-sc-ei-review-schema.php'               => $main,
+	'class-sc-ei-review-repository.php'           => $main,
+	'class-sc-ei-review-list-table.php'           => $main,
+	'class-sc-ei-review-admin.php'                => $main,
+	'$sql_reviews'                                => $database,
+	'backfill_review_defaults'                    => $database,
+	'review_version int'                          => $database,
+	'insert_snapshot'                             => $review,
+	'review_conflict'                             => $review,
+	'review_checklist_incomplete'                 => $review,
+	'sc-engagement-intake-review-packet/1.0'      => $review,
+	'sc_ei_bulk_review'                           => $review_admin,
+	'sc_ei_export_review_packet'                  => $review_admin,
+	'restrict_review_to_assignee'                 => $review_admin,
+	'Administrative review checklist'             => $review_view,
+	'Structured Review History'                   => $review_view,
+	'Engagement Intake Administrative Reviews'    => $privacy,
+	'beforeunload'                                => $javascript,
+	'data-sc-ei-review-bulk'                      => $javascript,
 );
 
 foreach ( $markers as $marker => $contents ) {
@@ -96,9 +97,13 @@ if ( false !== strpos( $public, 'Zoom' ) || false !== strpos( $public, 'Google M
 	$failures[] = 'Unsupported meeting platform appeared in the public form.';
 }
 
+if ( false !== strpos( $review . $review_admin, 'fit_score' ) ) {
+	$failures[] = 'Automated fit scoring marker appeared in human review layer.';
+}
+
 if ( $failures ) {
 	fwrite( STDERR, implode( PHP_EOL, $failures ) . PHP_EOL );
 	exit( 1 );
 }
 
-echo "Engagement Intake v0.3.2 smoke checks passed." . PHP_EOL;
+echo "Engagement Intake v0.4.0 smoke checks passed." . PHP_EOL;

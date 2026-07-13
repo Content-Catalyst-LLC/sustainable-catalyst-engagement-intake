@@ -1,56 +1,142 @@
 (() => {
   "use strict";
 
-  const controls = document.querySelector("[data-sc-ei-bulk-controls]");
-  if (!controls) return;
+  const quarantineControls = document.querySelector("[data-sc-ei-bulk-controls]");
+  if (quarantineControls) {
+    const operation = quarantineControls.querySelector("[data-sc-ei-bulk-operation]");
+    const retention = quarantineControls.querySelector("[data-sc-ei-bulk-retention]");
+    const confirmation = quarantineControls.querySelector("[data-sc-ei-bulk-confirmation]");
+    const form = quarantineControls.closest("form");
 
-  const operation = controls.querySelector("[data-sc-ei-bulk-operation]");
-  const retention = controls.querySelector("[data-sc-ei-bulk-retention]");
-  const confirmation = controls.querySelector("[data-sc-ei-bulk-confirmation]");
-  const form = controls.closest("form");
+    const syncQuarantine = () => {
+      const value = operation?.value || "";
+      const needsRetention = value === "set_retention";
+      const needsConfirmation = value === "reject_delete";
 
-  const sync = () => {
-    const value = operation?.value || "";
-    const needsRetention = value === "set_retention";
-    const needsConfirmation = value === "reject_delete";
+      if (retention) {
+        retention.hidden = !needsRetention;
+        retention.required = needsRetention;
+      }
+      if (confirmation) {
+        confirmation.hidden = !needsConfirmation;
+        confirmation.required = needsConfirmation;
+        if (!needsConfirmation) confirmation.value = "";
+      }
+    };
 
-    if (retention) {
-      retention.hidden = !needsRetention;
-      retention.required = needsRetention;
-    }
-    if (confirmation) {
-      confirmation.hidden = !needsConfirmation;
-      confirmation.required = needsConfirmation;
-      if (!needsConfirmation) confirmation.value = "";
-    }
-  };
+    operation?.addEventListener("change", syncQuarantine);
+    syncQuarantine();
 
-  operation?.addEventListener("change", sync);
-  sync();
-
-  form?.addEventListener("submit", (event) => {
-    const selected = form.querySelectorAll("input[name='attachment_ids[]']:checked");
-    if (!selected.length) {
-      event.preventDefault();
-      window.alert("Select at least one private document.");
-      return;
-    }
-
-    if (!operation?.value) {
-      event.preventDefault();
-      window.alert("Choose a bulk document action.");
-      return;
-    }
-
-    if (operation.value === "reject_delete") {
-      if ((confirmation?.value || "") !== "REJECT SELECTED") {
+    form?.addEventListener("submit", (event) => {
+      const selected = form.querySelectorAll("input[name='attachment_ids[]']:checked");
+      if (!selected.length) {
         event.preventDefault();
-        window.alert("Type REJECT SELECTED exactly before deleting selected physical files.");
+        window.alert("Select at least one private document.");
         return;
       }
-      if (!window.confirm("Reject the selected records and permanently delete their physical private files?")) {
+      if (!operation?.value) {
         event.preventDefault();
+        window.alert("Choose a bulk document action.");
+        return;
       }
-    }
-  });
+      if (operation.value === "reject_delete") {
+        if ((confirmation?.value || "") !== "REJECT SELECTED") {
+          event.preventDefault();
+          window.alert("Type REJECT SELECTED exactly before deleting selected physical files.");
+          return;
+        }
+        if (!window.confirm("Reject the selected records and permanently delete their physical private files?")) {
+          event.preventDefault();
+        }
+      }
+    });
+  }
+
+  const reviewControls = document.querySelector("[data-sc-ei-review-bulk]");
+  if (reviewControls) {
+    const operation = reviewControls.querySelector("[data-sc-ei-review-bulk-operation]");
+    const assignee = reviewControls.querySelector("[data-sc-ei-review-bulk-assignee]");
+    const priority = reviewControls.querySelector("[data-sc-ei-review-bulk-priority]");
+    const stage = reviewControls.querySelector("[data-sc-ei-review-bulk-stage]");
+    const due = reviewControls.querySelector("[data-sc-ei-review-bulk-due]");
+    const reason = reviewControls.querySelector("[data-sc-ei-review-bulk-reason]");
+    const form = reviewControls.closest("form");
+
+    const syncReview = () => {
+      const value = operation?.value || "";
+      const states = {
+        assignee: value === "assign",
+        priority: value === "priority",
+        stage: value === "stage",
+        due: value === "due",
+        reason: value === "escalate" || value === "resolve_escalation"
+      };
+
+      [[assignee, states.assignee], [priority, states.priority], [stage, states.stage], [due, states.due], [reason, states.reason]]
+        .forEach(([field, visible]) => {
+          if (!field) return;
+          field.hidden = !visible;
+          field.required = visible && !(field === reason && value === "resolve_escalation");
+        });
+
+      if (reason) {
+        reason.placeholder = value === "escalate"
+          ? "Required escalation reason"
+          : "Optional resolution note";
+      }
+    };
+
+    operation?.addEventListener("change", syncReview);
+    syncReview();
+
+    form?.addEventListener("submit", (event) => {
+      const selected = form.querySelectorAll("input[name='inquiry_ids[]']:checked");
+      if (!selected.length) {
+        event.preventDefault();
+        window.alert("Select at least one inquiry.");
+        return;
+      }
+      if (!operation?.value) {
+        event.preventDefault();
+        window.alert("Choose a bulk review action.");
+        return;
+      }
+      if (operation.value === "stage" && stage?.value === "completed") {
+        if (!window.confirm("Mark the selected reviews completed only when each already satisfies its checklist, fit-decision, next-step, and rationale requirements?")) {
+          event.preventDefault();
+        }
+      }
+    });
+  }
+
+  const reviewForm = document.querySelector("[data-sc-ei-review-form]");
+  if (reviewForm) {
+    let dirty = false;
+    const checklist = reviewForm.querySelectorAll(".sc-ei-review-checklist input[type='checkbox']");
+    const progress = reviewForm.querySelector(".sc-ei-review-checklist legend span");
+
+    const updateProgress = () => {
+      if (!progress || !checklist.length) return;
+      const completed = [...checklist].filter((item) => item.checked).length;
+      progress.textContent = `${Math.round((completed / checklist.length) * 100)}%`;
+    };
+
+    reviewForm.addEventListener("input", () => {
+      dirty = true;
+      updateProgress();
+    });
+    reviewForm.addEventListener("change", () => {
+      dirty = true;
+      updateProgress();
+    });
+    reviewForm.addEventListener("submit", () => {
+      dirty = false;
+    });
+    window.addEventListener("beforeunload", (event) => {
+      if (!dirty) return;
+      event.preventDefault();
+      event.returnValue = "";
+    });
+    updateProgress();
+  }
 })();

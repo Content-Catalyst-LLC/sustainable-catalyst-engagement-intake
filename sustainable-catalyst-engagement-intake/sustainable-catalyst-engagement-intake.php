@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Sustainable Catalyst Engagement Intake
  * Plugin URI:  https://sustainablecatalyst.com/
- * Description: Dual private intake experiences with secure document quarantine operations, scanner readiness, reliable storage, Microsoft Teams scheduling readiness, conversion routing, privacy tools, and administrative workflow.
- * Version:     0.3.2
+ * Description: Private consulting and contact intake with a human-controlled administrative review workspace, secure document quarantine, scanner readiness, Microsoft Teams scheduling readiness, privacy tools, and audit history.
+ * Version:     0.4.0
  * Author:      Content Catalyst LLC
  * Author URI:  https://sustainablecatalyst.com/
  * Text Domain: sustainable-catalyst-engagement-intake
@@ -18,9 +18,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SC_EI_VERSION', '0.3.2' );
-define( 'SC_EI_DB_VERSION', '0.3.2' );
+define( 'SC_EI_VERSION', '0.4.0' );
+define( 'SC_EI_DB_VERSION', '0.4.0' );
 define( 'SC_EI_VALIDATOR_VERSION', '1.0.1' );
+define( 'SC_EI_REVIEW_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_FILE', __FILE__ );
 define( 'SC_EI_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SC_EI_URL', plugin_dir_url( __FILE__ ) );
@@ -31,6 +32,7 @@ require_once SC_EI_DIR . 'includes/class-sc-ei-statuses.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-capabilities.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-teams.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-conversion.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-review-schema.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-upload-environment.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-storage.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-storage-reconciler.php';
@@ -39,6 +41,7 @@ require_once SC_EI_DIR . 'includes/class-sc-ei-scanner-operations.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-upload-validator.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-audit-log.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-inquiry-repository.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-review-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-attachment-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-upload-manager.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-retention.php';
@@ -49,9 +52,11 @@ require_once SC_EI_DIR . 'includes/class-sc-ei-privacy.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-diagnostics.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-rest.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-admin-list-table.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-review-list-table.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-quarantine-list-table.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-file-access-list-table.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-admin.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-review-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-activator.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-plugin.php';
 

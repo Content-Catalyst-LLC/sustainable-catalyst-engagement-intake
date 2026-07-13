@@ -13,6 +13,7 @@ final class SC_EI_Diagnostics {
 		$tables             = SC_EI_Database::tables_exist();
 		$inquiry_columns    = SC_EI_Database::inquiry_columns_exist();
 		$attachment_columns = SC_EI_Database::attachment_columns_exist();
+		$review_columns     = SC_EI_Database::review_columns_exist();
 		$admin              = get_role( 'administrator' );
 		$settings           = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
@@ -30,6 +31,7 @@ final class SC_EI_Diagnostics {
 		$retention_run     = SC_EI_Retention::latest_run();
 		$probe             = SC_EI_Storage::latest_probe();
 		$database_totals   = SC_EI_Attachment_Repository::storage_totals();
+		$review_metrics    = SC_EI_Review_Repository::metrics( get_current_user_id() );
 
 		$capabilities = array();
 		foreach ( SC_EI_Capabilities::ALL as $cap ) {
@@ -43,6 +45,9 @@ final class SC_EI_Diagnostics {
 			'tables'               => $tables,
 			'inquiry_columns'      => $inquiry_columns,
 			'attachment_columns'   => $attachment_columns,
+			'review_columns'       => $review_columns,
+			'review_metrics'       => $review_metrics,
+			'review_schema_version'=> SC_EI_REVIEW_SCHEMA_VERSION,
 			'capabilities'         => $capabilities,
 			'privacy_exporter'     => true,
 			'privacy_eraser'       => true,
@@ -118,6 +123,7 @@ final class SC_EI_Diagnostics {
 		$tables_ok      = ! in_array( false, $results['tables'], true );
 		$inquiry_ok     = ! in_array( false, $results['inquiry_columns'], true );
 		$attachments_ok = ! in_array( false, $results['attachment_columns'], true );
+		$reviews_ok     = ! in_array( false, $results['review_columns'], true );
 		$caps_ok        = ! in_array( false, $results['capabilities'], true );
 
 		$storage_ok = ! empty( $results['storage']['exists'] )
@@ -170,7 +176,7 @@ final class SC_EI_Diagnostics {
 		$disk_ok = empty( $results['storage']['disk_free_bytes'] )
 			|| (int) $results['storage']['disk_free_bytes'] >= 100 * MB_IN_BYTES;
 
-		return ( $tables_ok && $inquiry_ok && $attachments_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok )
+		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok )
 			? 'healthy'
 			: 'attention';
 	}

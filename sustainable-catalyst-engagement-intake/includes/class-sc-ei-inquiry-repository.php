@@ -54,6 +54,13 @@ final class SC_EI_Inquiry_Repository {
 			$timezone = '';
 		}
 
+		$initial_assignee = ! empty( $input['assigned_user_id'] ) ? absint( $input['assigned_user_id'] ) : 0;
+		$initial_priority = SC_EI_Review_Schema::sanitize_choice(
+			(string) ( $input['review_priority'] ?? 'normal' ),
+			SC_EI_Review_Schema::priorities(),
+			'normal'
+		);
+
 		$data = array(
 			'public_id'               => wp_generate_uuid4(),
 			'reference'               => self::generate_reference(),
@@ -101,7 +108,31 @@ final class SC_EI_Inquiry_Repository {
 			'metadata_json'           => wp_json_encode( self::sanitize_metadata( $input['metadata'] ?? array() ) ),
 			'consent_version'         => sanitize_text_field( $input['consent_version'] ?? '' ),
 			'consent_at'              => ! empty( $input['consent_at'] ) ? sanitize_text_field( $input['consent_at'] ) : null,
-			'assigned_user_id'        => ! empty( $input['assigned_user_id'] ) ? absint( $input['assigned_user_id'] ) : null,
+			'assigned_user_id'        => $initial_assignee ?: null,
+			'assignment_at'           => $initial_assignee ? $now : null,
+			'assignment_by'           => $initial_assignee ? absint( $input['assignment_by'] ?? 0 ) : null,
+			'review_stage'            => 'intake',
+			'review_priority'         => $initial_priority,
+			'review_due_at'           => SC_EI_Review_Schema::default_due_at( $initial_priority ),
+			'fit_decision'            => 'undecided',
+			'fit_confidence'          => 'unassessed',
+			'risk_level'              => 'unassessed',
+			'evidence_readiness'      => 'not_assessed',
+			'scope_clarity'           => 'not_assessed',
+			'recommended_next_step'   => 'review',
+			'review_summary'          => '',
+			'decision_rationale'      => '',
+			'information_gaps'        => '',
+			'conflict_notes'          => '',
+			'review_checklist'        => wp_json_encode( SC_EI_Review_Schema::sanitize_checklist( array() ) ),
+			'escalation_status'       => 'none',
+			'escalation_reason'       => '',
+			'review_started_at'       => null,
+			'last_reviewed_at'        => null,
+			'last_reviewed_by'        => null,
+			'decision_at'             => null,
+			'review_completed_at'     => null,
+			'review_version'          => 0,
 			'created_at'              => $now,
 			'updated_at'              => $now,
 			'closed_at'               => null,
@@ -112,6 +143,9 @@ final class SC_EI_Inquiry_Repository {
 			'participant_count',
 			'calendar_invite_consent',
 			'assigned_user_id',
+			'assignment_by',
+			'last_reviewed_by',
+			'review_version',
 		);
 		$formats = array_map(
 			static fn( string $key ): string => in_array( $key, $integer_fields, true ) ? '%d' : '%s',
@@ -140,6 +174,9 @@ final class SC_EI_Inquiry_Repository {
 				'preferred_contact_method' => $contact_method,
 				'meeting_request'          => $meeting_request,
 				'scheduling_status'        => $scheduling_state,
+				'review_stage'             => 'intake',
+				'review_priority'          => $initial_priority,
+				'review_due_at'            => $data['review_due_at'],
 			),
 			$id
 		);
@@ -229,7 +266,7 @@ final class SC_EI_Inquiry_Repository {
 			$params[] = $like;
 		}
 
-		$allowed_orderby = array( 'created_at', 'updated_at', 'status', 'scheduling_status', 'form_variant', 'source_page', 'conversion_route', 'contact_name', 'organization', 'reference' );
+		$allowed_orderby = array( 'created_at', 'updated_at', 'status', 'scheduling_status', 'form_variant', 'source_page', 'conversion_route', 'contact_name', 'organization', 'reference', 'review_stage', 'review_priority', 'review_due_at', 'fit_decision', 'risk_level', 'last_reviewed_at' );
 		$orderby         = in_array( $args['orderby'], $allowed_orderby, true ) ? $args['orderby'] : 'created_at';
 		$order           = 'ASC' === strtoupper( $args['order'] ) ? 'ASC' : 'DESC';
 		$per_page        = max( 1, min( 100, absint( $args['per_page'] ) ) );

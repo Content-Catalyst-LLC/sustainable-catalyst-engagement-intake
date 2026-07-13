@@ -26,7 +26,11 @@ Completed. Atomic storage commits, server request-envelope checks, storage probe
 
 ## v0.3.2 — Quarantine Operations and Scanner Readiness
 
-Current release. Cross-inquiry quarantine queue, scanner readiness testing and retry, clean-mode activation safeguards, guarded bulk controls, access reporting, storage utilization, CSV export, and untrusted-document isolation guidance.
+Completed. Cross-inquiry quarantine queue, scanner readiness testing and retry, clean-mode activation safeguards, guarded bulk controls, access reporting, storage utilization, CSV export, and untrusted-document isolation guidance.
+
+## v0.4.0 — Administrative Review Workspace
+
+Current release. Human-controlled assignment, review queues, due-date and aging visibility, manual fit and risk judgments, evidence and scope assessment, explicit next steps and status, checklists, escalation, optimistic concurrency, immutable review snapshots, bulk review operations, private review packet export, privacy integration, and diagnostics.
 
 ## v0.4.0 — Administrative Review Workspace
 

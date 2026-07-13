@@ -12,6 +12,12 @@ final class SC_EI_Capabilities {
 	public const ALL = array(
 		'sc_intake_view',
 		'sc_intake_review',
+		'sc_intake_manage_review',
+		'sc_intake_assign_inquiries',
+		'sc_intake_manage_review_priority',
+		'sc_intake_escalate_review',
+		'sc_intake_bulk_review_actions',
+		'sc_intake_export_review_packet',
 		'sc_intake_download_files',
 		'sc_intake_release_files',
 		'sc_intake_manage_file_retention',
@@ -40,8 +46,12 @@ final class SC_EI_Capabilities {
 			array(
 				'read'                    => true,
 				'sc_intake_view'          => true,
-				'sc_intake_review'        => true,
-				'sc_intake_add_notes'     => true,
+				'sc_intake_review'              => true,
+				'sc_intake_manage_review'       => true,
+				'sc_intake_manage_review_priority'=> true,
+				'sc_intake_escalate_review'     => true,
+				'sc_intake_export_review_packet'=> true,
+				'sc_intake_add_notes'           => true,
 				'sc_intake_change_status' => true,
 			)
 		);
@@ -52,7 +62,13 @@ final class SC_EI_Capabilities {
 			array(
 				'read'                     => true,
 				'sc_intake_view'           => true,
-				'sc_intake_review'         => true,
+				'sc_intake_review'               => true,
+				'sc_intake_manage_review'        => true,
+				'sc_intake_assign_inquiries'     => true,
+				'sc_intake_manage_review_priority'=> true,
+				'sc_intake_escalate_review'      => true,
+				'sc_intake_bulk_review_actions'  => true,
+				'sc_intake_export_review_packet' => true,
 				'sc_intake_download_files'       => true,
 				'sc_intake_release_files'        => true,
 				'sc_intake_manage_file_retention'=> true,
@@ -68,7 +84,7 @@ final class SC_EI_Capabilities {
 
 		$reviewer = get_role( 'sc_engagement_reviewer' );
 		if ( $reviewer ) {
-			foreach ( array( 'read', 'sc_intake_view', 'sc_intake_review', 'sc_intake_add_notes', 'sc_intake_change_status' ) as $capability ) {
+			foreach ( array( 'read', 'sc_intake_view', 'sc_intake_review', 'sc_intake_manage_review', 'sc_intake_manage_review_priority', 'sc_intake_escalate_review', 'sc_intake_export_review_packet', 'sc_intake_add_notes', 'sc_intake_change_status' ) as $capability ) {
 				$reviewer->add_cap( $capability );
 			}
 		}
@@ -80,6 +96,12 @@ final class SC_EI_Capabilities {
 					'read',
 					'sc_intake_view',
 					'sc_intake_review',
+					'sc_intake_manage_review',
+					'sc_intake_assign_inquiries',
+					'sc_intake_manage_review_priority',
+					'sc_intake_escalate_review',
+					'sc_intake_bulk_review_actions',
+					'sc_intake_export_review_packet',
 					'sc_intake_download_files',
 					'sc_intake_release_files',
 					'sc_intake_manage_file_retention',

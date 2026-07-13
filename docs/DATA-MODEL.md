@@ -111,3 +111,77 @@ last_scanned_by
 ```
 
 These fields distinguish the current scanner result from its operational history. Detailed result changes remain in the audit ledger.
+
+
+## Administrative review current state
+
+The inquiry table stores the current administrative review state:
+
+```text
+assigned_user_id
+assignment_at
+assignment_by
+review_stage
+review_priority
+review_due_at
+fit_decision
+fit_confidence
+risk_level
+evidence_readiness
+scope_clarity
+recommended_next_step
+review_summary
+decision_rationale
+information_gaps
+conflict_notes
+review_checklist
+escalation_status
+escalation_reason
+review_started_at
+last_reviewed_at
+last_reviewed_by
+decision_at
+review_completed_at
+review_version
+```
+
+This denormalized current state supports operational queues and filters.
+
+## Immutable review snapshots
+
+`{prefix}sc_ei_reviews` records every successful structured review save.
+
+The table is append-only through the normal plugin workflow. Privacy erasure can remove narrative personal data while retaining categorical accountability.
+
+Snapshot fields include:
+
+```text
+inquiry_id
+public_id
+reviewer_user_id
+event_type
+from_stage
+to_stage
+priority
+fit_decision
+fit_confidence
+risk_level
+evidence_readiness
+scope_clarity
+recommended_next_step
+summary
+rationale
+information_gaps
+conflict_notes
+checklist_json
+escalation_status
+escalation_reason
+assigned_user_id
+due_at
+inquiry_status
+review_version
+snapshot_json
+created_at
+```
+
+`review_version` on the inquiry row is used for optimistic concurrency.

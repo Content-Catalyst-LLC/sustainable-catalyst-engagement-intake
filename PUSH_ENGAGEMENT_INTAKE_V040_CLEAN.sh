@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_URL="git@github.com:Content-Catalyst-LLC/sustainable-catalyst-engagement-intake.git"
 REPO_DIR="${HOME}/Downloads/sustainable-catalyst-engagement-intake"
-ZIP_NAME="sustainable-catalyst-engagement-intake-v0.3.2-repo.zip"
+ZIP_NAME="sustainable-catalyst-engagement-intake-v0.4.0-repo.zip"
 ZIP_PATH="${HOME}/Downloads/${ZIP_NAME}"
 WORK_DIR="$(mktemp -d)"
 
@@ -20,9 +20,9 @@ fi
 echo "Checking GitHub CLI authentication..."
 gh auth status >/dev/null
 
-echo "Extracting Engagement Intake v0.3.2..."
+echo "Extracting Engagement Intake v0.4.0..."
 unzip -q "${ZIP_PATH}" -d "${WORK_DIR}"
-SOURCE_DIR="${WORK_DIR}/sustainable-catalyst-engagement-intake-v0.3.2-repo"
+SOURCE_DIR="${WORK_DIR}/sustainable-catalyst-engagement-intake-v0.4.0-repo"
 
 if [[ ! -d "${SOURCE_DIR}" ]]; then
   echo "Expected source directory not found: ${SOURCE_DIR}"
@@ -40,7 +40,7 @@ else
   git clone "${REPO_URL}" "${REPO_DIR}"
 fi
 
-echo "Replacing repository contents with v0.3.2..."
+echo "Replacing repository contents with v0.4.0..."
 rsync -a --delete --exclude='.git' "${SOURCE_DIR}/" "${REPO_DIR}/"
 
 echo "Running PHP syntax checks..."
@@ -53,10 +53,10 @@ node --check "${REPO_DIR}/sustainable-catalyst-engagement-intake/assets/js/publi
 echo "Running admin JavaScript syntax check..."
 node --check "${REPO_DIR}/sustainable-catalyst-engagement-intake/assets/js/admin.js"
 
-echo "Running smoke checks..."
+echo "Running release smoke checks..."
 php "${REPO_DIR}/tests/smoke.php"
 
-echo "Running validator fixtures..."
+echo "Running document validator fixtures..."
 php "${REPO_DIR}/tests/validator-fixtures.php"
 
 echo "Running protected-storage fixtures..."
@@ -71,32 +71,41 @@ php "${REPO_DIR}/tests/scanner-fixtures.php"
 echo "Running quarantine operations checks..."
 php "${REPO_DIR}/tests/quarantine-operations.php"
 
-echo "Checking schema and privacy mappings..."
+echo "Running review schema fixtures..."
+php "${REPO_DIR}/tests/review-schema-fixtures.php"
+
+echo "Running administrative review operation checks..."
+php "${REPO_DIR}/tests/review-operations.php"
+
+echo "Checking database, repository, and privacy mappings..."
 php "${REPO_DIR}/tests/schema-mapping.php"
 
 echo "Checking release markers..."
-grep -q "Version:     0.3.2" \
+grep -q "Version:     0.4.0" \
   "${REPO_DIR}/sustainable-catalyst-engagement-intake/sustainable-catalyst-engagement-intake.php"
 
-grep -q "class-sc-ei-scanner-operations.php" \
+grep -q "SC_EI_REVIEW_SCHEMA_VERSION', '1.0.0" \
   "${REPO_DIR}/sustainable-catalyst-engagement-intake/sustainable-catalyst-engagement-intake.php"
 
-grep -q "class-sc-ei-quarantine-list-table.php" \
+grep -q "class-sc-ei-review-repository.php" \
   "${REPO_DIR}/sustainable-catalyst-engagement-intake/sustainable-catalyst-engagement-intake.php"
 
-grep -q "sc_ei_run_scanner_readiness_test" \
-  "${REPO_DIR}/sustainable-catalyst-engagement-intake/includes/class-sc-ei-admin.php"
+grep -q "class-sc-ei-review-admin.php" \
+  "${REPO_DIR}/sustainable-catalyst-engagement-intake/sustainable-catalyst-engagement-intake.php"
 
-grep -q "sc_ei_quarantine_bulk" \
-  "${REPO_DIR}/sustainable-catalyst-engagement-intake/includes/class-sc-ei-admin.php"
+grep -q "START TRANSACTION" \
+  "${REPO_DIR}/sustainable-catalyst-engagement-intake/includes/class-sc-ei-review-repository.php"
 
-grep -q "REJECT SELECTED" \
-  "${REPO_DIR}/sustainable-catalyst-engagement-intake/includes/class-sc-ei-admin.php"
+grep -q "review_conflict" \
+  "${REPO_DIR}/sustainable-catalyst-engagement-intake/includes/class-sc-ei-review-repository.php"
+
+grep -q "Administrative Review Workspace" \
+  "${REPO_DIR}/sustainable-catalyst-engagement-intake/admin/views/review-workspace.php"
 
 echo "Running push-safe secret scan..."
 if grep -RInE \
   --exclude-dir=.git \
-  --exclude='PUSH_ENGAGEMENT_INTAKE_V032_CLEAN.sh' \
+  --exclude='PUSH_ENGAGEMENT_INTAKE_V040_CLEAN.sh' \
   '(AIza[0-9A-Za-z_-]{20,}|sk-[0-9A-Za-z]{20,}|ghp_[0-9A-Za-z]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' \
   "${REPO_DIR}"; then
   echo "Potential secret found. Push cancelled."
@@ -109,12 +118,12 @@ git add -A
 if git diff --cached --quiet; then
   echo "No changes to commit."
 else
-  git commit -m "Build Engagement Intake v0.3.2"
+  git commit -m "Build Engagement Intake v0.4.0"
 fi
 
 git branch -M main
 git push -u origin main
 
 echo
-echo "Engagement Intake v0.3.2 pushed successfully."
+echo "Engagement Intake v0.4.0 pushed successfully."
 echo "Repository: https://github.com/Content-Catalyst-LLC/sustainable-catalyst-engagement-intake"

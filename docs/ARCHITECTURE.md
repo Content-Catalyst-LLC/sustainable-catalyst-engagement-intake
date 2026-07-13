@@ -45,7 +45,8 @@ v0.2.x established conditional public forms, Teams preferences, dual experiences
 v0.3.0 added protected document storage and quarantine.  
 v0.3.1 adds atomic storage commits, request-envelope reliability, reconciliation, integrity tracking, retention previews, and cache/CDN hardening.  
 v0.3.2 adds a cross-inquiry quarantine operations layer, scanner readiness and retry, guarded bulk file actions, access reporting, and isolation guidance.  
-Later versions add broader administrative review, communication history, sender portal, connected scheduling, proposals, analytics, and Workflow Core.
+v0.4.0 adds a human-controlled administrative review layer with ownership, due dates, manual judgments, checklists, escalation, immutable snapshots, and explicit handoff recommendations.  
+Later versions add communication history, sender portal, connected scheduling, proposals, analytics, and Workflow Core.
 
 
 ## Dual public experiences
@@ -77,3 +78,55 @@ Attachment repository
 ```
 
 It does not expose files, create Media Library records, or merge private inquiry data into public Feature Suggestions or Knowledge Library records.
+
+
+## Administrative review architecture
+
+The review layer separates the fast current-state record from immutable review history.
+
+```text
+Current inquiry review fields
+→ optimistic review-version check
+→ transactional inquiry update
+→ immutable review snapshot
+→ audit ledger
+```
+
+The current inquiry row powers queues, assignments, due-state reporting, and filters.
+
+The dedicated review table preserves each successful human-authored snapshot, including:
+
+- reviewer
+- previous and current stage
+- assignment
+- priority and due date
+- fit decision and confidence
+- risk
+- evidence readiness
+- scope clarity
+- recommended next step
+- rationale and information gaps
+- checklist
+- escalation
+- inquiry status
+- review version
+
+The review layer does not calculate a fit score or infer a status from a recommendation.
+
+## Workspace separation
+
+```text
+Administrative Review Workspace
+  human judgment, ownership, rationale, checklist, escalation
+
+Quarantine Operations
+  file validation, scanner state, integrity, retention, access
+
+Full Inquiry Record
+  complete intake, Teams preference, notes, files, audit
+
+Public Forms
+  sender-facing intake only
+```
+
+Risky file operations remain in Quarantine and the full inquiry record. Review Workspace links to those surfaces instead of duplicating download or deletion controls.

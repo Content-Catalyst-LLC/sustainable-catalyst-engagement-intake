@@ -68,6 +68,8 @@ final class SC_EI_Admin {
 			array( __CLASS__, 'inquiries_page' )
 		);
 
+		SC_EI_Review_Admin::submenu();
+
 		$quarantine_hook = add_submenu_page(
 			'sc-engagement-intake',
 			__( 'Quarantine Operations', 'sustainable-catalyst-engagement-intake' ),
@@ -165,6 +167,16 @@ final class SC_EI_Admin {
 			'scanner_test_freshness_hours'        => 24,
 			'scanner_bulk_retry_limit'            => 25,
 			'private_storage_path'                => '',
+			'default_review_due_days'             => 3,
+			'high_priority_review_due_days'       => 1,
+			'low_priority_review_due_days'        => 7,
+			'urgent_review_due_hours'             => 4,
+			'stale_review_days'                    => 7,
+			'review_bulk_limit'                    => 50,
+			'reviewer_self_assignment'             => 1,
+			'restrict_review_to_assignee'          => 1,
+			'require_review_rationale'             => 1,
+			'require_completion_checklist'         => 1,
 		);
 	}
 
@@ -215,6 +227,16 @@ final class SC_EI_Admin {
 			'scanner_test_freshness_hours'      => $freshness_hours,
 			'scanner_bulk_retry_limit'          => $bulk_limit,
 			'private_storage_path'              => self::sanitize_private_storage_path( (string) ( $value['private_storage_path'] ?? '' ) ),
+			'default_review_due_days'           => max( 1, min( 30, absint( $value['default_review_due_days'] ?? 3 ) ) ),
+			'high_priority_review_due_days'     => max( 1, min( 14, absint( $value['high_priority_review_due_days'] ?? 1 ) ) ),
+			'low_priority_review_due_days'      => max( 1, min( 60, absint( $value['low_priority_review_due_days'] ?? 7 ) ) ),
+			'urgent_review_due_hours'           => max( 1, min( 72, absint( $value['urgent_review_due_hours'] ?? 4 ) ) ),
+			'stale_review_days'                  => max( 1, min( 90, absint( $value['stale_review_days'] ?? 7 ) ) ),
+			'review_bulk_limit'                  => max( 1, min( 50, absint( $value['review_bulk_limit'] ?? 50 ) ) ),
+			'reviewer_self_assignment'           => empty( $value['reviewer_self_assignment'] ) ? 0 : 1,
+			'restrict_review_to_assignee'        => empty( $value['restrict_review_to_assignee'] ) ? 0 : 1,
+			'require_review_rationale'           => empty( $value['require_review_rationale'] ) ? 0 : 1,
+			'require_completion_checklist'       => empty( $value['require_completion_checklist'] ) ? 0 : 1,
 		);
 	}
 
@@ -257,9 +279,11 @@ final class SC_EI_Admin {
 		array_unshift(
 			$links,
 			sprintf(
-				'<a href="%1$s">%2$s</a> · <a href="%3$s">%4$s</a>',
+				'<a href="%1$s">%2$s</a> · <a href="%3$s">%4$s</a> · <a href="%5$s">%6$s</a>',
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake' ) ),
 				esc_html__( 'Inquiries', 'sustainable-catalyst-engagement-intake' ),
+				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-review' ) ),
+				esc_html__( 'Review Workspace', 'sustainable-catalyst-engagement-intake' ),
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-quarantine' ) ),
 				esc_html__( 'Quarantine', 'sustainable-catalyst-engagement-intake' )
 			)

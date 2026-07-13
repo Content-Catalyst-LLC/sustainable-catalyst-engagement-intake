@@ -230,11 +230,31 @@ $effective       = $diagnostics['effective_limits'];
 			<?php endif; ?>
 		</section>
 
+		<section class="sc-ei-admin__card sc-ei-admin__card--wide">
+			<p class="sc-ei-admin__card-kicker"><?php esc_html_e( 'Administrative Review', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<h2><?php esc_html_e( 'Review Workspace Health', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<div class="sc-ei-diagnostic-metrics">
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['review_metrics']['open_reviews'] ) ); ?></strong><span><?php esc_html_e( 'open reviews', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['review_metrics']['unassigned'] ) ); ?></strong><span><?php esc_html_e( 'unassigned', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['review_metrics']['overdue'] ) ); ?></strong><span><?php esc_html_e( 'overdue', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['review_metrics']['escalated'] ) ); ?></strong><span><?php esc_html_e( 'escalated', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['review_metrics']['decision_ready'] ) ); ?></strong><span><?php esc_html_e( 'decision ready', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( $diagnostics['review_schema_version'] ); ?></strong><span><?php esc_html_e( 'review schema', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+			</div>
+			<ul class="sc-ei-checks sc-ei-checks--columns">
+				<?php foreach ( $diagnostics['review_columns'] as $column => $ok ) : ?>
+					<li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li>
+				<?php endforeach; ?>
+			</ul>
+			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-review' ) ); ?>"><?php esc_html_e( 'Open Administrative Review Workspace', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
+			<p class="description"><?php esc_html_e( 'Review metrics are operational signals. The plugin never creates an automated fit score or silently changes an inquiry status from these metrics.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+		</section>
+
 		<section class="sc-ei-admin__card">
 			<h2><?php esc_html_e( 'Database Migrations', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<h3><?php esc_html_e( 'Tables', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['tables'] as $name => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $name ); ?></li><?php endforeach; ?></ul>
-			<h3><?php esc_html_e( 'v0.3.2 attachment and scanner fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<h3><?php esc_html_e( 'v0.4.0 attachment, scanner, and review fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['attachment_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
 		</section>
 

@@ -8,6 +8,7 @@ $plugin     = $root . '/sustainable-catalyst-engagement-intake';
 $database   = file_get_contents( $plugin . '/includes/class-sc-ei-database.php' );
 $inquiries  = file_get_contents( $plugin . '/includes/class-sc-ei-inquiry-repository.php' );
 $attachments= file_get_contents( $plugin . '/includes/class-sc-ei-attachment-repository.php' );
+$reviews    = file_get_contents( $plugin . '/includes/class-sc-ei-review-repository.php' );
 $privacy    = file_get_contents( $plugin . '/includes/class-sc-ei-privacy.php' );
 
 function schema_columns( string $database, string $variable ): array {
@@ -42,6 +43,19 @@ function create_data_keys( string $repository ): array {
 	return array_values( array_unique( $matches[1] ) );
 }
 
+function snapshot_data_keys( string $repository ): array {
+	$start = strpos( $repository, 'private static function insert_snapshot' );
+	$end   = strpos( $repository, 'private static function sanitize_due_at', $start );
+	$part  = substr( $repository, $start, $end - $start );
+
+	$data_start = strpos( $part, '$data = array(' );
+	$data_end   = strpos( $part, "\n\t\t);", $data_start );
+	$data       = substr( $part, $data_start, $data_end - $data_start );
+
+	preg_match_all( "/^\t\t\t'([^']+)'\s*=>/m", $data, $matches );
+	return array_values( array_unique( $matches[1] ) );
+}
+
 function assert_mapping( string $label, array $columns, array $keys ): void {
 	$columns = array_values( array_diff( $columns, array( 'id' ) ) );
 	$missing = array_values( array_diff( $columns, $keys ) );
@@ -70,7 +84,13 @@ assert_mapping(
 	create_data_keys( $attachments )
 );
 
-if ( false === strpos( $inquiries, 'array_keys( $data )' ) || false === strpos( $attachments, 'array_keys( $data )' ) ) {
+assert_mapping(
+	'Review snapshot',
+	schema_columns( $database, 'sql_reviews' ),
+	snapshot_data_keys( $reviews )
+);
+
+if ( false === strpos( $inquiries, 'array_keys( $data )' ) || false === strpos( $attachments, 'array_keys( $data )' ) || false === strpos( $reviews, 'array_keys( $data )' ) ) {
 	fwrite( STDERR, "Repository insert formats are not derived from data keys.\n" );
 	exit( 1 );
 }
@@ -112,4 +132,4 @@ function assert_update_formats( string $source, string $needle, string $label ):
 assert_update_formats( $privacy, '$attachment_updated = $wpdb->update(', 'Attachment privacy eraser' );
 assert_update_formats( $privacy, '$updated         = $wpdb->update(', 'Inquiry privacy eraser' );
 
-echo "Engagement Intake v0.3.2 schema checks passed.\n";
+echo "Engagement Intake v0.4.0 schema checks passed.\n";

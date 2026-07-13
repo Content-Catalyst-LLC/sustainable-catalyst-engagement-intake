@@ -31,6 +31,8 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'inquiry_type'      => __( 'Type', 'sustainable-catalyst-engagement-intake' ),
 			'origin'            => __( 'Experience / Source', 'sustainable-catalyst-engagement-intake' ),
 			'conversion_route'  => __( 'Conversion Route', 'sustainable-catalyst-engagement-intake' ),
+			'review'            => __( 'Administrative Review', 'sustainable-catalyst-engagement-intake' ),
+			'review_due'        => __( 'Review Due', 'sustainable-catalyst-engagement-intake' ),
 			'documents'         => __( 'Documents', 'sustainable-catalyst-engagement-intake' ),
 			'status'            => __( 'Inquiry Status', 'sustainable-catalyst-engagement-intake' ),
 			'scheduling_status' => __( 'Teams Status', 'sustainable-catalyst-engagement-intake' ),
@@ -44,6 +46,8 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'contact'           => array( 'contact_name', false ),
 			'organization'      => array( 'organization', false ),
 			'conversion_route'  => array( 'conversion_route', false ),
+			'review'            => array( 'review_stage', false ),
+			'review_due'        => array( 'review_due_at', false ),
 			'status'            => array( 'status', false ),
 			'scheduling_status' => array( 'scheduling_status', false ),
 			'created_at'        => array( 'created_at', true ),
@@ -76,6 +80,26 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 
 			case 'conversion_route':
 				return esc_html( $item['conversion_route'] ? ucwords( str_replace( '_', ' ', $item['conversion_route'] ) ) : '—' );
+
+			case 'review':
+				$assigned = ! empty( $item['assigned_user_id'] ) ? get_userdata( absint( $item['assigned_user_id'] ) ) : false;
+				return sprintf(
+					'<span class="sc-ei-review-stage sc-ei-review-stage--%1$s">%2$s</span><br><span class="description">%3$s · %4$s</span>',
+					esc_attr( $item['review_stage'] ?: 'intake' ),
+					esc_html( SC_EI_Review_Schema::label( SC_EI_Review_Schema::stages(), $item['review_stage'] ?: 'intake' ) ),
+					esc_html( $assigned ? $assigned->display_name : __( 'Unassigned', 'sustainable-catalyst-engagement-intake' ) ),
+					esc_html( SC_EI_Review_Schema::label( SC_EI_Review_Schema::fit_decisions(), $item['fit_decision'] ?: 'undecided' ) )
+				);
+
+			case 'review_due':
+				$timing = SC_EI_Review_Schema::timing( $item );
+				return sprintf(
+					'<span class="sc-ei-review-priority sc-ei-review-priority--%1$s">%2$s</span><br><span class="sc-ei-review-due sc-ei-review-due--%3$s">%4$s</span>',
+					esc_attr( $item['review_priority'] ?: 'normal' ),
+					esc_html( SC_EI_Review_Schema::label( SC_EI_Review_Schema::priorities(), $item['review_priority'] ?: 'normal' ) ),
+					esc_attr( $timing['due_state'] ),
+					$item['review_due_at'] ? esc_html( get_date_from_gmt( $item['review_due_at'], 'M j, Y g:i a' ) ) : esc_html__( 'No due date', 'sustainable-catalyst-engagement-intake' )
+				);
 
 			case 'documents':
 				$count = SC_EI_Attachment_Repository::count_for_inquiry( absint( $item['id'] ) );
@@ -117,7 +141,8 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 		);
 
 		$actions = array(
-			'view' => sprintf( '<a href="%s">%s</a>', esc_url( $url ), esc_html__( 'View', 'sustainable-catalyst-engagement-intake' ) ),
+			'view'   => sprintf( '<a href="%s">%s</a>', esc_url( $url ), esc_html__( 'View', 'sustainable-catalyst-engagement-intake' ) ),
+			'review' => sprintf( '<a href="%s">%s</a>', esc_url( SC_EI_Review_Admin::detail_url( absint( $item['id'] ) ) ), esc_html__( 'Review', 'sustainable-catalyst-engagement-intake' ) ),
 		);
 
 		return sprintf(

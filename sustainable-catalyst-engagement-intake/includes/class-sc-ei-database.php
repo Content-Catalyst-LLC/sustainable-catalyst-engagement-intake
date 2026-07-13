@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -28,6 +28,7 @@ final class SC_EI_Database {
 		$charset_collate = $wpdb->get_charset_collate();
 		$inquiries      = self::table( 'inquiries' );
 		$attachments    = self::table( 'attachments' );
+		$reviews        = self::table( 'reviews' );
 		$audit_log      = self::table( 'audit_log' );
 
 		$sql_inquiries = "CREATE TABLE {$inquiries} (
@@ -79,6 +80,30 @@ final class SC_EI_Database {
 			consent_version varchar(80) NOT NULL DEFAULT '',
 			consent_at datetime NULL,
 			assigned_user_id bigint(20) unsigned NULL,
+			assignment_at datetime NULL,
+			assignment_by bigint(20) unsigned NULL,
+			review_stage varchar(40) NOT NULL DEFAULT 'intake',
+			review_priority varchar(20) NOT NULL DEFAULT 'normal',
+			review_due_at datetime NULL,
+			fit_decision varchar(40) NOT NULL DEFAULT 'undecided',
+			fit_confidence varchar(20) NOT NULL DEFAULT 'unassessed',
+			risk_level varchar(20) NOT NULL DEFAULT 'unassessed',
+			evidence_readiness varchar(20) NOT NULL DEFAULT 'not_assessed',
+			scope_clarity varchar(20) NOT NULL DEFAULT 'not_assessed',
+			recommended_next_step varchar(80) NOT NULL DEFAULT 'review',
+			review_summary longtext NULL,
+			decision_rationale longtext NULL,
+			information_gaps longtext NULL,
+			conflict_notes longtext NULL,
+			review_checklist longtext NULL,
+			escalation_status varchar(30) NOT NULL DEFAULT 'none',
+			escalation_reason longtext NULL,
+			review_started_at datetime NULL,
+			last_reviewed_at datetime NULL,
+			last_reviewed_by bigint(20) unsigned NULL,
+			decision_at datetime NULL,
+			review_completed_at datetime NULL,
+			review_version int(10) unsigned NOT NULL DEFAULT 0,
 			created_at datetime NOT NULL,
 			updated_at datetime NOT NULL,
 			closed_at datetime NULL,
@@ -95,6 +120,15 @@ final class SC_EI_Database {
 			KEY meeting_request (meeting_request),
 			KEY scheduling_status (scheduling_status),
 			KEY assigned_user_id (assigned_user_id),
+			KEY assignment_by (assignment_by),
+			KEY review_stage (review_stage),
+			KEY review_priority (review_priority),
+			KEY review_due_at (review_due_at),
+			KEY fit_decision (fit_decision),
+			KEY risk_level (risk_level),
+			KEY escalation_status (escalation_status),
+			KEY last_reviewed_by (last_reviewed_by),
+			KEY last_reviewed_at (last_reviewed_at),
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
@@ -154,6 +188,47 @@ final class SC_EI_Database {
 			KEY deleted_at (deleted_at)
 		) {$charset_collate};";
 
+
+		$sql_reviews = "CREATE TABLE {$reviews} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			public_id char(36) NOT NULL,
+			reviewer_user_id bigint(20) unsigned NULL,
+			event_type varchar(40) NOT NULL DEFAULT 'review_saved',
+			from_stage varchar(40) NOT NULL DEFAULT '',
+			to_stage varchar(40) NOT NULL DEFAULT '',
+			priority varchar(20) NOT NULL DEFAULT 'normal',
+			fit_decision varchar(40) NOT NULL DEFAULT 'undecided',
+			fit_confidence varchar(20) NOT NULL DEFAULT 'unassessed',
+			risk_level varchar(20) NOT NULL DEFAULT 'unassessed',
+			evidence_readiness varchar(20) NOT NULL DEFAULT 'not_assessed',
+			scope_clarity varchar(20) NOT NULL DEFAULT 'not_assessed',
+			recommended_next_step varchar(80) NOT NULL DEFAULT 'review',
+			summary longtext NULL,
+			rationale longtext NULL,
+			information_gaps longtext NULL,
+			conflict_notes longtext NULL,
+			checklist_json longtext NULL,
+			escalation_status varchar(30) NOT NULL DEFAULT 'none',
+			escalation_reason longtext NULL,
+			assigned_user_id bigint(20) unsigned NULL,
+			due_at datetime NULL,
+			inquiry_status varchar(80) NOT NULL DEFAULT '',
+			review_version int(10) unsigned NOT NULL DEFAULT 0,
+			snapshot_json longtext NULL,
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY inquiry_id (inquiry_id),
+			KEY reviewer_user_id (reviewer_user_id),
+			KEY event_type (event_type),
+			KEY to_stage (to_stage),
+			KEY fit_decision (fit_decision),
+			KEY risk_level (risk_level),
+			KEY escalation_status (escalation_status),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
 		$sql_audit = "CREATE TABLE {$audit_log} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			inquiry_id bigint(20) unsigned NULL,
@@ -173,9 +248,43 @@ final class SC_EI_Database {
 
 		dbDelta( $sql_inquiries );
 		dbDelta( $sql_attachments );
+		dbDelta( $sql_reviews );
 		dbDelta( $sql_audit );
 
+		self::backfill_review_defaults();
 		update_option( 'sc_ei_db_version', SC_EI_DB_VERSION, false );
+	}
+
+	private static function backfill_review_defaults(): void {
+		global $wpdb;
+
+		$table = self::table( 'inquiries' );
+		$settings = wp_parse_args(
+			get_option( 'sc_ei_settings', array() ),
+			SC_EI_Review_Schema::default_review_settings()
+		);
+		$days = max( 1, min( 30, absint( $settings['default_review_due_days'] ?? 3 ) ) );
+		$checklist = wp_json_encode( SC_EI_Review_Schema::sanitize_checklist( array() ) );
+
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table}
+				SET review_due_at = DATE_ADD(created_at, INTERVAL %d DAY)
+				WHERE review_due_at IS NULL
+				AND review_stage <> %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$days,
+				'completed'
+			)
+		);
+
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table}
+				SET review_checklist = %s
+				WHERE review_checklist IS NULL OR review_checklist = ''", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$checklist
+			)
+		);
 	}
 
 	public static function maybe_upgrade(): void {
@@ -189,7 +298,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -215,6 +324,72 @@ final class SC_EI_Database {
 			'scheduling_status',
 			'teams_meeting_url',
 			'scheduled_start_utc',
+			'assignment_at',
+			'assignment_by',
+			'review_stage',
+			'review_priority',
+			'review_due_at',
+			'fit_decision',
+			'fit_confidence',
+			'risk_level',
+			'evidence_readiness',
+			'scope_clarity',
+			'recommended_next_step',
+			'review_summary',
+			'decision_rationale',
+			'information_gaps',
+			'conflict_notes',
+			'review_checklist',
+			'escalation_status',
+			'escalation_reason',
+			'review_started_at',
+			'last_reviewed_at',
+			'last_reviewed_by',
+			'decision_at',
+			'review_completed_at',
+			'review_version',
+		);
+
+		$result = array();
+		foreach ( $columns as $column ) {
+			$found             = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$result[ $column ] = ( $found === $column );
+		}
+
+		return $result;
+	}
+
+	public static function review_columns_exist(): array {
+		global $wpdb;
+
+		$table   = self::table( 'reviews' );
+		$columns = array(
+			'inquiry_id',
+			'public_id',
+			'reviewer_user_id',
+			'event_type',
+			'from_stage',
+			'to_stage',
+			'priority',
+			'fit_decision',
+			'fit_confidence',
+			'risk_level',
+			'evidence_readiness',
+			'scope_clarity',
+			'recommended_next_step',
+			'summary',
+			'rationale',
+			'information_gaps',
+			'conflict_notes',
+			'checklist_json',
+			'escalation_status',
+			'escalation_reason',
+			'assigned_user_id',
+			'due_at',
+			'inquiry_status',
+			'review_version',
+			'snapshot_json',
+			'created_at',
 		);
 
 		$result = array();
@@ -270,7 +445,7 @@ final class SC_EI_Database {
 	public static function drop_all(): void {
 		global $wpdb;
 
-		foreach ( array( 'audit_log', 'attachments', 'inquiries' ) as $name ) {
+		foreach ( array( 'audit_log', 'reviews', 'attachments', 'inquiries' ) as $name ) {
 			$table = self::table( $name );
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}

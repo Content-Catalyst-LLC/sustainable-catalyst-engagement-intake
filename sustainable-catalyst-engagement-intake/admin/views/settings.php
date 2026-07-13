@@ -7,7 +7,7 @@ $scanner_readiness = SC_EI_Scanner_Operations::readiness( $settings );
 ?>
 <div class="wrap sc-ei-admin">
 	<h1><?php esc_html_e( 'Engagement Intake Settings', 'sustainable-catalyst-engagement-intake' ); ?></h1>
-	<p><?php esc_html_e( 'v0.3.2 adds cross-inquiry quarantine operations, scanner readiness testing and retry, guarded bulk actions, access reporting, storage utilization, and isolation guidance while preserving the v0.3.1 reliability controls.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+	<p><?php esc_html_e( 'v0.4.0 adds a human-controlled Administrative Review Workspace with assignment, SLA visibility, manual fit and risk judgments, structured checklists, escalation, immutable snapshots, and review packet export.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 
 	<form method="post" action="options.php">
 		<?php settings_fields( 'sc_ei_settings_group' ); ?>
@@ -43,6 +43,28 @@ $scanner_readiness = SC_EI_Scanner_Operations::readiness( $settings );
 				</tr>
 			</table>
 			<p class="description"><?php esc_html_e( 'The public forms also use a nonce, hidden honeypot, signed form timing, duplicate detection, field limits, and conditional server-side validation.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+		</section>
+
+		<section class="sc-ei-admin__card sc-ei-admin__settings-card">
+			<h2><?php esc_html_e( 'Administrative review controls', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<p><?php esc_html_e( 'These controls set review deadlines and completion safeguards. They do not generate automatic fit decisions or send notifications.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<table class="form-table" role="presentation">
+				<tr><th scope="row"><label for="sc-ei-review-normal-days"><?php esc_html_e( 'Normal-priority due window', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-review-normal-days" type="number" min="1" max="30" name="sc_ei_settings[default_review_due_days]" value="<?php echo esc_attr( $settings['default_review_due_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+				<tr><th scope="row"><label for="sc-ei-review-high-days"><?php esc_html_e( 'High-priority due window', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-review-high-days" type="number" min="1" max="14" name="sc_ei_settings[high_priority_review_due_days]" value="<?php echo esc_attr( $settings['high_priority_review_due_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+				<tr><th scope="row"><label for="sc-ei-review-low-days"><?php esc_html_e( 'Low-priority due window', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-review-low-days" type="number" min="1" max="60" name="sc_ei_settings[low_priority_review_due_days]" value="<?php echo esc_attr( $settings['low_priority_review_due_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+				<tr><th scope="row"><label for="sc-ei-review-urgent-hours"><?php esc_html_e( 'Urgent-priority due window', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-review-urgent-hours" type="number" min="1" max="72" name="sc_ei_settings[urgent_review_due_hours]" value="<?php echo esc_attr( $settings['urgent_review_due_hours'] ); ?>"> <?php esc_html_e( 'hours', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+				<tr><th scope="row"><label for="sc-ei-review-stale-days"><?php esc_html_e( 'Stale review threshold', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-review-stale-days" type="number" min="1" max="90" name="sc_ei_settings[stale_review_days]" value="<?php echo esc_attr( $settings['stale_review_days'] ); ?>"> <?php esc_html_e( 'idle days', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+				<tr><th scope="row"><label for="sc-ei-review-bulk-limit"><?php esc_html_e( 'Bulk review limit', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-review-bulk-limit" type="number" min="1" max="50" name="sc_ei_settings[review_bulk_limit]" value="<?php echo esc_attr( $settings['review_bulk_limit'] ); ?>"> <?php esc_html_e( 'inquiries per operation', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+				<tr><th scope="row"><?php esc_html_e( 'Assignment controls', 'sustainable-catalyst-engagement-intake' ); ?></th><td>
+					<label class="sc-ei-settings-check"><input type="checkbox" name="sc_ei_settings[reviewer_self_assignment]" value="1" <?php checked( $settings['reviewer_self_assignment'], 1 ); ?>> <?php esc_html_e( 'Allow reviewers to claim unassigned inquiries', 'sustainable-catalyst-engagement-intake' ); ?></label><br>
+					<label class="sc-ei-settings-check"><input type="checkbox" name="sc_ei_settings[restrict_review_to_assignee]" value="1" <?php checked( $settings['restrict_review_to_assignee'], 1 ); ?>> <?php esc_html_e( 'Restrict reviewer editing to the assigned reviewer; managers can edit or reassign any review', 'sustainable-catalyst-engagement-intake' ); ?></label>
+				</td></tr>
+				<tr><th scope="row"><?php esc_html_e( 'Completion safeguards', 'sustainable-catalyst-engagement-intake' ); ?></th><td>
+					<label class="sc-ei-settings-check"><input type="checkbox" name="sc_ei_settings[require_review_rationale]" value="1" <?php checked( $settings['require_review_rationale'], 1 ); ?>> <?php esc_html_e( 'Require rationale for fit decisions, escalations, and completed reviews', 'sustainable-catalyst-engagement-intake' ); ?></label><br>
+					<label class="sc-ei-settings-check"><input type="checkbox" name="sc_ei_settings[require_completion_checklist]" value="1" <?php checked( $settings['require_completion_checklist'], 1 ); ?>> <?php esc_html_e( 'Require the full checklist before review completion', 'sustainable-catalyst-engagement-intake' ); ?></label>
+				</td></tr>
+			</table>
+			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-review' ) ); ?>"><?php esc_html_e( 'Open Review Workspace', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
 		</section>
 
 		<section class="sc-ei-admin__card sc-ei-admin__settings-card">
@@ -127,7 +149,7 @@ $scanner_readiness = SC_EI_Scanner_Operations::readiness( $settings );
 
 		<section class="sc-ei-admin__card sc-ei-admin__settings-card">
 			<h2><?php esc_html_e( 'Microsoft Teams scheduling readiness', 'sustainable-catalyst-engagement-intake' ); ?></h2>
-			<p><?php esc_html_e( 'Microsoft Teams is the only supported live meeting platform. v0.3.2 stores preferences and approved meeting records; Microsoft Graph event creation is not enabled yet.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<p><?php esc_html_e( 'Microsoft Teams is the only supported live meeting platform. v0.4.0 stores preferences and approved meeting records; Microsoft Graph event creation is not enabled yet.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row"><label for="sc-ei-teams-organizer"><?php esc_html_e( 'Teams organizer email', 'sustainable-catalyst-engagement-intake' ); ?></label></th>

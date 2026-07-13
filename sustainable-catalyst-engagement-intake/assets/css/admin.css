@@ -874,3 +874,494 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* v0.4.0 Administrative Review Workspace */
+.sc-ei-review-metrics,
+.sc-ei-review-detail-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.sc-ei-review-metrics a,
+.sc-ei-review-detail-metrics > div {
+  display: block;
+  padding: 14px;
+  border: 1px solid #d8d1c3;
+  border-top: 4px solid #2f5f4a;
+  background: #fff;
+  color: #161616;
+  text-decoration: none;
+}
+
+.sc-ei-review-metrics a:hover,
+.sc-ei-review-metrics a:focus {
+  border-color: #6d1b2b;
+  box-shadow: 0 0 0 1px #6d1b2b;
+}
+
+.sc-ei-review-metrics strong,
+.sc-ei-review-metrics span,
+.sc-ei-review-detail-metrics strong,
+.sc-ei-review-detail-metrics span {
+  display: block;
+}
+
+.sc-ei-review-metrics strong,
+.sc-ei-review-detail-metrics strong {
+  margin-bottom: 4px;
+  font-size: 20px;
+}
+
+.sc-ei-review-metrics span,
+.sc-ei-review-detail-metrics span {
+  color: #5d5d5d;
+  font-size: 12px;
+}
+
+.sc-ei-review-metric--attention,
+.sc-ei-review-metric--due_soon {
+  border-top-color: #b77b00 !important;
+  background: #fffaf0 !important;
+}
+
+.sc-ei-review-metric--danger,
+.sc-ei-review-metric--overdue {
+  border-top-color: #8f1515 !important;
+  background: #fff5f5 !important;
+}
+
+.sc-ei-review-stage,
+.sc-ei-review-priority,
+.sc-ei-review-risk,
+.sc-ei-review-assignment,
+.sc-ei-review-mine,
+.sc-ei-review-escalation,
+.sc-ei-review-due {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid #b8b2a7;
+  border-radius: 999px;
+  background: #f8f7f2;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: .025em;
+}
+
+.sc-ei-review-stage--completed {
+  border-color: #187b32;
+  background: #f2faf4;
+  color: #0f5d25;
+}
+
+.sc-ei-review-stage--decision_ready,
+.sc-ei-review-stage--handoff_ready {
+  border-color: #355b74;
+  background: #f1f7fb;
+  color: #23465d;
+}
+
+.sc-ei-review-stage--awaiting_information {
+  border-color: #b77b00;
+  background: #fffaf0;
+  color: #7a5200;
+}
+
+.sc-ei-review-priority--urgent,
+.sc-ei-review-risk--critical {
+  border-color: #8f1515;
+  background: #fff1f1;
+  color: #8f1515;
+}
+
+.sc-ei-review-priority--high,
+.sc-ei-review-risk--high,
+.sc-ei-review-due--overdue {
+  border-color: #b13b2c;
+  background: #fff5f2;
+  color: #8c281c;
+}
+
+.sc-ei-review-priority--low,
+.sc-ei-review-risk--low,
+.sc-ei-review-due--on_track {
+  border-color: #66816f;
+  background: #f4faf6;
+  color: #31543d;
+}
+
+.sc-ei-review-assignment--unassigned,
+.sc-ei-review-due--due_soon {
+  border-color: #b77b00;
+  background: #fffaf0;
+  color: #7a5200;
+}
+
+.sc-ei-review-mine {
+  margin-left: 4px;
+  border-color: #355b74;
+  background: #f1f7fb;
+  color: #23465d;
+}
+
+.sc-ei-review-escalation {
+  margin-top: 5px;
+  border-color: #8f1515;
+  background: #fff1f1;
+  color: #8f1515;
+}
+
+.sc-ei-review-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+  max-width: 100%;
+}
+
+.sc-ei-review-filter-form input[type="search"] {
+  min-width: min(410px, 100%);
+}
+
+.sc-ei-review-method {
+  border-top: 5px solid #2f5f4a;
+}
+
+.sc-ei-review-method-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 18px 0;
+}
+
+.sc-ei-review-method-grid > div {
+  position: relative;
+  padding: 20px;
+  border: 1px solid #d8d1c3;
+  background: #fff;
+}
+
+.sc-ei-review-method-grid > div > span {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #2f5f4a;
+  color: #fff;
+  font-weight: 800;
+}
+
+.sc-ei-review-method-grid h3 {
+  margin: 12px 0 6px;
+}
+
+.sc-ei-review-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(280px, .7fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.sc-ei-review-detail-layout main,
+.sc-ei-review-detail-layout aside {
+  min-width: 0;
+}
+
+.sc-ei-review-detail-layout main > .sc-ei-admin__card,
+.sc-ei-review-detail-layout aside > .sc-ei-admin__card {
+  margin-bottom: 18px;
+}
+
+.sc-ei-review-form {
+  border-top: 5px solid #6d1b2b;
+}
+
+.sc-ei-review-form__fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.sc-ei-review-form__fieldset[disabled] {
+  opacity: .72;
+}
+
+.sc-ei-review-form__header,
+.sc-ei-review-section-header {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.sc-ei-review-form__header h2,
+.sc-ei-review-section-header h2 {
+  margin: 0;
+}
+
+.sc-ei-review-version {
+  padding: 5px 9px;
+  border: 1px solid #d8d1c3;
+  background: #f8f7f2;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sc-ei-review-form-grid,
+.sc-ei-review-text-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.sc-ei-review-form-grid label,
+.sc-ei-review-text-grid label,
+.sc-ei-review-event-note {
+  display: block;
+}
+
+.sc-ei-review-form-grid label > span,
+.sc-ei-review-text-grid label > span,
+.sc-ei-review-event-note > span {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 700;
+}
+
+.sc-ei-review-form-grid input,
+.sc-ei-review-form-grid select,
+.sc-ei-review-text-grid textarea,
+.sc-ei-review-event-note input {
+  width: 100%;
+  max-width: none;
+}
+
+.sc-ei-review-form-grid small,
+.sc-ei-review-text-grid small {
+  display: block;
+  margin-top: 4px;
+  color: #5d5d5d;
+}
+
+.sc-ei-review-form-grid__wide {
+  grid-column: 1 / -1;
+}
+
+.sc-ei-review-checkbox {
+  display: flex !important;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #d8d1c3;
+  background: #f8f7f2;
+}
+
+.sc-ei-review-checkbox span {
+  margin: 0 !important;
+}
+
+.sc-ei-review-checklist {
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px solid #d8d1c3;
+  background: #fbfaf7;
+}
+
+.sc-ei-review-checklist legend {
+  padding: 0 8px;
+  font-weight: 800;
+}
+
+.sc-ei-review-checklist legend span {
+  margin-left: 8px;
+  color: #6d1b2b;
+}
+
+.sc-ei-review-checklist label {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  margin: 0 0 10px;
+}
+
+.sc-ei-review-escalation-panel {
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px solid #d3a2a2;
+  border-left: 5px solid #8f1515;
+  background: #fff7f7;
+}
+
+.sc-ei-review-escalation-panel h3 {
+  margin-top: 0;
+}
+
+.sc-ei-review-event-note {
+  margin-top: 18px;
+}
+
+.sc-ei-review-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.sc-ei-review-context-details {
+  grid-template-columns: minmax(130px, .45fr) minmax(0, 1.55fr);
+}
+
+.sc-ei-review-context-block {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e1ddd3;
+}
+
+.sc-ei-review-context-block h3 {
+  margin: 0 0 7px;
+}
+
+.sc-ei-review-history,
+.sc-ei-review-mini-audit {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sc-ei-review-history > li,
+.sc-ei-review-mini-audit > li {
+  position: relative;
+  margin: 0;
+  padding: 0 0 18px 20px;
+  border-left: 2px solid #d8d1c3;
+}
+
+.sc-ei-review-history > li::before,
+.sc-ei-review-mini-audit > li::before {
+  position: absolute;
+  top: 2px;
+  left: -6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #6d1b2b;
+  content: "";
+}
+
+.sc-ei-review-history__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  justify-content: space-between;
+}
+
+.sc-ei-review-history__meta span,
+.sc-ei-review-mini-audit span {
+  color: #646464;
+  font-size: 12px;
+}
+
+.sc-ei-review-history details {
+  margin-top: 8px;
+}
+
+.sc-ei-review-owner-card form {
+  margin: 10px 0;
+}
+
+.sc-ei-review-document-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sc-ei-review-document-summary > div {
+  padding: 10px;
+  border: 1px solid #d8d1c3;
+  background: #f8f7f2;
+}
+
+.sc-ei-review-document-summary strong,
+.sc-ei-review-document-summary span {
+  display: block;
+}
+
+.sc-ei-review-document-summary strong {
+  font-size: 18px;
+}
+
+.sc-ei-review-mini-audit p {
+  margin: 4px 0 0;
+}
+
+.sc-ei-review-queue-card .wp-list-table th,
+.sc-ei-review-queue-card .wp-list-table td {
+  vertical-align: top;
+}
+
+.sc-ei-review-queue-card .column-reference,
+.sc-ei-review-queue-card .column-request {
+  min-width: 175px;
+}
+
+.sc-ei-review-queue-card .column-assignment,
+.sc-ei-review-queue-card .column-review_stage,
+.sc-ei-review-queue-card .column-priority_due,
+.sc-ei-review-queue-card .column-fit_next_step,
+.sc-ei-review-queue-card .column-risk_evidence {
+  min-width: 135px;
+}
+
+@media (max-width: 1200px) {
+  .sc-ei-review-detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sc-ei-review-method-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 782px) {
+  .sc-ei-review-form-grid,
+  .sc-ei-review-text-grid,
+  .sc-ei-review-method-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sc-ei-review-form-grid__wide {
+    grid-column: auto;
+  }
+
+  .sc-ei-review-bulk {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .sc-ei-review-bulk input,
+  .sc-ei-review-bulk select,
+  .sc-ei-review-bulk .button {
+    width: 100%;
+    max-width: none;
+  }
+
+  .sc-ei-review-form__header,
+  .sc-ei-review-section-header {
+    display: block;
+  }
+
+  .sc-ei-review-version {
+    display: inline-block;
+    margin-top: 8px;
+  }
+}

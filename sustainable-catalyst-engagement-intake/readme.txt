@@ -1,117 +1,128 @@
 === Sustainable Catalyst Engagement Intake ===
 Contributors: content-catalyst
-Tags: contact, consulting, intake, secure upload, quarantine, scanner readiness, file audit, microsoft teams, privacy
+Tags: contact, consulting, intake, administrative review, assignment, secure upload, quarantine, microsoft teams, privacy
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.3.2
+Stable tag: 0.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Private contact and consulting intake with secure document quarantine operations, scanner readiness, reliable protected storage, Microsoft Teams preferences, privacy tools, and audit history.
+Private consulting and contact intake with a human-controlled Administrative Review Workspace, secure document quarantine, scanner readiness, Microsoft Teams scheduling readiness, privacy tools, and audit history.
 
 == Description ==
 
-Version 0.3.2 adds the operational layer for private documents collected through the compact Consulting form and advanced Contact Hub.
+Version 0.4.0 adds the Administrative Review Workspace above the dual public intake, reliable protected storage, and Quarantine Operations layers.
 
 Recommended shortcodes:
 
 * Consulting page: `[sc_engagement_inquiry mode="compact" source="consulting-page" entry_cta="discuss-an-engagement" title="Discuss an Engagement"]`
 * Contact page: `[sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst"]`
 
-Quarantine Operations provides:
+The Review Workspace includes:
 
-* Cross-inquiry private document queue
-* Search by file, inquiry, contact, organization, or SHA-256
-* Filters for quarantine, validation, scanner, storage, category, confidentiality, and retention state
-* Scanner readiness status and generated benign test file
-* Single-file and guarded bulk scanner retries
-* Storage and integrity rechecks
-* Approval, return-to-quarantine, replacement request, retention, and rejection controls
-* Maximum 50 records per bulk operation
-* Configurable scanner retry batch limit
-* Exact confirmation before bulk physical deletion
-* Storage utilization and free-space reporting
-* Private document access and operations audit
-* Filtered CSV audit export with spreadsheet-formula neutralization
-* Isolation guidance for reviewing untrusted files
-* Human-controlled decisions with no automatic approval
+* Open, assigned-to-me, unassigned, escalation, and completed queues
+* Review ownership and self-claim controls
+* Manager assignment and unassignment
+* Configurable normal, high, low, and urgent due windows
+* Overdue, due-soon, stale, and aging indicators
+* Manual fit decision and confidence
+* Manual risk, evidence-readiness, and scope-clarity judgments
+* Explicit recommended next step
+* Explicit inquiry status selection
+* Review summary and decision rationale
+* Information-gap and conflict/independence notes
+* Administrative checklist
+* Escalation request, active review, and resolution
+* Optimistic version locking against silent reviewer overwrites
+* Immutable review snapshots
+* Guarded bulk assignment, priority, stage, due-date, and escalation actions
+* Private JSON review packet export
+* Request, document, scheduling, conversion, and audit context
+* Review health metrics in Diagnostics
+* WordPress privacy export and erasure for review narratives
 
-Scanner-required mode:
-
-* Newly enabling it requires a configured scanner integration.
-* A recent generated benign file must be reported clean.
-* The test file must be deleted successfully.
-* The configured scanner provider and integration version must still match the tested configuration.
-* Once enabled, the policy remains fail-closed if readiness later degrades.
-* New uploads not reported clean are rejected and deleted.
-
-No antivirus engine is bundled. The readiness test verifies that a benign file can be submitted to the integration and reported clean; it does not prove that every malicious file will be detected.
-
-Files remain outside the WordPress Media Library and receive no public URL.
+The review layer is human-authored. It does not calculate a fit score, automatically accept or reject an inquiry, infer an inquiry status, send a message, schedule a meeting, generate a proposal, or disclose a document.
 
 == Installation ==
 
 1. Back up the WordPress database and private storage directory.
-2. Upload and activate v0.3.2.
+2. Upload and activate v0.4.0.
 3. Open Engagement Intake → Diagnostics.
-4. Confirm database version 0.3.2 and scanner migration fields.
-5. Run Storage Probe and Storage Reconciliation.
-6. Open Engagement Intake → Quarantine.
-7. Run the benign scanner readiness test when an external scanner is integrated.
-8. Review the queue, access audit, storage utilization, and isolation guidance.
-9. Enable clean-required mode only after readiness shows Ready.
-10. Test compact and advanced forms with non-sensitive documents.
+4. Confirm database version 0.4.0.
+5. Confirm the `reviews` table and review fields.
+6. Open Engagement Intake → Review Workspace.
+7. Review unassigned and overdue queues.
+8. Configure review deadlines and completion safeguards in Settings.
+9. Claim or assign an inquiry.
+10. Complete a test review using non-sensitive data.
+11. Confirm a review snapshot appears.
+12. Export a private review packet.
+13. Verify reviewer and manager permissions.
 
-== Upgrade from 0.3.1 ==
+== Upgrade from 0.3.2 ==
 
-The upgrade preserves all inquiry, attachment, storage, audit, Teams, privacy, retention, and conversion data.
+The upgrade preserves inquiries, documents, storage, scanner, quarantine, Teams, conversion, privacy, retention, and audit data.
 
-The attachment table gains:
+It adds:
 
-* scanner attempt count
-* last scanner time
-* last scanner actor
-* index on last scanner time
+* Current review fields to the inquiry table
+* A dedicated immutable review snapshot table
+* Review assignment and due-date fields
+* Manual fit, risk, evidence, and scope fields
+* Checklist, escalation, rationale, and information-gap fields
+* Review version and completion timestamps
+* Reviewer and manager capabilities
+* Review settings
 
-Existing attachments remain in place. Scanner attempt metadata begins with the existing stored state until a new upload or administrative rescan occurs.
+Existing open inquiries without a due date receive a due date based on the normal-priority review window. Existing inquiry statuses are not converted into fit decisions or completed reviews.
 
 == Frequently Asked Questions ==
 
-= Does the plugin include antivirus software? =
+= Does the plugin score inquiry fit? =
 
-No. The plugin provides a strict structural validator and an integration bridge. Connect an external scanner through `sc_ei_scan_attachment` and `sc_ei_scanner_probe`.
+No. Fit decision, confidence, risk, evidence readiness, and scope clarity are explicit human judgments.
 
-= Does a clean readiness test guarantee the scanner catches malware? =
+= Does selecting a recommended next step change the inquiry status? =
 
-No. It confirms that the configured integration can receive a generated benign file, report it clean, and allow the temporary test file to be deleted. It is an operational readiness signal, not proof of detection quality.
+No. The reviewer must explicitly select the inquiry status. The next-step field does not send a message, schedule a meeting, or create a proposal.
 
-= What happens when an administrative rescan reports infected? =
+= How are conflicting edits handled? =
 
-The result is stored, downloads remain blocked, and the plugin attempts to delete the physical file and mark the attachment rejected. If deletion fails, the infected status remains visible and immediate administrative action is required.
+Every current review has a version number. A save based on an older version is rejected and the reviewer must reload the current review.
 
-= Can bulk actions approve documents automatically? =
+= Are review changes preserved? =
 
-No. An authorized human must select the documents and choose the action. Approval still requires validated content, acceptable scanner policy, and a current healthy storage and integrity check.
+Yes. Each successful save writes an immutable structured snapshot in addition to updating the current review state.
 
-= Are orphan files automatically deleted? =
+= Can reviewers edit each other's work? =
 
-No. Reconciliation remains read-only. Orphan files are reported for investigation.
+By default, a reviewer can edit an unassigned inquiry or the inquiry assigned to them. Managers can reassign and edit any inquiry. This restriction is configurable.
 
-= What is included in the CSV audit export? =
+= What does completion require? =
 
-Event metadata, inquiry reference, private document name, actor, message, and sanitized context. Physical file contents are never exported.
+By default, a completed review requires the full checklist, an explicit fit decision, a non-default next step, and a recorded rationale.
+
+= Does a completed review contact the sender? =
+
+No. Sender communications arrive in a later release.
+
+= Does the review packet include document contents? =
+
+No. It includes private inquiry, review, attachment metadata, and audit history in JSON. Physical file contents are not embedded.
 
 == Changelog ==
 
+= 0.4.0 =
+* Added the human-controlled Administrative Review Workspace, assignments, due-date and aging visibility, manual fit and risk judgments, review checklist, escalation, immutable snapshots, bulk review operations, private review packet export, privacy integration, and diagnostics.
+
 = 0.3.2 =
-* Added cross-inquiry Quarantine Operations.
-* Added scanner readiness testing, retry operations, clean-mode safeguards, guarded bulk controls, storage utilization, access reporting, CSV export, and isolation guidance.
+* Added cross-inquiry Quarantine Operations and scanner readiness.
 
 = 0.3.1 =
-* Added atomic storage commits, reconciliation, integrity tracking, retention previews, and upload reliability.
+* Added production storage and upload reliability.
 
 = 0.3.0 =
 * Added secure document intake and quarantine.
 
 = 0.2.2 =
-* Added compact Consulting and advanced Contact intake experiences with conversion routing.
+* Added dual intake experiences and conversion routing.

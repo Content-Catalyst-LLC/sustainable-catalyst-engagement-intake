@@ -175,3 +175,29 @@ For higher-risk intake:
 - CSV values beginning with spreadsheet formula characters are neutralized
 - audit export never includes physical file contents
 - isolation guidance remains necessary even after a clean scan
+
+
+## v0.4.0 administrative review controls
+
+- human-authored review categories; no automated fit score
+- explicit inquiry status separate from fit decision and recommended next step
+- optimistic `review_version` check prevents silent concurrent overwrite
+- current review update and immutable snapshot insertion occur in one database transaction
+- stale saves roll back
+- assignment validates that the selected user can review inquiries
+- reviewer editing can be restricted to the assigned reviewer
+- managers retain explicit reassignment authority
+- completion can require the complete checklist
+- fit decisions, escalation, and completion can require a rationale
+- completion requires an explicit fit decision and non-default next step
+- active escalation requires a reason
+- bulk review actions require a dedicated capability and nonce
+- bulk operations remain capped at 50 inquiries
+- each bulk item still passes normal review validation
+- private review packet export requires a dedicated capability and nonce
+- review packet export excludes physical document contents
+- privacy export includes review fields and snapshots
+- privacy erasure clears current and historical review narratives
+- categorical review history is retained for accountability
+- unsaved-change warning reduces accidental browser navigation loss
+- review metrics are operational signals and never trigger status changes

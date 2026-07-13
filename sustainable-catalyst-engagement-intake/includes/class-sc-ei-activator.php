@@ -28,7 +28,7 @@ final class SC_EI_Activator {
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Engagement Intake v0.3.2 activated with cross-inquiry quarantine operations, scanner readiness testing and retry, guarded bulk file actions, access audit reporting, storage utilization, isolation guidance, and v0.3.1 reliability controls.',
+			'Engagement Intake v0.4.0 activated with a human-controlled Administrative Review Workspace, assignments, due-date visibility, manual fit and risk judgments, review checklists, escalation, immutable snapshots, private review packet export, quarantine operations, and reliable protected storage.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}

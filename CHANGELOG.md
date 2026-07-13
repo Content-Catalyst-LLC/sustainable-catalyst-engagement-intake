@@ -1,47 +1,63 @@
 # Changelog
 
+## 0.4.0 — Administrative Review Workspace
+
+- Added a private Administrative Review Workspace submenu.
+- Added open, mine, unassigned, escalation, completed, and method views.
+- Added review queue metrics for open, unassigned, mine, overdue, due soon, escalated, decision ready, completed, document attention, and Teams attention.
+- Added review ownership and reviewer self-claim.
+- Added manager assignment and unassignment.
+- Added configurable assignee-only reviewer editing.
+- Added current review stage.
+- Added review priority and due date.
+- Added normal, high, low, and urgent due-window settings.
+- Added age, idle-time, stale, due-soon, and overdue indicators.
+- Added manual fit decision.
+- Added manual fit confidence.
+- Added manual risk level.
+- Added manual evidence readiness.
+- Added manual scope clarity.
+- Added explicit recommended next step.
+- Kept inquiry status explicitly separate from fit and next-step fields.
+- Added review summary.
+- Added decision rationale.
+- Added information-gap and question record.
+- Added conflict, independence, privacy, and reputational notes.
+- Added a nine-item administrative review checklist.
+- Added escalation request, under-review, resolved, reason, and resolution record.
+- Added configurable rationale and completion-checklist safeguards.
+- Added explicit completion requirements for fit decision and next step.
+- Added optimistic review-version locking.
+- Added transactionally paired current-state updates and immutable review snapshots.
+- Added dedicated `sc_ei_reviews` table.
+- Added assignment, review, fit, risk, evidence, scope, escalation, and timing indexes.
+- Added migration backfill for review due dates and checklist JSON.
+- Added guarded bulk assignment, unassignment, priority, stage, due-date, escalation, and resolution actions.
+- Added configurable bulk limit with hard maximum 50.
+- Added private JSON review packet export without physical document contents.
+- Added request, conversion, Teams, document, review history, and audit context to review detail.
+- Added review status and due visibility to the general inquiry list.
+- Added review settings and direct navigation.
+- Added review table and queue health to Diagnostics.
+- Added review fields and snapshots to WordPress privacy export.
+- Added review narrative erasure to WordPress privacy erasure.
+- Added reviewer, assignment, priority, escalation, bulk, and review-export capabilities.
+- Added mobile and responsive Review Workspace styling.
+- Added unsaved-change warning and live checklist progress.
+- Added review schema, operations, privacy, migration, and fresh-package tests.
+- Preserved v0.3.2 Quarantine Operations, scanner readiness, v0.3.1 storage reliability, and v0.3.0 secure document intake.
+
 ## 0.3.2 — Quarantine Operations and Scanner Readiness
 
-- Added a cross-inquiry Quarantine Operations workspace.
-- Added queue search across filename, SHA-256, inquiry reference, contact, email, and organization.
-- Added filters for quarantine, validation, scanner, storage, category, confidentiality, and retention state.
-- Added operational summary counts for active, quarantined, approved, replacement, scanner, storage, expired, bytes, and downloads.
-- Added scanner attempt count, last scanner time, and last scanner actor fields.
-- Added scanner provider and integration-version readiness matching.
-- Added generated benign scanner readiness test containing no submitted user data.
-- Added readiness freshness policy.
-- Added clean-required scanner-mode activation gate.
-- Preserved fail-closed behavior when an already-enabled scanner later becomes unavailable.
-- Added single-file scanner retry.
-- Added configurable bulk scanner retry.
-- Added storage and SHA-256 verification before administrative rescan.
-- Added automatic physical deletion and rejection when a rescan reports infected.
-- Added clear infected-file deletion-failure warning state.
-- Added guarded bulk integrity verification.
-- Added guarded bulk approval, quarantine, replacement, retention, and rejection actions.
-- Limited bulk selection to 50 records.
-- Added exact `REJECT SELECTED` confirmation before bulk physical deletion.
-- Added approval safeguards for validation, infection, scanner policy, storage, and integrity.
-- Added storage utilization and free-space dashboard.
-- Added private document access and operations audit.
-- Added filters for event, actor, date, inquiry, file, and message.
-- Added CSV audit export capped at 5,000 rows.
-- Added CSV formula-injection neutralization.
-- Added isolation guidance for untrusted documents.
-- Added scanner state, attempts, provider, time, and message to inquiry review.
-- Added scanner readiness and queue state to Diagnostics.
-- Added scanner readiness, freshness, and bulk-limit controls to Settings.
-- Added private file operational metadata to privacy export.
-- Added v0.3.2 operational option and transient cleanup on explicit uninstall.
-- Preserved v0.3.1 atomic storage, reconciliation, request idempotency, retention safety, and cache/CDN reliability.
+- Added cross-inquiry quarantine operations, scanner readiness, retry, bulk file controls, access audit, and isolation guidance.
 
 ## 0.3.1 — Production Storage and Upload Reliability
 
-- Added atomic storage commits, request-envelope checks, storage probes, reconciliation, integrity tracking, retention previews, and cache/CDN hardening.
+- Added atomic storage commits, request-envelope checks, reconciliation, and retention safety.
 
 ## 0.3.0 — Secure Document Intake and Quarantine
 
-- Added protected multi-file intake, validation, private storage, quarantine, downloads, retention, and privacy erasure.
+- Added protected multi-file intake, validation, quarantine, controlled downloads, and privacy erasure.
 
 ## 0.2.2 — Dual Intake Experiences and Conversion Routing
 

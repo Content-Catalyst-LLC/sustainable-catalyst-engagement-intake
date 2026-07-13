@@ -42,6 +42,7 @@ final class SC_EI_Plugin {
 
 		if ( is_admin() ) {
 			SC_EI_Admin::register();
+			SC_EI_Review_Admin::register();
 		}
 
 		do_action( 'sc_ei_loaded', $this );

@@ -61,6 +61,48 @@ final class SC_EI_Privacy {
 				'data'        => $item_data,
 			);
 
+			foreach ( SC_EI_Review_Repository::history( absint( $row['id'] ), 500 ) as $review ) {
+				$review_data = array();
+				foreach (
+					array(
+						'event_type'            => 'Review event',
+						'from_stage'            => 'Previous review stage',
+						'to_stage'              => 'Review stage',
+						'priority'              => 'Review priority',
+						'fit_decision'          => 'Fit decision',
+						'fit_confidence'        => 'Fit confidence',
+						'risk_level'            => 'Risk level',
+						'evidence_readiness'    => 'Evidence readiness',
+						'scope_clarity'         => 'Scope clarity',
+						'recommended_next_step' => 'Recommended next step',
+						'summary'               => 'Review summary',
+						'rationale'             => 'Decision rationale',
+						'information_gaps'      => 'Information gaps',
+						'conflict_notes'        => 'Conflict and independence notes',
+						'escalation_status'     => 'Escalation status',
+						'escalation_reason'     => 'Escalation reason',
+						'due_at'                => 'Review due at',
+						'inquiry_status'        => 'Inquiry status',
+						'review_version'        => 'Review version',
+						'created_at'            => 'Review recorded at',
+					) as $key => $label
+				) {
+					if ( isset( $review[ $key ] ) && '' !== (string) $review[ $key ] ) {
+						$review_data[] = array(
+							'name'  => $label,
+							'value' => (string) $review[ $key ],
+						);
+					}
+				}
+
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-reviews',
+					'group_label' => __( 'Engagement Intake Administrative Reviews', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-review-' . $review['id'],
+					'data'        => $review_data,
+				);
+			}
+
 			foreach ( SC_EI_Attachment_Repository::for_inquiry( absint( $row['id'] ), true ) as $attachment ) {
 				$attachment_data = array();
 				foreach (
@@ -177,6 +219,33 @@ final class SC_EI_Privacy {
 				}
 			}
 
+			$review_rows_updated = $wpdb->query(
+				$wpdb->prepare(
+					"UPDATE " . SC_EI_Database::table( 'reviews' ) . "
+					SET summary = '',
+						rationale = '',
+						information_gaps = '',
+						conflict_notes = '',
+						escalation_reason = '',
+						snapshot_json = %s
+					WHERE inquiry_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+					wp_json_encode(
+						array(
+							'personal_data_erased'  => true,
+							'review_schema_version' => SC_EI_REVIEW_SCHEMA_VERSION,
+						)
+					),
+					$inquiry_id
+				)
+			);
+
+			if ( false === $review_rows_updated ) {
+				$retained   = true;
+				$messages[] = __( 'Administrative review narratives could not be erased and require administrator attention.', 'sustainable-catalyst-engagement-intake' );
+			} elseif ( $review_rows_updated > 0 ) {
+				$removed = true;
+			}
+
 			$anonymous_email = 'deleted+' . $inquiry_id . '@example.invalid';
 			$updated         = $wpdb->update(
 				$table,
@@ -197,10 +266,15 @@ final class SC_EI_Privacy {
 					'desired_outcome'    => '',
 					'relevant_links'     => '[]',
 					'metadata_json'      => '{}',
+					'review_summary'     => '',
+					'decision_rationale' => '',
+					'information_gaps'   => '',
+					'conflict_notes'     => '',
+					'escalation_reason'  => '',
 					'updated_at'         => $now,
 				),
 				array( 'id' => $inquiry_id ),
-				array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
+				array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
 				array( '%d' )
 			);
 
@@ -264,6 +338,27 @@ final class SC_EI_Privacy {
 			'calendar_invite_consent'  => 'Calendar invitation consent',
 			'scheduling_notes'         => 'Scheduling notes',
 			'scheduling_status'        => 'Scheduling status',
+			'assigned_user_id'         => 'Assigned reviewer user ID',
+			'review_stage'             => 'Administrative review stage',
+			'review_priority'          => 'Review priority',
+			'review_due_at'            => 'Review due at',
+			'fit_decision'             => 'Fit decision',
+			'fit_confidence'           => 'Fit confidence',
+			'risk_level'               => 'Risk level',
+			'evidence_readiness'       => 'Evidence readiness',
+			'scope_clarity'            => 'Scope clarity',
+			'recommended_next_step'    => 'Recommended next step',
+			'review_summary'           => 'Review summary',
+			'decision_rationale'       => 'Decision rationale',
+			'information_gaps'         => 'Information gaps',
+			'conflict_notes'           => 'Conflict and independence notes',
+			'escalation_status'        => 'Escalation status',
+			'escalation_reason'        => 'Escalation reason',
+			'review_started_at'        => 'Review started at',
+			'last_reviewed_at'         => 'Last reviewed at',
+			'decision_at'              => 'Decision recorded at',
+			'review_completed_at'      => 'Review completed at',
+			'review_version'           => 'Review version',
 			'created_at'               => 'Submitted at',
 			'updated_at'               => 'Last updated',
 		);

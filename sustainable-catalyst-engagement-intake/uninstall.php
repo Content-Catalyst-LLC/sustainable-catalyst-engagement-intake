@@ -39,14 +39,18 @@ if ( $delete ) {
 	$timeout_like = $wpdb->esc_like( '_transient_timeout_sc_ei_success_' ) . '%';
 	$bulk_like    = $wpdb->esc_like( '_transient_sc_ei_quarantine_bulk_result_' ) . '%';
 	$bulk_timeout = $wpdb->esc_like( '_transient_timeout_sc_ei_quarantine_bulk_result_' ) . '%';
+	$review_bulk_like    = $wpdb->esc_like( '_transient_sc_ei_bulk_review_result_' ) . '%';
+	$review_bulk_timeout = $wpdb->esc_like( '_transient_timeout_sc_ei_bulk_review_result_' ) . '%';
 	$wpdb->query(
 		$wpdb->prepare(
-			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$lock_like,
 			$success_like,
 			$timeout_like,
 			$bulk_like,
-			$bulk_timeout
+			$bulk_timeout,
+			$review_bulk_like,
+			$review_bulk_timeout
 		)
 	);
 }
