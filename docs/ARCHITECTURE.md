@@ -243,3 +243,20 @@ Criterion items store ratings, weights, evidence, concerns, and source reference
 Second-review rows preserve independent review history.
 
 The repository contains no inquiry-status mutation or mail-delivery path.
+
+
+## v0.8.0 sender portal architecture
+```text
+one-time invitation
+→ email challenge
+→ session credential
+→ permission and privacy gates
+→ sender-safe view or write
+→ portal event and audit
+```
+
+Portal access, sessions, and events are separated from WordPress users.
+
+Portal-visible communications remain in the communication ledger and require explicit visibility state.
+
+Portal uploads enter the existing protected quarantine architecture.

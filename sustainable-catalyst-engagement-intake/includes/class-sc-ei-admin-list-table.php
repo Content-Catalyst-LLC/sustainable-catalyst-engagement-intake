@@ -35,6 +35,7 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'review_due'        => __( 'Review Due', 'sustainable-catalyst-engagement-intake' ),
 			'communication'     => __( 'Communication', 'sustainable-catalyst-engagement-intake' ),
 			'fit_assessment'    => __( 'Fit Assessment', 'sustainable-catalyst-engagement-intake' ),
+			'sender_portal'     => __( 'Sender Portal', 'sustainable-catalyst-engagement-intake' ),
 			'privacy'           => __( 'Privacy / Retention', 'sustainable-catalyst-engagement-intake' ),
 			'documents'         => __( 'Documents', 'sustainable-catalyst-engagement-intake' ),
 			'status'            => __( 'Inquiry Status', 'sustainable-catalyst-engagement-intake' ),
@@ -53,6 +54,7 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'review_due'        => array( 'review_due_at', false ),
 			'communication'     => array( 'last_communication_at', false ),
 			'fit_assessment'    => array( 'fit_assessment_updated_at', false ),
+			'sender_portal'     => array( 'portal_last_activity_at', false ),
 			'privacy'           => array( 'retention_until', false ),
 			'status'            => array( 'status', false ),
 			'scheduling_status' => array( 'scheduling_status', false ),
@@ -138,6 +140,22 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 						esc_html( $label )
 					);
 
+			case 'sender_portal':
+				$state = $item['portal_status'] ?: 'inactive';
+				$label = isset( SC_EI_Portal_Schema::access_statuses()[ $state ] )
+					? SC_EI_Portal_Schema::label( SC_EI_Portal_Schema::access_statuses(), $state )
+					: __( 'Inactive', 'sustainable-catalyst-engagement-intake' );
+				$content = sprintf(
+					'<span class="sc-ei-fit-state sc-ei-fit-state--%1$s">%2$s</span><br><span class="description">%3$d messages · %4$d documents</span>',
+					esc_attr( $state ),
+					esc_html( $label ),
+					absint( $item['portal_message_count'] ),
+					absint( $item['portal_document_count'] )
+				);
+				return ! empty( $item['portal_access_id'] )
+					? sprintf( '<a href="%1$s">%2$s</a>', esc_url( SC_EI_Portal_Admin::url( absint( $item['portal_access_id'] ) ) ), $content )
+					: $content;
+
 			case 'privacy':
 				$due = ! empty( $item['retention_until'] ) && strtotime( $item['retention_until'] . ' UTC' ) <= time();
 				$attention = in_array( $item['privacy_status'], array( 'restricted', 'erasure_requested' ), true ) || absint( $item['legal_hold_count'] ) > 0;
@@ -194,6 +212,9 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'view'   => sprintf( '<a href="%s">%s</a>', esc_url( $url ), esc_html__( 'View', 'sustainable-catalyst-engagement-intake' ) ),
 			'review' => sprintf( '<a href="%s">%s</a>', esc_url( SC_EI_Review_Admin::detail_url( absint( $item['id'] ) ) ), esc_html__( 'Review', 'sustainable-catalyst-engagement-intake' ) ),
 			'communications' => sprintf( '<a href="%s">%s</a>', esc_url( SC_EI_Communication_Admin::thread_url( absint( $item['id'] ) ) ), esc_html__( 'Communications', 'sustainable-catalyst-engagement-intake' ) ),
+			'portal' => ! empty( $item['portal_access_id'] )
+				? sprintf( '<a href="%s">%s</a>', esc_url( SC_EI_Portal_Admin::url( absint( $item['portal_access_id'] ) ) ), esc_html__( 'Sender Portal', 'sustainable-catalyst-engagement-intake' ) )
+				: '',
 			'fit' => ! empty( $item['current_fit_assessment_id'] )
 				? sprintf( '<a href="%s">%s</a>', esc_url( SC_EI_Fit_Admin::url( absint( $item['current_fit_assessment_id'] ) ) ), esc_html__( 'Fit Assessment', 'sustainable-catalyst-engagement-intake' ) )
 				: '',

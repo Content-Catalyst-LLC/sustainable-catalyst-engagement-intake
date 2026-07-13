@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-VERSION="0.7.0"
+VERSION="0.8.0"
 PLUGIN_SLUG="sustainable-catalyst-engagement-intake"
 REPO_ARCHIVE_BASENAME="${PLUGIN_SLUG}-v${VERSION}-repo.zip"
 
@@ -16,7 +16,7 @@ SKIP_PUSH="${SC_EI_SKIP_PUSH:-0}"
 SKIP_REMOTE_CHECK="${SC_EI_SKIP_REMOTE_CHECK:-0}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v070.XXXXXX")"
+WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v080.XXXXXX")"
 
 cleanup() {
   rm -rf "${WORK_DIR}"
@@ -117,66 +117,36 @@ find_source_directory() {
 
 validate_release_markers() {
   local main_file="${REPO_DIR}/${PLUGIN_SLUG}/${PLUGIN_SLUG}.php"
-  local fit_schema="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-fit-schema.php"
-  local fit_repo="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-fit-repository.php"
-  local fit_admin="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-fit-admin.php"
-  local fit_view="${REPO_DIR}/${PLUGIN_SLUG}/admin/views/fit-assessment-detail.php"
+  local portal_repo="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-portal-repository.php"
+  local portal_session="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-portal-session.php"
+  local portal_public="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-portal-public.php"
+  local portal_admin="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-portal-admin.php"
 
-  php -r '
-    $file = $argv[1];
-    $expected = $argv[2];
-    $contents = file_get_contents($file);
-    if ($contents === false || strpos($contents, $expected) === false) {
-        fwrite(STDERR, "Missing release marker: {$expected}\nFile: {$file}\n");
-        exit(1);
-    }
-  ' "${main_file}" "Version:     ${VERSION}"
+  grep -Fq "Version:     ${VERSION}" "${main_file}" || die "Plugin version marker is missing."
+  grep -Fq "SC_EI_DB_VERSION', '0.8.0'" "${main_file}" || die "Database version marker 0.8.0 is missing."
+  grep -Fq "SC_EI_PORTAL_SCHEMA_VERSION', '1.0.0'" "${main_file}" || die "Portal schema marker 1.0.0 is missing."
 
-  php -r '
-    $file = $argv[1];
-    $contents = file_get_contents($file);
-    if ($contents === false || !preg_match("/SC_EI_DB_VERSION\x27,\s*\x270\.7\.0\x27/", $contents)) {
-        fwrite(STDERR, "Database version marker 0.7.0 is missing.\nFile: {$file}\n");
-        exit(1);
-    }
-  ' "${main_file}"
+  grep -Fq "hash_hmac( 'sha256'" "${portal_repo}" || die "Portal HMAC credential hashing is missing."
+  grep -Fq "'invite_token_hash'   => ''" "${portal_repo}" || die "Single-use invitation invalidation is missing."
+  grep -Fq "'automatic_inquiry_status_change' => false" "${portal_repo}" || die "Status-neutral withdrawal marker is missing."
 
-  php -r '
-    $file = $argv[1];
-    $contents = file_get_contents($file);
-    if ($contents === false || !preg_match("/SC_EI_FIT_SCHEMA_VERSION\x27,\s*\x271\.0\.0\x27/", $contents)) {
-        fwrite(STDERR, "Fit schema marker 1.0.0 is missing.\nFile: {$file}\n");
-        exit(1);
-    }
-  ' "${main_file}"
+  grep -Fq "'httponly' => true" "${portal_session}" || die "HttpOnly session cookie is missing."
+  grep -Fq "'samesite' => 'Strict'" "${portal_session}" || die "SameSite Strict session cookie is missing."
+  grep -Fq "csrf_token" "${portal_session}" || die "Portal CSRF protection is missing."
 
-  grep -Fq "calculate_score" "${fit_schema}" \
-    || die "The transparent advisory score implementation is missing."
+  grep -Fq "Cache-Control: no-store" "${portal_public}" || die "Portal no-store protection is missing."
+  grep -Fq "SC_EI_Upload_Manager::process_inquiry_uploads" "${portal_public}" || die "Portal quarantine upload integration is missing."
+  grep -Fq "'REVOKE ' . strtoupper" "${portal_public}" || die "Sender typed access revocation is missing."
 
-  grep -Fq "second_review_reasons" "${fit_schema}" \
-    || die "The second-review trigger logic is missing."
+  grep -Fq "set_transient" "${portal_admin}" || die "One-time invitation display is missing."
+  grep -Fq "'SESSIONS ' . \$access_id" "${portal_admin}" || die "Typed administrative session revocation is missing."
 
-  grep -Fq "'automatic_status_change' => false" "${fit_repo}" \
-    || die "The status-neutral finalization marker is missing."
-
-  grep -Fq "'automatic_communication' => false" "${fit_repo}" \
-    || die "The communication-neutral finalization marker is missing."
-
-  grep -Fq "'automatic_scheduling' => false" "${fit_repo}" \
-    || die "The scheduling-neutral finalization marker is missing."
-
-  if grep -Fq "SC_EI_Inquiry_Repository::update_status" "${fit_repo}" || grep -Fq "wp_mail(" "${fit_repo}"; then
-    die "The fit repository contains an automatic status or mail path."
+  if grep -Fq "wp_create_user" "${portal_repo}" || grep -Fq "wp_insert_user" "${portal_repo}"; then
+    die "The portal repository contains WordPress user creation."
   fi
-
-  grep -Fq "'FINALIZE ' . \$assessment_id" "${fit_admin}" \
-    || die "Typed finalization confirmation is missing."
-
-  grep -Fq "'APPLY ' . \$assessment_id" "${fit_admin}" \
-    || die "Typed Review Workspace application confirmation is missing."
-
-  grep -Fq "Human judgment only" "${fit_view}" \
-    || die "The human-control interface boundary is missing."
+  if grep -Fq "wp_mail(" "${portal_repo}"; then
+    die "The portal repository contains automatic email delivery."
+  fi
 }
 
 run_release_tests() {
@@ -196,6 +166,8 @@ run_release_tests() {
     "tests/privacy-operations.php"
     "tests/fit-schema-fixtures.php"
     "tests/fit-operations.php"
+    "tests/portal-schema-fixtures.php"
+    "tests/portal-operations.php"
     "tests/schema-mapping.php"
   )
 
@@ -284,7 +256,7 @@ validate_release_markers
 log "Running push-safe secret scan..."
 if grep -RInE -I \
   --exclude-dir=.git \
-  --exclude='PUSH_ENGAGEMENT_INTAKE_V070_CLEAN.sh' \
+  --exclude='PUSH_ENGAGEMENT_INTAKE_V080_CLEAN.sh' \
   '(AIza[0-9A-Za-z_-]{20,}|sk-[0-9A-Za-z]{20,}|ghp_[0-9A-Za-z]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' \
   "${REPO_DIR}"
 then

@@ -17,6 +17,7 @@ final class SC_EI_Diagnostics {
 		$communication_columns = SC_EI_Database::communication_columns_exist();
 		$privacy_columns       = SC_EI_Database::privacy_columns_exist();
 		$fit_columns           = SC_EI_Database::fit_columns_exist();
+		$portal_columns        = SC_EI_Database::portal_columns_exist();
 		$admin              = get_role( 'administrator' );
 		$settings           = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
@@ -41,6 +42,7 @@ final class SC_EI_Diagnostics {
 		$privacy_inventory = SC_EI_Privacy_Repository::data_inventory();
 		$retention_policies = SC_EI_Retention_Policy_Repository::active();
 		$fit_metrics = SC_EI_Fit_Repository::metrics();
+		$portal_metrics = SC_EI_Portal_Repository::metrics();
 
 		$notification_policies = array(
 			'sender_acknowledgment' => ! empty( $settings['sender_acknowledgment_enabled'] ),
@@ -75,6 +77,25 @@ final class SC_EI_Diagnostics {
 			'communication_templates' => array(
 				'active_count' => count( $communication_templates ),
 				'keys'         => array_keys( $communication_templates ),
+			),
+			'portal_columns'         => $portal_columns,
+			'portal_schema_version'  => SC_EI_PORTAL_SCHEMA_VERSION,
+			'portal_metrics'         => $portal_metrics,
+			'portal_security'        => array(
+				'cleanup_scheduled'     => (bool) wp_next_scheduled( 'sc_ei_portal_cleanup' ),
+				'next_cleanup_utc'      => ( $next = wp_next_scheduled( 'sc_ei_portal_cleanup' ) ) ? gmdate( 'Y-m-d H:i:s', $next ) : null,
+				'last_cleanup'          => get_option( 'sc_ei_last_portal_cleanup', array() ),
+				'raw_invite_stored'     => false,
+				'raw_session_stored'    => false,
+				'wordpress_user_created'=> false,
+				'automatic_invite_email'=> false,
+				'email_challenge'       => ! empty( $settings['portal_require_email_challenge'] ),
+				'terms_required'        => ! empty( $settings['portal_require_terms_acceptance'] ),
+				'cookie_httponly'       => ! empty( $settings['portal_cookie_httponly'] ),
+				'cookie_samesite'       => (string) $settings['portal_cookie_samesite'],
+				'noindex'               => ! empty( $settings['portal_noindex'] ),
+				'no_store'              => ! empty( $settings['portal_no_store'] ),
+				'page_url'              => (string) $settings['portal_page_url'],
 			),
 			'fit_columns'            => $fit_columns,
 			'fit_schema_version'     => SC_EI_FIT_SCHEMA_VERSION,
@@ -212,6 +233,18 @@ final class SC_EI_Diagnostics {
 		$attachments_ok = ! in_array( false, $results['attachment_columns'], true );
 		$reviews_ok     = ! in_array( false, $results['review_columns'], true );
 		$communications_ok = ! in_array( false, $results['communication_columns'], true );
+		$portal_ok = ! in_array( false, $results['portal_columns'], true )
+			&& ! empty( $results['portal_security']['cleanup_scheduled'] )
+			&& empty( $results['portal_security']['raw_invite_stored'] )
+			&& empty( $results['portal_security']['raw_session_stored'] )
+			&& empty( $results['portal_security']['wordpress_user_created'] )
+			&& empty( $results['portal_security']['automatic_invite_email'] )
+			&& ! empty( $results['portal_security']['email_challenge'] )
+			&& ! empty( $results['portal_security']['terms_required'] )
+			&& ! empty( $results['portal_security']['cookie_httponly'] )
+			&& 'Strict' === $results['portal_security']['cookie_samesite']
+			&& ! empty( $results['portal_security']['noindex'] )
+			&& ! empty( $results['portal_security']['no_store'] );
 		$fit_ok = ! in_array( false, $results['fit_columns'], true )
 			&& empty( $results['fit_human_control']['automatic_recommendation'] )
 			&& empty( $results['fit_human_control']['automatic_acceptance'] )
@@ -282,7 +315,7 @@ final class SC_EI_Diagnostics {
 				&& ! empty( $results['communication_templates']['active_count'] );
 		}
 
-		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $fit_ok && $privacy_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
+		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $portal_ok && $fit_ok && $privacy_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
 			? 'healthy'
 			: 'attention';
 	}

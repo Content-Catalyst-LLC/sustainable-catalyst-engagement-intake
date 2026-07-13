@@ -56,4 +56,4 @@ if ( strpos( $scanner, 'orphan' ) !== false && strpos( $scanner, 'delete_file' )
 	// This class deletes infected attachments, not reconciliation orphans. No assertion needed.
 }
 
-echo "Engagement Intake v0.7.0 quarantine operation checks passed.\n";
+echo "Engagement Intake v0.8.0 quarantine operation checks passed.\n";

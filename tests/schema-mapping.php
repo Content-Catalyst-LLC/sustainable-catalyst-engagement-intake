@@ -1,6 +1,6 @@
 <?php
 /**
- * Static v0.7.0 schema, repository, and privacy mapping checks.
+ * Static v0.8.0 schema, repository, and privacy mapping checks.
  */
 
 $root       = dirname( __DIR__ );
@@ -10,6 +10,7 @@ $inquiries  = file_get_contents( $plugin . '/includes/class-sc-ei-inquiry-reposi
 $attachments= file_get_contents( $plugin . '/includes/class-sc-ei-attachment-repository.php' );
 $reviews    = file_get_contents( $plugin . '/includes/class-sc-ei-review-repository.php' );
 $fit_repository = file_get_contents( $plugin . '/includes/class-sc-ei-fit-repository.php' );
+$portal_repository = file_get_contents( $plugin . '/includes/class-sc-ei-portal-repository.php' );
 $communications = file_get_contents( $plugin . '/includes/class-sc-ei-communication-repository.php' );
 $templates  = file_get_contents( $plugin . '/includes/class-sc-ei-template-repository.php' );
 $mailer     = file_get_contents( $plugin . '/includes/class-sc-ei-mailer.php' );
@@ -148,6 +149,24 @@ assert_mapping(
 	method_data_keys( $privacy_repository, 'public static function queue_action', 'public static function find_action', 3 )
 );
 
+
+foreach ( array(
+	'sql_portal_access' => 'Portal access',
+	'sql_portal_sessions' => 'Portal session',
+	'sql_portal_events' => 'Portal event',
+) as $variable => $label ) {
+	$columns = array_values( array_diff( schema_columns( $database, $variable ), array( 'id' ) ) );
+	$missing = array();
+	foreach ( $columns as $column ) {
+		if ( false === strpos( $portal_repository, "'" . $column . "'" ) ) $missing[] = $column;
+	}
+	if ( $missing ) {
+		fwrite( STDERR, $label . ' fields lack repository coverage: ' . implode( ', ', $missing ) . PHP_EOL );
+		exit( 1 );
+	}
+	echo 'PASS: ' . $label . ' schema operational coverage (' . count( $columns ) . " fields)\n";
+}
+
 $communication_columns = array_values( array_diff( schema_columns( $database, 'sql_communications' ), array( 'id' ) ) );
 $communication_coverage = $communications . $mailer . $engine;
 $missing_communication = array();
@@ -162,7 +181,7 @@ if ( $missing_communication ) {
 }
 echo 'PASS: Communication schema operational coverage (' . count( $communication_columns ) . " fields)\n";
 
-foreach ( array( $inquiries, $attachments, $reviews, $fit_repository, $communications, $templates, $privacy_repository, $policy_repository ) as $source ) {
+foreach ( array( $inquiries, $attachments, $reviews, $fit_repository, $portal_repository, $communications, $templates, $privacy_repository, $policy_repository ) as $source ) {
 	if ( false === strpos( $source, 'array_keys( $data )' ) && false === strpos( $source, 'array_keys( $fields )' ) ) {
 		fwrite( STDERR, "Repository insert/update formats are not key-derived.\n" );
 		exit( 1 );
@@ -205,4 +224,4 @@ if (
 }
 echo "PASS: physical deletion verification, dependency blocking, and tombstone markers present\n";
 
-echo "Engagement Intake v0.7.0 schema checks passed.\n";
+echo "Engagement Intake v0.8.0 schema checks passed.\n";

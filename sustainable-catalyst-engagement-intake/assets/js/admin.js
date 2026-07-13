@@ -276,4 +276,42 @@
     sync();
   });
 
+  document.querySelectorAll("[data-sc-ei-portal-copy]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const input = document.querySelector("[data-sc-ei-portal-copy-source]");
+      if (!input) return;
+      try {
+        await navigator.clipboard.writeText(input.value);
+        button.textContent = "Copied";
+      } catch (error) {
+        input.select();
+        document.execCommand("copy");
+        button.textContent = "Copied";
+      }
+    });
+  });
+
+  document.querySelectorAll(".sc-ei-portal-danger-zone form").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      const state = form.querySelector("select[name='portal_status']")?.value || "";
+      const accessId = form.querySelector("input[name='access_id']")?.value || "";
+      const sessionInput = form.querySelector("input[name='session_confirmation']");
+      const accessInput = form.querySelector("input[name='access_confirmation']");
+      let expected = "";
+      let input = null;
+      if (sessionInput) {
+        expected = `SESSIONS ${accessId}`;
+        input = sessionInput;
+      } else if (accessInput && ["suspended", "revoked"].includes(state)) {
+        expected = `${state.toUpperCase()} ${accessId}`;
+        input = accessInput;
+      }
+      if (input && input.value.trim().toUpperCase() !== expected) {
+        event.preventDefault();
+        window.alert(`Type ${expected} exactly.`);
+        input.focus();
+      }
+    });
+  });
+
 })();

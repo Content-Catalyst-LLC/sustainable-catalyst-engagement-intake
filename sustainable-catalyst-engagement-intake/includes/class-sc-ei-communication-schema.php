@@ -138,7 +138,7 @@ final class SC_EI_Communication_Schema {
 				'communication_type' => 'request_information',
 				'subject'            => __( 'Additional information requested — {reference}', 'sustainable-catalyst-engagement-intake' ),
 				'body'               => __(
-					"Hello {first_name},\n\nThank you for the information provided. Before I can determine the most appropriate next step, please reply with the following:\n\n• [Question or missing information]\n• [Question or missing information]\n\nPlease do not email confidential documents or credentials. A secure sender portal will be introduced in a later release; for now, use only the approved intake route for private documents.\n\nRegards,\n{sender_name}\n{reply_email}",
+					"Hello {first_name},\n\nThank you for the information provided. Before I can determine the most appropriate next step, please reply with the following:\n\n• [Question or missing information]\n• [Question or missing information]\n\nPlease do not email confidential documents or credentials. Use the approved secure sender portal for private follow-up documents when portal access has been issued. Do not email confidential documents or credentials.\n\nRegards,\n{sender_name}\n{reply_email}",
 					'sustainable-catalyst-engagement-intake'
 				),
 				'is_system'          => 0,

@@ -70,6 +70,7 @@ final class SC_EI_Admin {
 
 		SC_EI_Review_Admin::submenu();
 		SC_EI_Fit_Admin::submenu();
+		SC_EI_Portal_Admin::submenu();
 		SC_EI_Communication_Admin::submenu();
 		SC_EI_Privacy_Admin::submenu();
 
@@ -192,7 +193,8 @@ final class SC_EI_Admin {
 				'notification_batch_limit'           => 25,
 			),
 			SC_EI_Privacy_Schema::default_settings(),
-			SC_EI_Fit_Schema::default_settings()
+			SC_EI_Fit_Schema::default_settings(),
+			SC_EI_Portal_Schema::default_settings()
 		);
 	}
 
@@ -263,6 +265,32 @@ final class SC_EI_Admin {
 			'fit_distinct_second_reviewer'            => empty( $value['fit_distinct_second_reviewer'] ) ? 0 : 1,
 			'fit_assessment_stale_days'               => max( 1, min( 365, absint( $value['fit_assessment_stale_days'] ?? $current['fit_assessment_stale_days'] ) ) ),
 			'fit_assessment_queue_limit'              => max( 10, min( 500, absint( $value['fit_assessment_queue_limit'] ?? $current['fit_assessment_queue_limit'] ) ) ),
+			'portal_enabled'                    => 1,
+			'portal_page_url'                   => SC_EI_Portal_Schema::sanitize_portal_page_url( (string) ( $value['portal_page_url'] ?? $current['portal_page_url'] ) ),
+			'portal_invite_ttl_hours'           => max( 1, min( 720, absint( $value['portal_invite_ttl_hours'] ?? $current['portal_invite_ttl_hours'] ) ) ),
+			'portal_session_ttl_minutes'        => max( 30, min( 4320, absint( $value['portal_session_ttl_minutes'] ?? $current['portal_session_ttl_minutes'] ) ) ),
+			'portal_idle_timeout_minutes'       => max( 5, min( 1440, absint( $value['portal_idle_timeout_minutes'] ?? $current['portal_idle_timeout_minutes'] ) ) ),
+			'portal_max_active_sessions'        => max( 1, min( 10, absint( $value['portal_max_active_sessions'] ?? $current['portal_max_active_sessions'] ) ) ),
+			'portal_max_failed_attempts'        => max( 1, min( 20, absint( $value['portal_max_failed_attempts'] ?? $current['portal_max_failed_attempts'] ) ) ),
+			'portal_lockout_minutes'            => max( 1, min( 1440, absint( $value['portal_lockout_minutes'] ?? $current['portal_lockout_minutes'] ) ) ),
+			'portal_message_rate_limit_hour'    => max( 1, min( 100, absint( $value['portal_message_rate_limit_hour'] ?? $current['portal_message_rate_limit_hour'] ) ) ),
+			'portal_update_rate_limit_hour'     => max( 1, min( 200, absint( $value['portal_update_rate_limit_hour'] ?? $current['portal_update_rate_limit_hour'] ) ) ),
+			'portal_session_touch_seconds'      => max( 30, min( 900, absint( $value['portal_session_touch_seconds'] ?? $current['portal_session_touch_seconds'] ) ) ),
+			'portal_event_retention_days'       => max( 30, min( 3650, absint( $value['portal_event_retention_days'] ?? $current['portal_event_retention_days'] ) ) ),
+			'portal_allow_messages'             => empty( $value['portal_allow_messages'] ) ? 0 : 1,
+			'portal_allow_documents'            => empty( $value['portal_allow_documents'] ) ? 0 : 1,
+			'portal_allow_contact_updates'      => empty( $value['portal_allow_contact_updates'] ) ? 0 : 1,
+			'portal_allow_scheduling_updates'   => empty( $value['portal_allow_scheduling_updates'] ) ? 0 : 1,
+			'portal_allow_privacy_requests'     => empty( $value['portal_allow_privacy_requests'] ) ? 0 : 1,
+			'portal_allow_withdrawal_requests'  => empty( $value['portal_allow_withdrawal_requests'] ) ? 0 : 1,
+			'portal_require_email_challenge'    => 1,
+			'portal_require_terms_acceptance'   => 1,
+			'portal_terms_version'              => sanitize_text_field( (string) ( $value['portal_terms_version'] ?? $current['portal_terms_version'] ) ),
+			'portal_default_permissions'        => SC_EI_Portal_Schema::sanitize_permissions( $value['portal_default_permissions'] ?? $current['portal_default_permissions'] ),
+			'portal_cookie_samesite'            => 'Strict',
+			'portal_cookie_httponly'            => 1,
+			'portal_noindex'                    => 1,
+			'portal_no_store'                   => 1,
 			'delete_data_on_uninstall'           => empty( $value['delete_data_on_uninstall'] ) ? 0 : 1,
 			'default_unaccepted_retention_days'  => max( 30, min( 3650, absint( $value['default_unaccepted_retention_days'] ?? $current['default_unaccepted_retention_days'] ) ) ),
 			'withdrawn_retention_days'           => max( 1, min( 3650, absint( $value['withdrawn_retention_days'] ?? $current['withdrawn_retention_days'] ) ) ),

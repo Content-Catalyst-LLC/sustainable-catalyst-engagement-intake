@@ -108,4 +108,4 @@ if ( 'undecided' !== SC_EI_Fit_Schema::sanitize_choice( 'invalid', SC_EI_Fit_Sch
 }
 pass_fit_schema( 'invalid fit choices fail safely' );
 
-echo "Engagement Intake v0.7.0 fit schema fixtures passed.\n";
+echo "Engagement Intake v0.8.0 fit schema fixtures passed.\n";

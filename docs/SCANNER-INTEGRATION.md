@@ -91,7 +91,7 @@ The readiness test includes:
 ```text
 test_mode = scanner_readiness
 contains_user_data = no
-generated_by = engagement-intake-v0.7.0
+generated_by = engagement-intake-v0.8.0
 ```
 
 ## Readiness test

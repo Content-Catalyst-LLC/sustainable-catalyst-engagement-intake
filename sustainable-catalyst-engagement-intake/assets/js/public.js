@@ -608,4 +608,19 @@
     document.querySelectorAll("[data-sc-ei-form]").forEach((form) => new AdaptiveForm(form));
     document.querySelectorAll("[data-sc-ei-compact-form]").forEach((form) => new CompactForm(form));
   });
+  document.querySelectorAll(".sc-ei-portal-card--danger form").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      const withdrawal = form.querySelector("input[name='withdrawal_confirmation']");
+      const revoke = form.querySelector("input[name='revoke_confirmation']");
+      const input = withdrawal || revoke;
+      if (!input) return;
+      const value = input.value.trim().toUpperCase();
+      const acceptable = value.startsWith("WITHDRAW ") || value.startsWith("CANCEL ") || value.startsWith("REVOKE ");
+      if (!acceptable || !window.confirm("Confirm this secure sender portal action?")) {
+        event.preventDefault();
+        input.focus();
+      }
+    });
+  });
+
 })();

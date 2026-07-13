@@ -151,6 +151,10 @@ final class SC_EI_Communication_Repository {
 					'draft_source'                 => sanitize_key( (string) ( $input['draft_source'] ?? 'communications_workspace' ) ),
 				)
 			),
+			'portal_visibility'     => 'hidden',
+			'portal_published_at'   => null,
+			'portal_published_by'   => null,
+			'portal_source'         => '',
 			'row_version'           => $new_version,
 			'updated_at'            => $now,
 			'deleted_at'            => null,
@@ -158,7 +162,7 @@ final class SC_EI_Communication_Repository {
 
 		$integer_fields = array(
 			'inquiry_id', 'reply_to_id', 'sender_user_id', 'template_version', 'is_automated',
-			'requires_approval', 'approved_by', 'row_version',
+			'requires_approval', 'approved_by', 'portal_published_by', 'row_version',
 		);
 		$formats = array_map(
 			static fn( string $key ): string => in_array( $key, $integer_fields, true ) ? '%d' : '%s',
@@ -301,6 +305,10 @@ final class SC_EI_Communication_Repository {
 					$metadata
 				)
 			),
+			'portal_visibility'     => 'hidden',
+			'portal_published_at'   => null,
+			'portal_published_by'   => null,
+			'portal_source'         => '',
 			'row_version'           => 0,
 			'created_at'            => $now,
 			'updated_at'            => $now,
@@ -309,7 +317,7 @@ final class SC_EI_Communication_Repository {
 
 		$integer_fields = array(
 			'inquiry_id', 'reply_to_id', 'sender_user_id', 'template_version', 'is_automated',
-			'requires_approval', 'approved_by', 'attempt_count', 'row_version',
+			'requires_approval', 'approved_by', 'attempt_count', 'portal_published_by', 'row_version',
 		);
 		$formats = array_map(
 			static fn( string $key ): string => in_array( $key, $integer_fields, true ) ? '%d' : '%s',
@@ -422,6 +430,10 @@ final class SC_EI_Communication_Repository {
 					'recorded_manually'            => true,
 				)
 			),
+			'portal_visibility'     => 'hidden',
+			'portal_published_at'   => null,
+			'portal_published_by'   => null,
+			'portal_source'         => '',
 			'row_version'           => 0,
 			'created_at'            => $now,
 			'updated_at'            => $now,
@@ -430,7 +442,7 @@ final class SC_EI_Communication_Repository {
 
 		$integer_fields = array(
 			'inquiry_id', 'reply_to_id', 'sender_user_id', 'template_version', 'is_automated',
-			'requires_approval', 'approved_by', 'attempt_count', 'row_version',
+			'requires_approval', 'approved_by', 'attempt_count', 'portal_published_by', 'row_version',
 		);
 		$formats = array_map(
 			static fn( string $key ): string => in_array( $key, $integer_fields, true ) ? '%d' : '%s',

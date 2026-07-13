@@ -1,43 +1,37 @@
 # Changelog
 
+## 0.8.0 — Secure Sender Portal
+
+- Added passwordless sender portal shortcode and private workspace.
+- Added one-time expiring invitations.
+- Added inquiry-email activation challenge and terms acceptance.
+- Added failed-attempt lockout.
+- Added absolute and idle session expiration.
+- Added maximum active sessions and revocation.
+- Added HttpOnly SameSite Strict cookies.
+- Added session-derived CSRF protection.
+- Added no-store, noindex, no-referrer, frame-denial, and same-origin protections.
+- Added hashed email, IP, and browser fingerprints.
+- Added secure portal-only messages without automatic email.
+- Added explicit portal publication for eligible outbound communications.
+- Added protected follow-up uploads through quarantine.
+- Added contact and Microsoft Teams preference updates.
+- Added consent-ledger updates for calendar permission.
+- Added sender privacy requests.
+- Added typed withdrawal request and cancellation.
+- Added typed self-revocation.
+- Added portal access, session, and event administration.
+- Added one-time invitation display through a short-lived user transient.
+- Added typed administrative access and session controls.
+- Added portal-only settings and granular capabilities.
+- Added private portal audit export.
+- Added hourly invitation/session expiration.
+- Added portal records to inquiry, review, communication, REST, privacy, erasure, inventory, and Diagnostics surfaces.
+- Preserved the boundary against automatic status changes, email, scheduling, acceptance, deletion, and public file access.
+
 ## 0.7.0 — Human-Controlled Fit Assessment
 
-- Added private Human-Controlled Fit Assessment workspace.
-- Added assessment queue and metrics.
-- Added three versioned fit tables.
-- Added fit lifecycle state to inquiries.
-- Added 16 criteria across six domains.
-- Added transparent criterion weights.
-- Added manual rating scale.
-- Added optional advisory signal without thresholds.
-- Added human recommendations and confidence.
-- Added service-route recommendations.
-- Added scope boundaries.
-- Added criterion evidence and private source references.
-- Added material concerns and mitigation notes.
-- Added conditions, limitations, referral, and decline notes.
-- Added human attestation.
-- Added assistance disclosure.
-- Added optimistic draft locking.
-- Added assessor ownership.
-- Added independent second review.
-- Added configurable second-review triggers.
-- Added optional distinct second reviewer.
-- Prevented Agree reviews from changing submitted conclusions.
-- Reset review clearance after post-submission edits.
-- Added typed finalization.
-- Added explicit and separately typed Review Workspace application.
-- Preserved inquiry-status neutrality.
-- Preserved communication and scheduling neutrality.
-- Added private assessment JSON export.
-- Added fit history to review packets.
-- Added capability-gated fit context to REST.
-- Added fit data to WordPress privacy export.
-- Added fit narrative redaction to approved inquiry erasure.
-- Added fit tables to private data inventory.
-- Added fit metrics and human-control truth checks to Diagnostics.
-- Added granular fit capabilities.
-- Added settings for evidence, rationale, second review, staleness, and queue size.
+- Added evidence-backed human fit assessment, second review, typed finalization, and explicit Review Workspace application.
 
 ## 0.6.0 — Privacy and Retention Center
 

@@ -231,6 +231,75 @@ final class SC_EI_Privacy {
 				}
 			}
 
+			$portal = SC_EI_Portal_Repository::export_for_inquiry( $inquiry_id );
+			if ( ! empty( $portal['access'] ) ) {
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-sender-portal-access',
+					'group_label' => __( 'Engagement Intake Secure Sender Portal Access', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-portal-access-' . $portal['access']['id'],
+					'data'        => self::export_fields(
+						$portal['access'],
+						array(
+							'status'             => 'Portal access state',
+							'invite_expires_at'  => 'Invitation expires at',
+							'invite_used_at'     => 'Invitation used at',
+							'permissions_json'   => 'Portal permissions',
+							'terms_version'      => 'Terms version',
+							'terms_accepted_at'  => 'Terms accepted at',
+							'invitation_note'    => 'Invitation note',
+							'activated_at'       => 'Activated at',
+							'suspended_at'       => 'Suspended at',
+							'revoked_at'         => 'Revoked at',
+							'revocation_reason'  => 'Revocation reason',
+							'last_access_at'     => 'Last access at',
+							'failed_attempts'    => 'Failed activation attempts',
+							'locked_until'       => 'Locked until',
+							'created_at'         => 'Created at',
+							'updated_at'         => 'Updated at',
+						)
+					),
+				);
+			}
+			foreach ( (array) ( $portal['sessions'] ?? array() ) as $portal_session ) {
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-sender-portal-sessions',
+					'group_label' => __( 'Engagement Intake Secure Sender Portal Sessions', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-portal-session-' . $portal_session['id'],
+					'data'        => self::export_fields(
+						$portal_session,
+						array(
+							'status'          => 'Session state',
+							'expires_at'      => 'Absolute expiration',
+							'idle_expires_at' => 'Idle expiration',
+							'last_seen_at'    => 'Last seen at',
+							'activity_count'  => 'Activity count',
+							'revoked_at'      => 'Revoked or expired at',
+							'revoked_reason'  => 'Revocation reason',
+							'created_at'      => 'Created at',
+							'updated_at'      => 'Updated at',
+						)
+					),
+				);
+			}
+			foreach ( (array) ( $portal['events'] ?? array() ) as $portal_event ) {
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-sender-portal-events',
+					'group_label' => __( 'Engagement Intake Secure Sender Portal Events', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-portal-event-' . $portal_event['id'],
+					'data'        => self::export_fields(
+						$portal_event,
+						array(
+							'event_type'   => 'Portal event type',
+							'target_type'  => 'Target type',
+							'target_id'    => 'Target ID',
+							'outcome'      => 'Outcome',
+							'context_json' => 'Event context',
+							'created_at'   => 'Occurred at',
+						)
+					),
+				);
+			}
+
 			foreach ( SC_EI_Attachment_Repository::for_inquiry( $inquiry_id, true ) as $attachment ) {
 				$data[] = array(
 					'group_id'    => 'sc-engagement-intake-documents',
@@ -382,7 +451,7 @@ final class SC_EI_Privacy {
 	/**
 	 * WordPress eraser bridge.
 	 *
-	 * v0.7.0 retains the queue-only behavior introduced in v0.6.0 and does not erase synchronously. It creates a tracked case and queues
+	 * v0.8.0 retains the queue-only behavior introduced in v0.6.0 and does not erase synchronously. It creates a tracked case and queues
 	 * legal-hold-aware lifecycle actions for human approval and verified execution.
 	 */
 	public static function erase_by_email( string $email_address, int $page = 1 ): array {
@@ -658,6 +727,16 @@ final class SC_EI_Privacy {
 			'fit_assessment_updated_at' => 'Fit assessment updated at',
 			'fit_assessment_finalized_at'=> 'Fit assessment finalized at',
 			'fit_assessment_version'    => 'Fit assessment version',
+			'portal_status'             => 'Sender portal state',
+			'portal_access_id'          => 'Sender portal access ID',
+			'portal_last_activity_at'   => 'Sender portal last activity',
+			'portal_message_count'      => 'Sender portal message count',
+			'portal_document_count'     => 'Sender portal document count',
+			'portal_last_sender_message_at' => 'Last sender portal message',
+			'sender_withdrawal_status'  => 'Sender withdrawal request state',
+			'sender_withdrawal_requested_at' => 'Sender withdrawal requested at',
+			'sender_withdrawal_reason'  => 'Sender withdrawal reason',
+			'portal_version'            => 'Sender portal state version',
 			'created_at'                => 'Submitted at',
 			'updated_at'                => 'Last updated',
 		);

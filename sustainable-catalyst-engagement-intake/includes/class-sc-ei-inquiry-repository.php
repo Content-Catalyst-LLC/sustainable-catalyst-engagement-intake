@@ -164,6 +164,16 @@ final class SC_EI_Inquiry_Repository {
 			'fit_assessment_updated_at' => null,
 			'fit_assessment_finalized_at' => null,
 			'fit_assessment_version'  => 0,
+			'portal_status'           => 'inactive',
+			'portal_access_id'        => null,
+			'portal_last_activity_at' => null,
+			'portal_message_count'    => 0,
+			'portal_document_count'   => 0,
+			'portal_last_sender_message_at' => null,
+			'sender_withdrawal_status' => 'none',
+			'sender_withdrawal_requested_at' => null,
+			'sender_withdrawal_reason'=> '',
+			'portal_version'          => 0,
 			'created_at'              => $now,
 			'updated_at'              => $now,
 			'closed_at'               => null,
@@ -186,6 +196,10 @@ final class SC_EI_Inquiry_Repository {
 			'privacy_version',
 			'current_fit_assessment_id',
 			'fit_assessment_version',
+			'portal_access_id',
+			'portal_message_count',
+			'portal_document_count',
+			'portal_version',
 		);
 		$formats = array_map(
 			static fn( string $key ): string => in_array( $key, $integer_fields, true ) ? '%d' : '%s',
@@ -220,6 +234,8 @@ final class SC_EI_Inquiry_Repository {
 				'communication_status'      => 'open',
 				'privacy_status'            => 'active',
 				'fit_assessment_status'     => 'not_started',
+				'portal_status'             => 'inactive',
+				'sender_withdrawal_status'  => 'none',
 				'retention_policy_key'      => 'unaccepted_inquiry',
 				'retention_until'           => $initial_retention_until,
 			),
@@ -311,7 +327,7 @@ final class SC_EI_Inquiry_Repository {
 			$params[] = $like;
 		}
 
-		$allowed_orderby = array( 'created_at', 'updated_at', 'status', 'scheduling_status', 'form_variant', 'source_page', 'conversion_route', 'contact_name', 'organization', 'reference', 'review_stage', 'review_priority', 'review_due_at', 'fit_decision', 'risk_level', 'last_reviewed_at', 'communication_status', 'next_follow_up_at', 'last_communication_at', 'privacy_status', 'retention_until', 'legal_hold_count', 'fit_assessment_status', 'fit_assessment_updated_at', 'fit_assessment_finalized_at' );
+		$allowed_orderby = array( 'created_at', 'updated_at', 'status', 'scheduling_status', 'form_variant', 'source_page', 'conversion_route', 'contact_name', 'organization', 'reference', 'review_stage', 'review_priority', 'review_due_at', 'fit_decision', 'risk_level', 'last_reviewed_at', 'communication_status', 'next_follow_up_at', 'last_communication_at', 'privacy_status', 'retention_until', 'legal_hold_count', 'fit_assessment_status', 'fit_assessment_updated_at', 'fit_assessment_finalized_at', 'portal_status', 'portal_last_activity_at', 'portal_last_sender_message_at', 'sender_withdrawal_status' );
 		$orderby         = in_array( $args['orderby'], $allowed_orderby, true ) ? $args['orderby'] : 'created_at';
 		$order           = 'ASC' === strtoupper( $args['order'] ) ? 'ASC' : 'DESC';
 		$per_page        = max( 1, min( 100, absint( $args['per_page'] ) ) );

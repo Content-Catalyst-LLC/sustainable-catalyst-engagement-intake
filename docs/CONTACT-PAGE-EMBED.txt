@@ -1,18 +1,18 @@
-CONSULTING PAGE — COMPACT INTAKE
+Sustainable Catalyst Engagement Intake v0.8.0 Shortcodes
+================================================================
 
-[sc_engagement_inquiry mode="compact" source="consulting-page" entry_cta="discuss-an-engagement" title="Discuss an Engagement" intro="Share the problem, desired outcome, budget range, and preferred next step."]
+Consulting page
+[sc_engagement_inquiry mode="compact" source="consulting-page" entry_cta="discuss-an-engagement" title="Discuss an Engagement"]
 
+Contact page
+[sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst"]
 
-CONTACT PAGE — ADVANCED CONTACT HUB
+Private sender portal page
+[sc_sender_portal title="Secure Sender Portal"]
 
-[sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst" intro="Choose the inquiry path that best matches your question, project, collaboration, or engagement."]
-
-
-OPTIONAL GENERAL-ONLY FORM
-
-[sc_contact_form mode="general" source="contact-page" entry_cta="general-contact-form" title="Send a General Inquiry"]
-
-
-OPTIONAL STANDARD ENGAGEMENT FORM
-
-[sc_engagement_inquiry mode="consulting" source="contact-page" entry_cta="standard-engagement-form" title="Discuss an Engagement"]
+Portal page requirements
+- Use a dedicated HTTPS WordPress page.
+- Do not add it to public navigation.
+- Exclude it from WordPress, host, reverse-proxy, and CDN caches.
+- Exclude it from search and sitemap plugins.
+- Save its exact URL under Engagement Intake → Sender Portal.

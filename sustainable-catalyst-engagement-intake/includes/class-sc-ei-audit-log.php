@@ -87,6 +87,26 @@ final class SC_EI_Audit_Log {
 		);
 	}
 
+	public static function portal_event_types(): array {
+		return array(
+			'portal_invitation_issued'      => __( 'Portal Invitation Issued', 'sustainable-catalyst-engagement-intake' ),
+			'portal_invitation_activated'   => __( 'Portal Invitation Activated', 'sustainable-catalyst-engagement-intake' ),
+			'portal_sessions_revoked'       => __( 'Portal Sessions Revoked', 'sustainable-catalyst-engagement-intake' ),
+			'portal_access_active'          => __( 'Portal Access Resumed', 'sustainable-catalyst-engagement-intake' ),
+			'portal_access_suspended'       => __( 'Portal Access Suspended', 'sustainable-catalyst-engagement-intake' ),
+			'portal_access_revoked'         => __( 'Portal Access Revoked', 'sustainable-catalyst-engagement-intake' ),
+			'portal_sender_message_created' => __( 'Sender Portal Message Created', 'sustainable-catalyst-engagement-intake' ),
+			'portal_staff_message_created'  => __( 'Staff Portal Message Created', 'sustainable-catalyst-engagement-intake' ),
+			'portal_documents_uploaded'     => __( 'Portal Documents Uploaded', 'sustainable-catalyst-engagement-intake' ),
+			'portal_contact_updated'        => __( 'Portal Contact Updated', 'sustainable-catalyst-engagement-intake' ),
+			'portal_scheduling_updated'     => __( 'Portal Scheduling Updated', 'sustainable-catalyst-engagement-intake' ),
+			'portal_withdrawal_requested'   => __( 'Portal Withdrawal Requested', 'sustainable-catalyst-engagement-intake' ),
+			'portal_withdrawal_canceled'    => __( 'Portal Withdrawal Canceled', 'sustainable-catalyst-engagement-intake' ),
+			'portal_audit_exported'         => __( 'Portal Audit Exported', 'sustainable-catalyst-engagement-intake' ),
+			'portal_settings_updated'       => __( 'Portal Settings Updated', 'sustainable-catalyst-engagement-intake' ),
+		);
+	}
+
 	public static function privacy_event_types(): array {
 		return array(
 			'privacy_request_created'          => __( 'Privacy Request Created', 'sustainable-catalyst-engagement-intake' ),

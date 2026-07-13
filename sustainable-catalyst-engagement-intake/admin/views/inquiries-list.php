@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</p>
 
 	<div class="sc-ei-admin__notice">
-		<strong><?php esc_html_e( 'v0.7.0 Human-Controlled Fit Assessment active', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+		<strong><?php esc_html_e( 'v0.8.0 Secure Sender Portal active', 'sustainable-catalyst-engagement-intake' ); ?></strong>
 		<span><?php esc_html_e( 'Reviewed plain-text messages, opt-in notifications, communication timelines, follow-up and suppression controls, human review, quarantine operations, Teams readiness, and protected storage are active.', 'sustainable-catalyst-engagement-intake' ); ?></span>
 	</div>
 

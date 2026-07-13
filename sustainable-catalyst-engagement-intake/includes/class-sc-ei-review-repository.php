@@ -609,6 +609,9 @@ final class SC_EI_Review_Repository {
 			'fit_assessment' => ! empty( $inquiry['current_fit_assessment_id'] )
 				? SC_EI_Fit_Repository::find( absint( $inquiry['current_fit_assessment_id'] ) )
 				: null,
+			'sender_portal' => current_user_can( 'sc_intake_view_sender_portal' )
+				? SC_EI_Portal_Repository::export_for_inquiry( $inquiry_id )
+				: null,
 			'attachments'    => $attachments,
 			'communications' => SC_EI_Communication_Repository::for_inquiry( $inquiry_id, 500, true ),
 			'privacy'        => array(

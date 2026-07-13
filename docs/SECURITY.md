@@ -282,3 +282,28 @@ For higher-risk intake:
 - privacy export includes assessment history
 - approved erasure redacts narratives, evidence, references, and reviewer disclosures
 - categorical lifecycle and audit tombstones may remain
+
+
+## v0.8.0 sender portal controls
+- no WordPress sender account
+- no public inquiry lookup
+- HMAC invitation and session hashes
+- single-use invitation
+- email activation challenge
+- activation lockout
+- absolute and idle session expiry
+- maximum active sessions
+- HttpOnly SameSite Strict cookie
+- browser binding
+- hashed IP-change evidence
+- session-derived CSRF
+- per-session rate limits
+- no-store and noindex
+- no referrer
+- frame denial
+- explicit communication publication
+- no portal file-download endpoint
+- quarantine-only follow-up uploads
+- privacy-state feature blocking
+- typed withdrawal and access revocation
+- portal privacy export and erasure

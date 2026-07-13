@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -34,6 +34,9 @@ final class SC_EI_Database {
 		$fit_assessments = self::table( 'fit_assessments' );
 		$fit_assessment_items = self::table( 'fit_assessment_items' );
 		$fit_assessment_reviews = self::table( 'fit_assessment_reviews' );
+		$portal_access = self::table( 'portal_access' );
+		$portal_sessions = self::table( 'portal_sessions' );
+		$portal_events = self::table( 'portal_events' );
 		$communication_templates = self::table( 'communication_templates' );
 		$privacy_requests = self::table( 'privacy_requests' );
 		$consent_events = self::table( 'consent_events' );
@@ -140,6 +143,16 @@ final class SC_EI_Database {
 			fit_assessment_updated_at datetime NULL,
 			fit_assessment_finalized_at datetime NULL,
 			fit_assessment_version int(10) unsigned NOT NULL DEFAULT 0,
+			portal_status varchar(30) NOT NULL DEFAULT 'inactive',
+			portal_access_id bigint(20) unsigned NULL,
+			portal_last_activity_at datetime NULL,
+			portal_message_count int(10) unsigned NOT NULL DEFAULT 0,
+			portal_document_count int(10) unsigned NOT NULL DEFAULT 0,
+			portal_last_sender_message_at datetime NULL,
+			sender_withdrawal_status varchar(30) NOT NULL DEFAULT 'none',
+			sender_withdrawal_requested_at datetime NULL,
+			sender_withdrawal_reason longtext NULL,
+			portal_version int(10) unsigned NOT NULL DEFAULT 0,
 			created_at datetime NOT NULL,
 			updated_at datetime NOT NULL,
 			closed_at datetime NULL,
@@ -178,6 +191,11 @@ final class SC_EI_Database {
 			KEY current_fit_assessment_id (current_fit_assessment_id),
 			KEY fit_assessment_updated_at (fit_assessment_updated_at),
 			KEY fit_assessment_finalized_at (fit_assessment_finalized_at),
+			KEY portal_status (portal_status),
+			KEY portal_access_id (portal_access_id),
+			KEY portal_last_activity_at (portal_last_activity_at),
+			KEY portal_last_sender_message_at (portal_last_sender_message_at),
+			KEY sender_withdrawal_status (sender_withdrawal_status),
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
@@ -381,6 +399,102 @@ final class SC_EI_Database {
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
+
+		$sql_portal_access = "CREATE TABLE {$portal_access} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			status varchar(30) NOT NULL DEFAULT 'invited',
+			sender_email_hash char(64) NOT NULL DEFAULT '',
+			invite_token_hash char(64) NOT NULL DEFAULT '',
+			invite_token_prefix varchar(16) NOT NULL DEFAULT '',
+			invite_expires_at datetime NULL,
+			invite_used_at datetime NULL,
+			permissions_json longtext NULL,
+			terms_version varchar(80) NOT NULL DEFAULT '',
+			terms_accepted_at datetime NULL,
+			invited_by bigint(20) unsigned NULL,
+			invitation_note longtext NULL,
+			activated_at datetime NULL,
+			suspended_at datetime NULL,
+			revoked_at datetime NULL,
+			revoked_by bigint(20) unsigned NULL,
+			revocation_reason longtext NULL,
+			last_access_at datetime NULL,
+			last_ip_hash char(64) NOT NULL DEFAULT '',
+			last_user_agent_hash char(64) NOT NULL DEFAULT '',
+			failed_attempts int(10) unsigned NOT NULL DEFAULT 0,
+			locked_until datetime NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY inquiry_id (inquiry_id),
+			KEY status (status),
+			KEY invite_expires_at (invite_expires_at),
+			KEY invited_by (invited_by),
+			KEY revoked_by (revoked_by),
+			KEY locked_until (locked_until),
+			KEY last_access_at (last_access_at)
+		) {$charset_collate};";
+
+		$sql_portal_sessions = "CREATE TABLE {$portal_sessions} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			access_id bigint(20) unsigned NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			session_hash char(64) NOT NULL DEFAULT '',
+			status varchar(20) NOT NULL DEFAULT 'active',
+			expires_at datetime NOT NULL,
+			idle_expires_at datetime NOT NULL,
+			last_seen_at datetime NOT NULL,
+			ip_hash char(64) NOT NULL DEFAULT '',
+			user_agent_hash char(64) NOT NULL DEFAULT '',
+			activity_count int(10) unsigned NOT NULL DEFAULT 0,
+			rotated_from_id bigint(20) unsigned NULL,
+			revoked_at datetime NULL,
+			revoked_reason longtext NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY session_hash (session_hash),
+			KEY access_id (access_id),
+			KEY inquiry_id (inquiry_id),
+			KEY status (status),
+			KEY expires_at (expires_at),
+			KEY idle_expires_at (idle_expires_at),
+			KEY last_seen_at (last_seen_at),
+			KEY rotated_from_id (rotated_from_id)
+		) {$charset_collate};";
+
+		$sql_portal_events = "CREATE TABLE {$portal_events} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NULL,
+			access_id bigint(20) unsigned NULL,
+			session_id bigint(20) unsigned NULL,
+			event_type varchar(80) NOT NULL DEFAULT '',
+			target_type varchar(40) NOT NULL DEFAULT '',
+			target_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			outcome varchar(30) NOT NULL DEFAULT 'recorded',
+			ip_hash char(64) NOT NULL DEFAULT '',
+			user_agent_hash char(64) NOT NULL DEFAULT '',
+			context_json longtext NULL,
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY inquiry_id (inquiry_id),
+			KEY access_id (access_id),
+			KEY session_id (session_id),
+			KEY event_type (event_type),
+			KEY target_type (target_type),
+			KEY target_id (target_id),
+			KEY outcome (outcome),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
 		$sql_communications = "CREATE TABLE {$communications} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			inquiry_id bigint(20) unsigned NOT NULL,
@@ -419,6 +533,10 @@ final class SC_EI_Database {
 			message_hash char(64) NOT NULL DEFAULT '',
 			dedupe_key varchar(191) NULL,
 			metadata_json longtext NULL,
+			portal_visibility varchar(20) NOT NULL DEFAULT 'hidden',
+			portal_published_at datetime NULL,
+			portal_published_by bigint(20) unsigned NULL,
+			portal_source varchar(40) NOT NULL DEFAULT '',
 			row_version int(10) unsigned NOT NULL DEFAULT 0,
 			created_at datetime NOT NULL,
 			updated_at datetime NOT NULL,
@@ -666,6 +784,9 @@ final class SC_EI_Database {
 		dbDelta( $sql_fit_assessments );
 		dbDelta( $sql_fit_assessment_items );
 		dbDelta( $sql_fit_assessment_reviews );
+		dbDelta( $sql_portal_access );
+		dbDelta( $sql_portal_sessions );
+		dbDelta( $sql_portal_events );
 		dbDelta( $sql_communications );
 		dbDelta( $sql_communication_events );
 		dbDelta( $sql_communication_templates );
@@ -678,6 +799,7 @@ final class SC_EI_Database {
 
 		self::backfill_review_defaults();
 		self::backfill_fit_defaults();
+		self::backfill_portal_defaults();
 		self::backfill_communication_defaults();
 		self::backfill_privacy_defaults();
 		update_option( 'sc_ei_db_version', SC_EI_DB_VERSION, false );
@@ -739,6 +861,22 @@ final class SC_EI_Database {
 		);
 	}
 
+	private static function backfill_portal_defaults(): void {
+		global $wpdb;
+
+		$table = self::table( 'inquiries' );
+		$wpdb->query(
+			"UPDATE {$table}
+			SET portal_status = 'inactive',
+				portal_message_count = 0,
+				portal_document_count = 0,
+				sender_withdrawal_status = 'none',
+				portal_version = 0
+			WHERE portal_status IS NULL
+				OR portal_status = ''" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		);
+	}
+
 	private static function backfill_privacy_defaults(): void {
 		global $wpdb;
 
@@ -774,7 +912,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -849,6 +987,16 @@ final class SC_EI_Database {
 			'fit_assessment_updated_at',
 			'fit_assessment_finalized_at',
 			'fit_assessment_version',
+			'portal_status',
+			'portal_access_id',
+			'portal_last_activity_at',
+			'portal_message_count',
+			'portal_document_count',
+			'portal_last_sender_message_at',
+			'sender_withdrawal_status',
+			'sender_withdrawal_requested_at',
+			'sender_withdrawal_reason',
+			'portal_version',
 		);
 
 		$result = array();
@@ -914,7 +1062,8 @@ final class SC_EI_Database {
 				'approved_by', 'approved_at', 'provider', 'provider_message_id', 'attempt_count',
 				'last_attempt_at', 'accepted_at', 'failed_at', 'error_code', 'error_message',
 				'occurred_at', 'scheduled_for', 'privacy_classification', 'message_hash',
-				'dedupe_key', 'metadata_json', 'row_version', 'created_at', 'updated_at', 'deleted_at',
+				'dedupe_key', 'metadata_json', 'portal_visibility', 'portal_published_at',
+				'portal_published_by', 'portal_source', 'row_version', 'created_at', 'updated_at', 'deleted_at',
 			),
 			'communication_events' => array(
 				'communication_id', 'inquiry_id', 'actor_user_id', 'event_type', 'from_status',
@@ -965,6 +1114,41 @@ final class SC_EI_Database {
 			),
 		);
 
+		$result = array();
+		foreach ( $tables as $table_name => $columns ) {
+			$table = self::table( $table_name );
+			foreach ( $columns as $column ) {
+				$found = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$result[ $table_name . '.' . $column ] = ( $found === $column );
+			}
+		}
+		return $result;
+	}
+
+	public static function portal_columns_exist(): array {
+		global $wpdb;
+
+		$tables = array(
+			'portal_access' => array(
+				'public_id', 'inquiry_id', 'status', 'sender_email_hash', 'invite_token_hash',
+				'invite_token_prefix', 'invite_expires_at', 'invite_used_at', 'permissions_json',
+				'terms_version', 'terms_accepted_at', 'invited_by', 'invitation_note',
+				'activated_at', 'suspended_at', 'revoked_at', 'revoked_by', 'revocation_reason',
+				'last_access_at', 'last_ip_hash', 'last_user_agent_hash', 'failed_attempts',
+				'locked_until', 'row_version', 'created_at', 'updated_at',
+			),
+			'portal_sessions' => array(
+				'public_id', 'access_id', 'inquiry_id', 'session_hash', 'status',
+				'expires_at', 'idle_expires_at', 'last_seen_at', 'ip_hash',
+				'user_agent_hash', 'activity_count', 'rotated_from_id', 'revoked_at',
+				'revoked_reason', 'created_at', 'updated_at',
+			),
+			'portal_events' => array(
+				'public_id', 'inquiry_id', 'access_id', 'session_id', 'event_type',
+				'target_type', 'target_id', 'outcome', 'ip_hash', 'user_agent_hash',
+				'context_json', 'created_at',
+			),
+		);
 		$result = array();
 		foreach ( $tables as $table_name => $columns ) {
 			$table = self::table( $table_name );
@@ -1065,7 +1249,7 @@ final class SC_EI_Database {
 	public static function drop_all(): void {
 		global $wpdb;
 
-		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
+		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
 			$table = self::table( $name );
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}

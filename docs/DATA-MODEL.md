@@ -341,3 +341,19 @@ row version
 Criterion items store one row per criterion per assessment.
 
 Second-review records are append-only through normal operation.
+
+
+## v0.8.0 portal data model
+```text
+portal_access
+portal_sessions
+portal_events
+```
+
+Access stores invitation lifecycle, permission, terms, lockout, and revocation state.
+
+Sessions store credential hash, expiry, activity, and hashed client fingerprints.
+
+Events store categorical action evidence and sanitized context.
+
+Raw credentials and plaintext network identifiers are excluded.

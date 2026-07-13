@@ -1,79 +1,62 @@
-# Release Notes — v0.7.0
+# Release Notes — v0.8.0
 
 ## Release
 
-Human-Controlled Fit Assessment
+Secure Sender Portal
 
-## Primary outcome
+## Outcome
 
-Add structured fit reasoning without turning intake into an automated eligibility or sales-scoring system.
+Create a private continuation channel after public intake without turning senders into WordPress users or exposing internal operations.
 
-## Workflow
+## Security boundary
 
 ```text
-draft
-→ human submission
-→ independent review when required
-→ ready to finalize
-→ typed finalization
-→ optional typed Review Workspace application
+single-use credential
++ inquiry-email challenge
++ terms
++ revocable session
++ CSRF
++ capability
++ privacy state
++ rate limit
 ```
 
-## Human-control guarantees
+## No automatic actions
 
-- no score threshold
-- no score-derived recommendation
-- no automated acceptance
-- no automated rejection
-- no automated inquiry status
-- no automated email
-- no automated Teams meeting
-- no automated proposal
-- no automated referral
+The portal does not automatically:
 
-## Assessment evidence
-
-Sixteen criteria require human ratings and can require evidence.
-
-Material concerns require explicit notes.
-
-Assistance must be disclosed.
-
-## Review integrity
-
-- drafts use optimistic locking
-- assessor ownership is enforced
-- second reviewer can be required to differ
-- Agree cannot alter the submitted conclusion
-- post-submission edits reset prior review clearance
-- finalization freezes one version
-- reassessment creates a new version
+- email an invitation
+- accept or reject an inquiry
+- change inquiry status
+- schedule a Teams meeting
+- send a proposal
+- publish an internal communication
+- approve a document
+- release quarantine
+- erase data
+- release a legal hold
 
 ## Production verification
 
-1. Back up database and protected storage.
-2. Upgrade to v0.7.0.
-3. Confirm migrations in Diagnostics.
-4. Review fit settings.
-5. Create a staging assessment.
-6. verify evidence requirements.
-7. Verify concurrent edit conflict.
-8. Verify independent review triggers.
-9. Verify post-submission reset.
-10. Finalize with typed confirmation.
-11. Confirm no external or inquiry status side effect.
-12. Apply to Review Workspace separately.
-13. Inspect immutable review snapshot.
-14. Test JSON export.
-15. Test privacy export and erasure.
-16. Review fit criteria and operating policy with appropriate leadership and counsel.
-
-## Limitations
-
-- no automated legal conflict determination
-- no professional licensing determination
-- no identity or fraud assessment
-- no automated pricing or proposal generation
-- no predictive model
-- no Microsoft Graph
-- no production WordPress activation in the build environment
+1. Confirm HTTPS.
+2. Create the portal page.
+3. Exclude it from all caches.
+4. Confirm headers with browser developer tools.
+5. Issue a test invitation.
+6. Verify raw link is shown once.
+7. Verify incorrect email and token behavior.
+8. Verify invitation lockout.
+9. Verify token reuse fails.
+10. Verify cookie flags.
+11. Verify idle and absolute expiration.
+12. Verify concurrent session limit.
+13. Verify reissue revokes sessions.
+14. Verify status and internal-data boundary.
+15. Verify messages do not send email.
+16. Verify explicit communication publication.
+17. Verify protected quarantine upload.
+18. Verify privacy restrictions.
+19. Verify withdrawal remains status-neutral.
+20. Verify self and administrative revocation.
+21. Verify privacy export and erasure.
+22. Verify audit export.
