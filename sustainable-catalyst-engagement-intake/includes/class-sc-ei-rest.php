@@ -110,6 +110,11 @@ final class SC_EI_REST {
 		if ( current_user_can( 'sc_intake_view_communications' ) ) {
 			$record['communications'] = SC_EI_Communication_Repository::for_inquiry( absint( $request['id'] ), 500, true );
 		}
+		if ( current_user_can( 'sc_intake_view_fit_assessments' ) ) {
+			$record['fit_assessment'] = ! empty( $record['current_fit_assessment_id'] )
+				? SC_EI_Fit_Repository::find( absint( $record['current_fit_assessment_id'] ) )
+				: null;
+		}
 		if ( current_user_can( 'sc_intake_view_privacy_center' ) ) {
 			$record['privacy'] = array(
 				'consent_events'   => SC_EI_Privacy_Repository::consent_events( array( 'inquiry_id' => absint( $request['id'] ), 'limit' => 500 ) ),

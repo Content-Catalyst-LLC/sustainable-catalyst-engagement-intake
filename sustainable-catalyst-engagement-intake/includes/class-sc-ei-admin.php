@@ -69,6 +69,7 @@ final class SC_EI_Admin {
 		);
 
 		SC_EI_Review_Admin::submenu();
+		SC_EI_Fit_Admin::submenu();
 		SC_EI_Communication_Admin::submenu();
 		SC_EI_Privacy_Admin::submenu();
 
@@ -190,7 +191,8 @@ final class SC_EI_Admin {
 				'review_reminder_lead_hours'         => 24,
 				'notification_batch_limit'           => 25,
 			),
-			SC_EI_Privacy_Schema::default_settings()
+			SC_EI_Privacy_Schema::default_settings(),
+			SC_EI_Fit_Schema::default_settings()
 		);
 	}
 
@@ -249,6 +251,18 @@ final class SC_EI_Admin {
 		}
 
 		return array(
+			'fit_assessment_enabled'                  => 1,
+			'fit_advisory_score_enabled'              => empty( $value['fit_advisory_score_enabled'] ) ? 0 : 1,
+			'fit_require_human_attestation'           => 1,
+			'fit_require_evidence_for_assessed_items' => empty( $value['fit_require_evidence_for_assessed_items'] ) ? 0 : 1,
+			'fit_require_rationale_for_finalization'  => empty( $value['fit_require_rationale_for_finalization'] ) ? 0 : 1,
+			'fit_require_second_review_high_risk'     => empty( $value['fit_require_second_review_high_risk'] ) ? 0 : 1,
+			'fit_require_second_review_conflict'      => empty( $value['fit_require_second_review_conflict'] ) ? 0 : 1,
+			'fit_require_second_review_decline'       => empty( $value['fit_require_second_review_decline'] ) ? 0 : 1,
+			'fit_require_second_review_unsafe_scope'  => empty( $value['fit_require_second_review_unsafe_scope'] ) ? 0 : 1,
+			'fit_distinct_second_reviewer'            => empty( $value['fit_distinct_second_reviewer'] ) ? 0 : 1,
+			'fit_assessment_stale_days'               => max( 1, min( 365, absint( $value['fit_assessment_stale_days'] ?? $current['fit_assessment_stale_days'] ) ) ),
+			'fit_assessment_queue_limit'              => max( 10, min( 500, absint( $value['fit_assessment_queue_limit'] ?? $current['fit_assessment_queue_limit'] ) ) ),
 			'delete_data_on_uninstall'           => empty( $value['delete_data_on_uninstall'] ) ? 0 : 1,
 			'default_unaccepted_retention_days'  => max( 30, min( 3650, absint( $value['default_unaccepted_retention_days'] ?? $current['default_unaccepted_retention_days'] ) ) ),
 			'withdrawn_retention_days'           => max( 1, min( 3650, absint( $value['withdrawn_retention_days'] ?? $current['withdrawn_retention_days'] ) ) ),
@@ -340,13 +354,15 @@ final class SC_EI_Admin {
 		array_unshift(
 			$links,
 			sprintf(
-				'<a href="%1$s">%2$s</a> · <a href="%3$s">%4$s</a> · <a href="%5$s">%6$s</a> · <a href="%7$s">%8$s</a> · <a href="%9$s">%10$s</a>',
+				'<a href="%1$s">%2$s</a> · <a href="%3$s">%4$s</a> · <a href="%5$s">%6$s</a> · <a href="%7$s">%8$s</a> · <a href="%9$s">%10$s</a> · <a href="%11$s">%12$s</a>',
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake' ) ),
 				esc_html__( 'Inquiries', 'sustainable-catalyst-engagement-intake' ),
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-review' ) ),
 				esc_html__( 'Review Workspace', 'sustainable-catalyst-engagement-intake' ),
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-communications' ) ),
 				esc_html__( 'Communications', 'sustainable-catalyst-engagement-intake' ),
+				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-fit' ) ),
+				esc_html__( 'Fit Assessment', 'sustainable-catalyst-engagement-intake' ),
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-privacy' ) ),
 				esc_html__( 'Privacy Center', 'sustainable-catalyst-engagement-intake' ),
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-quarantine' ) ),

@@ -1,6 +1,6 @@
 <?php
 /**
- * Static v0.6.0 schema, repository, and privacy mapping checks.
+ * Static v0.7.0 schema, repository, and privacy mapping checks.
  */
 
 $root       = dirname( __DIR__ );
@@ -9,6 +9,7 @@ $database   = file_get_contents( $plugin . '/includes/class-sc-ei-database.php' 
 $inquiries  = file_get_contents( $plugin . '/includes/class-sc-ei-inquiry-repository.php' );
 $attachments= file_get_contents( $plugin . '/includes/class-sc-ei-attachment-repository.php' );
 $reviews    = file_get_contents( $plugin . '/includes/class-sc-ei-review-repository.php' );
+$fit_repository = file_get_contents( $plugin . '/includes/class-sc-ei-fit-repository.php' );
 $communications = file_get_contents( $plugin . '/includes/class-sc-ei-communication-repository.php' );
 $templates  = file_get_contents( $plugin . '/includes/class-sc-ei-template-repository.php' );
 $mailer     = file_get_contents( $plugin . '/includes/class-sc-ei-mailer.php' );
@@ -26,7 +27,7 @@ function schema_columns( string $database, string $variable ): array {
 	$end     = strpos( $segment, '";' );
 	$segment = substr( $segment, 0, $end );
 	preg_match_all(
-		'/^\s*([a-z0-9_]+)\s+(?:bigint|char|varchar|longtext|text|date|datetime|smallint|tinyint|int)\b/im',
+		'/^\s*([a-z0-9_]+)\s+(?:bigint|char|varchar|longtext|text|date|datetime|decimal|smallint|tinyint|int)\b/im',
 		$segment,
 		$matches
 	);
@@ -97,6 +98,21 @@ assert_mapping( 'Inquiry', schema_columns( $database, 'sql_inquiries' ), create_
 assert_mapping( 'Attachment', schema_columns( $database, 'sql_attachments' ), create_data_keys( $attachments ) );
 assert_mapping( 'Review snapshot', schema_columns( $database, 'sql_reviews' ), snapshot_data_keys( $reviews ) );
 assert_mapping(
+	'Fit assessment',
+	schema_columns( $database, 'sql_fit_assessments' ),
+	method_data_keys( $fit_repository, 'public static function create_draft', 'public static function save_draft', 3 )
+);
+assert_mapping(
+	'Fit criterion item',
+	schema_columns( $database, 'sql_fit_assessment_items' ),
+	method_data_keys( $fit_repository, 'private static function seed_items', 'private static function upsert_item', 4 )
+);
+assert_mapping(
+	'Fit second review',
+	schema_columns( $database, 'sql_fit_assessment_reviews' ),
+	method_data_keys( $fit_repository, 'public static function record_second_review', 'public static function finalize', 3 )
+);
+assert_mapping(
 	'Communication event',
 	schema_columns( $database, 'sql_communication_events' ),
 	keys_at_indentation( function_segment( $communications, 'public static function record_event', 'public static function update_inquiry_aggregate' ), 4 )
@@ -146,13 +162,25 @@ if ( $missing_communication ) {
 }
 echo 'PASS: Communication schema operational coverage (' . count( $communication_columns ) . " fields)\n";
 
-foreach ( array( $inquiries, $attachments, $reviews, $communications, $templates, $privacy_repository, $policy_repository ) as $source ) {
+foreach ( array( $inquiries, $attachments, $reviews, $fit_repository, $communications, $templates, $privacy_repository, $policy_repository ) as $source ) {
 	if ( false === strpos( $source, 'array_keys( $data )' ) && false === strpos( $source, 'array_keys( $fields )' ) ) {
 		fwrite( STDERR, "Repository insert/update formats are not key-derived.\n" );
 		exit( 1 );
 	}
 }
 echo "PASS: repository insert/update formats are key-derived\n";
+
+if (
+	false === strpos( $fit_repository, "'automatic_status_change' => false" )
+	|| false === strpos( $fit_repository, "'automatic_communication' => false" )
+	|| false === strpos( $fit_repository, "'automatic_scheduling' => false" )
+	|| false !== strpos( $fit_repository, 'SC_EI_Inquiry_Repository::update_status' )
+	|| false !== strpos( $fit_repository, 'wp_mail(' )
+) {
+	fwrite( STDERR, "Fit assessment repository violates the human-control boundary.\n" );
+	exit( 1 );
+}
+echo "PASS: fit assessment repository preserves human-controlled, status-neutral operation\n";
 
 if (
 	false === strpos( $privacy, 'queue-only eraser bridge' )
@@ -177,4 +205,4 @@ if (
 }
 echo "PASS: physical deletion verification, dependency blocking, and tombstone markers present\n";
 
-echo "Engagement Intake v0.6.0 schema checks passed.\n";
+echo "Engagement Intake v0.7.0 schema checks passed.\n";

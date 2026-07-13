@@ -240,6 +240,32 @@ $effective       = $diagnostics['effective_limits'];
 		</section>
 
 		<section class="sc-ei-admin__card sc-ei-admin__card--wide">
+			<p class="sc-ei-admin__card-kicker"><?php esc_html_e( 'Human-Controlled Assessment', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<h2><?php esc_html_e( 'Fit Assessment Health', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<div class="sc-ei-diagnostic-metrics">
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['fit_metrics']['draft_count'] ) ); ?></strong><span><?php esc_html_e( 'drafts', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['fit_metrics']['second_review_count'] ) ); ?></strong><span><?php esc_html_e( 'second reviews', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['fit_metrics']['ready_count'] ) ); ?></strong><span><?php esc_html_e( 'ready to finalize', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['fit_metrics']['finalized_count'] ) ); ?></strong><span><?php esc_html_e( 'finalized', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['fit_metrics']['concern_count'] ) ); ?></strong><span><?php esc_html_e( 'material concerns', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( $diagnostics['fit_schema_version'] ); ?></strong><span><?php esc_html_e( 'fit schema', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+			</div>
+			<ul class="sc-ei-checks">
+				<li><span class="sc-ei-check--ok">●</span> <?php esc_html_e( 'recommendations are selected by authorized humans', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="sc-ei-check--ok">●</span> <?php esc_html_e( 'advisory score uses no decision threshold', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="sc-ei-check--ok">●</span> <?php esc_html_e( 'no automated acceptance, rejection, status, communication, or scheduling', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="sc-ei-check--ok">●</span> <?php echo esc_html( sprintf( __( '%d evidence-backed criteria', 'sustainable-catalyst-engagement-intake' ), absint( $diagnostics['fit_human_control']['criteria_count'] ) ) ); ?></li>
+				<li><span class="<?php echo $diagnostics['fit_human_control']['human_attestation_required'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'human attestation required', 'sustainable-catalyst-engagement-intake' ); ?></li>
+			</ul>
+			<dl class="sc-ei-admin__details">
+				<dt><?php esc_html_e( 'Distinct second reviewer', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo $diagnostics['fit_human_control']['distinct_second_reviewer'] ? esc_html__( 'required', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'not required', 'sustainable-catalyst-engagement-intake' ); ?></dd>
+				<dt><?php esc_html_e( 'Advisory signal', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo $diagnostics['fit_human_control']['advisory_score_enabled'] ? esc_html__( 'enabled without thresholds', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'disabled', 'sustainable-catalyst-engagement-intake' ); ?></dd>
+				<dt><?php esc_html_e( 'Stale open assessments', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( $diagnostics['fit_metrics']['stale_count'] ) ); ?></dd>
+			</dl>
+			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-fit' ) ); ?>"><?php esc_html_e( 'Open Fit Assessment Workspace', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
+		</section>
+
+		<section class="sc-ei-admin__card sc-ei-admin__card--wide">
 			<p class="sc-ei-admin__card-kicker"><?php esc_html_e( 'Privacy and Retention', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<h2><?php esc_html_e( 'Privacy Center Health', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<div class="sc-ei-diagnostic-metrics">
@@ -329,8 +355,10 @@ $effective       = $diagnostics['effective_limits'];
 			<h2><?php esc_html_e( 'Database Migrations', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<h3><?php esc_html_e( 'Tables', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['tables'] as $name => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $name ); ?></li><?php endforeach; ?></ul>
-			<h3><?php esc_html_e( 'v0.6.0 inquiry, attachment, review, communication, and privacy fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<h3><?php esc_html_e( 'v0.7.0 inquiry, attachment, review, fit assessment, communication, and privacy fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['attachment_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
+			<h3><?php esc_html_e( 'Fit assessment tables and fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<ul class="sc-ei-checks sc-ei-checks--columns"><?php foreach ( $diagnostics['fit_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
 			<h3><?php esc_html_e( 'Privacy lifecycle tables and fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks sc-ei-checks--columns"><?php foreach ( $diagnostics['privacy_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
 		</section>

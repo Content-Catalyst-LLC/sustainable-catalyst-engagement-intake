@@ -671,7 +671,8 @@ final class SC_EI_Privacy_Repository {
 	public static function data_inventory(): array {
 		global $wpdb;
 		$tables = array(
-			'inquiries', 'attachments', 'reviews', 'communications', 'communication_events',
+			'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items',
+			'fit_assessment_reviews', 'communications', 'communication_events',
 			'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds',
 			'retention_policies', 'retention_actions', 'audit_log',
 		);

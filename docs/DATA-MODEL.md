@@ -302,3 +302,42 @@ policy_key + version
 ## Retention actions
 
 Tracks proposal, due date, policy version, hold/dependency state, approval, execution, verification, failures, and tombstone snapshots.
+
+
+## v0.7.0 fit assessment state
+
+Inquiry fields:
+
+```text
+fit_assessment_status
+current_fit_assessment_id
+fit_assessment_updated_at
+fit_assessment_finalized_at
+fit_assessment_version
+```
+
+Assessment records store:
+
+```text
+version and parent
+assessor
+workflow state
+human recommendation
+confidence
+service route
+scope boundary
+advisory signal
+material concern count
+second-review requirement and disposition
+summary and rationale
+conditions and limitations
+referral notes
+attestation
+assistance disclosure
+submission and finalization state
+row version
+```
+
+Criterion items store one row per criterion per assessment.
+
+Second-review records are append-only through normal operation.

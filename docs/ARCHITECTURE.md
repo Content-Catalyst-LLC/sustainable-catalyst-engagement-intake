@@ -214,3 +214,32 @@ The daily retention compatibility hook is queue-only.
 The WordPress eraser is also a bridge into reviewed lifecycle actions rather than a direct destructive path.
 
 Execution remains inside the retention engine and rechecks legal holds immediately before mutation.
+
+
+## v0.7.0 human-controlled fit architecture
+
+```text
+inquiry
+→ versioned assessment
+→ criterion items
+→ human recommendation
+→ independent review events
+→ finalized assessment
+→ explicitly applied review snapshot
+```
+
+Tables:
+
+```text
+fit_assessments
+fit_assessment_items
+fit_assessment_reviews
+```
+
+The assessment header stores the human conclusion and lifecycle state.
+
+Criterion items store ratings, weights, evidence, concerns, and source references.
+
+Second-review rows preserve independent review history.
+
+The repository contains no inquiry-status mutation or mail-delivery path.

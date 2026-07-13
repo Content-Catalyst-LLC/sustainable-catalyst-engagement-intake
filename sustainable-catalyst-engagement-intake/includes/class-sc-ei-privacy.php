@@ -149,6 +149,88 @@ final class SC_EI_Privacy {
 				}
 			}
 
+			foreach ( SC_EI_Fit_Repository::for_inquiry( $inquiry_id, true ) as $assessment ) {
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-fit-assessments',
+					'group_label' => __( 'Engagement Intake Human Fit Assessments', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-fit-assessment-' . $assessment['id'],
+					'data'        => self::export_fields(
+						$assessment,
+						array(
+							'assessment_version'        => 'Assessment version',
+							'status'                    => 'Assessment status',
+							'recommendation'            => 'Human recommendation',
+							'confidence'                => 'Confidence',
+							'service_route'             => 'Service route',
+							'scope_boundary'            => 'Scope boundary',
+							'advisory_score'            => 'Advisory signal',
+							'score_complete'            => 'Criteria complete',
+							'material_concern_count'    => 'Material concern count',
+							'second_review_required'    => 'Second review required',
+							'second_review_reason'      => 'Second review reason',
+							'second_review_disposition' => 'Second review disposition',
+							'overall_summary'           => 'Overall summary',
+							'recommendation_rationale'  => 'Recommendation rationale',
+							'limitations_notes'         => 'Limitations and uncertainty',
+							'conditions_for_fit'        => 'Conditions for fit',
+							'referral_notes'            => 'Referral or decline notes',
+							'human_attestation'         => 'Human attestation',
+							'assistance_disclosure'     => 'Assistance disclosure',
+							'assistance_notes'          => 'Assistance notes',
+							'submitted_at'              => 'Submitted at',
+							'finalized_at'              => 'Finalized at',
+							'created_at'                => 'Created at',
+							'updated_at'                => 'Updated at',
+						)
+					),
+				);
+				foreach ( $assessment['items'] as $item ) {
+					$data[] = array(
+						'group_id'    => 'sc-engagement-intake-fit-criteria',
+						'group_label' => __( 'Engagement Intake Fit Assessment Criteria', 'sustainable-catalyst-engagement-intake' ),
+						'item_id'     => 'sc-ei-fit-item-' . $item['id'],
+						'data'        => self::export_fields(
+							$item,
+							array(
+								'criterion_key'       => 'Criterion',
+								'criterion_group'     => 'Criterion group',
+								'rating'              => 'Human rating',
+								'weight'              => 'Transparent weight',
+								'numeric_value'       => 'Numeric rating value',
+								'is_applicable'       => 'Applicable',
+								'is_material_concern' => 'Material concern',
+								'evidence_note'       => 'Evidence and reasoning',
+								'concern_note'        => 'Concern or mitigation',
+								'source_refs_json'    => 'Source references',
+								'created_at'          => 'Created at',
+								'updated_at'          => 'Updated at',
+							)
+						),
+					);
+				}
+				foreach ( $assessment['second_reviews'] as $review ) {
+					$data[] = array(
+						'group_id'    => 'sc-engagement-intake-fit-reviews',
+						'group_label' => __( 'Engagement Intake Fit Assessment Second Reviews', 'sustainable-catalyst-engagement-intake' ),
+						'item_id'     => 'sc-ei-fit-review-' . $review['id'],
+						'data'        => self::export_fields(
+							$review,
+							array(
+								'disposition'        => 'Second-review disposition',
+								'recommendation'     => 'Reviewed recommendation',
+								'service_route'      => 'Reviewed service route',
+								'scope_boundary'     => 'Reviewed scope boundary',
+								'review_notes'       => 'Second-review notes',
+								'required_changes'   => 'Required changes',
+								'conflict_disclosure'=> 'Reviewer conflict disclosure',
+								'human_attestation'  => 'Human attestation',
+								'created_at'         => 'Recorded at',
+							)
+						),
+					);
+				}
+			}
+
 			foreach ( SC_EI_Attachment_Repository::for_inquiry( $inquiry_id, true ) as $attachment ) {
 				$data[] = array(
 					'group_id'    => 'sc-engagement-intake-documents',
@@ -300,7 +382,7 @@ final class SC_EI_Privacy {
 	/**
 	 * WordPress eraser bridge.
 	 *
-	 * v0.6.0 does not erase synchronously. It creates a tracked case and queues
+	 * v0.7.0 retains the queue-only behavior introduced in v0.6.0 and does not erase synchronously. It creates a tracked case and queues
 	 * legal-hold-aware lifecycle actions for human approval and verified execution.
 	 */
 	public static function erase_by_email( string $email_address, int $page = 1 ): array {
@@ -571,6 +653,11 @@ final class SC_EI_Privacy {
 			'last_privacy_review_by'    => 'Last privacy reviewer user ID',
 			'personal_data_erased_at'   => 'Personal data erased at',
 			'privacy_version'           => 'Privacy state version',
+			'fit_assessment_status'     => 'Fit assessment state',
+			'current_fit_assessment_id' => 'Current fit assessment ID',
+			'fit_assessment_updated_at' => 'Fit assessment updated at',
+			'fit_assessment_finalized_at'=> 'Fit assessment finalized at',
+			'fit_assessment_version'    => 'Fit assessment version',
 			'created_at'                => 'Submitted at',
 			'updated_at'                => 'Last updated',
 		);

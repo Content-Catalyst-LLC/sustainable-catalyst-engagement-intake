@@ -257,3 +257,28 @@ For higher-risk intake:
 - retention actions use unique deduplication keys
 - failed actions remain visible and auditable
 - non-personal tombstones cannot be disabled in v0.6.0
+
+
+## v0.7.0 fit assessment controls
+
+- fit records are private and capability-gated
+- reviewers and managers have separate capabilities
+- finalization and Review Workspace application are separate
+- no automatic inquiry-status mutation
+- no communication or scheduling path
+- no score thresholds
+- no score-derived recommendation
+- criterion evidence can be required
+- material concern notes are required
+- human attestation is fixed on
+- assistance must be disclosed
+- drafts use optimistic locking
+- assessor ownership is enforced
+- a distinct second reviewer can be required
+- Agree cannot change the submitted conclusion
+- post-submission edits invalidate prior review clearance
+- JSON export requires capability and nonce
+- REST fit context requires capability
+- privacy export includes assessment history
+- approved erasure redacts narratives, evidence, references, and reviewer disclosures
+- categorical lifecycle and audit tombstones may remain

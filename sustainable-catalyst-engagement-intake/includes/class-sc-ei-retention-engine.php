@@ -513,6 +513,7 @@ final class SC_EI_Retention_Engine {
 					$inquiry_id
 				)
 			);
+			$fit_result = SC_EI_Fit_Repository::redact_for_privacy( $inquiry_id, $now );
 			if (
 				false === $communication_result
 				|| false === $event_result
@@ -521,8 +522,9 @@ final class SC_EI_Retention_Engine {
 				|| false === $request_result
 				|| false === $hold_result
 				|| false === $retention_result
+				|| false === $fit_result
 			) {
-				throw new RuntimeException( 'Related communication, review, consent, request, hold, or lifecycle data could not be redacted.' );
+				throw new RuntimeException( 'Related communication, review, fit assessment, consent, request, hold, or lifecycle data could not be redacted.' );
 			}
 
 			$data = array(
@@ -569,6 +571,7 @@ final class SC_EI_Retention_Engine {
 				'last_privacy_review_by' => $actor_user_id,
 				'personal_data_erased_at' => $now,
 				'privacy_version' => absint( $inquiry['privacy_version'] ) + 1,
+				'fit_assessment_status' => 'finalized' === (string) $inquiry['fit_assessment_status'] ? 'finalized' : 'not_started',
 				'updated_at' => $now,
 			);
 			$integer = array( 'participant_count', 'preferred_duration', 'last_privacy_review_by', 'privacy_version' );

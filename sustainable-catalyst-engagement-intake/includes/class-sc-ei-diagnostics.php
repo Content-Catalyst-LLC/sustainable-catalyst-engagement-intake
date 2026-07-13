@@ -16,6 +16,7 @@ final class SC_EI_Diagnostics {
 		$review_columns     = SC_EI_Database::review_columns_exist();
 		$communication_columns = SC_EI_Database::communication_columns_exist();
 		$privacy_columns       = SC_EI_Database::privacy_columns_exist();
+		$fit_columns           = SC_EI_Database::fit_columns_exist();
 		$admin              = get_role( 'administrator' );
 		$settings           = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
@@ -39,6 +40,7 @@ final class SC_EI_Diagnostics {
 		$privacy_metrics = SC_EI_Privacy_Repository::metrics();
 		$privacy_inventory = SC_EI_Privacy_Repository::data_inventory();
 		$retention_policies = SC_EI_Retention_Policy_Repository::active();
+		$fit_metrics = SC_EI_Fit_Repository::metrics();
 
 		$notification_policies = array(
 			'sender_acknowledgment' => ! empty( $settings['sender_acknowledgment_enabled'] ),
@@ -73,6 +75,22 @@ final class SC_EI_Diagnostics {
 			'communication_templates' => array(
 				'active_count' => count( $communication_templates ),
 				'keys'         => array_keys( $communication_templates ),
+			),
+			'fit_columns'            => $fit_columns,
+			'fit_schema_version'     => SC_EI_FIT_SCHEMA_VERSION,
+			'fit_metrics'            => $fit_metrics,
+			'fit_human_control'      => array(
+				'automatic_recommendation' => false,
+				'automatic_acceptance'     => false,
+				'automatic_rejection'      => false,
+				'automatic_status_change'  => false,
+				'automatic_communication'  => false,
+				'automatic_scheduling'     => false,
+				'advisory_thresholds'      => false,
+				'human_attestation_required' => true,
+				'distinct_second_reviewer' => ! empty( $settings['fit_distinct_second_reviewer'] ),
+				'advisory_score_enabled'   => ! empty( $settings['fit_advisory_score_enabled'] ),
+				'criteria_count'           => count( SC_EI_Fit_Schema::criteria() ),
 			),
 			'privacy_columns'        => $privacy_columns,
 			'privacy_schema_version' => SC_EI_PRIVACY_SCHEMA_VERSION,
@@ -194,6 +212,13 @@ final class SC_EI_Diagnostics {
 		$attachments_ok = ! in_array( false, $results['attachment_columns'], true );
 		$reviews_ok     = ! in_array( false, $results['review_columns'], true );
 		$communications_ok = ! in_array( false, $results['communication_columns'], true );
+		$fit_ok = ! in_array( false, $results['fit_columns'], true )
+			&& empty( $results['fit_human_control']['automatic_recommendation'] )
+			&& empty( $results['fit_human_control']['automatic_acceptance'] )
+			&& empty( $results['fit_human_control']['automatic_rejection'] )
+			&& empty( $results['fit_human_control']['automatic_status_change'] )
+			&& empty( $results['fit_human_control']['advisory_thresholds'] )
+			&& ! empty( $results['fit_human_control']['human_attestation_required'] );
 		$privacy_ok      = ! in_array( false, $results['privacy_columns'], true )
 			&& ! empty( $results['retention_policies']['active_count'] )
 			&& ! empty( $results['privacy_lifecycle']['queue_only_cron'] )
@@ -257,7 +282,7 @@ final class SC_EI_Diagnostics {
 				&& ! empty( $results['communication_templates']['active_count'] );
 		}
 
-		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $privacy_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
+		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $fit_ok && $privacy_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
 			? 'healthy'
 			: 'attention';
 	}

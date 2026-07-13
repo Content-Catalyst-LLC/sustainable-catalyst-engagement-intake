@@ -1919,3 +1919,284 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* v0.7.0 Human-Controlled Fit Assessment */
+.sc-ei-fit-boundary {
+  display: grid;
+  gap: 4px;
+  margin: 16px 0;
+  padding: 14px 16px;
+  border: 1px solid #6d1b2b;
+  border-left: 6px solid #6d1b2b;
+  background: #fff8f5;
+}
+
+.sc-ei-fit-boundary strong {
+  color: #6d1b2b;
+}
+
+.sc-ei-fit-metrics,
+.sc-ei-fit-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.sc-ei-fit-metrics a,
+.sc-ei-fit-summary-grid > div {
+  display: block;
+  padding: 14px;
+  border: 1px solid #d8d1c3;
+  border-top: 4px solid #6d1b2b;
+  background: #fff;
+  color: #161616;
+  text-decoration: none;
+}
+
+.sc-ei-fit-metrics strong,
+.sc-ei-fit-metrics span,
+.sc-ei-fit-summary-grid strong,
+.sc-ei-fit-summary-grid span {
+  display: block;
+}
+
+.sc-ei-fit-metrics strong,
+.sc-ei-fit-summary-grid strong {
+  margin-bottom: 4px;
+  font-size: 18px;
+}
+
+.sc-ei-fit-metrics span,
+.sc-ei-fit-summary-grid span {
+  color: #5d5d5d;
+  font-size: 12px;
+}
+
+.sc-ei-fit-toolbar {
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid #d8d1c3;
+  background: #f8f7f2;
+}
+
+.sc-ei-fit-create-form,
+.sc-ei-fit-toolbar .sc-ei-operation-filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+  margin: 0 0 10px;
+}
+
+.sc-ei-fit-create-form label span {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.sc-ei-fit-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(300px, .7fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.sc-ei-fit-detail-layout main,
+.sc-ei-fit-detail-layout aside {
+  min-width: 0;
+}
+
+.sc-ei-fit-detail-layout .sc-ei-admin__card {
+  margin-bottom: 18px;
+}
+
+.sc-ei-fit-criterion {
+  margin: 0 0 18px;
+  padding: 16px;
+  border: 1px solid #d8d1c3;
+  background: #fff;
+}
+
+.sc-ei-fit-criterion:last-child {
+  margin-bottom: 0;
+}
+
+.sc-ei-fit-criterion legend {
+  padding: 0 8px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.sc-ei-fit-criterion legend span {
+  margin-left: 8px;
+  color: #666;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.sc-ei-fit-criterion--material {
+  border-color: #8f1515;
+  border-left: 6px solid #8f1515;
+  background: #fff8f8;
+}
+
+.sc-ei-fit-criterion-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, .6fr) minmax(240px, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.sc-ei-fit-criterion-grid label > span,
+.sc-ei-fit-assessment-form label > span,
+.sc-ei-fit-confirm-form label > span {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 700;
+}
+
+.sc-ei-fit-wide {
+  grid-column: 1 / -1;
+}
+
+.sc-ei-fit-material-check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding-top: 26px;
+}
+
+.sc-ei-fit-material-check span,
+.sc-ei-fit-attestation span {
+  display: inline;
+  margin: 0;
+  font-weight: 600;
+}
+
+.sc-ei-fit-attestation {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid #2f5f4a;
+  background: #f5fbf6;
+}
+
+.sc-ei-fit-finalize-zone {
+  border: 1px solid #6d1b2b;
+  border-left: 6px solid #6d1b2b;
+  background: #fff8f5;
+}
+
+.sc-ei-fit-confirm-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+.sc-ei-fit-confirm-form input[type="text"] {
+  min-width: 220px;
+}
+
+.sc-ei-fit-final-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.sc-ei-fit-review-history {
+  padding: 12px 0;
+  border-bottom: 1px solid #e1ddd3;
+}
+
+.sc-ei-fit-review-history:last-child {
+  border-bottom: 0;
+}
+
+.sc-ei-fit-review-history strong,
+.sc-ei-fit-review-history span {
+  display: block;
+}
+
+.sc-ei-fit-review-history span {
+  margin-top: 3px;
+  color: #6d1b2b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sc-ei-fit-state,
+.sc-ei-privacy-state {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #f0ece3;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sc-ei-fit-state--finalized,
+.sc-ei-fit-state--ready-to-finalize {
+  background: #e8f4eb;
+  color: #145b28;
+}
+
+.sc-ei-fit-state--second-review,
+.sc-ei-fit-state--under-review {
+  background: #fff4d6;
+  color: #6b4b00;
+}
+
+.sc-ei-inline-form {
+  display: inline;
+  margin: 0;
+}
+
+.sc-ei-inline-form .button-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #2271b1;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.sc-ei-fit-table th,
+.sc-ei-fit-table td {
+  vertical-align: top;
+}
+
+@media (max-width: 1100px) {
+  .sc-ei-fit-detail-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 782px) {
+  .sc-ei-fit-criterion-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sc-ei-fit-wide {
+    grid-column: auto;
+  }
+
+  .sc-ei-fit-material-check {
+    padding-top: 0;
+  }
+
+  .sc-ei-fit-create-form,
+  .sc-ei-fit-toolbar .sc-ei-operation-filter-form,
+  .sc-ei-fit-confirm-form {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .sc-ei-fit-confirm-form input[type="text"],
+  .sc-ei-fit-confirm-form .button {
+    width: 100%;
+  }
+}

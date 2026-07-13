@@ -238,4 +238,42 @@
     });
   });
 
+  document.querySelectorAll(".sc-ei-fit-confirm-form").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      const assessmentId = form.querySelector("input[name='assessment_id']")?.value || "";
+      const finalizeInput = form.querySelector("input[name='confirm_finalize']");
+      const applyInput = form.querySelector("input[name='confirm_apply']");
+      const input = finalizeInput || applyInput;
+      const expected = finalizeInput ? `FINALIZE ${assessmentId}` : `APPLY ${assessmentId}`;
+      if (!input || input.value.trim().toUpperCase() !== expected) {
+        event.preventDefault();
+        window.alert(`Type ${expected} exactly.`);
+        input?.focus();
+        return;
+      }
+      const message = finalizeInput
+        ? "Finalize this human fit assessment? This freezes the assessment version but does not change the inquiry or contact the sender."
+        : "Apply this finalized assessment to the Review Workspace? This creates a review snapshot but does not change inquiry status.";
+      if (!window.confirm(message)) {
+        event.preventDefault();
+      }
+    });
+  });
+
+  document.querySelectorAll(".sc-ei-fit-criterion").forEach((criterion) => {
+    const rating = criterion.querySelector("select[name$='[rating]']");
+    const evidence = criterion.querySelector("textarea[name$='[evidence_note]']");
+    const material = criterion.querySelector("input[name$='[is_material_concern]']");
+    const concern = criterion.querySelector("textarea[name$='[concern_note]']");
+    const sync = () => {
+      const assessed = rating && !["not_assessed", "not_applicable"].includes(rating.value);
+      if (evidence) evidence.required = Boolean(assessed);
+      if (concern) concern.required = Boolean(material?.checked);
+      criterion.classList.toggle("sc-ei-fit-criterion--material", Boolean(material?.checked));
+    };
+    rating?.addEventListener("change", sync);
+    material?.addEventListener("change", sync);
+    sync();
+  });
+
 })();

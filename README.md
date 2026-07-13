@@ -1,22 +1,20 @@
 # Sustainable Catalyst Engagement Intake
 
-**Version:** 0.6.0  
-**Release:** Privacy and Retention Center
+**Version:** 0.7.0  
+**Release:** Human-Controlled Fit Assessment
 
-v0.6.0 adds an auditable lifecycle layer:
+v0.7.0 adds an evidence-backed fit layer between private intake and engagement decisions:
 
 ```text
-Private intake
-→ review and communication
-→ privacy state
-→ policy preview
-→ queue
-→ legal-hold and dependency review
-→ approval
-→ typed execution
-→ verification
-→ non-personal tombstone
+private inquiry
+→ administrative review
+→ human fit assessment
+→ independent review when required
+→ final assessment record
+→ separately authorized Review Workspace application
 ```
+
+It does not automate acceptance, rejection, status changes, communication, scheduling, proposals, or referrals.
 
 ## Public shortcodes
 
@@ -28,346 +26,382 @@ Private intake
 [sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst"]
 ```
 
-## Privacy Center
+## Fit workspace
 
 Open:
 
 ```text
-Engagement Intake → Privacy Center
+Engagement Intake → Fit Assessment
 ```
 
-Views:
+The workspace includes:
 
-- Overview
-- Privacy Requests
-- Consent Ledger
-- Legal Holds
-- Retention Queue
-- Policies
-- Operating Method
+- queue metrics
+- state and ownership filters
+- human-control disclosures
+- assessment creation
+- criterion evidence
+- material concerns
+- human recommendation and route
+- independent second review
+- typed finalization
+- explicit Review Workspace application
+- private JSON export
 
-## Safety model
-
-The release enforces:
+## Six assessment domains
 
 ```text
-preview is not queue
-queue is not approval
-approval is not execution
-execution is not assumed verification
+Mission and Service Alignment
+Problem and Outcome Clarity
+Evidence and Engagement Readiness
+Feasibility and Delivery Conditions
+Ethics, Independence, Privacy, and Risk
+Learning, Measurement, and Public Value
 ```
 
-The daily cron only queues candidates.
-
-Approval is mandatory.
-
-Irreversible execution requires:
+## Sixteen criteria
 
 ```text
-EXECUTE <action-id>
+mission_alignment
+service_alignment
+problem_clarity
+outcome_clarity
+evidence_readiness
+stakeholder_readiness
+decision_authority
+budget_feasibility
+timing_feasibility
+implementation_readiness
+ethics_public_interest
+privacy_confidentiality
+conflict_independence
+risk_manageability
+measurement_readiness
+public_value
 ```
 
-Private-document execution verifies physical absence before marking the action complete.
-
-## Privacy requests
-
-Cases support:
-
-- access/export
-- erasure
-- restriction
-- correction
-- consent withdrawal
-- objection
-- portability
-- other privacy requests
-
-Each case records:
-
-- requester
-- request type
-- source
-- identity-verification state
-- received date
-- due date
-- assigned owner
-- request summary
-- resolution
-- completion state
-
-Completing or denying a case requires a resolution summary.
-
-## Consent and authorization ledger
-
-The append-oriented ledger records:
-
-- privacy notice acknowledgment
-- inquiry processing
-- calendar invitation
-- participant contact authorization
-- communication permission
-- private document processing
-- other authorization
-
-Actions include:
-
-- granted
-- renewed
-- withdrawn
-- corrected
-- expired
-- not applicable
-
-Evidence includes:
-
-- notice or consent version
-- recorded processing basis
-- source
-- evidence note
-- subject email SHA-256
-- occurrence time
-- internal actor
-
-Withdrawing a recorded authorization restricts the inquiry until reviewed.
-
-## Legal holds
-
-A hold can cover:
+Each criterion stores:
 
 ```text
-entire inquiry and related records
-specific private document
+human rating
+transparent weight
+numeric rating value
+applicability
+material-concern flag
+evidence and reasoning
+concern or mitigation
+private source references
+row version
+timestamps
 ```
 
-A hold requires:
+## Advisory score
 
-- reason
-- authority
-- placement actor and time
-- review date
-
-Release requires an explicit reason.
-
-Any active related hold blocks inquiry erasure. A document hold also blocks its file deletion and related inquiry lifecycle actions.
-
-## Versioned retention policies
-
-Default policy families:
+The optional score is:
 
 ```text
-unaccepted_inquiry
-withdrawn_inquiry
-closed_inquiry
-accepted_inquiry
-private_attachment
-communication_content
+sum(human rating × disclosed weight)
+÷
+sum(maximum rating × disclosed weight)
+× 100
 ```
 
-A policy version records:
+It is only a compact summary of manually selected ratings.
 
-- key and immutable version
-- name
-- target type
-- inquiry status scope
-- retention days
-- anchor field
-- action
-- recorded basis
-- description
-- system/custom origin
-- author and timestamps
-
-Creating a version archives the prior active version. Existing queued actions keep their original policy key and version.
-
-## Queue behavior
-
-A deterministic candidate includes:
+The system has:
 
 ```text
-inquiry
-target type and ID
-policy key and version
-action
-due date
-deduplication key
-hold state
-minimal snapshot
+no acceptance threshold
+no rejection threshold
+no score-to-recommendation rule
+no automatic routing rule
 ```
 
-The queue prevents duplicate actions with a unique deduplication key.
+A low or high signal does not create a decision.
 
-States:
+## Recommendations
+
+Authorized humans can select:
 
 ```text
-queued
-blocked_hold
-blocked_dependency
-approved
-executing
-executed
-failed
-canceled
-skipped
+Undecided
+Strong Fit
+Possible Fit
+Conditional Fit
+Needs Clarification
+Limited Fit
+Referral Candidate
+Not a Fit
 ```
 
-## Execution behavior
-
-### Private document
+Confidence is separately recorded as:
 
 ```text
-approved action
-→ recheck every related hold
-→ delete from protected storage
-→ verify physical absence
-→ mark attachment tombstone
-→ record SHA-256, size, actor, and verification
+Not Assessed
+Low
+Moderate
+High
 ```
 
-### Communication content
+## Service routes
+
+The human reviewer can recommend:
 
 ```text
-approved action
-→ redact subject and body
-→ redact parties, CC, provider IDs, errors, hashes, dedupe data, and metadata
-→ redact related delivery-event context
-→ retain categorical channel, direction, status, type, and timestamps
+Continue Review
+Request More Information
+Free 20-Minute Fit Call
+Paid Consultation
+Evidence and Claims Audit
+Evidence Systems Diagnostic
+Knowledge Architecture
+Technical Storytelling or Product Dossier
+Measurement and Indicator Design
+Decision Dossier or Systems Analysis
+Responsible AI or Knowledge Workflow
+Strategy Sprint
+Workshop or Training
+Monthly Advisory Retainer
+Institutional Partnership Discussion
+Referral
+Not Yet — Revisit Later
+Decline
 ```
 
-### Inquiry personal data
+The route is a recommendation only.
+
+## Scope boundaries
 
 ```text
-approved action
-→ confirm no active related hold
-→ confirm no undeleted private document
-→ transaction
-→ redact communications and events
-→ redact review narratives and snapshots
-→ redact consent evidence and email hashes
-→ redact privacy-request identifiers and narratives
-→ redact released-hold narratives and authorities
-→ redact retention snapshots and failure narratives
-→ redact inquiry contact, project, scheduling, and link data
-→ mark privacy state erased
-→ preserve reference and non-personal tombstone
-→ commit
+Within Scope
+Potentially In Scope After Reframing
+Capacity Constraint
+Budget or Resource Mismatch
+Timing Mismatch
+Conflict or Independence Concern
+Requires Legal or Regulatory Expertise
+Requires Medical or Clinical Expertise
+Unsafe, Prohibited, or Inappropriate Scope
+Outside Scope
 ```
 
-### Archive only
+## Human attestation
 
-Accepted engagement records default to archive review rather than automatic erasure.
+Before submission, the assessor must attest that:
 
-## WordPress privacy tools
+- they personally reviewed the inquiry and relevant private records
+- ratings represent their judgment
+- recommendation and route represent their judgment
+- scope and limitations are recorded
+- assistance is disclosed
 
-The exporter includes:
-
-- inquiry lifecycle state
-- review history
-- communications and transport events
-- private document metadata
-- consent events
-- legal holds
-- retention actions
-- privacy requests
-
-The eraser does not delete synchronously.
-
-It:
-
-1. creates or reuses an open erasure request
-2. marks the inquiry erasure requested
-3. queues each active private document
-4. queues the inquiry erasure dependency
-5. records an audit event
-6. reports that data remains pending reviewed execution
-
-## Processing restrictions
-
-Sender-facing email is suppressed when the inquiry is:
+Assistance disclosure options include:
 
 ```text
-restricted
-erasure_requested
-erased
+No assistance
+Clerical only
+Summarization
+Analytical support with retained human judgment
+Other disclosed assistance
 ```
 
-Internal case-management and preservation records remain available to authorized users.
+## Independent second review
 
-## Fixed safety controls
+A second review can be required for:
 
-These cannot be disabled in v0.6.0:
+- not-a-fit recommendation
+- conflict or independence boundary
+- unsafe or prohibited scope
+- material ethics concern
+- material privacy concern
+- material independence concern
+- material risk concern
+
+The second reviewer records:
 
 ```text
-daily cron is queue-only
-approval before execution is required
-non-personal tombstones are retained
+Agree
+Agree with Required Changes
+Disagree
+Escalate for Additional Review
 ```
 
-Optional:
+An Agree disposition must confirm the submitted recommendation, service route, and scope boundary.
+
+The original assessor and second reviewer can be required to differ.
+
+## Workflow integrity
 
 ```text
-require approver to differ from proposer
+draft
+→ submitted
+→ second review when required
+→ ready to finalize
+→ finalized
 ```
 
-## Data inventory
-
-The private inventory counts:
-
-- inquiries
-- attachments
-- reviews
-- communications
-- communication events
-- templates
-- privacy requests
-- consent events
-- legal holds
-- retention policies
-- retention actions
-- audit events
-- active private document bytes
-
-Authorized users can export a private JSON inventory containing aggregate counts, active policies, lifecycle settings, metrics, and the last queue run.
-
-## Migration from v0.5.0
-
-New tables:
+Alternative states:
 
 ```text
-{prefix}sc_ei_privacy_requests
-{prefix}sc_ei_consent_events
-{prefix}sc_ei_legal_holds
-{prefix}sc_ei_retention_policies
-{prefix}sc_ei_retention_actions
+changes requested
+superseded
+withdrawn
 ```
 
-New inquiry fields:
+Any edit after submission:
 
 ```text
-privacy_status
-retention_policy_key
-retention_until
-legal_hold_count
-privacy_restriction_reason
-last_privacy_review_at
-last_privacy_review_by
-personal_data_erased_at
-privacy_version
+returns the assessment to draft
+clears submitted time
+clears second-review disposition
+clears second reviewer
+requires fresh submission and review
 ```
 
-Migration is non-destructive. It does not queue or execute existing records merely because the plugin was upgraded.
+Drafts use optimistic `row_version` locking.
 
-## Legal boundary
+## Finalization
 
-This plugin provides technical controls and evidence.
+Finalization requires:
+
+```text
+ready_to_finalize state
+complete criteria
+required evidence
+human attestation
+recommendation
+confidence
+rationale
+resolved second review
+typed FINALIZE <assessment-id>
+```
+
+Finalization does not call:
+
+```text
+inquiry status mutation
+mail transport
+Teams scheduling
+proposal generation
+referral dispatch
+```
+
+## Review Workspace application
+
+After finalization, an authorized manager may type:
+
+```text
+APPLY <assessment-id>
+```
+
+This creates a new immutable Review Workspace snapshot containing:
+
+- fit decision
+- confidence
+- recommended next step
+- summary
+- rationale
+- conflict notes when applicable
+
+It does not change inquiry status.
+
+## Privacy and retention
+
+WordPress privacy export includes:
+
+- assessment headers
+- human recommendation and route
+- advisory signal
+- criterion ratings and weights
+- criterion evidence and source references
+- material concerns
+- second-review history
+- assistance disclosure
+
+Approved inquiry erasure redacts:
+
+- assessment summaries
+- recommendation rationale
+- limitations
+- conditions
+- referral notes
+- second-review reasons
+- assistance notes
+- criterion evidence
+- concern notes
+- source references
+- second-review notes
+- required changes
+- reviewer conflict disclosures
+
+Categorical lifecycle state, timestamps, internal actor IDs, and audit evidence can remain as non-personal tombstones.
+
+## New database tables
+
+```text
+{prefix}sc_ei_fit_assessments
+{prefix}sc_ei_fit_assessment_items
+{prefix}sc_ei_fit_assessment_reviews
+```
+
+## New inquiry fields
+
+```text
+fit_assessment_status
+current_fit_assessment_id
+fit_assessment_updated_at
+fit_assessment_finalized_at
+fit_assessment_version
+```
+
+## New capabilities
+
+```text
+sc_intake_view_fit_assessments
+sc_intake_create_fit_assessments
+sc_intake_review_fit_assessments
+sc_intake_finalize_fit_assessments
+sc_intake_apply_fit_to_review
+sc_intake_manage_fit_settings
+sc_intake_export_fit_assessments
+```
+
+Reviewers can create and independently review assessments.
+
+Managers can finalize and explicitly apply assessments.
+
+## Production verification
+
+1. Back up the database and protected storage.
+2. Upgrade to v0.7.0.
+3. Confirm DB version `0.7.0`.
+4. Confirm fit schema `1.0.0`.
+5. Confirm all three fit tables and five inquiry fields.
+6. Review fit settings.
+7. Start an assessment from an inquiry.
+8. Verify evidence requirements.
+9. Verify optimistic conflict handling in two browser sessions.
+10. Verify a post-submission edit resets review clearance.
+11. Verify a triggered independent second review.
+12. Verify Agree cannot change the submitted conclusion.
+13. Finalize with typed confirmation.
+14. Confirm inquiry status, communications, and scheduling remain unchanged.
+15. Apply to Review Workspace with separate typed confirmation.
+16. Test assessment export.
+17. Test WordPress privacy export.
+18. Test approved inquiry erasure in staging.
+
+## Legal and professional boundary
+
+The fit workspace supports structured internal judgment.
 
 It does not determine:
 
-- applicable jurisdiction
-- legal basis
-- mandatory retention period
-- preservation obligations
-- identity-verification sufficiency
-- whether an erasure exception applies
-- whether a legal hold should be placed or released
+- whether a relationship is legally permissible
+- whether a conflict is waivable
+- whether legal, medical, clinical, accounting, or regulated expertise is required
+- whether a price or contract term is appropriate
+- whether an engagement should ultimately be accepted
+- whether a retention or disclosure obligation applies
 
-Obtain appropriate legal and professional review for production policies.
+Use appropriate legal, professional, ethical, and organizational review.

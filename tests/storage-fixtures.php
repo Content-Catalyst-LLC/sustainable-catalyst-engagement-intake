@@ -278,4 +278,4 @@ foreach ( $iterator as $item ) {
 }
 rmdir( $temp_root );
 
-echo "Engagement Intake v0.6.0 storage fixtures passed.\n";
+echo "Engagement Intake v0.7.0 storage fixtures passed.\n";

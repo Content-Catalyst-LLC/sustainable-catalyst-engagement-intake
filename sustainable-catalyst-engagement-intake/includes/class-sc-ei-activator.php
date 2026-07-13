@@ -29,10 +29,11 @@ final class SC_EI_Activator {
 
 		update_option( 'sc_ei_version', SC_EI_VERSION, false );
 		update_option( 'sc_ei_privacy_schema_version', SC_EI_PRIVACY_SCHEMA_VERSION, false );
+		update_option( 'sc_ei_fit_schema_version', SC_EI_FIT_SCHEMA_VERSION, false );
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Engagement Intake v0.6.0 activated with a Privacy and Retention Center, versioned lifecycle policies, consent evidence, privacy request cases, legal holds, queue-only retention scans, approved verified execution, reviewed communications, administrative review, quarantine operations, and reliable protected storage.',
+			'Engagement Intake v0.7.0 activated with human-controlled fit assessment, evidence-backed criteria, transparent advisory scoring without thresholds, second-review controls, explicit finalization, privacy and retention governance, reviewed communications, administrative review, quarantine operations, and reliable protected storage.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}

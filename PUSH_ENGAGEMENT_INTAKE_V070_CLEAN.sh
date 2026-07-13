@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-VERSION="0.6.0"
+VERSION="0.7.0"
 PLUGIN_SLUG="sustainable-catalyst-engagement-intake"
 REPO_ARCHIVE_BASENAME="${PLUGIN_SLUG}-v${VERSION}-repo.zip"
 
@@ -16,7 +16,7 @@ SKIP_PUSH="${SC_EI_SKIP_PUSH:-0}"
 SKIP_REMOTE_CHECK="${SC_EI_SKIP_REMOTE_CHECK:-0}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v060.XXXXXX")"
+WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v070.XXXXXX")"
 
 cleanup() {
   rm -rf "${WORK_DIR}"
@@ -117,10 +117,10 @@ find_source_directory() {
 
 validate_release_markers() {
   local main_file="${REPO_DIR}/${PLUGIN_SLUG}/${PLUGIN_SLUG}.php"
-  local retention_file="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-retention.php"
-  local engine_file="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-retention-engine.php"
-  local admin_file="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-admin.php"
-  local privacy_view="${REPO_DIR}/${PLUGIN_SLUG}/admin/views/privacy-center.php"
+  local fit_schema="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-fit-schema.php"
+  local fit_repo="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-fit-repository.php"
+  local fit_admin="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-fit-admin.php"
+  local fit_view="${REPO_DIR}/${PLUGIN_SLUG}/admin/views/fit-assessment-detail.php"
 
   php -r '
     $file = $argv[1];
@@ -135,8 +135,8 @@ validate_release_markers() {
   php -r '
     $file = $argv[1];
     $contents = file_get_contents($file);
-    if ($contents === false || !preg_match("/SC_EI_DB_VERSION\x27,\s*\x270\.6\.0\x27/", $contents)) {
-        fwrite(STDERR, "Database version marker 0.6.0 is missing.\nFile: {$file}\n");
+    if ($contents === false || !preg_match("/SC_EI_DB_VERSION\x27,\s*\x270\.7\.0\x27/", $contents)) {
+        fwrite(STDERR, "Database version marker 0.7.0 is missing.\nFile: {$file}\n");
         exit(1);
     }
   ' "${main_file}"
@@ -144,30 +144,39 @@ validate_release_markers() {
   php -r '
     $file = $argv[1];
     $contents = file_get_contents($file);
-    if ($contents === false || !preg_match("/SC_EI_PRIVACY_SCHEMA_VERSION\x27,\s*\x271\.0\.0\x27/", $contents)) {
-        fwrite(STDERR, "Privacy schema marker 1.0.0 is missing.\nFile: {$file}\n");
+    if ($contents === false || !preg_match("/SC_EI_FIT_SCHEMA_VERSION\x27,\s*\x271\.0\.0\x27/", $contents)) {
+        fwrite(STDERR, "Fit schema marker 1.0.0 is missing.\nFile: {$file}\n");
         exit(1);
     }
   ' "${main_file}"
 
-  grep -Fq "SC_EI_Retention_Engine::queue_candidates" "${retention_file}" \
-    || die "The queue-only retention marker is missing."
+  grep -Fq "calculate_score" "${fit_schema}" \
+    || die "The transparent advisory score implementation is missing."
 
-  if grep -Eq "delete_file|mark_deleted" "${retention_file}"; then
-    die "The daily retention compatibility layer contains a destructive operation."
+  grep -Fq "second_review_reasons" "${fit_schema}" \
+    || die "The second-review trigger logic is missing."
+
+  grep -Fq "'automatic_status_change' => false" "${fit_repo}" \
+    || die "The status-neutral finalization marker is missing."
+
+  grep -Fq "'automatic_communication' => false" "${fit_repo}" \
+    || die "The communication-neutral finalization marker is missing."
+
+  grep -Fq "'automatic_scheduling' => false" "${fit_repo}" \
+    || die "The scheduling-neutral finalization marker is missing."
+
+  if grep -Fq "SC_EI_Inquiry_Repository::update_status" "${fit_repo}" || grep -Fq "wp_mail(" "${fit_repo}"; then
+    die "The fit repository contains an automatic status or mail path."
   fi
 
-  grep -Fq "physical_absence_verified" "${engine_file}" \
-    || die "The physical deletion verification marker is missing."
+  grep -Fq "'FINALIZE ' . \$assessment_id" "${fit_admin}" \
+    || die "Typed finalization confirmation is missing."
 
-  grep -Fq "tombstone_preserved" "${engine_file}" \
-    || die "The inquiry tombstone marker is missing."
+  grep -Fq "'APPLY ' . \$assessment_id" "${fit_admin}" \
+    || die "Typed Review Workspace application confirmation is missing."
 
-  grep -Eq "'require_retention_approval'[[:space:]]*=>[[:space:]]*1" "${admin_file}" \
-    || die "Mandatory retention approval is not fixed on."
-
-  grep -Fq "No silent deletion" "${privacy_view}" \
-    || die "The Privacy Center safety boundary marker is missing."
+  grep -Fq "Human judgment only" "${fit_view}" \
+    || die "The human-control interface boundary is missing."
 }
 
 run_release_tests() {
@@ -185,6 +194,8 @@ run_release_tests() {
     "tests/communication-operations.php"
     "tests/privacy-schema-fixtures.php"
     "tests/privacy-operations.php"
+    "tests/fit-schema-fixtures.php"
+    "tests/fit-operations.php"
     "tests/schema-mapping.php"
   )
 
@@ -273,7 +284,7 @@ validate_release_markers
 log "Running push-safe secret scan..."
 if grep -RInE -I \
   --exclude-dir=.git \
-  --exclude='PUSH_ENGAGEMENT_INTAKE_V060_CLEAN.sh' \
+  --exclude='PUSH_ENGAGEMENT_INTAKE_V070_CLEAN.sh' \
   '(AIza[0-9A-Za-z_-]{20,}|sk-[0-9A-Za-z]{20,}|ghp_[0-9A-Za-z]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' \
   "${REPO_DIR}"
 then

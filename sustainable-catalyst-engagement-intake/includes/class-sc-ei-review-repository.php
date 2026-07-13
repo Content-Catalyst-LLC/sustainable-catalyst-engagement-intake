@@ -606,6 +606,9 @@ final class SC_EI_Review_Repository {
 			'generated_at' => current_time( 'mysql', true ),
 			'inquiry'      => $inquiry,
 			'reviews'      => self::history( $inquiry_id, 500 ),
+			'fit_assessment' => ! empty( $inquiry['current_fit_assessment_id'] )
+				? SC_EI_Fit_Repository::find( absint( $inquiry['current_fit_assessment_id'] ) )
+				: null,
 			'attachments'    => $attachments,
 			'communications' => SC_EI_Communication_Repository::for_inquiry( $inquiry_id, 500, true ),
 			'privacy'        => array(

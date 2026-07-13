@@ -48,6 +48,7 @@ final class SC_EI_Plugin {
 			SC_EI_Review_Admin::register();
 			SC_EI_Communication_Admin::register();
 			SC_EI_Privacy_Admin::register();
+			SC_EI_Fit_Admin::register();
 		}
 
 		do_action( 'sc_ei_loaded', $this );

@@ -74,6 +74,19 @@ final class SC_EI_Audit_Log {
 		);
 	}
 
+	public static function fit_event_types(): array {
+		return array(
+			'fit_assessment_created'           => __( 'Fit Assessment Created', 'sustainable-catalyst-engagement-intake' ),
+			'fit_assessment_saved'             => __( 'Fit Assessment Saved', 'sustainable-catalyst-engagement-intake' ),
+			'fit_assessment_submitted'         => __( 'Fit Assessment Submitted', 'sustainable-catalyst-engagement-intake' ),
+			'fit_second_review_recorded'       => __( 'Fit Second Review Recorded', 'sustainable-catalyst-engagement-intake' ),
+			'fit_assessment_finalized'         => __( 'Fit Assessment Finalized', 'sustainable-catalyst-engagement-intake' ),
+			'fit_assessment_applied_to_review' => __( 'Fit Assessment Applied to Review', 'sustainable-catalyst-engagement-intake' ),
+			'fit_assessment_exported'          => __( 'Fit Assessment Exported', 'sustainable-catalyst-engagement-intake' ),
+			'fit_settings_updated'             => __( 'Fit Settings Updated', 'sustainable-catalyst-engagement-intake' ),
+		);
+	}
+
 	public static function privacy_event_types(): array {
 		return array(
 			'privacy_request_created'          => __( 'Privacy Request Created', 'sustainable-catalyst-engagement-intake' ),

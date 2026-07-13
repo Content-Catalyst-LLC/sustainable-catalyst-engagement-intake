@@ -18,6 +18,13 @@ final class SC_EI_Capabilities {
 		'sc_intake_escalate_review',
 		'sc_intake_bulk_review_actions',
 		'sc_intake_export_review_packet',
+		'sc_intake_view_fit_assessments',
+		'sc_intake_create_fit_assessments',
+		'sc_intake_review_fit_assessments',
+		'sc_intake_finalize_fit_assessments',
+		'sc_intake_apply_fit_to_review',
+		'sc_intake_manage_fit_settings',
+		'sc_intake_export_fit_assessments',
 		'sc_intake_download_files',
 		'sc_intake_release_files',
 		'sc_intake_manage_file_retention',
@@ -47,125 +54,102 @@ final class SC_EI_Capabilities {
 		'sc_intake_manage_settings',
 	);
 
+	private const REVIEWER = array(
+		'read',
+		'sc_intake_view',
+		'sc_intake_review',
+		'sc_intake_manage_review',
+		'sc_intake_manage_review_priority',
+		'sc_intake_escalate_review',
+		'sc_intake_export_review_packet',
+		'sc_intake_view_fit_assessments',
+		'sc_intake_create_fit_assessments',
+		'sc_intake_review_fit_assessments',
+		'sc_intake_export_fit_assessments',
+		'sc_intake_add_notes',
+		'sc_intake_change_status',
+		'sc_intake_communicate',
+		'sc_intake_view_communications',
+		'sc_intake_compose_communications',
+		'sc_intake_send_communications',
+		'sc_intake_record_inbound',
+		'sc_intake_export_communications',
+		'sc_intake_view_privacy_center',
+	);
+
+	private const MANAGER = array(
+		'read',
+		'sc_intake_view',
+		'sc_intake_review',
+		'sc_intake_manage_review',
+		'sc_intake_assign_inquiries',
+		'sc_intake_manage_review_priority',
+		'sc_intake_escalate_review',
+		'sc_intake_bulk_review_actions',
+		'sc_intake_export_review_packet',
+		'sc_intake_view_fit_assessments',
+		'sc_intake_create_fit_assessments',
+		'sc_intake_review_fit_assessments',
+		'sc_intake_finalize_fit_assessments',
+		'sc_intake_apply_fit_to_review',
+		'sc_intake_manage_fit_settings',
+		'sc_intake_export_fit_assessments',
+		'sc_intake_download_files',
+		'sc_intake_release_files',
+		'sc_intake_manage_file_retention',
+		'sc_intake_manage_scanner',
+		'sc_intake_bulk_file_actions',
+		'sc_intake_view_file_audit',
+		'sc_intake_add_notes',
+		'sc_intake_change_status',
+		'sc_intake_communicate',
+		'sc_intake_view_communications',
+		'sc_intake_compose_communications',
+		'sc_intake_send_communications',
+		'sc_intake_record_inbound',
+		'sc_intake_manage_templates',
+		'sc_intake_manage_notifications',
+		'sc_intake_export_communications',
+		'sc_intake_view_privacy_center',
+		'sc_intake_manage_privacy_requests',
+		'sc_intake_manage_consent',
+		'sc_intake_manage_legal_holds',
+		'sc_intake_manage_retention_policies',
+		'sc_intake_approve_retention_actions',
+		'sc_intake_execute_retention_actions',
+		'sc_intake_export_privacy_data',
+		'sc_intake_export',
+	);
+
 	public static function install(): void {
 		$administrator = get_role( 'administrator' );
 		if ( $administrator ) {
-			foreach ( self::ALL as $cap ) {
-				$administrator->add_cap( $cap );
+			foreach ( self::ALL as $capability ) {
+				$administrator->add_cap( $capability );
 			}
 		}
 
 		add_role(
 			'sc_engagement_reviewer',
 			__( 'Engagement Reviewer', 'sustainable-catalyst-engagement-intake' ),
-			array(
-				'read'                    => true,
-				'sc_intake_view'          => true,
-				'sc_intake_review'              => true,
-				'sc_intake_manage_review'       => true,
-				'sc_intake_manage_review_priority'=> true,
-				'sc_intake_escalate_review'     => true,
-				'sc_intake_export_review_packet'=> true,
-				'sc_intake_add_notes'           => true,
-				'sc_intake_change_status'       => true,
-				'sc_intake_communicate'           => true,
-				'sc_intake_view_communications'   => true,
-				'sc_intake_compose_communications'=> true,
-				'sc_intake_send_communications'   => true,
-				'sc_intake_record_inbound'        => true,
-				'sc_intake_export_communications' => true,
-				'sc_intake_view_privacy_center'    => true,
-			)
+			array_fill_keys( self::REVIEWER, true )
 		);
-
 		add_role(
 			'sc_engagement_manager',
 			__( 'Engagement Manager', 'sustainable-catalyst-engagement-intake' ),
-			array(
-				'read'                     => true,
-				'sc_intake_view'           => true,
-				'sc_intake_review'               => true,
-				'sc_intake_manage_review'        => true,
-				'sc_intake_assign_inquiries'     => true,
-				'sc_intake_manage_review_priority'=> true,
-				'sc_intake_escalate_review'      => true,
-				'sc_intake_bulk_review_actions'  => true,
-				'sc_intake_export_review_packet' => true,
-				'sc_intake_download_files'       => true,
-				'sc_intake_release_files'        => true,
-				'sc_intake_manage_file_retention'=> true,
-				'sc_intake_manage_scanner'       => true,
-				'sc_intake_bulk_file_actions'    => true,
-				'sc_intake_view_file_audit'      => true,
-				'sc_intake_add_notes'            => true,
-				'sc_intake_change_status'  => true,
-				'sc_intake_communicate'            => true,
-				'sc_intake_view_communications'    => true,
-				'sc_intake_compose_communications' => true,
-				'sc_intake_send_communications'    => true,
-				'sc_intake_record_inbound'         => true,
-				'sc_intake_manage_templates'       => true,
-				'sc_intake_manage_notifications'   => true,
-				'sc_intake_export_communications'   => true,
-				'sc_intake_view_privacy_center'      => true,
-				'sc_intake_manage_privacy_requests'  => true,
-				'sc_intake_manage_consent'           => true,
-				'sc_intake_manage_legal_holds'       => true,
-				'sc_intake_manage_retention_policies'=> true,
-				'sc_intake_approve_retention_actions'=> true,
-				'sc_intake_execute_retention_actions'=> true,
-				'sc_intake_export_privacy_data'      => true,
-				'sc_intake_export'                   => true,
-			)
+			array_fill_keys( self::MANAGER, true )
 		);
 
 		$reviewer = get_role( 'sc_engagement_reviewer' );
 		if ( $reviewer ) {
-			foreach ( array( 'read', 'sc_intake_view', 'sc_intake_review', 'sc_intake_manage_review', 'sc_intake_manage_review_priority', 'sc_intake_escalate_review', 'sc_intake_export_review_packet', 'sc_intake_add_notes', 'sc_intake_change_status', 'sc_intake_communicate', 'sc_intake_view_communications', 'sc_intake_compose_communications', 'sc_intake_send_communications', 'sc_intake_record_inbound', 'sc_intake_export_communications', 'sc_intake_view_privacy_center' ) as $capability ) {
+			foreach ( self::REVIEWER as $capability ) {
 				$reviewer->add_cap( $capability );
 			}
 		}
 
 		$manager = get_role( 'sc_engagement_manager' );
 		if ( $manager ) {
-			foreach (
-				array(
-					'read',
-					'sc_intake_view',
-					'sc_intake_review',
-					'sc_intake_manage_review',
-					'sc_intake_assign_inquiries',
-					'sc_intake_manage_review_priority',
-					'sc_intake_escalate_review',
-					'sc_intake_bulk_review_actions',
-					'sc_intake_export_review_packet',
-					'sc_intake_download_files',
-					'sc_intake_release_files',
-					'sc_intake_manage_file_retention',
-					'sc_intake_manage_scanner',
-					'sc_intake_bulk_file_actions',
-					'sc_intake_view_file_audit',
-					'sc_intake_add_notes',
-					'sc_intake_change_status',
-					'sc_intake_communicate',
-					'sc_intake_view_communications',
-					'sc_intake_compose_communications',
-					'sc_intake_send_communications',
-					'sc_intake_record_inbound',
-					'sc_intake_manage_templates',
-					'sc_intake_manage_notifications',
-					'sc_intake_export_communications',
-					'sc_intake_view_privacy_center',
-					'sc_intake_manage_privacy_requests',
-					'sc_intake_manage_consent',
-					'sc_intake_manage_legal_holds',
-					'sc_intake_manage_retention_policies',
-					'sc_intake_approve_retention_actions',
-					'sc_intake_execute_retention_actions',
-					'sc_intake_export_privacy_data',
-					'sc_intake_export',
-				) as $capability
-			) {
+			foreach ( self::MANAGER as $capability ) {
 				$manager->add_cap( $capability );
 			}
 		}
@@ -175,8 +159,8 @@ final class SC_EI_Capabilities {
 		foreach ( array( 'administrator', 'sc_engagement_reviewer', 'sc_engagement_manager' ) as $role_name ) {
 			$role = get_role( $role_name );
 			if ( $role ) {
-				foreach ( self::ALL as $cap ) {
-					$role->remove_cap( $cap );
+				foreach ( self::ALL as $capability ) {
+					$role->remove_cap( $capability );
 				}
 			}
 		}

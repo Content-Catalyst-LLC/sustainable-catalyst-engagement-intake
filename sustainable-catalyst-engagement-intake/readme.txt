@@ -1,180 +1,211 @@
 === Sustainable Catalyst Engagement Intake ===
 Contributors: content-catalyst
-Tags: contact, consulting, privacy, retention, legal hold, consent, communications, administrative review, secure upload, quarantine, microsoft teams
+Tags: contact, consulting, fit assessment, human review, privacy, retention, legal hold, communications, secure upload, quarantine, microsoft teams
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.6.0
+Stable tag: 0.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Private consulting and contact intake with a Privacy and Retention Center, reviewed communications, human administrative review, secure document quarantine, Microsoft Teams readiness, and auditable lifecycle controls.
+Private consulting and contact intake with human-controlled fit assessment, privacy and retention governance, reviewed communications, administrative review, secure document quarantine, and Microsoft Teams readiness.
 
 == Description ==
 
-Version 0.6.0 adds a centralized Privacy and Retention Center to the existing dual intake, secure document quarantine, scanner operations, Administrative Review Workspace, and Communication History.
+Version 0.7.0 adds Human-Controlled Fit Assessment to the dual intake, secure document quarantine, scanner operations, Administrative Review Workspace, Communication History, and Privacy and Retention Center.
 
 Recommended shortcodes:
 
 * Consulting page: `[sc_engagement_inquiry mode="compact" source="consulting-page" entry_cta="discuss-an-engagement" title="Discuss an Engagement"]`
 * Contact page: `[sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst"]`
 
-Privacy and retention capabilities:
+Human-controlled fit capabilities:
 
-* Private data inventory
-* Privacy-request case management
-* Identity-verification state
-* Request deadlines and assignment
-* Consent and authorization ledger
-* Notice and consent version evidence
-* Consent withdrawal and processing restriction
-* Inquiry-level privacy state
-* Legal and operational holds
-* Hold review dates and release history
-* Versioned retention policies
-* Deterministic retention previews
-* Queue-only daily retention cron
-* Human approval before execution
-* Optional separation between proposer and approver
-* Typed confirmation for irreversible execution
-* Physical document deletion verification
-* Communication-content redaction
-* Transactional inquiry erasure
-* Dependency blocking when private documents remain
-* Non-personal tombstone preservation
-* Private inventory export
-* Privacy lifecycle diagnostics
-* Privacy context in review packets and authenticated REST responses
+* Private assessment queue
+* Six assessment domains
+* Sixteen evidence-backed criteria
+* Manual ratings and explicit criterion weights
+* Transparent advisory score
+* No score thresholds
+* No score-generated recommendations
+* Human recommendation and confidence
+* Service-route recommendation
+* Scope and independence boundaries
+* Material concern flags
+* Evidence notes and private source references
+* Conditions, uncertainty, referral, and decline notes
+* Human-attestation requirement
+* AI and automation assistance disclosure
+* Independent second-review workflow
+* Second-review triggers for decline, conflict, unsafe scope, and material risk
+* Optional distinct original assessor and second reviewer
+* Optimistic version locking
+* Versioned reassessment history
+* Typed finalization confirmation
+* Separate typed application to the Review Workspace
+* Private JSON assessment export
+* Privacy export and approved-erasure redaction
+* Human-control diagnostics
 
-The daily retention event never physically deletes a document and never erases inquiry data. It only creates candidates in the private retention queue.
+The advisory score summarizes ratings selected by an authorized human. It has no acceptance or rejection threshold and never determines the recommendation.
 
-Every lifecycle action must be approved before it can execute. Execution is a separate capability-protected operation and requires an action-specific typed phrase.
+Finalizing an assessment does not:
 
-The WordPress personal-data eraser is also queue-only. It creates a tracked privacy request and retention actions instead of silently deleting data.
+* accept or reject an inquiry
+* change inquiry status
+* send email
+* schedule a Microsoft Teams meeting
+* create a proposal
+* create a referral
+* change the Review Workspace
 
-The Privacy and Retention Center is an operational governance tool. It does not determine which laws apply, replace legal advice, or guarantee that a configured period satisfies legal, contractual, insurance, tax, employment, litigation, or professional obligations.
+Applying a finalized assessment to the Review Workspace is a separate capability-protected and typed-confirmation action. It creates an immutable review snapshot but still does not change inquiry status.
+
+== Assessment domains ==
+
+* Mission and Service Alignment
+* Problem and Outcome Clarity
+* Evidence and Engagement Readiness
+* Feasibility and Delivery Conditions
+* Ethics, Independence, Privacy, and Risk
+* Learning, Measurement, and Public Value
+
+== Human-control safeguards ==
+
+* Every assessed criterion can require evidence or reasoning.
+* Every material concern requires an explicit concern or mitigation note.
+* Every criterion must be assessed or marked not applicable before submission.
+* The assessor must attest that the recommendation is their own human judgment.
+* Assistance used for summarization or analytical support must be disclosed.
+* Editing after submission returns the assessment to draft and invalidates prior second-review clearance.
+* An “Agree” second review cannot silently change the submitted recommendation, route, or boundary.
+* Finalization requires a ready-to-finalize state and exact typed confirmation.
+* The fit repository does not call inquiry-status mutation or mail-delivery APIs.
 
 == Installation ==
 
 1. Back up the WordPress database and protected storage directory.
-2. Upload and activate v0.6.0.
+2. Upload and activate v0.7.0.
 3. Open Engagement Intake → Diagnostics.
-4. Confirm database version 0.6.0 and privacy schema 1.0.0.
-5. Confirm privacy-request, consent-event, legal-hold, retention-policy, and retention-action tables.
-6. Open Engagement Intake → Privacy Center.
-7. Review the private data inventory.
-8. Review every active retention policy and period.
-9. Confirm the daily retention event is shown as queue-only.
-10. Test privacy-request creation and assignment.
-11. Test consent-event recording.
-12. Place and release a test legal hold.
-13. Generate a retention preview.
-14. Queue candidates and confirm that no data is deleted.
-15. Approve and execute test actions only in staging.
-16. Verify private document physical deletion and tombstone preservation.
-17. Test WordPress privacy export and queue-only eraser behavior.
-18. Review sender suppression for restricted inquiries.
-19. Enable distinct proposer/approver separation when staffing permits.
+4. Confirm database version 0.7.0.
+5. Confirm fit schema version 1.0.0.
+6. Confirm the fit assessments, criterion items, and second reviews tables.
+7. Open Engagement Intake → Settings.
+8. Review evidence, rationale, second-review, staleness, and queue settings.
+9. Open a private inquiry.
+10. Start a fit assessment.
+11. Rate every criterion and record evidence.
+12. Save the draft.
+13. Submit it into human review.
+14. Test a required independent second review.
+15. Finalize using the exact typed confirmation.
+16. Confirm inquiry status and communications were unchanged.
+17. Apply the assessment to the Review Workspace using the separate typed action.
+18. Test JSON export, WordPress privacy export, and approved erasure in staging.
 
-== Upgrade from 0.5.0 ==
+== Upgrade from 0.6.0 ==
 
-The upgrade preserves inquiries, attachments, reviews, communication history, templates, audit records, scanner state, protected storage, and Teams scheduling information.
+The upgrade preserves:
+
+* inquiries
+* private documents
+* review history
+* communications and templates
+* privacy requests
+* consent events
+* legal holds
+* retention policies and actions
+* audit records
+* protected storage
+* Microsoft Teams scheduling information
 
 It adds:
 
-* Privacy lifecycle state fields to inquiries
-* Privacy requests table
-* Consent events table
-* Legal holds table
-* Versioned retention policies table
-* Retention actions table
-* Default policy versions
-* Privacy and retention capabilities
-* Privacy Center administration
-* Queue-only WordPress privacy eraser
-* Consent evidence capture on new submissions
-* Privacy-state sender-email suppression
-* Privacy lifecycle diagnostics
+* fit lifecycle fields to inquiries
+* fit assessments table
+* fit criterion items table
+* fit second reviews table
+* fit capabilities
+* fit settings
+* private queue and detail workspaces
+* fit data in review packets and authenticated REST responses
+* fit data in WordPress privacy export
+* fit narrative redaction during approved inquiry erasure
 
 Migration does not:
 
-* enable automatic deletion
-* execute a retention action
-* erase an existing inquiry
-* delete an existing private document
-* create a legal conclusion
+* create an assessment for an existing inquiry
+* calculate a score
+* recommend a service
+* accept or reject an inquiry
+* change inquiry status
 * send an email
-* connect Microsoft Graph
-* ingest a mailbox
+* schedule a meeting
+* create a proposal or referral
 
 == Frequently Asked Questions ==
 
-= Will the daily retention cron delete files? =
+= Does the score decide fit? =
 
-No. It only queues candidates for human review.
+No. It only summarizes ratings selected by a human. There are no thresholds or automatic recommendation rules.
 
-= Can an administrator mark an inquiry erased without running the erasure workflow? =
+= Can the assessment accept or reject an inquiry? =
 
-No. The erased state is reserved for verified execution by the retention engine.
+No. Finalization freezes the assessment record but does not change the inquiry.
 
-= What blocks an inquiry erasure? =
+= Can a second reviewer change the recommendation while choosing Agree? =
 
-Any active related legal hold and any undeleted private document.
+No. An Agree review must confirm the submitted recommendation, route, and boundary. Proposed changes use an explicit changes-requested path.
 
-= Is approval optional? =
+= What happens when an assessor edits after submission? =
 
-No. Approval before execution is permanently required in v0.6.0.
+The assessment returns to draft and prior second-review clearance is invalidated.
 
-= Can one person both propose and approve an action? =
+= Does the system require a second review? =
 
-By default, yes. Administrators can require a different authorized approver.
+Configured triggers can require one for a not-a-fit recommendation, conflict or independence concern, unsafe or prohibited scope, or material ethics, privacy, independence, or risk concern.
 
-= What does verified document deletion mean? =
+= Can AI perform the assessment? =
 
-The protected file is deleted, its physical absence is checked, and a non-personal database tombstone is recorded.
+No. Assistance may be disclosed for clerical, summarization, or analytical support, but an authorized human must personally review the records, select ratings, write the recommendation, and attest to the judgment.
 
-= What remains after inquiry erasure? =
+= Does applying the assessment change inquiry status? =
 
-A limited operational tombstone can retain the inquiry reference, categorical workflow states, policy/action states, timestamps, internal actor IDs, and audit evidence. Personal narratives, contact information, scheduling details, document files, communication content, consent evidence, request identifiers, and related lifecycle narratives are redacted.
+No. It creates a Review Workspace snapshot only.
 
-= Does the WordPress privacy eraser delete immediately? =
+= Are privacy and retention controls preserved? =
 
-No. It creates a privacy request case and queues legal-hold-aware actions for review, approval, and verified execution.
+Yes. v0.7.0 retains the queue-only retention, legal-hold, approval, verified execution, and tombstone safeguards introduced in v0.6.0.
 
-= Is the plugin legal advice? =
-
-No. Retention periods and workflows require review for the organization and obligations that actually apply.
-
-= Are automated notifications changed? =
-
-No. The v0.5.0 notification policies remain opt-in and default to disabled.
-
-= Does v0.6.0 create Teams meetings? =
+= Does v0.7.0 create Teams meetings? =
 
 No. Teams remains the only live meeting platform represented, but Microsoft Graph is not connected.
 
 == Changelog ==
 
+= 0.7.0 =
+* Added Human-Controlled Fit Assessment.
+* Added 16 evidence-backed criteria across 6 assessment domains.
+* Added transparent advisory scoring without thresholds.
+* Added human recommendations, confidence, service routes, and scope boundaries.
+* Added material concerns, evidence notes, source references, limitations, conditions, and referral notes.
+* Added human attestation and assistance disclosure.
+* Added optimistic locking and assessor ownership.
+* Added independent second review and configured review triggers.
+* Added workflow reset after post-submission edits.
+* Added typed finalization.
+* Added separate typed Review Workspace application.
+* Added private assessment export.
+* Added review packet, REST, privacy export, privacy erasure, inquiry list, settings, and Diagnostics integration.
+* Preserved status-neutral and communication-neutral operation.
+
 = 0.6.0 =
 * Added the Privacy and Retention Center.
-* Added private data inventory and export.
-* Added privacy-request cases, assignments, deadlines, identity state, and resolutions.
-* Added consent and authorization ledger with version and evidence.
-* Added legal holds, review dates, release reasons, and queue blocking.
-* Added versioned retention policies.
-* Added queue-only retention previews and daily candidate generation.
-* Added mandatory approval and typed execution.
-* Added verified private-document deletion.
-* Added transactional inquiry and communication erasure.
-* Added dependency blocking and non-personal tombstones.
-* Added queue-only WordPress privacy eraser behavior.
-* Added privacy lifecycle state to inquiry, review, communication, REST, packet, settings, and diagnostics surfaces.
-* Repaired an inherited v0.5.0 settings sanitization defect.
 
 = 0.5.0 =
 * Added Notifications and Communication History.
 
 = 0.4.0 =
-* Added the human-controlled Administrative Review Workspace.
+* Added the Administrative Review Workspace.
 
 = 0.3.2 =
 * Added Quarantine Operations and scanner readiness.

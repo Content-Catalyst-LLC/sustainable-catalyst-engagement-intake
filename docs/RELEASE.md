@@ -1,84 +1,79 @@
-# Release Notes — v0.6.0
+# Release Notes — v0.7.0
 
 ## Release
 
-Privacy and Retention Center
+Human-Controlled Fit Assessment
 
 ## Primary outcome
 
-Move privacy and retention from scattered settings and direct cleanup into a centralized, human-controlled lifecycle system.
+Add structured fit reasoning without turning intake into an automated eligibility or sales-scoring system.
 
-## New workflow
+## Workflow
 
 ```text
-policy
-→ preview
-→ queue
-→ hold/dependency review
-→ approval
-→ typed execution
-→ verification
-→ audit
+draft
+→ human submission
+→ independent review when required
+→ ready to finalize
+→ typed finalization
+→ optional typed Review Workspace application
 ```
 
-## Non-destructive automation
+## Human-control guarantees
 
-Daily automation only queues candidates.
+- no score threshold
+- no score-derived recommendation
+- no automated acceptance
+- no automated rejection
+- no automated inquiry status
+- no automated email
+- no automated Teams meeting
+- no automated proposal
+- no automated referral
 
-No automatic action can:
+## Assessment evidence
 
-- delete a protected file
-- redact an inquiry
-- redact a communication
-- mark an inquiry erased
-- bypass a legal hold
+Sixteen criteria require human ratings and can require evidence.
 
-## Erasure completeness
+Material concerns require explicit notes.
 
-Approved inquiry erasure covers:
+Assistance must be disclosed.
 
-- inquiry contact and narrative fields
-- Teams and scheduling details
-- communications
-- transport-event context
-- review narratives and snapshots
-- consent evidence and subject hashes
-- privacy-request identifiers and narratives
-- released-hold narratives and authorities
-- retention snapshots and failure narratives
+## Review integrity
 
-Private documents must already be deleted and verified.
+- drafts use optimistic locking
+- assessor ownership is enforced
+- second reviewer can be required to differ
+- Agree cannot alter the submitted conclusion
+- post-submission edits reset prior review clearance
+- finalization freezes one version
+- reassessment creates a new version
 
 ## Production verification
 
 1. Back up database and protected storage.
-2. Upgrade to v0.6.0.
+2. Upgrade to v0.7.0.
 3. Confirm migrations in Diagnostics.
-4. Review policy periods.
-5. Confirm cron queue-only status.
-6. Test request creation and identity states.
-7. Test consent events and withdrawal restriction.
-8. Test inquiry and attachment holds.
-9. Preview candidates.
-10. Queue candidates.
-11. Confirm no physical deletion.
-12. Approve one staging document action.
-13. Type the execution phrase.
-14. Confirm physical absence and tombstone.
-15. Test an inquiry action with a remaining document and confirm dependency blocking.
-16. Delete the document through an approved action.
-17. Execute inquiry erasure.
-18. Inspect retained tombstone and audit history.
-19. Test the WordPress privacy exporter.
-20. Test the WordPress eraser and confirm it only queues.
-21. Confirm restricted inquiries suppress sender-facing email.
+4. Review fit settings.
+5. Create a staging assessment.
+6. verify evidence requirements.
+7. Verify concurrent edit conflict.
+8. Verify independent review triggers.
+9. Verify post-submission reset.
+10. Finalize with typed confirmation.
+11. Confirm no external or inquiry status side effect.
+12. Apply to Review Workspace separately.
+13. Inspect immutable review snapshot.
+14. Test JSON export.
+15. Test privacy export and erasure.
+16. Review fit criteria and operating policy with appropriate leadership and counsel.
 
 ## Limitations
 
-- No automated legal analysis.
-- No jurisdiction detection.
-- No automatic identity verification.
-- No Microsoft Graph.
-- No mailbox ingestion.
-- No provider delivery webhook.
-- No live WordPress production activation was performed in the build environment.
+- no automated legal conflict determination
+- no professional licensing determination
+- no identity or fraud assessment
+- no automated pricing or proposal generation
+- no predictive model
+- no Microsoft Graph
+- no production WordPress activation in the build environment

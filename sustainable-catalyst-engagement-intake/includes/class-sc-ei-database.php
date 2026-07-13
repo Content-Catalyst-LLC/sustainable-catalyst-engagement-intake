@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -31,6 +31,9 @@ final class SC_EI_Database {
 		$reviews        = self::table( 'reviews' );
 		$communications = self::table( 'communications' );
 		$communication_events = self::table( 'communication_events' );
+		$fit_assessments = self::table( 'fit_assessments' );
+		$fit_assessment_items = self::table( 'fit_assessment_items' );
+		$fit_assessment_reviews = self::table( 'fit_assessment_reviews' );
 		$communication_templates = self::table( 'communication_templates' );
 		$privacy_requests = self::table( 'privacy_requests' );
 		$consent_events = self::table( 'consent_events' );
@@ -132,6 +135,11 @@ final class SC_EI_Database {
 			last_privacy_review_by bigint(20) unsigned NULL,
 			personal_data_erased_at datetime NULL,
 			privacy_version int(10) unsigned NOT NULL DEFAULT 0,
+			fit_assessment_status varchar(30) NOT NULL DEFAULT 'not_started',
+			current_fit_assessment_id bigint(20) unsigned NULL,
+			fit_assessment_updated_at datetime NULL,
+			fit_assessment_finalized_at datetime NULL,
+			fit_assessment_version int(10) unsigned NOT NULL DEFAULT 0,
 			created_at datetime NOT NULL,
 			updated_at datetime NOT NULL,
 			closed_at datetime NULL,
@@ -166,6 +174,10 @@ final class SC_EI_Database {
 			KEY retention_until (retention_until),
 			KEY legal_hold_count (legal_hold_count),
 			KEY last_privacy_review_by (last_privacy_review_by),
+			KEY fit_assessment_status (fit_assessment_status),
+			KEY current_fit_assessment_id (current_fit_assessment_id),
+			KEY fit_assessment_updated_at (fit_assessment_updated_at),
+			KEY fit_assessment_finalized_at (fit_assessment_finalized_at),
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
@@ -266,6 +278,108 @@ final class SC_EI_Database {
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
+
+
+		$sql_fit_assessments = "CREATE TABLE {$fit_assessments} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			assessment_version int(10) unsigned NOT NULL DEFAULT 1,
+			parent_assessment_id bigint(20) unsigned NULL,
+			assessor_user_id bigint(20) unsigned NULL,
+			status varchar(30) NOT NULL DEFAULT 'draft',
+			recommendation varchar(40) NOT NULL DEFAULT 'undecided',
+			confidence varchar(20) NOT NULL DEFAULT 'unassessed',
+			service_route varchar(80) NOT NULL DEFAULT 'continue_review',
+			scope_boundary varchar(40) NOT NULL DEFAULT 'within_scope',
+			advisory_score decimal(5,2) NULL,
+			score_complete tinyint(1) unsigned NOT NULL DEFAULT 0,
+			material_concern_count smallint(5) unsigned NOT NULL DEFAULT 0,
+			second_review_required tinyint(1) unsigned NOT NULL DEFAULT 0,
+			second_review_reason longtext NULL,
+			second_reviewer_user_id bigint(20) unsigned NULL,
+			second_review_disposition varchar(40) NOT NULL DEFAULT 'not_requested',
+			second_reviewed_at datetime NULL,
+			overall_summary longtext NULL,
+			recommendation_rationale longtext NULL,
+			limitations_notes longtext NULL,
+			conditions_for_fit longtext NULL,
+			referral_notes longtext NULL,
+			human_attestation tinyint(1) unsigned NOT NULL DEFAULT 0,
+			assistance_disclosure varchar(40) NOT NULL DEFAULT 'none',
+			assistance_notes longtext NULL,
+			submitted_at datetime NULL,
+			finalized_by bigint(20) unsigned NULL,
+			finalized_at datetime NULL,
+			superseded_at datetime NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY inquiry_version (inquiry_id, assessment_version),
+			KEY inquiry_id (inquiry_id),
+			KEY parent_assessment_id (parent_assessment_id),
+			KEY assessor_user_id (assessor_user_id),
+			KEY status (status),
+			KEY recommendation (recommendation),
+			KEY service_route (service_route),
+			KEY scope_boundary (scope_boundary),
+			KEY second_review_required (second_review_required),
+			KEY second_reviewer_user_id (second_reviewer_user_id),
+			KEY second_review_disposition (second_review_disposition),
+			KEY finalized_by (finalized_by),
+			KEY finalized_at (finalized_at),
+			KEY updated_at (updated_at)
+		) {$charset_collate};";
+
+		$sql_fit_assessment_items = "CREATE TABLE {$fit_assessment_items} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			assessment_id bigint(20) unsigned NOT NULL,
+			criterion_key varchar(80) NOT NULL,
+			criterion_group varchar(60) NOT NULL DEFAULT '',
+			rating varchar(30) NOT NULL DEFAULT 'not_assessed',
+			weight decimal(5,2) NOT NULL DEFAULT 1.00,
+			numeric_value decimal(5,2) NULL,
+			is_applicable tinyint(1) unsigned NOT NULL DEFAULT 1,
+			is_material_concern tinyint(1) unsigned NOT NULL DEFAULT 0,
+			evidence_note longtext NULL,
+			concern_note longtext NULL,
+			source_refs_json longtext NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY assessment_criterion (assessment_id, criterion_key),
+			KEY assessment_id (assessment_id),
+			KEY criterion_group (criterion_group),
+			KEY rating (rating),
+			KEY is_material_concern (is_material_concern),
+			KEY updated_at (updated_at)
+		) {$charset_collate};";
+
+		$sql_fit_assessment_reviews = "CREATE TABLE {$fit_assessment_reviews} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			assessment_id bigint(20) unsigned NOT NULL,
+			reviewer_user_id bigint(20) unsigned NULL,
+			disposition varchar(40) NOT NULL DEFAULT 'agree',
+			recommendation varchar(40) NOT NULL DEFAULT 'undecided',
+			service_route varchar(80) NOT NULL DEFAULT 'continue_review',
+			scope_boundary varchar(40) NOT NULL DEFAULT 'within_scope',
+			review_notes longtext NULL,
+			required_changes longtext NULL,
+			conflict_disclosure longtext NULL,
+			human_attestation tinyint(1) unsigned NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY assessment_id (assessment_id),
+			KEY reviewer_user_id (reviewer_user_id),
+			KEY disposition (disposition),
+			KEY recommendation (recommendation),
+			KEY created_at (created_at)
+		) {$charset_collate};";
 
 		$sql_communications = "CREATE TABLE {$communications} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -549,6 +663,9 @@ final class SC_EI_Database {
 		dbDelta( $sql_inquiries );
 		dbDelta( $sql_attachments );
 		dbDelta( $sql_reviews );
+		dbDelta( $sql_fit_assessments );
+		dbDelta( $sql_fit_assessment_items );
+		dbDelta( $sql_fit_assessment_reviews );
 		dbDelta( $sql_communications );
 		dbDelta( $sql_communication_events );
 		dbDelta( $sql_communication_templates );
@@ -560,6 +677,7 @@ final class SC_EI_Database {
 		dbDelta( $sql_audit );
 
 		self::backfill_review_defaults();
+		self::backfill_fit_defaults();
 		self::backfill_communication_defaults();
 		self::backfill_privacy_defaults();
 		update_option( 'sc_ei_db_version', SC_EI_DB_VERSION, false );
@@ -608,6 +726,19 @@ final class SC_EI_Database {
 		);
 	}
 
+	private static function backfill_fit_defaults(): void {
+		global $wpdb;
+
+		$table = self::table( 'inquiries' );
+		$wpdb->query(
+			"UPDATE {$table}
+			SET fit_assessment_status = 'not_started',
+				fit_assessment_version = 0
+			WHERE fit_assessment_status IS NULL
+				OR fit_assessment_status = ''" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		);
+	}
+
 	private static function backfill_privacy_defaults(): void {
 		global $wpdb;
 
@@ -643,7 +774,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -713,6 +844,11 @@ final class SC_EI_Database {
 			'last_privacy_review_by',
 			'personal_data_erased_at',
 			'privacy_version',
+			'fit_assessment_status',
+			'current_fit_assessment_id',
+			'fit_assessment_updated_at',
+			'fit_assessment_finalized_at',
+			'fit_assessment_version',
 		);
 
 		$result = array();
@@ -788,6 +924,44 @@ final class SC_EI_Database {
 			'communication_templates' => array(
 				'template_key', 'version', 'name', 'communication_type', 'subject_template',
 				'body_template', 'status', 'is_system', 'created_by', 'created_at', 'updated_at',
+			),
+		);
+
+		$result = array();
+		foreach ( $tables as $table_name => $columns ) {
+			$table = self::table( $table_name );
+			foreach ( $columns as $column ) {
+				$found = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$result[ $table_name . '.' . $column ] = ( $found === $column );
+			}
+		}
+		return $result;
+	}
+
+	public static function fit_columns_exist(): array {
+		global $wpdb;
+
+		$tables = array(
+			'fit_assessments' => array(
+				'public_id', 'inquiry_id', 'assessment_version', 'parent_assessment_id',
+				'assessor_user_id', 'status', 'recommendation', 'confidence', 'service_route',
+				'scope_boundary', 'advisory_score', 'score_complete', 'material_concern_count',
+				'second_review_required', 'second_review_reason', 'second_reviewer_user_id',
+				'second_review_disposition', 'second_reviewed_at', 'overall_summary',
+				'recommendation_rationale', 'limitations_notes', 'conditions_for_fit',
+				'referral_notes', 'human_attestation', 'assistance_disclosure',
+				'assistance_notes', 'submitted_at', 'finalized_by', 'finalized_at',
+				'superseded_at', 'row_version', 'created_at', 'updated_at',
+			),
+			'fit_assessment_items' => array(
+				'assessment_id', 'criterion_key', 'criterion_group', 'rating', 'weight',
+				'numeric_value', 'is_applicable', 'is_material_concern', 'evidence_note',
+				'concern_note', 'source_refs_json', 'row_version', 'created_at', 'updated_at',
+			),
+			'fit_assessment_reviews' => array(
+				'public_id', 'assessment_id', 'reviewer_user_id', 'disposition',
+				'recommendation', 'service_route', 'scope_boundary', 'review_notes',
+				'required_changes', 'conflict_disclosure', 'human_attestation', 'created_at',
 			),
 		);
 
@@ -891,7 +1065,7 @@ final class SC_EI_Database {
 	public static function drop_all(): void {
 		global $wpdb;
 
-		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'communication_events', 'communications', 'communication_templates', 'reviews', 'attachments', 'inquiries' ) as $name ) {
+		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
 			$table = self::table( $name );
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}

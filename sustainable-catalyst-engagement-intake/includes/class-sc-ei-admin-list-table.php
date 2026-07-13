@@ -34,6 +34,7 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'review'            => __( 'Administrative Review', 'sustainable-catalyst-engagement-intake' ),
 			'review_due'        => __( 'Review Due', 'sustainable-catalyst-engagement-intake' ),
 			'communication'     => __( 'Communication', 'sustainable-catalyst-engagement-intake' ),
+			'fit_assessment'    => __( 'Fit Assessment', 'sustainable-catalyst-engagement-intake' ),
 			'privacy'           => __( 'Privacy / Retention', 'sustainable-catalyst-engagement-intake' ),
 			'documents'         => __( 'Documents', 'sustainable-catalyst-engagement-intake' ),
 			'status'            => __( 'Inquiry Status', 'sustainable-catalyst-engagement-intake' ),
@@ -51,6 +52,7 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'review'            => array( 'review_stage', false ),
 			'review_due'        => array( 'review_due_at', false ),
 			'communication'     => array( 'last_communication_at', false ),
+			'fit_assessment'    => array( 'fit_assessment_updated_at', false ),
 			'privacy'           => array( 'retention_until', false ),
 			'status'            => array( 'status', false ),
 			'scheduling_status' => array( 'scheduling_status', false ),
@@ -117,6 +119,25 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 					absint( $item['unread_inbound_count'] )
 				);
 
+			case 'fit_assessment':
+				$state = $item['fit_assessment_status'] ?: 'not_started';
+				$link = ! empty( $item['current_fit_assessment_id'] )
+					? SC_EI_Fit_Admin::url( absint( $item['current_fit_assessment_id'] ) )
+					: '';
+				$label = SC_EI_Fit_Schema::label( SC_EI_Fit_Schema::inquiry_statuses(), $state );
+				return $link
+					? sprintf(
+						'<a href="%1$s"><span class="sc-ei-fit-state sc-ei-fit-state--%2$s">%3$s</span></a><br><span class="description">%4$s</span>',
+						esc_url( $link ),
+						esc_attr( $state ),
+						esc_html( $label ),
+						$item['fit_assessment_updated_at'] ? esc_html( get_date_from_gmt( $item['fit_assessment_updated_at'], 'M j, Y' ) ) : esc_html__( 'Not updated', 'sustainable-catalyst-engagement-intake' )
+					)
+					: sprintf(
+						'<span class="sc-ei-fit-state sc-ei-fit-state--not-started">%s</span>',
+						esc_html( $label )
+					);
+
 			case 'privacy':
 				$due = ! empty( $item['retention_until'] ) && strtotime( $item['retention_until'] . ' UTC' ) <= time();
 				$attention = in_array( $item['privacy_status'], array( 'restricted', 'erasure_requested' ), true ) || absint( $item['legal_hold_count'] ) > 0;
@@ -173,7 +194,14 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'view'   => sprintf( '<a href="%s">%s</a>', esc_url( $url ), esc_html__( 'View', 'sustainable-catalyst-engagement-intake' ) ),
 			'review' => sprintf( '<a href="%s">%s</a>', esc_url( SC_EI_Review_Admin::detail_url( absint( $item['id'] ) ) ), esc_html__( 'Review', 'sustainable-catalyst-engagement-intake' ) ),
 			'communications' => sprintf( '<a href="%s">%s</a>', esc_url( SC_EI_Communication_Admin::thread_url( absint( $item['id'] ) ) ), esc_html__( 'Communications', 'sustainable-catalyst-engagement-intake' ) ),
-			'privacy' => sprintf( '<a href="%s">%s</a>', esc_url( SC_EI_Privacy_Admin::url( 'overview', array( 'inquiry' => absint( $item['id'] ) ) ) ), esc_html__( 'Privacy Center', 'sustainable-catalyst-engagement-intake' ) ),
+			'fit' => ! empty( $item['current_fit_assessment_id'] )
+				? sprintf( '<a href="%s">%s</a>', esc_url( SC_EI_Fit_Admin::url( absint( $item['current_fit_assessment_id'] ) ) ), esc_html__( 'Fit Assessment', 'sustainable-catalyst-engagement-intake' ) )
+				: '',
+			'privacy' => sprintf(
+				'<a href="%s">%s</a>',
+				esc_url( SC_EI_Privacy_Admin::url( 'overview', array( 'inquiry' => absint( $item['id'] ) ) ) ),
+				esc_html__( 'Privacy Center', 'sustainable-catalyst-engagement-intake' )
+			),
 		);
 
 		return sprintf(

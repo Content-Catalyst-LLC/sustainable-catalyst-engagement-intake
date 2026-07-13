@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="0.6.0"
+VERSION="0.7.0"
 PLUGIN_SLUG="sustainable-catalyst-engagement-intake"
 DIST="${ROOT}/dist"
 

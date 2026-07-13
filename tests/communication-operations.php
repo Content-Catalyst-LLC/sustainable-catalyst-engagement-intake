@@ -87,4 +87,4 @@ if ( $failed ) {
 foreach ( $checks as $label => $passed ) {
 	echo 'PASS: ' . $label . PHP_EOL;
 }
-echo "Engagement Intake v0.6.0 communication operation checks passed.\n";
+echo "Engagement Intake v0.7.0 communication operation checks passed.\n";

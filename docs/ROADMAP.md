@@ -40,9 +40,9 @@ Current release. Reviewed plain-text messages, immutable transport events, inbou
 
 Current release. Private data inventory, privacy-request cases, consent history, processing restrictions, legal holds, versioned policies, queue-only candidate scans, mandatory approval, typed execution, verified deletion and redaction, WordPress privacy bridging, and non-personal tombstones.
 
-## v0.7.0 — Fit Assessment and Human-Controlled Routing
+## v0.7.0 — Human-Controlled Fit Assessment
 
-Planned. Explainable advisory-only assessment and recommended next steps without automated acceptance.
+Current release. Evidence-backed criteria, transparent advisory scoring without thresholds, human recommendations, service and scope routing, material concerns, assistance disclosure, independent second review, typed finalization, explicit Review Workspace application, privacy integration, and Diagnostics.
 
 ## v0.8.0 — Secure Sender Portal
 
