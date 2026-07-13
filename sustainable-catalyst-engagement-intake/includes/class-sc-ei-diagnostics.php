@@ -25,9 +25,22 @@ final class SC_EI_Diagnostics {
 			'capabilities'       => $capabilities,
 			'privacy_exporter'   => true,
 			'privacy_eraser'     => true,
-			'public_forms'       => false,
+			'public_forms'       => true,
+			'public_shortcodes'  => array(
+				'[sc_contact_hub]',
+				'[sc_contact_form mode="general"]',
+				'[sc_engagement_inquiry mode="consulting"]',
+			),
+			'public_submit_rest' => rest_url( 'sc-engagement-intake/v1/submit' ),
 			'secure_uploads'     => false,
-			'upload_note'        => __( 'Secure physical upload handling is scheduled for v0.3.0. The attachment metadata table is installed in v0.1.0.', 'sustainable-catalyst-engagement-intake' ),
+			'upload_note'        => __( 'Secure physical upload handling is scheduled for v0.3.0. v0.2.0 collects descriptions and non-confidential public links only.', 'sustainable-catalyst-engagement-intake' ),
+			'spam_controls'      => array(
+				'nonce'       => true,
+				'honeypot'    => true,
+				'timing'      => true,
+				'rate_limit'  => true,
+				'duplicates'  => true,
+			),
 			'wordpress_version'  => get_bloginfo( 'version' ),
 			'php_version'        => PHP_VERSION,
 			'multisite'          => is_multisite(),
@@ -39,6 +52,6 @@ final class SC_EI_Diagnostics {
 		$tables_ok = ! in_array( false, $results['tables'], true );
 		$caps_ok   = ! in_array( false, $results['capabilities'], true );
 
-		return ( $tables_ok && $caps_ok ) ? 'healthy' : 'attention';
+		return ( $tables_ok && $caps_ok && $results['public_forms'] ) ? 'healthy' : 'attention';
 	}
 }

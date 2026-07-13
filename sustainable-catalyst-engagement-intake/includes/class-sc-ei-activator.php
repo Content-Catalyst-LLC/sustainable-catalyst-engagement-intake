@@ -26,7 +26,7 @@ final class SC_EI_Activator {
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Engagement Intake v0.1.0 activated and private record foundation installed.',
+			'Engagement Intake v0.2.0 activated with adaptive public contact forms and private record creation.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}

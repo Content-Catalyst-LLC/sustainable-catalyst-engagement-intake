@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_URL="git@github.com:Content-Catalyst-LLC/sustainable-catalyst-engagement-intake.git"
 REPO_DIR="${HOME}/Downloads/sustainable-catalyst-engagement-intake"
-ZIP_NAME="sustainable-catalyst-engagement-intake-v0.1.0-repo.zip"
+ZIP_NAME="sustainable-catalyst-engagement-intake-v0.2.0-repo.zip"
 ZIP_PATH="${HOME}/Downloads/${ZIP_NAME}"
 WORK_DIR="$(mktemp -d)"
 
@@ -21,9 +21,9 @@ fi
 echo "Checking GitHub CLI authentication..."
 gh auth status >/dev/null
 
-echo "Extracting Engagement Intake v0.1.0..."
+echo "Extracting Engagement Intake v0.2.0..."
 unzip -q "${ZIP_PATH}" -d "${WORK_DIR}"
-SOURCE_DIR="${WORK_DIR}/sustainable-catalyst-engagement-intake-v0.1.0-repo"
+SOURCE_DIR="${WORK_DIR}/sustainable-catalyst-engagement-intake-v0.2.0-repo"
 
 if [[ ! -d "${SOURCE_DIR}" ]]; then
   echo "Expected source directory not found: ${SOURCE_DIR}"
@@ -38,17 +38,10 @@ if [[ -d "${REPO_DIR}/.git" ]]; then
   find "${REPO_DIR}" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
 else
   echo "Cloning repository..."
-  if ! git clone "${REPO_URL}" "${REPO_DIR}"; then
-    echo "Repository may not exist yet. Creating it with GitHub CLI..."
-    gh repo create Content-Catalyst-LLC/sustainable-catalyst-engagement-intake \
-      --private \
-      --description "Private contact and advisory inquiry workflow for Sustainable Catalyst." \
-      --clone=false
-    git clone "${REPO_URL}" "${REPO_DIR}"
-  fi
+  git clone "${REPO_URL}" "${REPO_DIR}"
 fi
 
-echo "Replacing repository contents with v0.1.0..."
+echo "Replacing repository contents with v0.2.0..."
 rsync -a --delete --exclude='.git' "${SOURCE_DIR}/" "${REPO_DIR}/"
 
 echo "Running PHP syntax checks..."
@@ -59,13 +52,16 @@ echo "Running smoke checks..."
 php "${REPO_DIR}/tests/smoke.php"
 
 echo "Checking release markers..."
-grep -q "Version:     0.1.0" \
+grep -q "Version:     0.2.0" \
   "${REPO_DIR}/sustainable-catalyst-engagement-intake/sustainable-catalyst-engagement-intake.php"
+
+grep -q "sc_contact_hub" \
+  "${REPO_DIR}/sustainable-catalyst-engagement-intake/includes/class-sc-ei-public.php"
 
 echo "Running push-safe secret scan..."
 if grep -RInE \
   --exclude-dir=.git \
-  --exclude='PUSH_ENGAGEMENT_INTAKE_V010_CLEAN.sh' \
+  --exclude='PUSH_ENGAGEMENT_INTAKE_V020_CLEAN.sh' \
   '(AIza[0-9A-Za-z_-]{20,}|sk-[0-9A-Za-z]{20,}|ghp_[0-9A-Za-z]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' \
   "${REPO_DIR}"; then
   echo "Potential secret found. Push cancelled."
@@ -78,12 +74,12 @@ git add -A
 if git diff --cached --quiet; then
   echo "No changes to commit."
 else
-  git commit -m "Build Engagement Intake v0.1.0"
+  git commit -m "Build Engagement Intake v0.2.0"
 fi
 
 git branch -M main
 git push -u origin main
 
 echo
-echo "Engagement Intake v0.1.0 pushed successfully."
+echo "Engagement Intake v0.2.0 pushed successfully."
 echo "Repository: https://github.com/Content-Catalyst-LLC/sustainable-catalyst-engagement-intake"

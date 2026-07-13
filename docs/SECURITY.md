@@ -1,18 +1,28 @@
 # Security Model
 
-## v0.1.0 guarantees
+## v0.2.0 public form controls
 
-- No public submission route
-- No public inquiry archive
-- No unauthenticated REST access
-- Dedicated capabilities
-- Nonces for administrative writes
-- Sanitization and escaping
-- Separate private database records
-- Privacy exporter and eraser
-- Conservative data preservation
+- WordPress nonce validation
+- Write-only public REST submission route
+- Non-JavaScript admin-post fallback
+- Hidden honeypot
+- Signed form-start timestamp
+- Configurable minimum completion time
+- Configurable email-based hourly rate limit
+- Exact duplicate suppression
+- Field-length constraints
+- Server-side conditional validation
+- Sanitized text, dates, email, and URLs
 - No raw IP address storage
-- No physical upload handling before quarantine and protected storage exist
+- No public inquiry archive
+- Dynamic form pages request no-cache headers and define `DONOTCACHEPAGE` when supported
+- No unauthenticated inquiry-read endpoint
+- Dedicated private capabilities
+- Audit event for public submission
+
+## Document boundary
+
+v0.2.0 does not accept physical documents. The form warns against credentials, payment data, regulated health records, highly sensitive personal data, export-controlled material, and confidential documents.
 
 ## Secure upload requirements for v0.3.0
 
@@ -22,13 +32,13 @@
 - Quarantine before administrative download
 - Malware-scanner integration
 - Randomized internal filenames and paths
-- Storage outside public Media Library behavior
+- Protected storage outside normal public Media Library behavior
 - Permission checks on every download
 - Expiring signed download URLs
 - Download audit events
 - Retention and deletion controls
 - No permanent file URLs in email
 
-## Reporting
+## Full-page caching
 
-Security concerns should be reported privately through the project owner rather than filed with confidential details in a public issue.
+The shortcode requests dynamic no-cache behavior because WordPress nonces and signed form timing should not be served indefinitely from a static cache. When a CDN ignores WordPress cache controls, exclude the Contact page from full-page HTML caching.

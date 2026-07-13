@@ -35,6 +35,8 @@ final class SC_EI_Plugin {
 		SC_EI_Capabilities::install();
 		SC_EI_Privacy::register();
 		SC_EI_REST::register();
+		SC_EI_Form_Handler::register();
+		SC_EI_Public::register();
 
 		if ( is_admin() ) {
 			SC_EI_Admin::register();

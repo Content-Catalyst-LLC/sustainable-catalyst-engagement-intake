@@ -33,15 +33,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 		<section class="sc-ei-admin__card">
 			<h2><?php esc_html_e( 'Public exposure', 'sustainable-catalyst-engagement-intake' ); ?></h2>
-			<p><strong><?php esc_html_e( 'Public forms:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Disabled in v0.1.0', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<p><strong><?php esc_html_e( 'Public forms:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Enabled through adaptive shortcodes', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<p><strong><?php esc_html_e( 'Public inquiry archive:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'None', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<p><strong><?php esc_html_e( 'REST API:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Authenticated capability checks required', 'sustainable-catalyst-engagement-intake' ); ?></p>
 		</section>
 
 		<section class="sc-ei-admin__card">
+			<h2><?php esc_html_e( 'Public shortcodes', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<?php foreach ( $diagnostics['public_shortcodes'] as $shortcode ) : ?>
+				<p><code><?php echo esc_html( $shortcode ); ?></code></p>
+			<?php endforeach; ?>
+		</section>
+
+		<section class="sc-ei-admin__card">
+			<h2><?php esc_html_e( 'Submission safeguards', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<ul class="sc-ei-checks">
+				<?php foreach ( $diagnostics['spam_controls'] as $control => $ok ) : ?>
+					<li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( ucwords( str_replace( '_', ' ', $control ) ) ); ?></li>
+				<?php endforeach; ?>
+			</ul>
+			<p><strong><?php esc_html_e( 'Page cache:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Dynamic form rendering requests no-cache headers and sets DONOTCACHEPAGE when supported.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+		</section>
+
+		<section class="sc-ei-admin__card">
 			<h2><?php esc_html_e( 'Secure uploads', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<p><?php echo esc_html( $diagnostics['upload_note'] ); ?></p>
-			<p><strong><?php esc_html_e( 'Current state:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Metadata foundation only; no public upload endpoint.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<p><strong><?php esc_html_e( 'Current state:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Descriptions and public links only; physical uploads remain disabled.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 		</section>
 
 		<section class="sc-ei-admin__card">

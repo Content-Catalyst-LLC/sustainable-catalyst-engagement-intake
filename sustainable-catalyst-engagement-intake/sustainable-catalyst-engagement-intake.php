@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Sustainable Catalyst Engagement Intake
  * Plugin URI:  https://sustainablecatalyst.com/
- * Description: Private inquiry records, role-based review, audit history, privacy tools, and secure foundations for the Sustainable Catalyst contact and advisory intake system.
- * Version:     0.1.0
+ * Description: Adaptive private contact and engagement intake with conditional forms, inquiry routing, review-before-submit, private records, audit history, privacy tools, and administrative workflow.
+ * Version:     0.2.0
  * Author:      Content Catalyst LLC
  * Author URI:  https://sustainablecatalyst.com/
  * Text Domain: sustainable-catalyst-engagement-intake
@@ -18,8 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SC_EI_VERSION', '0.1.0' );
-define( 'SC_EI_DB_VERSION', '0.1.0' );
+define( 'SC_EI_VERSION', '0.2.0' );
+define( 'SC_EI_DB_VERSION', '0.2.0' );
 define( 'SC_EI_FILE', __FILE__ );
 define( 'SC_EI_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SC_EI_URL', plugin_dir_url( __FILE__ ) );
@@ -31,6 +31,9 @@ require_once SC_EI_DIR . 'includes/class-sc-ei-capabilities.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-audit-log.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-inquiry-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-attachment-repository.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-form-schema.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-form-handler.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-public.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-privacy.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-diagnostics.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-rest.php';

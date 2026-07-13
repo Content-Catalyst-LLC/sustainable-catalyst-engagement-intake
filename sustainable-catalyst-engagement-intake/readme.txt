@@ -1,64 +1,76 @@
 === Sustainable Catalyst Engagement Intake ===
 Contributors: content-catalyst
-Tags: contact, inquiry, consulting, workflow, privacy, audit
+Tags: contact, inquiry, consulting, workflow, privacy, audit, forms
 Requires at least: 6.5
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.1.0
+Stable tag: 0.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Private inquiry records and administrative workflow foundation for the Sustainable Catalyst contact and advisory system.
+Adaptive private contact and engagement intake for Sustainable Catalyst.
 
 == Description ==
 
-Version 0.1.0 establishes the private data and permissions layer for a future adaptive Contact Hub.
+Version 0.2.0 adds an accessible public Contact Hub and conditional forms to the private inquiry foundation introduced in v0.1.0.
+
+Shortcodes:
+
+* `[sc_contact_hub]`
+* `[sc_contact_form mode="general"]`
+* `[sc_engagement_inquiry mode="consulting"]`
 
 Included:
 
-* Dedicated private inquiry table
-* Dedicated attachment metadata table
-* Dedicated audit history table
-* Twelve-status review workflow
-* Ten inquiry categories
-* Administrator, manager, and reviewer capabilities
-* Private admin list and detail screens
-* Status changes and private internal notes
-* Authenticated REST diagnostics and inquiry reads
-* WordPress privacy exporter and eraser
-* Retention defaults and uninstall controls
-* Administration diagnostics
-* No public inquiry archive
-* No public submission endpoint in this release
-
-Secure physical document upload is scheduled for v0.3.0. The attachment metadata foundation is installed now, but v0.1.0 does not accept public files.
+* Adaptive inquiry routing
+* General and consulting modes
+* Conditional engagement and media fields
+* Three-step accessible form flow
+* Review-before-submit
+* JavaScript-enhanced REST submission
+* Non-JavaScript admin-post fallback
+* Private inquiry record creation
+* Human-readable confirmation references
+* Nonce, signed timing, honeypot, rate-limit, and duplicate controls
+* Server-side conditional validation
+* Privacy and authorization consent
+* No public archive
+* No document uploads until secure quarantine is added in v0.3.0
 
 == Installation ==
 
 1. Upload and activate the plugin.
-2. Open Engagement Intake in WordPress administration.
-3. Review Diagnostics and Settings.
-4. Assign the Engagement Reviewer or Engagement Manager role only to trusted users.
+2. Open Engagement Intake → Diagnostics.
+3. Add `[sc_contact_hub]` to the Contact page.
+4. Use the separate general or consulting shortcodes when a narrower form is preferred.
 
 == Frequently Asked Questions ==
 
-= Does v0.1.0 replace the Contact form? =
+= Which shortcode should I use on the main Contact page? =
 
-Not yet. This release establishes private records, roles, administration, privacy, and audit foundations. Adaptive public forms arrive in v0.2.0.
+Use `[sc_contact_hub]`.
+
+= Can I show only general inquiries? =
+
+Use `[sc_contact_form mode="general"]`.
+
+= Can I show only consulting and engagement inquiries? =
+
+Use `[sc_engagement_inquiry mode="consulting"]`.
 
 = Can visitors upload documents? =
 
-Not in v0.1.0. Secure upload quarantine, validation, protected storage, and download controls are planned for v0.3.0.
+Not yet. v0.2.0 explicitly blocks sensitive document submission and accepts public links only. Secure protected uploads arrive in v0.3.0.
 
-= Are inquiry records public? =
+= Are submissions private? =
 
-No. There is no public archive, query, or unauthenticated REST endpoint.
-
-= Does deactivation delete data? =
-
-No. Deactivation preserves all records. Uninstall deletes data only when the administrator explicitly enables the uninstall deletion setting.
+Yes. They are stored in dedicated private tables and are not exposed through a public archive or unauthenticated read endpoint.
 
 == Changelog ==
 
+= 0.2.0 =
+* Added Adaptive Contact Hub and Conditional Forms.
+* Added public shortcodes, routing cards, conditional fields, review step, AJAX submission, fallback submission, confirmations, and anti-spam controls.
+
 = 0.1.0 =
-* Initial private inquiry records and plugin foundation.
+* Added private inquiry records, roles, audit history, privacy tools, diagnostics, and administration.

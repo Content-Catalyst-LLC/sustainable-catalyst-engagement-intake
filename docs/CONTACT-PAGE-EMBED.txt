@@ -1,0 +1,9 @@
+Primary Contact page shortcode:
+
+[sc_contact_hub title="Contact Sustainable Catalyst" intro="Choose the inquiry path that best matches your question, project, collaboration, or engagement."]
+
+Optional separate forms:
+
+[sc_contact_form mode="general" title="Send a General Inquiry"]
+
+[sc_engagement_inquiry mode="consulting" title="Discuss an Engagement"]

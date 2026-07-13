@@ -1,48 +1,52 @@
 # Sustainable Catalyst Engagement Intake
 
-**Version:** 0.1.0  
-**Release:** Private Inquiry Records and Plugin Foundation
+**Version:** 0.2.0  
+**Release:** Adaptive Contact Hub and Conditional Forms
 
-A private WordPress workflow foundation for Sustainable Catalyst contact, consulting, research, media, technical, and institutional inquiries.
+A private WordPress contact, consulting, research, media, technical, and institutional inquiry system for Sustainable Catalyst.
 
-## What v0.1.0 includes
-
-- Dedicated inquiry, attachment-metadata, and audit-log tables
-- Private inquiry administration
-- Twelve-stage status model
-- Ten inquiry categories
-- Role-based capabilities
-- Internal notes and status history
-- WordPress privacy exporter and eraser
-- Authenticated REST reads
-- Retention defaults and uninstall controls
-- Diagnostics and release documentation
-- No public archive
-- No public intake endpoint yet
-
-## Planned public shortcodes
-
-These are reserved for later releases and are **not registered in v0.1.0**:
+## Public shortcodes
 
 ```text
 [sc_contact_hub]
-[sc_contact_form mode="general"]
-[sc_engagement_inquiry mode="consulting"]
-[sc_inquiry_portal]
 ```
 
-## Installation package
+Complete adaptive contact experience.
 
-Use `sustainable-catalyst-engagement-intake-v0.1.0.zip` in **Plugins → Add New → Upload Plugin**.
+```text
+[sc_contact_form mode="general"]
+```
+
+General questions, research collaboration, media, speaking, open source, and other non-consulting inquiries.
+
+```text
+[sc_engagement_inquiry mode="consulting"]
+```
+
+Consulting, platform work, workshops, monthly advisory, and institutional partnerships.
+
+## v0.2.0 capabilities
+
+- Conditional public routing
+- Three-step accessible form experience
+- Review-before-submit
+- JavaScript-enhanced REST submission
+- Non-JavaScript fallback
+- Private inquiry records and confirmation references
+- Conditional server-side validation
+- Privacy and authorization acknowledgments
+- Nonce, honeypot, signed timing, email rate limiting, and duplicate controls
+- No public inquiry archive
+- No physical document uploads before v0.3.0 security controls exist
+
+## Recommended Contact page embed
+
+```text
+[sc_contact_hub title="Contact Sustainable Catalyst"]
+```
 
 ## Repository
-
-Target repository:
 
 ```text
 https://github.com/Content-Catalyst-LLC/sustainable-catalyst-engagement-intake
 ```
-
-## Security position
-
-v0.1.0 intentionally does not accept public submissions or physical files. It establishes the private storage, access-control, audit, and privacy foundation before public forms and secure upload handling are introduced.

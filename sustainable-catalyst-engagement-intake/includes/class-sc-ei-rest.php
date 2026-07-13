@@ -1,6 +1,6 @@
 <?php
 /**
- * Private REST API foundation.
+ * REST API.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -53,6 +53,16 @@ final class SC_EI_REST {
 				),
 			)
 		);
+
+		register_rest_route(
+			'sc-engagement-intake/v1',
+			'/submit',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'submit' ),
+				'permission_callback' => '__return_true',
+			)
+		);
 	}
 
 	public static function status(): WP_REST_Response {
@@ -91,5 +101,37 @@ final class SC_EI_REST {
 		$record['audit_log']   = SC_EI_Audit_Log::for_inquiry( absint( $request['id'] ) );
 
 		return new WP_REST_Response( $record );
+	}
+
+	public static function submit( WP_REST_Request $request ) {
+		$result = SC_EI_Form_Handler::process( $request->get_params() );
+
+		if ( is_wp_error( $result ) ) {
+			return new WP_Error(
+				$result->get_error_code(),
+				$result->get_error_message(),
+				array( 'status' => self::status_for_error( $result->get_error_code() ) )
+			);
+		}
+
+		return new WP_REST_Response(
+			array(
+				'ok'        => true,
+				'reference' => $result['reference'],
+				'status'    => $result['status'],
+				'message'   => __( 'Your private inquiry record has been created.', 'sustainable-catalyst-engagement-intake' ),
+			),
+			201
+		);
+	}
+
+	private static function status_for_error( string $code ): int {
+		if ( in_array( $code, array( 'rate_limited' ), true ) ) {
+			return 429;
+		}
+		if ( in_array( $code, array( 'storage_error' ), true ) ) {
+			return 500;
+		}
+		return 400;
 	}
 }

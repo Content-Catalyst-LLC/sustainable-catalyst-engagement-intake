@@ -103,6 +103,8 @@ final class SC_EI_Admin {
 			'default_unaccepted_retention_days'=> 365,
 			'withdrawn_retention_days'         => 30,
 			'abandoned_draft_days'              => 30,
+			'minimum_completion_seconds'        => 3,
+			'submissions_per_hour'              => 5,
 		);
 	}
 
@@ -114,6 +116,8 @@ final class SC_EI_Admin {
 			'default_unaccepted_retention_days' => max( 30, min( 3650, absint( $value['default_unaccepted_retention_days'] ?? 365 ) ) ),
 			'withdrawn_retention_days'          => max( 1, min( 365, absint( $value['withdrawn_retention_days'] ?? 30 ) ) ),
 			'abandoned_draft_days'              => max( 1, min( 365, absint( $value['abandoned_draft_days'] ?? 30 ) ) ),
+			'minimum_completion_seconds'        => max( 1, min( 30, absint( $value['minimum_completion_seconds'] ?? 3 ) ) ),
+			'submissions_per_hour'              => max( 1, min( 20, absint( $value['submissions_per_hour'] ?? 5 ) ) ),
 		);
 	}
 

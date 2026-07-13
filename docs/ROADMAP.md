@@ -6,7 +6,7 @@ Current release.
 
 ## v0.2.0 — Adaptive Contact Hub and Conditional Forms
 
-Public routing, general and consulting forms, conditional fields, review step, accessible errors, and reference confirmation.
+Current release. Public routing, general and consulting forms, conditional fields, review step, accessible errors, private submission, and reference confirmation.
 
 ## v0.3.0 — Secure Document Intake and Quarantine
 
