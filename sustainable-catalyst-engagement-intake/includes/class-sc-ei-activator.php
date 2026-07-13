@@ -35,7 +35,7 @@ final class SC_EI_Activator {
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Engagement Intake v0.8.0 activated with a secure passwordless sender portal, one-time invitations, revocable sessions, secure messaging, protected follow-up documents, sender privacy and withdrawal controls, human-controlled fit assessment, privacy and retention governance, reviewed communications, administrative review, quarantine operations, and reliable protected storage.',
+			'Engagement Intake v0.8.1 activated with atomic portal authentication, __Host session cookies, legacy-session migration, wrong-token lockout protection, human-reviewed recovery and fresh-invitation reissue, plus all v0.8.0 secure sender portal, fit assessment, privacy, communication, quarantine, and storage controls.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}

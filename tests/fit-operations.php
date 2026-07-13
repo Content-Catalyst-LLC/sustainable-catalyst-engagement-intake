@@ -116,4 +116,4 @@ if ( $failed ) {
 foreach ( $checks as $label => $passed ) {
 	echo 'PASS: ' . $label . PHP_EOL;
 }
-echo "Engagement Intake v0.8.0 human-controlled fit operation checks passed.\n";
+echo "Engagement Intake v0.8.1 human-controlled fit operation checks passed.\n";

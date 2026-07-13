@@ -260,3 +260,28 @@ Portal access, sessions, and events are separated from WordPress users.
 Portal-visible communications remain in the communication ledger and require explicit visibility state.
 
 Portal uploads enter the existing protected quarantine architecture.
+
+
+## v0.8.1 authentication and recovery architecture
+
+```text
+invitation credential
+→ token-first verification
+→ email challenge
+→ atomic access/inquiry/session transaction
+→ __Host session cookie
+```
+
+Recovery is a separate workflow:
+
+```text
+generic public request
+→ keyed-IP rate limit
+→ internal exact match
+→ pending recovery record
+→ human decision
+→ normal invitation reissue
+→ one-time administrative link display
+```
+
+The recovery workflow never calls mail transport.

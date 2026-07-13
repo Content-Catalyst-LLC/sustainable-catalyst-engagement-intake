@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-VERSION="0.8.0"
+VERSION="0.8.1"
 PLUGIN_SLUG="sustainable-catalyst-engagement-intake"
 REPO_ARCHIVE_BASENAME="${PLUGIN_SLUG}-v${VERSION}-repo.zip"
 
@@ -16,7 +16,7 @@ SKIP_PUSH="${SC_EI_SKIP_PUSH:-0}"
 SKIP_REMOTE_CHECK="${SC_EI_SKIP_REMOTE_CHECK:-0}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v080.XXXXXX")"
+WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v081.XXXXXX")"
 
 cleanup() {
   rm -rf "${WORK_DIR}"
@@ -117,32 +117,51 @@ find_source_directory() {
 
 validate_release_markers() {
   local main_file="${REPO_DIR}/${PLUGIN_SLUG}/${PLUGIN_SLUG}.php"
+  local database="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-database.php"
+  local portal_schema="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-portal-schema.php"
   local portal_repo="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-portal-repository.php"
   local portal_session="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-portal-session.php"
   local portal_public="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-portal-public.php"
   local portal_admin="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-portal-admin.php"
 
   grep -Fq "Version:     ${VERSION}" "${main_file}" || die "Plugin version marker is missing."
-  grep -Fq "SC_EI_DB_VERSION', '0.8.0'" "${main_file}" || die "Database version marker 0.8.0 is missing."
-  grep -Fq "SC_EI_PORTAL_SCHEMA_VERSION', '1.0.0'" "${main_file}" || die "Portal schema marker 1.0.0 is missing."
+  grep -Fq "SC_EI_DB_VERSION', '0.8.1'" "${main_file}" || die "Database version marker 0.8.1 is missing."
+  grep -Fq "SC_EI_PORTAL_SCHEMA_VERSION', '1.1.0'" "${main_file}" || die "Portal schema marker 1.1.0 is missing."
 
-  grep -Fq "hash_hmac( 'sha256'" "${portal_repo}" || die "Portal HMAC credential hashing is missing."
-  grep -Fq "'invite_token_hash'   => ''" "${portal_repo}" || die "Single-use invitation invalidation is missing."
-  grep -Fq "'automatic_inquiry_status_change' => false" "${portal_repo}" || die "Status-neutral withdrawal marker is missing."
+  grep -Fq '$sql_portal_recovery_requests' "${database}" || die "Portal recovery table declaration is missing."
+  grep -Fq 'dbDelta( $sql_portal_recovery_requests )' "${database}" || die "Portal recovery table installation is missing."
 
-  grep -Fq "'httponly' => true" "${portal_session}" || die "HttpOnly session cookie is missing."
-  grep -Fq "'samesite' => 'Strict'" "${portal_session}" || die "SameSite Strict session cookie is missing."
-  grep -Fq "csrf_token" "${portal_session}" || die "Portal CSRF protection is missing."
+  grep -Fq "__Host-sc_ei_sender_session" "${portal_schema}" || die "__Host production cookie marker is missing."
+  grep -Fq "LEGACY_COOKIE_NAME" "${portal_schema}" || die "Legacy-cookie migration marker is missing."
+  grep -Fq "portal_require_https" "${portal_schema}" || die "HTTPS authentication policy is missing."
 
-  grep -Fq "Cache-Control: no-store" "${portal_public}" || die "Portal no-store protection is missing."
-  grep -Fq "SC_EI_Upload_Manager::process_inquiry_uploads" "${portal_public}" || die "Portal quarantine upload integration is missing."
-  grep -Fq "'REVOKE ' . strtoupper" "${portal_public}" || die "Sender typed access revocation is missing."
+  grep -Fq "inspect_invitation" "${portal_repo}" || die "Invitation-state inspection is missing."
+  grep -Fq "START TRANSACTION" "${portal_repo}" || die "Atomic activation transaction is missing."
+  grep -Fq "create_session( \$fresh_access, false )" "${portal_repo}" || die "Session creation is outside the activation transaction."
+  grep -Fq "activation_rolled_back" "${portal_repo}" || die "Safe activation rollback evidence is missing."
+  grep -Fq "'lockout_incremented' => false" "${portal_repo}" || die "Wrong-token lockout isolation is missing."
+  grep -Fq "request_recovery" "${portal_repo}" || die "Sender recovery request implementation is missing."
+  grep -Fq "review_recovery" "${portal_repo}" || die "Human recovery review implementation is missing."
+  grep -Fq "event_type IN ('recovery_requested','recovery_request_unmatched')" "${portal_repo}" \
+    || die "Matched and unmatched recovery attempts do not share throttling."
 
-  grep -Fq "set_transient" "${portal_admin}" || die "One-time invitation display is missing."
-  grep -Fq "'SESSIONS ' . \$access_id" "${portal_admin}" || die "Typed administrative session revocation is missing."
+  grep -Fq "'secure'   => true" "${portal_session}" || die "Secure production cookie is missing."
+  grep -Fq "'httponly' => true" "${portal_session}" || die "HttpOnly cookie is missing."
+  grep -Fq "'samesite' => 'Strict'" "${portal_session}" || die "SameSite Strict cookie is missing."
+  if grep -Fq "'domain'" "${portal_session}"; then
+    die "__Host cookie implementation contains a Domain attribute."
+  fi
+
+  grep -Fq "redirect_activation" "${portal_public}" || die "Correctable activation redirect is missing."
+  grep -Fq "sc_ei_portal_recovery" "${portal_public}" || die "Public recovery action is missing."
+  grep -Fq "portal_activation_form_expired" "${portal_public}" || die "Expired activation form recovery is missing."
+
+  grep -Fq "'RECOVER ' : 'DECLINE '" "${portal_admin}" || die "Typed recovery decision is missing."
+  grep -Fq "'UNLOCK ' . \$access_id" "${portal_admin}" || die "Typed invitation unlock is missing."
+  grep -Fq "sc_intake_manage_portal_recovery" "${portal_admin}" || die "Recovery management capability boundary is missing."
 
   if grep -Fq "wp_create_user" "${portal_repo}" || grep -Fq "wp_insert_user" "${portal_repo}"; then
-    die "The portal repository contains WordPress user creation."
+    die "The portal repository contains WordPress sender-user creation."
   fi
   if grep -Fq "wp_mail(" "${portal_repo}"; then
     die "The portal repository contains automatic email delivery."
@@ -168,6 +187,7 @@ run_release_tests() {
     "tests/fit-operations.php"
     "tests/portal-schema-fixtures.php"
     "tests/portal-operations.php"
+    "tests/portal-auth-recovery.php"
     "tests/schema-mapping.php"
   )
 
@@ -256,7 +276,7 @@ validate_release_markers
 log "Running push-safe secret scan..."
 if grep -RInE -I \
   --exclude-dir=.git \
-  --exclude='PUSH_ENGAGEMENT_INTAKE_V080_CLEAN.sh' \
+  --exclude='PUSH_ENGAGEMENT_INTAKE_V081_CLEAN.sh' \
   '(AIza[0-9A-Za-z_-]{20,}|sk-[0-9A-Za-z]{20,}|ghp_[0-9A-Za-z]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' \
   "${REPO_DIR}"
 then

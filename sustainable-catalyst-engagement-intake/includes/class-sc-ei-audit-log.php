@@ -104,6 +104,11 @@ final class SC_EI_Audit_Log {
 			'portal_withdrawal_canceled'    => __( 'Portal Withdrawal Canceled', 'sustainable-catalyst-engagement-intake' ),
 			'portal_audit_exported'         => __( 'Portal Audit Exported', 'sustainable-catalyst-engagement-intake' ),
 			'portal_settings_updated'       => __( 'Portal Settings Updated', 'sustainable-catalyst-engagement-intake' ),
+			'portal_recovery_requested'     => __( 'Portal Recovery Requested', 'sustainable-catalyst-engagement-intake' ),
+			'portal_recovery_completed'     => __( 'Portal Recovery Completed', 'sustainable-catalyst-engagement-intake' ),
+			'portal_recovery_declined'      => __( 'Portal Recovery Declined', 'sustainable-catalyst-engagement-intake' ),
+			'portal_invitation_unlocked'    => __( 'Portal Invitation Unlocked', 'sustainable-catalyst-engagement-intake' ),
+			'portal_recovery_issue_failed'  => __( 'Portal Recovery Invitation Failed', 'sustainable-catalyst-engagement-intake' ),
 		);
 	}
 

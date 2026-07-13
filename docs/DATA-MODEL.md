@@ -357,3 +357,18 @@ Sessions store credential hash, expiry, activity, and hashed client fingerprints
 Events store categorical action evidence and sanitized context.
 
 Raw credentials and plaintext network identifiers are excluded.
+
+
+## v0.8.1 recovery data model
+
+New table:
+
+```text
+portal_recovery_requests
+```
+
+It stores hashed matching evidence, sender reason, rate and deduplication state, human review state, and timestamps.
+
+Unmatched public attempts are represented only as sanitized portal security events.
+
+The session table remains unchanged; active v0.8.0 sessions migrate at the cookie layer.

@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Sustainable Catalyst Engagement Intake
  * Plugin URI:  https://sustainablecatalyst.com/
- * Description: Private consulting and contact intake with a secure passwordless sender portal, human-controlled fit assessment, privacy and retention governance, reviewed communications, administrative review, secure document quarantine, and Microsoft Teams readiness.
- * Version:     0.8.0
+ * Description: Private consulting and contact intake with patched passwordless portal authentication and human-reviewed recovery, human-controlled fit assessment, privacy and retention governance, reviewed communications, secure quarantine, and Microsoft Teams readiness.
+ * Version:     0.8.1
  * Author:      Content Catalyst LLC
  * Author URI:  https://sustainablecatalyst.com/
  * Text Domain: sustainable-catalyst-engagement-intake
@@ -18,14 +18,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SC_EI_VERSION', '0.8.0' );
-define( 'SC_EI_DB_VERSION', '0.8.0' );
+define( 'SC_EI_VERSION', '0.8.1' );
+define( 'SC_EI_DB_VERSION', '0.8.1' );
 define( 'SC_EI_VALIDATOR_VERSION', '1.0.1' );
 define( 'SC_EI_REVIEW_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_COMMUNICATION_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_PRIVACY_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_FIT_SCHEMA_VERSION', '1.0.0' );
-define( 'SC_EI_PORTAL_SCHEMA_VERSION', '1.0.0' );
+define( 'SC_EI_PORTAL_SCHEMA_VERSION', '1.1.0' );
 define( 'SC_EI_FILE', __FILE__ );
 define( 'SC_EI_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SC_EI_URL', plugin_dir_url( __FILE__ ) );

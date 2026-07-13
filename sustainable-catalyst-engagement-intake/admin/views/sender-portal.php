@@ -4,7 +4,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $success = array(
-	'portal_settings_saved' => __( 'Sender portal settings saved.', 'sustainable-catalyst-engagement-intake' ),
+	'portal_settings_saved'       => __( 'Sender portal settings saved.', 'sustainable-catalyst-engagement-intake' ),
+	'portal_recovery_completed'   => __( 'Recovery approved and a fresh one-time invitation was issued.', 'sustainable-catalyst-engagement-intake' ),
+	'portal_recovery_declined'    => __( 'Recovery request declined.', 'sustainable-catalyst-engagement-intake' ),
+	'portal_invitation_unlocked'  => __( 'Invitation lockout reset.', 'sustainable-catalyst-engagement-intake' ),
 );
 ?>
 <div class="wrap sc-ei-admin sc-ei-portal-admin">
@@ -19,7 +22,7 @@ $success = array(
 
 	<div class="sc-ei-portal-admin-boundary">
 		<strong><?php esc_html_e( 'Security boundary', 'sustainable-catalyst-engagement-intake' ); ?></strong>
-		<span><?php esc_html_e( 'Raw invitation and session credentials are never stored. The portal uses one-time invitations, an email challenge, HttpOnly SameSite cookies, revocable sessions, CSRF protection, rate limits, no-store headers, no indexing, and hashed network fingerprints.', 'sustainable-catalyst-engagement-intake' ); ?></span>
+		<span><?php esc_html_e( 'Raw invitation and session credentials are never stored. v0.8.1 adds atomic activation rollback, __Host HTTPS cookies, wrong-token lockout protection, legacy-cookie migration, non-enumerating recovery requests, and human-approved reissue.', 'sustainable-catalyst-engagement-intake' ); ?></span>
 	</div>
 
 	<div class="sc-ei-fit-metrics sc-ei-portal-metrics">
@@ -29,8 +32,11 @@ $success = array(
 		<a href="<?php echo esc_url( self::url( 0, array( 'status' => 'revoked' ) ) ); ?>"><strong><?php echo esc_html( number_format_i18n( $metrics['revoked'] ) ); ?></strong><span><?php esc_html_e( 'revoked', 'sustainable-catalyst-engagement-intake' ); ?></span></a>
 		<a><strong><?php echo esc_html( number_format_i18n( $metrics['active_sessions'] ) ); ?></strong><span><?php esc_html_e( 'active sessions', 'sustainable-catalyst-engagement-intake' ); ?></span></a>
 		<a><strong><?php echo esc_html( number_format_i18n( $metrics['messages_today'] ) ); ?></strong><span><?php esc_html_e( 'portal messages today', 'sustainable-catalyst-engagement-intake' ); ?></span></a>
+		<a class="<?php echo $metrics['pending_recovery'] ? 'sc-ei-review-metric--attention' : ''; ?>"><strong><?php echo esc_html( number_format_i18n( $metrics['pending_recovery'] ) ); ?></strong><span><?php esc_html_e( 'pending recovery', 'sustainable-catalyst-engagement-intake' ); ?></span></a>
+		<a><strong><?php echo esc_html( number_format_i18n( $metrics['recovery_today'] ) ); ?></strong><span><?php esc_html_e( 'recovery requests today', 'sustainable-catalyst-engagement-intake' ); ?></span></a>
 		<a class="<?php echo $metrics['failed_today'] ? 'sc-ei-review-metric--danger' : ''; ?>"><strong><?php echo esc_html( number_format_i18n( $metrics['failed_today'] ) ); ?></strong><span><?php esc_html_e( 'security rejections today', 'sustainable-catalyst-engagement-intake' ); ?></span></a>
 		<a class="<?php echo $metrics['locked'] ? 'sc-ei-review-metric--danger' : ''; ?>"><strong><?php echo esc_html( number_format_i18n( $metrics['locked'] ) ); ?></strong><span><?php esc_html_e( 'locked invitations', 'sustainable-catalyst-engagement-intake' ); ?></span></a>
+		<a class="<?php echo $metrics['activation_rollbacks_today'] ? 'sc-ei-review-metric--attention' : ''; ?>"><strong><?php echo esc_html( number_format_i18n( $metrics['activation_rollbacks_today'] ) ); ?></strong><span><?php esc_html_e( 'safe activation rollbacks', 'sustainable-catalyst-engagement-intake' ); ?></span></a>
 	</div>
 
 	<div class="sc-ei-fit-toolbar">
@@ -41,6 +47,45 @@ $success = array(
 			<button type="submit" class="button"><?php esc_html_e( 'Filter', 'sustainable-catalyst-engagement-intake' ); ?></button>
 		</form>
 	</div>
+
+	<?php if ( current_user_can( 'sc_intake_view_portal_recovery' ) ) : ?>
+		<section class="sc-ei-admin__card sc-ei-admin__card--wide sc-ei-portal-recovery-queue">
+			<h2><?php esc_html_e( 'Authentication Recovery Queue', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<p><?php esc_html_e( 'Public recovery responses never confirm a match. Only matched, unexpired requests appear here. Completing recovery issues a fresh one-time invitation but never sends it automatically.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<form method="get" class="sc-ei-operation-filter-form">
+				<input type="hidden" name="page" value="sc-engagement-intake-portal">
+				<select name="recovery_status"><?php foreach ( SC_EI_Portal_Schema::recovery_statuses() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $recovery_status, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select>
+				<button type="submit" class="button"><?php esc_html_e( 'Filter Recovery', 'sustainable-catalyst-engagement-intake' ); ?></button>
+			</form>
+			<table class="widefat striped sc-ei-portal-recovery-table">
+				<thead><tr><th><?php esc_html_e( 'Request', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'Inquiry', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'Reason', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'Activity', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'Human decision', 'sustainable-catalyst-engagement-intake' ); ?></th></tr></thead>
+				<tbody>
+					<?php if ( ! $recovery_requests ) : ?><tr><td colspan="5"><?php esc_html_e( 'No recovery requests match this state.', 'sustainable-catalyst-engagement-intake' ); ?></td></tr><?php endif; ?>
+					<?php foreach ( $recovery_requests as $recovery ) : ?>
+						<tr>
+							<td><strong>#<?php echo esc_html( $recovery['id'] ); ?></strong><br><span class="sc-ei-fit-state sc-ei-fit-state--<?php echo esc_attr( $recovery['status'] ); ?>"><?php echo esc_html( SC_EI_Portal_Schema::label( SC_EI_Portal_Schema::recovery_statuses(), $recovery['status'] ) ); ?></span><br><span class="description"><?php echo esc_html( get_date_from_gmt( $recovery['requested_at'], 'M j, Y g:i a' ) ); ?></span></td>
+							<td><?php if ( $recovery['access_id'] ) : ?><a href="<?php echo esc_url( self::url( absint( $recovery['access_id'] ) ) ); ?>"><strong><?php echo esc_html( $recovery['reference'] ?: '#' . $recovery['inquiry_id'] ); ?></strong></a><?php else : ?>—<?php endif; ?><br><?php echo esc_html( $recovery['contact_name'] ?: '' ); ?><br><span class="description"><?php echo esc_html( $recovery['contact_email'] ?: '' ); ?></span></td>
+							<td><?php echo nl2br( esc_html( $recovery['recovery_reason'] ) ); ?></td>
+							<td><?php echo esc_html( sprintf( __( '%1$d requests · expires %2$s UTC', 'sustainable-catalyst-engagement-intake' ), absint( $recovery['request_count'] ), $recovery['expires_at'] ) ); ?></td>
+							<td>
+								<?php if ( 'pending' === $recovery['status'] && current_user_can( 'sc_intake_manage_portal_recovery' ) ) : ?>
+									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-portal-recovery-form">
+										<input type="hidden" name="action" value="sc_ei_review_portal_recovery"><input type="hidden" name="recovery_id" value="<?php echo esc_attr( $recovery['id'] ); ?>"><?php wp_nonce_field( 'sc_ei_review_portal_recovery_' . absint( $recovery['id'] ) ); ?>
+										<select name="recovery_decision"><option value="complete"><?php esc_html_e( 'Approve and issue fresh invitation', 'sustainable-catalyst-engagement-intake' ); ?></option><option value="decline"><?php esc_html_e( 'Decline recovery', 'sustainable-catalyst-engagement-intake' ); ?></option></select>
+										<textarea name="recovery_decision_note" rows="3" required placeholder="<?php esc_attr_e( 'Human review rationale', 'sustainable-catalyst-engagement-intake' ); ?>"></textarea>
+										<input type="text" name="recovery_confirmation" required autocomplete="off" placeholder="<?php echo esc_attr( 'RECOVER ' . absint( $recovery['id'] ) ); ?>">
+										<button type="submit" class="button"><?php esc_html_e( 'Record Decision', 'sustainable-catalyst-engagement-intake' ); ?></button>
+									</form>
+								<?php else : ?>
+									<?php echo esc_html( $recovery['decision_note'] ?: '—' ); ?><?php if ( $recovery['reviewed_by_name'] ) : ?><br><span class="description"><?php echo esc_html( $recovery['reviewed_by_name'] ); ?></span><?php endif; ?>
+								<?php endif; ?>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		</section>
+	<?php endif; ?>
 
 	<?php if ( current_user_can( 'sc_intake_issue_portal_invites' ) ) : ?>
 		<section class="sc-ei-admin__card sc-ei-admin__card--wide">
@@ -72,6 +117,10 @@ $success = array(
 				<label><span><?php esc_html_e( 'Message limit per hour', 'sustainable-catalyst-engagement-intake' ); ?></span><input type="number" min="1" max="100" name="portal_settings[portal_message_rate_limit_hour]" value="<?php echo esc_attr( $settings['portal_message_rate_limit_hour'] ); ?>"></label>
 				<label><span><?php esc_html_e( 'Update limit per hour', 'sustainable-catalyst-engagement-intake' ); ?></span><input type="number" min="1" max="200" name="portal_settings[portal_update_rate_limit_hour]" value="<?php echo esc_attr( $settings['portal_update_rate_limit_hour'] ); ?>"></label>
 				<label><span><?php esc_html_e( 'Audit retention days', 'sustainable-catalyst-engagement-intake' ); ?></span><input type="number" min="30" max="3650" name="portal_settings[portal_event_retention_days]" value="<?php echo esc_attr( $settings['portal_event_retention_days'] ); ?>"></label>
+				<label><span><?php esc_html_e( 'Recovery requests per hour', 'sustainable-catalyst-engagement-intake' ); ?></span><input type="number" min="1" max="20" name="portal_settings[portal_recovery_requests_per_hour]" value="<?php echo esc_attr( $settings['portal_recovery_requests_per_hour'] ); ?>"></label>
+				<label><span><?php esc_html_e( 'Recovery deduplication minutes', 'sustainable-catalyst-engagement-intake' ); ?></span><input type="number" min="1" max="1440" name="portal_settings[portal_recovery_cooldown_minutes]" value="<?php echo esc_attr( $settings['portal_recovery_cooldown_minutes'] ); ?>"></label>
+				<label><span><?php esc_html_e( 'Recovery review expiry days', 'sustainable-catalyst-engagement-intake' ); ?></span><input type="number" min="1" max="90" name="portal_settings[portal_recovery_expiry_days]" value="<?php echo esc_attr( $settings['portal_recovery_expiry_days'] ); ?>"></label>
+				<label><span><?php esc_html_e( 'Minimum recovery-reason characters', 'sustainable-catalyst-engagement-intake' ); ?></span><input type="number" min="0" max="500" name="portal_settings[portal_recovery_min_reason_chars]" value="<?php echo esc_attr( $settings['portal_recovery_min_reason_chars'] ); ?>"></label>
 				<label><span><?php esc_html_e( 'Terms version', 'sustainable-catalyst-engagement-intake' ); ?></span><input type="text" name="portal_settings[portal_terms_version]" value="<?php echo esc_attr( $settings['portal_terms_version'] ); ?>"></label>
 				<fieldset class="sc-ei-portal-admin-form__wide"><legend><?php esc_html_e( 'Enabled sender capabilities', 'sustainable-catalyst-engagement-intake' ); ?></legend>
 					<label><input type="checkbox" name="portal_settings[portal_allow_messages]" value="1" <?php checked( $settings['portal_allow_messages'], 1 ); ?>> <?php esc_html_e( 'Secure messages', 'sustainable-catalyst-engagement-intake' ); ?></label>
@@ -82,7 +131,7 @@ $success = array(
 					<label><input type="checkbox" name="portal_settings[portal_allow_withdrawal_requests]" value="1" <?php checked( $settings['portal_allow_withdrawal_requests'], 1 ); ?>> <?php esc_html_e( 'Withdrawal requests', 'sustainable-catalyst-engagement-intake' ); ?></label>
 				</fieldset>
 				<fieldset class="sc-ei-portal-admin-form__wide"><legend><?php esc_html_e( 'Default invitation permissions', 'sustainable-catalyst-engagement-intake' ); ?></legend><div class="sc-ei-portal-permission-grid"><?php foreach ( SC_EI_Portal_Schema::permissions() as $key => $label ) : ?><label><input type="checkbox" name="portal_settings[portal_default_permissions][]" value="<?php echo esc_attr( $key ); ?>" <?php checked( in_array( $key, $settings['portal_default_permissions'], true ) ); ?>> <?php echo esc_html( $label ); ?></label><?php endforeach; ?></div></fieldset>
-				<div class="sc-ei-diagnostic-warning sc-ei-portal-admin-form__wide"><strong><?php esc_html_e( 'Fixed protections:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Email challenge, terms acceptance, HttpOnly cookies, SameSite Strict, no-store, noindex, hashed fingerprints, no WordPress accounts, and no automatic invitation email cannot be disabled in v0.8.0.', 'sustainable-catalyst-engagement-intake' ); ?></div>
+				<div class="sc-ei-diagnostic-warning sc-ei-portal-admin-form__wide"><strong><?php esc_html_e( 'Fixed protections:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Email challenge, terms acceptance, HttpOnly cookies, SameSite Strict, no-store, noindex, hashed fingerprints, no WordPress accounts, and no automatic invitation email plus HTTPS, __Host cookie use, legacy-cookie migration, atomic activation, wrong-token lockout protection, generic recovery responses, and human-approved reissue cannot be disabled in v0.8.1.', 'sustainable-catalyst-engagement-intake' ); ?></div>
 				<p class="sc-ei-portal-admin-form__wide"><button type="submit" class="button"><?php esc_html_e( 'Save Portal Settings', 'sustainable-catalyst-engagement-intake' ); ?></button></p>
 			</form>
 		</details>

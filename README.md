@@ -1,9 +1,22 @@
 # Sustainable Catalyst Engagement Intake
 
-**Version:** 0.8.0  
-**Release:** Secure Sender Portal
+**Version:** 0.8.1  
+**Release:** Portal Authentication and Recovery Patch
 
-## Public surfaces
+## Scope
+
+v0.8.1 patches the v0.8.0 Secure Sender Portal without changing its sender-safe data boundary.
+
+```text
+v0.8.0 portal
++ atomic activation
++ corrected lockout
++ __Host cookie migration
++ non-enumerating recovery
++ human-approved fresh invitation
+```
+
+## Shortcodes
 
 ```text
 [sc_engagement_inquiry mode="compact" source="consulting-page" entry_cta="discuss-an-engagement" title="Discuss an Engagement"]
@@ -11,267 +24,291 @@
 [sc_sender_portal title="Secure Sender Portal"]
 ```
 
-## Portal trust model
+## Atomic activation
+
+The v0.8.1 activation transaction covers:
 
 ```text
-authorized administrator
-→ one-time invitation
-→ inquiry-email challenge
-→ terms acceptance
-→ hashed credential verification
-→ HttpOnly SameSite Strict session
-→ sender-safe private workspace
+portal access transition
+inquiry portal transition
+session creation
 ```
 
-The portal has no public lookup and creates no WordPress user.
+The one-time invitation hash is cleared inside the transaction.
 
-Stored credentials:
+A failure in any stage performs:
 
 ```text
-HMAC invite hash
-HMAC session hash
-HMAC email hash
-HMAC IP fingerprint
-HMAC user-agent fingerprint
+ROLLBACK
+→ invitation remains invited
+→ raw invitation can be retried
+→ activation_rolled_back event
 ```
 
-Not stored:
+Successful activation performs:
 
 ```text
-raw invitation token
-raw session token
-plaintext IP address
-plaintext browser fingerprint
-reusable portal password
+COMMIT
+→ session cookie
+→ invitation_activated event
 ```
 
-## Sender capabilities
+## Lockout correction
 
-An invitation can permit:
+The authentication order is:
 
 ```text
-view sender-safe status
-view secure messages
-send secure messages
-view private document metadata
-upload private follow-up documents
-update contact preferences
-update Teams scheduling preferences
-submit privacy requests
-request inquiry withdrawal
-revoke portal access
+find public access ID
+→ constant-work token hash check
+→ reject incorrect token without lockout
+→ verify invitation state
+→ verify email challenge
+→ increment lockout only for incorrect email
 ```
 
-Every capability is checked on every write.
+This closes an identifier-only denial-of-service path.
 
-Privacy restrictions can block new processing while preserving status, existing message, privacy-request, and access-revocation controls.
+## Invitation states
 
-## Message publication
-
-Portal messages use the Communication History table.
-
-New sender and staff portal messages are immediately portal-visible and use:
+A verified invitation can present:
 
 ```text
-channel = sender_portal
-communication_type = portal_message
-provider = sender_portal
-email_sent = false
-privacy_classification = private
+valid
+expired
+locked
+inactive
 ```
 
-Existing outbound email or manual communication is hidden by default.
-
-An authorized reviewer must explicitly publish it.
-
-Draft, failed, canceled, suppressed, inbound, and internal records cannot be published.
-
-## Documents
-
-Sender follow-up documents use the existing protected upload pipeline:
+An unverified credential presents only:
 
 ```text
-authenticated portal
-→ validation
-→ atomic protected storage
-→ quarantine
-→ scanner policy
-→ administrative review
+invalid
 ```
 
-The sender sees metadata only.
+The UI never distinguishes why an unverified credential failed.
 
-No public download endpoint is created.
-
-## Contact and Teams updates
-
-The sender can update approved contact and scheduling fields.
-
-The inquiry email cannot be changed through the portal because it is part of the activation challenge.
-
-Teams preferences do not book a meeting.
-
-Calendar permission changes create consent-ledger events.
-
-## Withdrawal
-
-Typed confirmation:
+## Production cookie
 
 ```text
-WITHDRAW <REFERENCE>
-CANCEL <REFERENCE>
+__Host-sc_ei_sender_session
 ```
 
-A withdrawal request does not:
+Attributes:
 
 ```text
-change inquiry status automatically
-erase records
-release legal holds
-cancel retention obligations
+Secure
+HttpOnly
+SameSite=Strict
+Path=/
+No Domain
 ```
 
-## Access controls
-
-Sender self-revocation requires:
+The patch can read the v0.8.0 cookie:
 
 ```text
-REVOKE <REFERENCE>
+sc_ei_sender_session
 ```
 
-Administrative session revocation requires:
+On a valid HTTPS request, it migrates the same active session credential into the `__Host-` cookie and clears the legacy cookie.
+
+## Correctable activation failures
+
+These failures preserve or replace usable invitation context:
 
 ```text
-SESSIONS <ACCESS-ID>
+expired WordPress activation nonce
+terms not accepted
+temporary optimistic conflict
+inquiry persistence failure
+session persistence failure
+browser cookie establishment failure
 ```
 
-Administrative suspension or revocation requires:
+A stale form returns to the original invitation.
+
+A transactional persistence failure rolls back the invitation.
+
+A cookie-establishment failure revokes the unusable session and generates a fresh invitation.
+
+## Recovery request
+
+The public recovery form accepts:
 
 ```text
-SUSPENDED <ACCESS-ID>
-REVOKED <ACCESS-ID>
+inquiry reference
+inquiry email
+recovery reason
 ```
 
-Revoked or expired access cannot be resumed. A fresh invitation is required.
-
-## Expiration
-
-Hourly cleanup marks:
+Its response is always:
 
 ```text
-unused expired invitations → expired
-absolute-expired sessions → expired
-idle-expired sessions → expired
+The request was received.
+If the details match an eligible record, it will be reviewed.
+No access link is issued automatically.
 ```
+
+The response is the same for:
+
+```text
+matched request
+unmatched request
+invalid input
+honeypot submission
+deduplicated request
+throttled request
+```
+
+## Recovery controls
+
+```text
+keyed-IP hourly limit
+matched and unmatched event counting
+minimum reason length
+honeypot
+pending-request deduplication
+review expiry
+hashed reference
+hashed email
+hashed IP
+hashed browser
+```
+
+Unmatched attempts generate security events but do not create an identity-bearing recovery row.
+
+## Human review
+
+Reviewers with the view capability can inspect matched recovery requests.
+
+Only managers with:
+
+```text
+sc_intake_manage_portal_recovery
+```
+
+can approve, decline, or reset lockout.
+
+Approval:
+
+```text
+RECOVER <RECOVERY-ID>
+```
+
+Decline:
+
+```text
+DECLINE <RECOVERY-ID>
+```
+
+Lockout reset:
+
+```text
+UNLOCK <ACCESS-ID>
+```
+
+Every action requires a human rationale.
+
+Recovery approval calls the normal invitation reissue path, preserving access permissions and revoking active sessions.
+
+No email is sent automatically.
+
+## New table
+
+```text
+{prefix}sc_ei_portal_recovery_requests
+```
+
+Fields:
+
+```text
+public_id
+inquiry_id
+access_id
+status
+match_status
+reference_hash
+email_hash
+recovery_reason
+request_ip_hash
+request_user_agent_hash
+request_count
+requested_at
+last_requested_at
+expires_at
+reviewed_by
+reviewed_at
+decision_note
+completed_at
+row_version
+created_at
+updated_at
+```
+
+## New capabilities
+
+```text
+sc_intake_view_portal_recovery
+sc_intake_manage_portal_recovery
+```
+
+Engagement Reviewers receive view access.
+
+Engagement Managers receive view and management access.
+
+## Recovery lifecycle
+
+```text
+pending
+→ completed
+→ declined
+→ expired
+→ canceled
+```
+
+Hourly portal cleanup marks expired pending requests.
 
 It does not delete audit history.
-
-## Internal-data boundary
-
-The sender portal never renders:
-
-```text
-internal notes
-fit assessments
-review summaries
-decision rationale
-risk level
-legal-hold reason
-retention queue
-audit narratives
-assignments
-escalation notes
-protected file paths
-```
-
-## New tables
-
-```text
-{prefix}sc_ei_portal_access
-{prefix}sc_ei_portal_sessions
-{prefix}sc_ei_portal_events
-```
-
-## New inquiry fields
-
-```text
-portal_status
-portal_access_id
-portal_last_activity_at
-portal_message_count
-portal_document_count
-portal_last_sender_message_at
-sender_withdrawal_status
-sender_withdrawal_requested_at
-sender_withdrawal_reason
-portal_version
-```
-
-## Communication publication fields
-
-```text
-portal_visibility
-portal_published_at
-portal_published_by
-portal_source
-```
-
-## Capabilities
-
-```text
-sc_intake_view_sender_portal
-sc_intake_manage_sender_portal
-sc_intake_issue_portal_invites
-sc_intake_post_portal_messages
-sc_intake_revoke_portal_access
-sc_intake_manage_portal_settings
-sc_intake_export_portal_audit
-```
-
-Reviewers can view and post secure portal messages.
-
-Managers can issue invitations, manage access, terminate sessions, configure the portal, and export audit data.
 
 ## Privacy
 
 WordPress privacy export includes:
 
-- portal access state
-- permissions and terms evidence
-- sessions
-- portal events
-- withdrawal state
-- portal-visible messages
-- uploaded document metadata
+```text
+recovery state
+recovery reason
+request count
+review timestamps
+decision note
+completion state
+```
 
-Approved inquiry erasure:
+Approved inquiry erasure clears:
 
-- revokes active sessions
-- replaces session hashes
-- clears email, IP, and browser hashes
-- clears invitation and access narratives
-- clears withdrawal reason
-- redacts event context
-- preserves limited categorical and audit tombstones
+```text
+reference hash
+email hash
+recovery reason
+IP hash
+browser hash
+decision note
+```
 
-## Production checklist
+## Upgrade checklist
 
 1. Back up database and protected storage.
-2. Upgrade to v0.8.0.
-3. Create the sender portal page and shortcode.
-4. Exclude the page from caching and navigation.
-5. Confirm HTTPS and security headers.
-6. Confirm DB and portal schema versions.
-7. Confirm hourly cleanup.
-8. Test single-use invitation activation.
-9. Test incorrect email and lockout.
-10. Test idle and absolute expiration.
-11. Test concurrent session limit.
-12. Test reissue revokes active sessions.
-13. Test secure messages without email.
-14. Test communication publication boundaries.
-15. Test quarantine uploads.
-16. Test privacy restriction blocking.
-17. Test withdrawal and self-revocation.
-18. Test privacy export and erasure in staging.
-19. Test audit export.
+2. Upgrade from v0.8.0 to v0.8.1.
+3. Confirm HTTPS.
+4. Keep the existing sender portal URL.
+5. Clear caches.
+6. Confirm DB `0.8.1`.
+7. Confirm portal schema `1.1.0`.
+8. Confirm the recovery table.
+9. Confirm recovery capabilities.
+10. Confirm hourly cleanup.
+11. Test v0.8.0 legacy-cookie migration.
+12. Test incorrect-token behavior.
+13. Test email-challenge lockout.
+14. Test transactional rollback.
+15. Test generic matched and unmatched recovery.
+16. Test approval, decline, unlock, and link display.
+17. Test privacy export and erasure.

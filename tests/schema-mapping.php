@@ -1,6 +1,6 @@
 <?php
 /**
- * Static v0.8.0 schema, repository, and privacy mapping checks.
+ * Static v0.8.1 schema, repository, and privacy mapping checks.
  */
 
 $root       = dirname( __DIR__ );
@@ -154,6 +154,7 @@ foreach ( array(
 	'sql_portal_access' => 'Portal access',
 	'sql_portal_sessions' => 'Portal session',
 	'sql_portal_events' => 'Portal event',
+	'sql_portal_recovery_requests' => 'Portal recovery request',
 ) as $variable => $label ) {
 	$columns = array_values( array_diff( schema_columns( $database, $variable ), array( 'id' ) ) );
 	$missing = array();
@@ -224,4 +225,4 @@ if (
 }
 echo "PASS: physical deletion verification, dependency blocking, and tombstone markers present\n";
 
-echo "Engagement Intake v0.8.0 schema checks passed.\n";
+echo "Engagement Intake v0.8.1 schema checks passed.\n";

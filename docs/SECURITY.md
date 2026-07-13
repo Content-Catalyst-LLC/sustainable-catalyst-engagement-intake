@@ -307,3 +307,26 @@ For higher-risk intake:
 - privacy-state feature blocking
 - typed withdrawal and access revocation
 - portal privacy export and erasure
+
+
+## v0.8.1 authentication and recovery controls
+
+- atomic invitation activation
+- rollback preserves invitation
+- optimistic access and inquiry locking
+- token verification before email lockout
+- wrong token cannot increment lockout
+- verified-token email failures can lock
+- `__Host-` production cookie
+- legacy cookie migration
+- HTTPS-required production authentication
+- generic recovery response
+- no public record enumeration
+- matched and unmatched shared rate limit
+- recovery honeypot
+- pending-request deduplication
+- recovery expiry
+- human approval or decline
+- typed recovery and unlock confirmations
+- no automatic invitation email
+- recovery privacy export and erasure

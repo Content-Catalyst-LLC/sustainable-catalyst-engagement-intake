@@ -1,4 +1,4 @@
-Sustainable Catalyst Engagement Intake v0.8.0 Shortcodes
+Sustainable Catalyst Engagement Intake v0.8.1 Shortcodes
 ================================================================
 
 Consulting page
@@ -10,9 +10,9 @@ Contact page
 Private sender portal page
 [sc_sender_portal title="Secure Sender Portal"]
 
-Portal page requirements
-- Use a dedicated HTTPS WordPress page.
-- Do not add it to public navigation.
-- Exclude it from WordPress, host, reverse-proxy, and CDN caches.
-- Exclude it from search and sitemap plugins.
-- Save its exact URL under Engagement Intake → Sender Portal.
+v0.8.1 requirements
+- Serve the portal over HTTPS.
+- Keep the portal out of public navigation.
+- Exclude it from page, object, host, reverse-proxy, and CDN caches.
+- Preserve the existing portal URL during the upgrade.
+- Clear caches after activation so the authentication patch is loaded.

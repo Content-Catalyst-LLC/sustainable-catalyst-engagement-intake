@@ -300,6 +300,31 @@ final class SC_EI_Privacy {
 				);
 			}
 
+			foreach ( (array) ( $portal['recovery_requests'] ?? array() ) as $portal_recovery ) {
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-sender-portal-recovery',
+					'group_label' => __( 'Engagement Intake Sender Portal Recovery Requests', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-portal-recovery-' . $portal_recovery['id'],
+					'data'        => self::export_fields(
+						$portal_recovery,
+						array(
+							'status'            => 'Recovery state',
+							'match_status'      => 'Recovery match state',
+							'recovery_reason'   => 'Recovery reason',
+							'request_count'     => 'Recovery submission count',
+							'requested_at'      => 'Requested at',
+							'last_requested_at' => 'Last requested at',
+							'expires_at'        => 'Review expires at',
+							'reviewed_at'       => 'Reviewed at',
+							'decision_note'     => 'Human review note',
+							'completed_at'      => 'Completed at',
+							'created_at'        => 'Created at',
+							'updated_at'        => 'Updated at',
+						)
+					),
+				);
+			}
+
 			foreach ( SC_EI_Attachment_Repository::for_inquiry( $inquiry_id, true ) as $attachment ) {
 				$data[] = array(
 					'group_id'    => 'sc-engagement-intake-documents',
@@ -451,7 +476,7 @@ final class SC_EI_Privacy {
 	/**
 	 * WordPress eraser bridge.
 	 *
-	 * v0.8.0 retains the queue-only behavior introduced in v0.6.0 and does not erase synchronously. It creates a tracked case and queues
+	 * v0.8.1 retains the queue-only behavior introduced in v0.6.0 and does not erase synchronously. It creates a tracked case and queues
 	 * legal-hold-aware lifecycle actions for human approval and verified execution.
 	 */
 	public static function erase_by_email( string $email_address, int $page = 1 ): array {

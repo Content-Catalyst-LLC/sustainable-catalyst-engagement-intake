@@ -246,8 +246,8 @@ $effective       = $diagnostics['effective_limits'];
 				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['portal_metrics']['invited'] ) ); ?></strong><span><?php esc_html_e( 'invited', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
 				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['portal_metrics']['active'] ) ); ?></strong><span><?php esc_html_e( 'active access', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
 				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['portal_metrics']['active_sessions'] ) ); ?></strong><span><?php esc_html_e( 'active sessions', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
-				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['portal_metrics']['failed_today'] ) ); ?></strong><span><?php esc_html_e( 'security rejections today', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
-				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['portal_metrics']['locked'] ) ); ?></strong><span><?php esc_html_e( 'locked invitations', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['portal_metrics']['pending_recovery'] ) ); ?></strong><span><?php esc_html_e( 'pending recovery', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['portal_metrics']['activation_rollbacks_today'] ) ); ?></strong><span><?php esc_html_e( 'safe rollbacks today', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
 				<div><strong><?php echo esc_html( $diagnostics['portal_schema_version'] ); ?></strong><span><?php esc_html_e( 'portal schema', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
 			</div>
 			<ul class="sc-ei-checks">
@@ -255,13 +255,17 @@ $effective       = $diagnostics['effective_limits'];
 				<li><span class="sc-ei-check--ok">●</span> <?php esc_html_e( 'raw invitation and session credentials are never stored', 'sustainable-catalyst-engagement-intake' ); ?></li>
 				<li><span class="sc-ei-check--ok">●</span> <?php esc_html_e( 'no sender WordPress account and no automatic invitation email', 'sustainable-catalyst-engagement-intake' ); ?></li>
 				<li><span class="<?php echo $diagnostics['portal_security']['email_challenge'] && $diagnostics['portal_security']['terms_required'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'email challenge and terms acceptance required', 'sustainable-catalyst-engagement-intake' ); ?></li>
-				<li><span class="<?php echo $diagnostics['portal_security']['cookie_httponly'] && 'Strict' === $diagnostics['portal_security']['cookie_samesite'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'HttpOnly SameSite Strict session cookie', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['portal_security']['cookie_httponly'] && 'Strict' === $diagnostics['portal_security']['cookie_samesite'] && '__Host-sc_ei_sender_session' === $diagnostics['portal_security']['cookie_name'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( '__Host HttpOnly SameSite Strict session cookie', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['portal_security']['atomic_activation'] && ! $diagnostics['portal_security']['wrong_token_lockout'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'atomic activation and wrong-token lockout protection', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['portal_security']['recovery_enabled'] && $diagnostics['portal_security']['recovery_human_review'] && ! $diagnostics['portal_security']['recovery_auto_issue'] && ! $diagnostics['portal_security']['recovery_auto_email'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'non-enumerating recovery requires human review', 'sustainable-catalyst-engagement-intake' ); ?></li>
 				<li><span class="<?php echo $diagnostics['portal_security']['noindex'] && $diagnostics['portal_security']['no_store'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'portal pages are noindex and no-store', 'sustainable-catalyst-engagement-intake' ); ?></li>
 			</ul>
 			<dl class="sc-ei-admin__details">
 				<dt><?php esc_html_e( 'Portal page', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $diagnostics['portal_security']['page_url'] ); ?></dd>
 				<dt><?php esc_html_e( 'Next cleanup UTC', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $diagnostics['portal_security']['next_cleanup_utc'] ?: __( 'Not scheduled', 'sustainable-catalyst-engagement-intake' ) ); ?></dd>
 				<dt><?php esc_html_e( 'Messages today', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( $diagnostics['portal_metrics']['messages_today'] ) ); ?></dd>
+				<dt><?php esc_html_e( 'Recovery requests today', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( $diagnostics['portal_metrics']['recovery_today'] ) ); ?></dd>
+				<dt><?php esc_html_e( 'Secure transport now', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo $diagnostics['portal_security']['secure_transport_now'] ? esc_html__( 'available', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'not detected', 'sustainable-catalyst-engagement-intake' ); ?></dd>
 			</dl>
 			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-portal' ) ); ?>"><?php esc_html_e( 'Open Secure Sender Portal Workspace', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
 		</section>
@@ -382,7 +386,7 @@ $effective       = $diagnostics['effective_limits'];
 			<h2><?php esc_html_e( 'Database Migrations', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<h3><?php esc_html_e( 'Tables', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['tables'] as $name => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $name ); ?></li><?php endforeach; ?></ul>
-			<h3><?php esc_html_e( 'v0.8.0 inquiry, attachment, review, fit assessment, sender portal, communication, and privacy fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<h3><?php esc_html_e( 'v0.8.1 inquiry, attachment, review, fit assessment, sender portal authentication and recovery, communication, and privacy fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['attachment_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
 			<h3><?php esc_html_e( 'Sender portal tables and fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks sc-ei-checks--columns"><?php foreach ( $diagnostics['portal_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>

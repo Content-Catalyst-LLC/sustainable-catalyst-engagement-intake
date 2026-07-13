@@ -17,6 +17,8 @@ final class SC_EI_Portal_Admin {
 		add_action( 'admin_post_sc_ei_publish_portal_communication', array( __CLASS__, 'handle_publish' ) );
 		add_action( 'admin_post_sc_ei_export_portal_audit', array( __CLASS__, 'handle_export' ) );
 		add_action( 'admin_post_sc_ei_save_portal_settings', array( __CLASS__, 'handle_settings' ) );
+		add_action( 'admin_post_sc_ei_review_portal_recovery', array( __CLASS__, 'handle_recovery' ) );
+		add_action( 'admin_post_sc_ei_unlock_portal_access', array( __CLASS__, 'handle_unlock' ) );
 	}
 
 	public static function submenu(): void {
@@ -41,6 +43,7 @@ final class SC_EI_Portal_Admin {
 		}
 
 		$status = isset( $_GET['status'] ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : '';
+		$recovery_status = isset( $_GET['recovery_status'] ) ? sanitize_key( wp_unslash( $_GET['recovery_status'] ) ) : 'pending';
 		$search = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
 		$message = isset( $_GET['sc_ei_msg'] ) ? sanitize_key( wp_unslash( $_GET['sc_ei_msg'] ) ) : '';
 		$settings = SC_EI_Portal_Repository::settings();
@@ -52,6 +55,14 @@ final class SC_EI_Portal_Admin {
 				'limit'  => 250,
 			)
 		);
+		$recovery_requests = current_user_can( 'sc_intake_view_portal_recovery' )
+			? SC_EI_Portal_Repository::recovery_requests(
+				array(
+					'status' => $recovery_status,
+					'limit'  => 250,
+				)
+			)
+			: array();
 		include SC_EI_DIR . 'admin/views/sender-portal.php';
 	}
 
@@ -68,6 +79,9 @@ final class SC_EI_Portal_Admin {
 		$settings = SC_EI_Portal_Repository::settings();
 		$sessions = SC_EI_Portal_Repository::sessions( $access_id, false );
 		$events = SC_EI_Portal_Repository::events( array( 'access_id' => $access_id, 'limit' => 500 ) );
+		$recovery_requests = current_user_can( 'sc_intake_view_portal_recovery' )
+			? SC_EI_Portal_Repository::recovery_requests( array( 'access_id' => $access_id, 'limit' => 250 ) )
+			: array();
 		$portal_messages = SC_EI_Portal_Repository::portal_messages( absint( $inquiry['id'] ), 500 );
 		$all_communications = SC_EI_Communication_Repository::for_inquiry( absint( $inquiry['id'] ), 500, false );
 		$publishable = array_values(
@@ -108,7 +122,7 @@ final class SC_EI_Portal_Admin {
 			get_current_user_id()
 		);
 		if ( is_wp_error( $result ) ) {
-			self::redirect( 0, $result->get_error_code() );
+			self::redirect( $redirect_access_id, $result->get_error_code() );
 		}
 		$access_id = absint( $result['access']['id'] );
 		set_transient(
@@ -156,6 +170,59 @@ final class SC_EI_Portal_Admin {
 		self::redirect( $access_id, 'portal_sessions_revoked' );
 	}
 
+	public static function handle_recovery(): void {
+		self::require_cap( 'sc_intake_manage_portal_recovery' );
+		$recovery_id = absint( $_POST['recovery_id'] ?? 0 );
+		check_admin_referer( 'sc_ei_review_portal_recovery_' . $recovery_id );
+		$existing_recovery = SC_EI_Portal_Repository::find_recovery( $recovery_id );
+		$redirect_access_id = absint( $existing_recovery['access_id'] ?? 0 );
+		$decision = isset( $_POST['recovery_decision'] ) ? sanitize_key( wp_unslash( $_POST['recovery_decision'] ) ) : '';
+		$expected = ( 'complete' === $decision ? 'RECOVER ' : 'DECLINE ' ) . $recovery_id;
+		$provided = strtoupper( trim( (string) ( $_POST['recovery_confirmation'] ?? '' ) ) );
+		if ( ! hash_equals( $expected, $provided ) ) {
+			self::redirect( $redirect_access_id, 'portal_recovery_confirmation_failed' );
+		}
+		$note = isset( $_POST['recovery_decision_note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['recovery_decision_note'] ) ) : '';
+		$result = SC_EI_Portal_Repository::review_recovery( $recovery_id, $decision, $note, get_current_user_id() );
+		if ( is_wp_error( $result ) ) {
+			self::redirect( 0, $result->get_error_code() );
+		}
+		$recovery = $result['recovery'] ?? SC_EI_Portal_Repository::find_recovery( $recovery_id );
+		$access_id = absint( $recovery['access_id'] ?? 0 );
+		if ( ! empty( $result['invitation'] ) && $access_id ) {
+			set_transient(
+				self::link_transient_key( $access_id ),
+				array(
+					'url'        => esc_url_raw( $result['invitation']['url'] ),
+					'expires_at' => sanitize_text_field( $result['invitation']['expires_at'] ),
+				),
+				5 * MINUTE_IN_SECONDS
+			);
+		}
+		$message = 'complete' === $decision ? 'portal_recovery_completed' : 'portal_recovery_declined';
+		if ( ! empty( $result['warning'] ) ) {
+			$message = sanitize_key( $result['warning'] );
+		}
+		self::redirect( $access_id, $message );
+	}
+
+	public static function handle_unlock(): void {
+		self::require_cap( 'sc_intake_manage_portal_recovery' );
+		$access_id = absint( $_POST['access_id'] ?? 0 );
+		check_admin_referer( 'sc_ei_unlock_portal_access_' . $access_id );
+		$expected = 'UNLOCK ' . $access_id;
+		$provided = strtoupper( trim( (string) ( $_POST['unlock_confirmation'] ?? '' ) ) );
+		if ( ! hash_equals( $expected, $provided ) ) {
+			self::redirect( $access_id, 'portal_unlock_confirmation_failed' );
+		}
+		$result = SC_EI_Portal_Repository::unlock_access(
+			$access_id,
+			isset( $_POST['unlock_reason'] ) ? sanitize_textarea_field( wp_unslash( $_POST['unlock_reason'] ) ) : '',
+			get_current_user_id()
+		);
+		self::redirect( $access_id, is_wp_error( $result ) ? $result->get_error_code() : 'portal_invitation_unlocked' );
+	}
+
 	public static function handle_reply(): void {
 		self::require_cap( 'sc_intake_post_portal_messages' );
 		$access_id = absint( $_POST['access_id'] ?? 0 );
@@ -194,7 +261,7 @@ final class SC_EI_Portal_Admin {
 		}
 		$inquiry = SC_EI_Inquiry_Repository::find( absint( $access['inquiry_id'] ) );
 		$packet = array(
-			'schema'        => 'sc-engagement-intake-sender-portal-audit/1.0',
+			'schema'        => 'sc-engagement-intake-sender-portal-audit/1.1',
 			'generated_at'  => current_time( 'mysql', true ),
 			'portal_schema' => SC_EI_PORTAL_SCHEMA_VERSION,
 			'security'      => array(
@@ -204,6 +271,10 @@ final class SC_EI_Portal_Admin {
 				'user_agent_plaintext_stored' => false,
 				'wordpress_account_required' => false,
 				'automatic_email'     => false,
+				'atomic_activation'   => true,
+				'wrong_token_lockout' => false,
+				'human_recovery'      => true,
+				'cookie_name'         => SC_EI_Portal_Schema::COOKIE_NAME,
 			),
 			'inquiry'       => $inquiry,
 			'portal'        => SC_EI_Portal_Repository::export_for_inquiry( absint( $access['inquiry_id'] ) ),
@@ -236,6 +307,13 @@ final class SC_EI_Portal_Admin {
 			'portal_message_rate_limit_hour'   => max( 1, min( 100, absint( $raw['portal_message_rate_limit_hour'] ?? $current['portal_message_rate_limit_hour'] ) ) ),
 			'portal_update_rate_limit_hour'    => max( 1, min( 200, absint( $raw['portal_update_rate_limit_hour'] ?? $current['portal_update_rate_limit_hour'] ) ) ),
 			'portal_event_retention_days'      => max( 30, min( 3650, absint( $raw['portal_event_retention_days'] ?? $current['portal_event_retention_days'] ) ) ),
+			'portal_recovery_enabled'           => 1,
+			'portal_recovery_requests_per_hour' => max( 1, min( 20, absint( $raw['portal_recovery_requests_per_hour'] ?? $current['portal_recovery_requests_per_hour'] ) ) ),
+			'portal_recovery_cooldown_minutes'  => max( 1, min( 1440, absint( $raw['portal_recovery_cooldown_minutes'] ?? $current['portal_recovery_cooldown_minutes'] ) ) ),
+			'portal_recovery_expiry_days'       => max( 1, min( 90, absint( $raw['portal_recovery_expiry_days'] ?? $current['portal_recovery_expiry_days'] ) ) ),
+			'portal_recovery_min_reason_chars'  => max( 0, min( 500, absint( $raw['portal_recovery_min_reason_chars'] ?? $current['portal_recovery_min_reason_chars'] ) ) ),
+			'portal_require_https'              => 1,
+			'portal_allow_legacy_cookie'        => 1,
 			'portal_allow_messages'            => empty( $raw['portal_allow_messages'] ) ? 0 : 1,
 			'portal_allow_documents'           => empty( $raw['portal_allow_documents'] ) ? 0 : 1,
 			'portal_allow_contact_updates'     => empty( $raw['portal_allow_contact_updates'] ) ? 0 : 1,
@@ -264,6 +342,10 @@ final class SC_EI_Portal_Admin {
 				'httponly'        => true,
 				'samesite'        => 'Strict',
 				'automatic_email' => false,
+				'recovery_enabled'=> true,
+				'recovery_limit'  => $settings['portal_recovery_requests_per_hour'],
+				'require_https'   => true,
+				'host_cookie'     => SC_EI_Portal_Schema::COOKIE_NAME,
 			),
 			null,
 			null,

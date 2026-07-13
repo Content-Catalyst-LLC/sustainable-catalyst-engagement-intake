@@ -93,6 +93,16 @@ final class SC_EI_Diagnostics {
 				'terms_required'        => ! empty( $settings['portal_require_terms_acceptance'] ),
 				'cookie_httponly'       => ! empty( $settings['portal_cookie_httponly'] ),
 				'cookie_samesite'       => (string) $settings['portal_cookie_samesite'],
+				'cookie_name'           => SC_EI_Portal_Schema::COOKIE_NAME,
+				'legacy_cookie_allowed' => ! empty( $settings['portal_allow_legacy_cookie'] ),
+				'https_required'        => ! empty( $settings['portal_require_https'] ),
+				'secure_transport_now'  => SC_EI_Portal_Schema::secure_transport_available(),
+				'atomic_activation'     => true,
+				'wrong_token_lockout'   => false,
+				'recovery_enabled'      => ! empty( $settings['portal_recovery_enabled'] ),
+				'recovery_human_review' => true,
+				'recovery_auto_issue'   => false,
+				'recovery_auto_email'   => false,
 				'noindex'               => ! empty( $settings['portal_noindex'] ),
 				'no_store'              => ! empty( $settings['portal_no_store'] ),
 				'page_url'              => (string) $settings['portal_page_url'],
@@ -243,6 +253,14 @@ final class SC_EI_Diagnostics {
 			&& ! empty( $results['portal_security']['terms_required'] )
 			&& ! empty( $results['portal_security']['cookie_httponly'] )
 			&& 'Strict' === $results['portal_security']['cookie_samesite']
+			&& '__Host-sc_ei_sender_session' === $results['portal_security']['cookie_name']
+			&& ! empty( $results['portal_security']['https_required'] )
+			&& ! empty( $results['portal_security']['atomic_activation'] )
+			&& empty( $results['portal_security']['wrong_token_lockout'] )
+			&& ! empty( $results['portal_security']['recovery_enabled'] )
+			&& ! empty( $results['portal_security']['recovery_human_review'] )
+			&& empty( $results['portal_security']['recovery_auto_issue'] )
+			&& empty( $results['portal_security']['recovery_auto_email'] )
 			&& ! empty( $results['portal_security']['noindex'] )
 			&& ! empty( $results['portal_security']['no_store'] );
 		$fit_ok = ! in_array( false, $results['fit_columns'], true )

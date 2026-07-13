@@ -1047,3 +1047,35 @@
     max-width: 100%;
   }
 }
+
+
+/* v0.8.1 portal authentication and recovery patch */
+.sc-ei-portal-card--recovery {
+  border-left: 6px solid var(--portal-maroon);
+  background: #fffdf8;
+}
+
+.sc-ei-portal-auth-meta {
+  display: inline-block;
+  margin: 0 0 14px;
+  padding: 6px 9px;
+  background: var(--portal-cream);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sc-ei-portal-honeypot {
+  position: absolute !important;
+  left: -10000px !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+}
+
+.sc-ei-portal--login .sc-ei-portal-card {
+  max-width: 760px;
+}
+
+.sc-ei-portal--login .sc-ei-portal-security-grid {
+  max-width: 980px;
+}

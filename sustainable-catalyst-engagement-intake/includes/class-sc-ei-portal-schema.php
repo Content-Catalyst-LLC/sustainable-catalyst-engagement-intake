@@ -9,7 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class SC_EI_Portal_Schema {
 
-	public const COOKIE_NAME = 'sc_ei_sender_session';
+	public const COOKIE_NAME = '__Host-sc_ei_sender_session';
+	public const LEGACY_COOKIE_NAME = 'sc_ei_sender_session';
 
 	public static function access_statuses(): array {
 		return array(
@@ -26,6 +27,36 @@ final class SC_EI_Portal_Schema {
 			'active'  => __( 'Active', 'sustainable-catalyst-engagement-intake' ),
 			'revoked' => __( 'Revoked', 'sustainable-catalyst-engagement-intake' ),
 			'expired' => __( 'Expired', 'sustainable-catalyst-engagement-intake' ),
+		);
+	}
+
+
+	public static function recovery_statuses(): array {
+		return array(
+			'pending'    => __( 'Pending Human Review', 'sustainable-catalyst-engagement-intake' ),
+			'processing' => __( 'Recovery Processing', 'sustainable-catalyst-engagement-intake' ),
+			'completed' => __( 'Fresh Invitation Issued', 'sustainable-catalyst-engagement-intake' ),
+			'declined'  => __( 'Declined', 'sustainable-catalyst-engagement-intake' ),
+			'expired'   => __( 'Expired', 'sustainable-catalyst-engagement-intake' ),
+			'canceled'  => __( 'Canceled', 'sustainable-catalyst-engagement-intake' ),
+		);
+	}
+
+	public static function recovery_match_statuses(): array {
+		return array(
+			'matched'   => __( 'Matched Existing Inquiry', 'sustainable-catalyst-engagement-intake' ),
+			'unmatched' => __( 'No Match Recorded', 'sustainable-catalyst-engagement-intake' ),
+		);
+	}
+
+	public static function invitation_states(): array {
+		return array(
+			'valid'      => __( 'Ready to Activate', 'sustainable-catalyst-engagement-intake' ),
+			'expired'    => __( 'Invitation Expired', 'sustainable-catalyst-engagement-intake' ),
+			'locked'     => __( 'Invitation Temporarily Locked', 'sustainable-catalyst-engagement-intake' ),
+			'inactive'   => __( 'Invitation No Longer Active', 'sustainable-catalyst-engagement-intake' ),
+			'invalid'    => __( 'Invitation Could Not Be Verified', 'sustainable-catalyst-engagement-intake' ),
+			'https'      => __( 'Secure Connection Required', 'sustainable-catalyst-engagement-intake' ),
 		);
 	}
 
@@ -73,7 +104,19 @@ final class SC_EI_Portal_Schema {
 			'invitation_issued'          => __( 'Invitation Issued', 'sustainable-catalyst-engagement-intake' ),
 			'invitation_reissued'        => __( 'Invitation Reissued', 'sustainable-catalyst-engagement-intake' ),
 			'invitation_failed'          => __( 'Invitation Activation Failed', 'sustainable-catalyst-engagement-intake' ),
+			'invitation_token_rejected'  => __( 'Invitation Token Rejected', 'sustainable-catalyst-engagement-intake' ),
+			'invitation_email_rejected'  => __( 'Invitation Email Challenge Rejected', 'sustainable-catalyst-engagement-intake' ),
+			'invitation_locked'          => __( 'Invitation Locked', 'sustainable-catalyst-engagement-intake' ),
+			'invitation_unlocked'        => __( 'Invitation Unlocked', 'sustainable-catalyst-engagement-intake' ),
 			'invitation_activated'       => __( 'Invitation Activated', 'sustainable-catalyst-engagement-intake' ),
+			'activation_rolled_back'     => __( 'Activation Rolled Back Safely', 'sustainable-catalyst-engagement-intake' ),
+			'legacy_cookie_migrated'     => __( 'Legacy Session Cookie Migrated', 'sustainable-catalyst-engagement-intake' ),
+			'recovery_requested'         => __( 'Portal Recovery Requested', 'sustainable-catalyst-engagement-intake' ),
+			'recovery_request_unmatched' => __( 'Unmatched Recovery Attempt', 'sustainable-catalyst-engagement-intake' ),
+			'recovery_request_throttled' => __( 'Recovery Request Throttled', 'sustainable-catalyst-engagement-intake' ),
+			'recovery_completed'         => __( 'Portal Recovery Completed', 'sustainable-catalyst-engagement-intake' ),
+			'recovery_declined'          => __( 'Portal Recovery Declined', 'sustainable-catalyst-engagement-intake' ),
+			'recovery_expired'           => __( 'Portal Recovery Expired', 'sustainable-catalyst-engagement-intake' ),
 			'session_created'            => __( 'Session Created', 'sustainable-catalyst-engagement-intake' ),
 			'session_seen'               => __( 'Session Activity', 'sustainable-catalyst-engagement-intake' ),
 			'session_revoked'            => __( 'Session Revoked', 'sustainable-catalyst-engagement-intake' ),
@@ -135,6 +178,13 @@ final class SC_EI_Portal_Schema {
 			'portal_update_rate_limit_hour'     => 20,
 			'portal_session_touch_seconds'      => 60,
 			'portal_event_retention_days'       => 365,
+			'portal_recovery_enabled'            => 1,
+			'portal_recovery_requests_per_hour'  => 3,
+			'portal_recovery_cooldown_minutes'   => 30,
+			'portal_recovery_expiry_days'        => 7,
+			'portal_recovery_min_reason_chars'   => 10,
+			'portal_require_https'               => 1,
+			'portal_allow_legacy_cookie'         => 1,
 			'portal_allow_messages'             => 1,
 			'portal_allow_documents'            => 1,
 			'portal_allow_contact_updates'      => 1,
@@ -202,6 +252,26 @@ final class SC_EI_Portal_Schema {
 			return ! in_array( $action, array( 'view_status', 'view_messages', 'privacy_requests', 'revoke_access' ), true );
 		}
 		return false;
+	}
+
+	public static function sanitize_recovery_status( string $status, string $fallback = 'pending' ): string {
+		$status = sanitize_key( $status );
+		return isset( self::recovery_statuses()[ $status ] ) ? $status : $fallback;
+	}
+
+	public static function secure_transport_available(): bool {
+		if ( is_ssl() ) {
+			return true;
+		}
+		$host = isset( $_SERVER['HTTP_HOST'] ) ? strtolower( sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) ) : '';
+		$environment = function_exists( 'wp_get_environment_type' )
+			? wp_get_environment_type()
+			: ( defined( 'WP_ENVIRONMENT_TYPE' ) ? WP_ENVIRONMENT_TYPE : 'production' );
+		$is_local_host = in_array( $host, array( 'localhost', '127.0.0.1', '[::1]' ), true )
+			|| str_ends_with( $host, '.test' )
+			|| str_ends_with( $host, '.local' );
+		$is_local_environment = in_array( $environment, array( 'local', 'development' ), true );
+		return (bool) apply_filters( 'sc_ei_portal_allow_insecure_local', $is_local_host && $is_local_environment );
 	}
 
 	public static function label( array $options, string $value ): string {

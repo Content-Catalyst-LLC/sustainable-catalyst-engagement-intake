@@ -165,6 +165,54 @@ final class SC_EI_Portal_Repository {
 		);
 	}
 
+	public static function inspect_invitation( string $public_id, string $raw_token ): array {
+		$settings = self::settings();
+		if ( ! empty( $settings['portal_require_https'] ) && ! SC_EI_Portal_Schema::secure_transport_available() ) {
+			return array( 'state' => 'https', 'verified' => false );
+		}
+		if ( '' === trim( $public_id ) || '' === trim( $raw_token ) ) {
+			return array( 'state' => 'invalid', 'verified' => false );
+		}
+		$access = self::find_access_by_public_id( $public_id );
+		$submitted_hash = self::hash_secret( $raw_token );
+		if ( ! $access ) {
+			hash_equals( self::hash_secret( 'portal-dummy-token' ), $submitted_hash );
+			return array( 'state' => 'invalid', 'verified' => false );
+		}
+		if ( empty( $access['invite_token_hash'] ) || ! hash_equals( (string) $access['invite_token_hash'], $submitted_hash ) ) {
+			return array( 'state' => 'invalid', 'verified' => false );
+		}
+		if ( ! empty( $access['locked_until'] ) && strtotime( $access['locked_until'] . ' UTC' ) > time() ) {
+			return array(
+				'state'        => 'locked',
+				'verified'     => true,
+				'locked_until' => $access['locked_until'],
+				'access_id'    => absint( $access['id'] ),
+			);
+		}
+		if ( 'invited' !== $access['status'] ) {
+			return array(
+				'state'     => 'inactive',
+				'verified'  => true,
+				'access_id' => absint( $access['id'] ),
+			);
+		}
+		if ( empty( $access['invite_expires_at'] ) || strtotime( $access['invite_expires_at'] . ' UTC' ) < time() ) {
+			return array(
+				'state'      => 'expired',
+				'verified'   => true,
+				'expires_at' => $access['invite_expires_at'],
+				'access_id'  => absint( $access['id'] ),
+			);
+		}
+		return array(
+			'state'      => 'valid',
+			'verified'   => true,
+			'expires_at' => $access['invite_expires_at'],
+			'access_id'  => absint( $access['id'] ),
+		);
+	}
+
 	public static function activate_invitation(
 		string $public_id,
 		string $raw_token,
@@ -173,30 +221,71 @@ final class SC_EI_Portal_Repository {
 	) {
 		global $wpdb;
 
-		$access = self::find_access_by_public_id( $public_id );
-		$generic = new WP_Error( 'portal_activation_failed', __( 'The portal invitation could not be activated. Verify the link and email or request a new invitation.', 'sustainable-catalyst-engagement-intake' ) );
-		if ( ! $access ) {
-			return $generic;
-		}
 		$settings = self::settings();
-		$now = current_time( 'mysql', true );
-		if (
-			'invited' !== $access['status']
-			|| empty( $access['invite_token_hash'] )
-			|| empty( $access['invite_expires_at'] )
-			|| strtotime( $access['invite_expires_at'] . ' UTC' ) < time()
-			|| ( ! empty( $access['locked_until'] ) && strtotime( $access['locked_until'] . ' UTC' ) > time() )
-		) {
-			self::record_event( 'invitation_failed', absint( $access['inquiry_id'] ), absint( $access['id'] ), 0, 'access', absint( $access['id'] ), 'rejected', array( 'reason' => 'state_or_expiry' ) );
+		$generic = new WP_Error( 'portal_activation_failed', __( 'The portal invitation could not be activated. Verify the invitation and email or request a fresh invitation.', 'sustainable-catalyst-engagement-intake' ) );
+		if ( ! empty( $settings['portal_require_https'] ) && ! SC_EI_Portal_Schema::secure_transport_available() ) {
+			return new WP_Error( 'portal_https_required', __( 'A secure HTTPS connection is required before this invitation can be activated.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		$access = self::find_access_by_public_id( $public_id );
+		$submitted_hash = self::hash_secret( $raw_token );
+		if ( ! $access ) {
+			hash_equals( self::hash_secret( 'portal-dummy-token' ), $submitted_hash );
 			return $generic;
 		}
-		if (
-			! hash_equals( (string) $access['invite_token_hash'], self::hash_secret( $raw_token ) )
-			|| ( ! empty( $settings['portal_require_email_challenge'] ) && ! hash_equals( (string) $access['sender_email_hash'], self::email_hash( $email ) ) )
-		) {
-			self::register_failed_activation( $access );
+
+		if ( empty( $access['invite_token_hash'] ) || ! hash_equals( (string) $access['invite_token_hash'], $submitted_hash ) ) {
+			self::record_event(
+				'invitation_token_rejected',
+				absint( $access['inquiry_id'] ),
+				absint( $access['id'] ),
+				0,
+				'access',
+				absint( $access['id'] ),
+				'rejected',
+				array( 'lockout_incremented' => false )
+			);
 			return $generic;
 		}
+
+		if ( ! empty( $access['locked_until'] ) && strtotime( $access['locked_until'] . ' UTC' ) > time() ) {
+			self::record_event( 'invitation_locked', absint( $access['inquiry_id'] ), absint( $access['id'] ), 0, 'access', absint( $access['id'] ), 'rejected', array( 'locked_until' => $access['locked_until'] ) );
+			return new WP_Error( 'portal_invite_locked', __( 'The invitation is temporarily locked after failed email verification. Request a fresh invitation or try again after the lockout expires.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		if ( 'invited' !== $access['status'] ) {
+			return new WP_Error( 'portal_invite_inactive', __( 'This invitation is no longer active. Request a fresh invitation.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		if ( empty( $access['invite_expires_at'] ) || strtotime( $access['invite_expires_at'] . ' UTC' ) < time() ) {
+			self::mark_access_expired( $access );
+			return new WP_Error( 'portal_invite_expired', __( 'This invitation expired. Submit a recovery request for a fresh invitation.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		if (
+			! empty( $settings['portal_require_email_challenge'] )
+			&& ! hash_equals( (string) $access['sender_email_hash'], self::email_hash( $email ) )
+		) {
+			$failure = self::register_failed_activation( $access );
+			self::record_event(
+				'invitation_email_rejected',
+				absint( $access['inquiry_id'] ),
+				absint( $access['id'] ),
+				0,
+				'access',
+				absint( $access['id'] ),
+				'rejected',
+				array(
+					'attempts' => $failure['attempts'],
+					'locked'   => $failure['locked'],
+				)
+			);
+			if ( $failure['locked'] ) {
+				return new WP_Error( 'portal_invite_locked', __( 'The invitation is temporarily locked after failed email verification. Request a fresh invitation or try again later.', 'sustainable-catalyst-engagement-intake' ) );
+			}
+			return $generic;
+		}
+
 		if ( ! empty( $settings['portal_require_terms_acceptance'] ) && ! $terms_accepted ) {
 			return new WP_Error( 'portal_terms_required', __( 'Accept the secure portal terms to continue.', 'sustainable-catalyst-engagement-intake' ) );
 		}
@@ -205,60 +294,89 @@ final class SC_EI_Portal_Repository {
 		if ( ! $inquiry || 'erased' === $inquiry['privacy_status'] ) {
 			return $generic;
 		}
-		$updated = $wpdb->update(
-			SC_EI_Database::table( 'portal_access' ),
-			array(
-				'status'              => 'active',
-				'invite_token_hash'   => '',
-				'invite_token_prefix' => '',
-				'invite_used_at'      => $now,
-				'terms_accepted_at'   => $terms_accepted ? $now : null,
-				'activated_at'        => $access['activated_at'] ?: $now,
-				'failed_attempts'     => 0,
-				'locked_until'        => null,
-				'last_access_at'      => $now,
-				'last_ip_hash'        => self::request_ip_hash(),
-				'last_user_agent_hash'=> self::request_user_agent_hash(),
-				'row_version'         => absint( $access['row_version'] ) + 1,
-				'updated_at'          => $now,
-			),
-			array( 'id' => absint( $access['id'] ), 'row_version' => absint( $access['row_version'] ) ),
-			array( '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%d', '%s' ),
-			array( '%d', '%d' )
+
+		$now = current_time( 'mysql', true );
+		$access_data = array(
+			'status'               => 'active',
+			'invite_token_hash'    => '',
+			'invite_token_prefix'  => '',
+			'invite_used_at'       => $now,
+			'terms_accepted_at'    => $terms_accepted ? $now : null,
+			'activated_at'         => $access['activated_at'] ?: $now,
+			'failed_attempts'      => 0,
+			'locked_until'         => null,
+			'last_access_at'       => $now,
+			'last_ip_hash'         => self::request_ip_hash(),
+			'last_user_agent_hash' => self::request_user_agent_hash(),
+			'row_version'          => absint( $access['row_version'] ) + 1,
+			'updated_at'           => $now,
 		);
-		if ( 1 !== $updated ) {
-			return $generic;
-		}
-		$wpdb->update(
-			SC_EI_Database::table( 'inquiries' ),
-			array(
-				'portal_status'           => 'active',
-				'portal_access_id'        => absint( $access['id'] ),
-				'portal_last_activity_at' => $now,
-				'portal_version'          => absint( $inquiry['portal_version'] ) + 1,
-				'updated_at'              => $now,
-			),
-			array( 'id' => absint( $inquiry['id'] ) ),
-			array( '%s', '%d', '%s', '%d', '%s' ),
-			array( '%d' )
+		$inquiry_data = array(
+			'portal_status'           => 'active',
+			'portal_access_id'        => absint( $access['id'] ),
+			'portal_last_activity_at' => $now,
+			'portal_version'          => absint( $inquiry['portal_version'] ) + 1,
+			'updated_at'              => $now,
 		);
 
-		$access = self::find_access( absint( $access['id'] ) );
-		$session = self::create_session( $access );
-		if ( is_wp_error( $session ) ) {
-			return $session;
+		$wpdb->query( 'START TRANSACTION' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$access_updated = $wpdb->update(
+			SC_EI_Database::table( 'portal_access' ),
+			$access_data,
+			array(
+				'id'          => absint( $access['id'] ),
+				'row_version' => absint( $access['row_version'] ),
+				'status'      => 'invited',
+			),
+			self::formats( $access_data, self::access_integer_fields() ),
+			array( '%d', '%d', '%s' )
+		);
+		if ( 1 !== $access_updated ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			return new WP_Error( 'portal_activation_conflict', __( 'The invitation changed before activation completed. Reload the original invitation or request a fresh one.', 'sustainable-catalyst-engagement-intake' ) );
 		}
-		self::record_event( 'invitation_activated', absint( $access['inquiry_id'] ), absint( $access['id'] ), absint( $session['session']['id'] ), 'access', absint( $access['id'] ), 'success', array( 'terms_version' => $access['terms_version'] ) );
+
+		$inquiry_updated = $wpdb->update(
+			SC_EI_Database::table( 'inquiries' ),
+			$inquiry_data,
+			array(
+				'id'             => absint( $inquiry['id'] ),
+				'portal_version' => absint( $inquiry['portal_version'] ),
+			),
+			array( '%s', '%d', '%s', '%d', '%s' ),
+			array( '%d', '%d' )
+		);
+		if ( 1 !== $inquiry_updated ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			self::record_event( 'activation_rolled_back', absint( $access['inquiry_id'] ), absint( $access['id'] ), 0, 'access', absint( $access['id'] ), 'rolled_back', array( 'stage' => 'inquiry_update' ) );
+			return new WP_Error( 'portal_activation_retry', __( 'Activation could not be completed safely. The invitation was preserved; reload it and try again.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		$fresh_access = array_merge( $access, $access_data );
+		$session = self::create_session( $fresh_access, false );
+		if ( is_wp_error( $session ) ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			self::record_event( 'activation_rolled_back', absint( $access['inquiry_id'] ), absint( $access['id'] ), 0, 'access', absint( $access['id'] ), 'rolled_back', array( 'stage' => 'session_create' ) );
+			return new WP_Error( 'portal_activation_retry', __( 'A secure session could not be created. The invitation was preserved; reload it and try again.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		$wpdb->query( 'COMMIT' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+
+		self::record_event( 'session_created', absint( $access['inquiry_id'] ), absint( $access['id'] ), absint( $session['session']['id'] ), 'session', absint( $session['session']['id'] ), 'success' );
+		self::record_event( 'invitation_activated', absint( $access['inquiry_id'] ), absint( $access['id'] ), absint( $session['session']['id'] ), 'access', absint( $access['id'] ), 'success', array( 'terms_version' => $access['terms_version'], 'atomic' => true ) );
 		SC_EI_Audit_Log::record(
 			'portal_invitation_activated',
-			'Sender activated secure portal access using a one-time invitation and email challenge.',
-			array( 'access_id' => absint( $access['id'] ), 'session_id' => absint( $session['session']['id'] ) ),
+			'Sender portal activation committed atomically after access, inquiry, and session records all succeeded.',
+			array(
+				'access_id'        => absint( $access['id'] ),
+				'session_id'       => absint( $session['session']['id'] ),
+				'atomic_activation'=> true,
+			),
 			absint( $access['inquiry_id'] )
 		);
 		return $session;
 	}
 
-	public static function create_session( array $access ) {
+	public static function create_session( array $access, bool $record_event = true ) {
 		global $wpdb;
 
 		if ( 'active' !== $access['status'] ) {
@@ -299,7 +417,9 @@ final class SC_EI_Portal_Repository {
 		}
 		$id = (int) $wpdb->insert_id;
 		$session = self::find_session( $id );
-		self::record_event( 'session_created', absint( $access['inquiry_id'] ), absint( $access['id'] ), $id, 'session', $id, 'success' );
+		if ( $record_event ) {
+			self::record_event( 'session_created', absint( $access['inquiry_id'] ), absint( $access['id'] ), $id, 'session', $id, 'success' );
+		}
 		return array(
 			'session'   => $session,
 			'raw_token' => $raw,
@@ -332,6 +452,409 @@ final class SC_EI_Portal_Repository {
 			ARRAY_A
 		);
 		return $row ?: null;
+	}
+
+	public static function request_recovery( string $reference, string $email, string $reason ): array {
+		global $wpdb;
+
+		$settings = self::settings();
+		$generic = array(
+			'accepted' => true,
+			'message'  => __( 'If the inquiry details match an eligible portal record, the recovery request will be reviewed by Sustainable Catalyst. No access link is issued automatically.', 'sustainable-catalyst-engagement-intake' ),
+		);
+		if (
+			empty( $settings['portal_recovery_enabled'] )
+			|| ( ! empty( $settings['portal_require_https'] ) && ! SC_EI_Portal_Schema::secure_transport_available() )
+		) {
+			return $generic;
+		}
+
+		$reference = strtoupper( trim( sanitize_text_field( $reference ) ) );
+		$email = sanitize_email( $email );
+		$reason = sanitize_textarea_field( $reason );
+		$reference_hash = self::reference_hash( $reference );
+		$email_hash = self::email_hash( $email );
+		$ip_hash = self::request_ip_hash();
+		$user_agent_hash = self::request_user_agent_hash();
+		$now = current_time( 'mysql', true );
+		$window_start = gmdate( 'Y-m-d H:i:s', time() - HOUR_IN_SECONDS );
+		$limit = max( 1, min( 20, absint( $settings['portal_recovery_requests_per_hour'] ) ) );
+		$table = SC_EI_Database::table( 'portal_recovery_requests' );
+
+		$event_table = SC_EI_Database::table( 'portal_events' );
+		$recent = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$event_table}
+				WHERE created_at >= %s
+					AND ip_hash = %s
+					AND event_type IN ('recovery_requested','recovery_request_unmatched')", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$window_start,
+				$ip_hash
+			)
+		);
+		if ( $recent >= $limit ) {
+			self::record_event(
+				'recovery_request_throttled',
+				0,
+				0,
+				0,
+				'recovery',
+				0,
+				'throttled',
+				array( 'window_seconds' => HOUR_IN_SECONDS, 'limit' => $limit )
+			);
+			return $generic;
+		}
+
+		if (
+			'' === $reference
+			|| ! is_email( $email )
+			|| mb_strlen( $reason ) < max( 0, absint( $settings['portal_recovery_min_reason_chars'] ) )
+		) {
+			self::record_event( 'recovery_request_unmatched', 0, 0, 0, 'recovery', 0, 'generic', array( 'validation' => 'insufficient' ) );
+			return $generic;
+		}
+
+		$inquiry_table = SC_EI_Database::table( 'inquiries' );
+		$inquiry = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$inquiry_table}
+				WHERE UPPER(reference) = %s
+					AND LOWER(contact_email) = %s
+				LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$reference,
+				strtolower( $email )
+			),
+			ARRAY_A
+		);
+		$access = $inquiry ? self::access_for_inquiry( absint( $inquiry['id'] ) ) : null;
+		if ( ! $inquiry || ! $access || 'erased' === $inquiry['privacy_status'] ) {
+			self::record_event( 'recovery_request_unmatched', 0, 0, 0, 'recovery', 0, 'generic', array( 'validation' => 'no_eligible_match' ) );
+			return $generic;
+		}
+
+		$cooldown_start = gmdate(
+			'Y-m-d H:i:s',
+			time() - max( 1, absint( $settings['portal_recovery_cooldown_minutes'] ) ) * MINUTE_IN_SECONDS
+		);
+		$existing = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$table}
+				WHERE access_id = %d
+					AND status = 'pending'
+					AND expires_at > %s
+					AND last_requested_at >= %s
+				ORDER BY id DESC
+				LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				absint( $access['id'] ),
+				$now,
+				$cooldown_start
+			),
+			ARRAY_A
+		);
+		if ( $existing ) {
+			$wpdb->update(
+				$table,
+				array(
+					'request_count'           => absint( $existing['request_count'] ) + 1,
+					'last_requested_at'       => $now,
+					'recovery_reason'         => $reason,
+					'request_ip_hash'         => $ip_hash,
+					'request_user_agent_hash' => $user_agent_hash,
+					'row_version'             => absint( $existing['row_version'] ) + 1,
+					'updated_at'              => $now,
+				),
+				array(
+					'id'          => absint( $existing['id'] ),
+					'row_version' => absint( $existing['row_version'] ),
+				),
+				array( '%d', '%s', '%s', '%s', '%s', '%d', '%s' ),
+				array( '%d', '%d' )
+			);
+			self::record_event( 'recovery_requested', absint( $inquiry['id'] ), absint( $access['id'] ), 0, 'recovery', absint( $existing['id'] ), 'deduplicated', array( 'request_count' => absint( $existing['request_count'] ) + 1 ) );
+			return $generic;
+		}
+
+		$expires = gmdate(
+			'Y-m-d H:i:s',
+			time() + max( 1, absint( $settings['portal_recovery_expiry_days'] ) ) * DAY_IN_SECONDS
+		);
+		$data = array(
+			'public_id'                => wp_generate_uuid4(),
+			'inquiry_id'               => absint( $inquiry['id'] ),
+			'access_id'                => absint( $access['id'] ),
+			'status'                   => 'pending',
+			'match_status'             => 'matched',
+			'reference_hash'           => $reference_hash,
+			'email_hash'               => $email_hash,
+			'recovery_reason'          => $reason,
+			'request_ip_hash'          => $ip_hash,
+			'request_user_agent_hash'  => $user_agent_hash,
+			'request_count'            => 1,
+			'requested_at'             => $now,
+			'last_requested_at'        => $now,
+			'expires_at'               => $expires,
+			'reviewed_by'              => null,
+			'reviewed_at'              => null,
+			'decision_note'            => '',
+			'completed_at'             => null,
+			'row_version'              => 0,
+			'created_at'               => $now,
+			'updated_at'               => $now,
+		);
+		if ( false === $wpdb->insert( $table, $data, self::formats( $data, self::recovery_integer_fields() ) ) ) {
+			return $generic;
+		}
+		$recovery_id = (int) $wpdb->insert_id;
+		self::record_event( 'recovery_requested', absint( $inquiry['id'] ), absint( $access['id'] ), 0, 'recovery', $recovery_id, 'pending', array( 'expires_at' => $expires ) );
+		SC_EI_Audit_Log::record(
+			'portal_recovery_requested',
+			'Sender requested portal recovery through a non-enumerating public form. No invitation was issued automatically.',
+			array(
+				'recovery_id'              => $recovery_id,
+				'access_id'                => absint( $access['id'] ),
+				'automatic_invite_issued'  => false,
+				'automatic_email_sent'     => false,
+			),
+			absint( $inquiry['id'] )
+		);
+		return $generic;
+	}
+
+	public static function find_recovery( int $id ): ?array {
+		global $wpdb;
+		$table = SC_EI_Database::table( 'portal_recovery_requests' );
+		$row = $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			ARRAY_A
+		);
+		return $row ?: null;
+	}
+
+	public static function recovery_requests( array $args = array() ): array {
+		global $wpdb;
+
+		$args = wp_parse_args(
+			$args,
+			array(
+				'status'     => '',
+				'access_id'  => 0,
+				'inquiry_id' => 0,
+				'limit'      => 250,
+			)
+		);
+		$table = SC_EI_Database::table( 'portal_recovery_requests' );
+		$inquiries = SC_EI_Database::table( 'inquiries' );
+		$where = array( '1=1' );
+		$params = array();
+		$status = sanitize_key( (string) $args['status'] );
+		if ( isset( SC_EI_Portal_Schema::recovery_statuses()[ $status ] ) ) {
+			$where[] = 'r.status = %s';
+			$params[] = $status;
+		}
+		foreach ( array( 'access_id', 'inquiry_id' ) as $field ) {
+			if ( absint( $args[ $field ] ) ) {
+				$where[] = "r.{$field} = %d";
+				$params[] = absint( $args[ $field ] );
+			}
+		}
+		$sql = "SELECT r.*, i.reference, i.contact_name, i.contact_email, i.organization,
+				reviewer.display_name AS reviewed_by_name
+			FROM {$table} r
+			LEFT JOIN {$inquiries} i ON i.id = r.inquiry_id
+			LEFT JOIN {$wpdb->users} reviewer ON reviewer.ID = r.reviewed_by
+			WHERE " . implode( ' AND ', $where ) . "
+			ORDER BY CASE r.status WHEN 'pending' THEN 0 WHEN 'completed' THEN 1 ELSE 2 END,
+				r.last_requested_at DESC, r.id DESC
+			LIMIT %d";
+		$params[] = max( 1, min( 1000, absint( $args['limit'] ) ) );
+		return (array) $wpdb->get_results( $wpdb->prepare( $sql, $params ), ARRAY_A );
+	}
+
+	public static function review_recovery( int $recovery_id, string $decision, string $note, int $actor_user_id ) {
+		global $wpdb;
+
+		$recovery = self::find_recovery( $recovery_id );
+		if ( ! $recovery ) {
+			return new WP_Error( 'portal_recovery_not_found', __( 'The portal recovery request could not be found.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		if ( 'pending' !== $recovery['status'] || strtotime( $recovery['expires_at'] . ' UTC' ) < time() ) {
+			return new WP_Error( 'portal_recovery_not_pending', __( 'Only an unexpired pending recovery request can be reviewed.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		$decision = sanitize_key( $decision );
+		$note = sanitize_textarea_field( $note );
+		if ( ! in_array( $decision, array( 'complete', 'decline' ), true ) ) {
+			return new WP_Error( 'portal_recovery_decision_invalid', __( 'Choose a valid recovery decision.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		if ( '' === trim( $note ) ) {
+			return new WP_Error( 'portal_recovery_note_required', __( 'Record the human review rationale.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		$now = current_time( 'mysql', true );
+		if ( 'decline' === $decision ) {
+			$updated = $wpdb->update(
+				SC_EI_Database::table( 'portal_recovery_requests' ),
+				array(
+					'status'        => 'declined',
+					'reviewed_by'   => $actor_user_id,
+					'reviewed_at'   => $now,
+					'decision_note' => $note,
+					'row_version'   => absint( $recovery['row_version'] ) + 1,
+					'updated_at'    => $now,
+				),
+				array(
+					'id'          => $recovery_id,
+					'row_version' => absint( $recovery['row_version'] ),
+					'status'      => 'pending',
+				),
+				array( '%s', '%d', '%s', '%s', '%d', '%s' ),
+				array( '%d', '%d', '%s' )
+			);
+			if ( 1 !== $updated ) {
+				return new WP_Error( 'portal_recovery_conflict', __( 'The recovery request changed before the decision was saved.', 'sustainable-catalyst-engagement-intake' ) );
+			}
+			self::record_event( 'recovery_declined', absint( $recovery['inquiry_id'] ), absint( $recovery['access_id'] ), 0, 'recovery', $recovery_id, 'declined', array( 'actor_user_id' => $actor_user_id ) );
+			SC_EI_Audit_Log::record( 'portal_recovery_declined', 'Authorized human reviewer declined a sender portal recovery request.', array( 'recovery_id' => $recovery_id, 'decision_note' => $note ), absint( $recovery['inquiry_id'] ), null, $actor_user_id );
+			return array( 'recovery' => self::find_recovery( $recovery_id ) );
+		}
+
+		$claimed_version = absint( $recovery['row_version'] ) + 1;
+		$claimed = $wpdb->update(
+			SC_EI_Database::table( 'portal_recovery_requests' ),
+			array(
+				'status'        => 'processing',
+				'reviewed_by'   => $actor_user_id,
+				'reviewed_at'   => $now,
+				'decision_note' => $note,
+				'row_version'   => $claimed_version,
+				'updated_at'    => $now,
+			),
+			array(
+				'id'          => $recovery_id,
+				'row_version' => absint( $recovery['row_version'] ),
+				'status'      => 'pending',
+			),
+			array( '%s', '%d', '%s', '%s', '%d', '%s' ),
+			array( '%d', '%d', '%s' )
+		);
+		if ( 1 !== $claimed ) {
+			return new WP_Error( 'portal_recovery_conflict', __( 'Another reviewer already claimed or changed this recovery request.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		$access = self::find_access( absint( $recovery['access_id'] ) );
+		$permissions = $access
+			? json_decode( (string) $access['permissions_json'], true )
+			: SC_EI_Portal_Schema::default_permissions();
+		$settings = self::settings();
+		$invitation = self::issue_invitation(
+			absint( $recovery['inquiry_id'] ),
+			array(
+				'invite_ttl_hours' => $settings['portal_invite_ttl_hours'],
+				'permissions'      => is_array( $permissions ) ? $permissions : SC_EI_Portal_Schema::default_permissions(),
+				'invitation_note'  => 'Issued after human-approved portal recovery request #' . $recovery_id . '.',
+			),
+			$actor_user_id
+		);
+		if ( is_wp_error( $invitation ) ) {
+			$wpdb->update(
+				SC_EI_Database::table( 'portal_recovery_requests' ),
+				array(
+					'status'        => 'pending',
+					'reviewed_by'   => null,
+					'reviewed_at'   => null,
+					'decision_note' => '',
+					'row_version'   => $claimed_version + 1,
+					'updated_at'    => current_time( 'mysql', true ),
+				),
+				array(
+					'id'          => $recovery_id,
+					'row_version' => $claimed_version,
+					'status'      => 'processing',
+				),
+				array( '%s', '%d', '%s', '%s', '%d', '%s' ),
+				array( '%d', '%d', '%s' )
+			);
+			SC_EI_Audit_Log::record(
+				'portal_recovery_issue_failed',
+				'Portal recovery approval was rolled back to pending because fresh invitation issuance failed.',
+				array( 'recovery_id' => $recovery_id, 'error_code' => $invitation->get_error_code() ),
+				absint( $recovery['inquiry_id'] ),
+				null,
+				$actor_user_id
+			);
+			return $invitation;
+		}
+
+		$completed = $wpdb->update(
+			SC_EI_Database::table( 'portal_recovery_requests' ),
+			array(
+				'status'       => 'completed',
+				'completed_at' => current_time( 'mysql', true ),
+				'row_version'  => $claimed_version + 1,
+				'updated_at'   => current_time( 'mysql', true ),
+			),
+			array(
+				'id'          => $recovery_id,
+				'row_version' => $claimed_version,
+				'status'      => 'processing',
+			),
+			array( '%s', '%s', '%d', '%s' ),
+			array( '%d', '%d', '%s' )
+		);
+		$warning = 1 === $completed ? '' : 'recovery_record_update_failed_after_invitation';
+		self::record_event( 'recovery_completed', absint( $recovery['inquiry_id'] ), absint( $recovery['access_id'] ), 0, 'recovery', $recovery_id, 'completed', array( 'actor_user_id' => $actor_user_id, 'warning' => $warning ) );
+		SC_EI_Audit_Log::record(
+			'portal_recovery_completed',
+			'Authorized human reviewer approved portal recovery and issued a fresh one-time invitation.',
+			array(
+				'recovery_id'     => $recovery_id,
+				'access_id'       => absint( $invitation['access']['id'] ),
+				'automatic_email' => false,
+				'warning'         => $warning,
+			),
+			absint( $recovery['inquiry_id'] ),
+			null,
+			$actor_user_id
+		);
+		return array(
+			'recovery'   => self::find_recovery( $recovery_id ),
+			'invitation' => $invitation,
+			'warning'    => $warning,
+		);
+	}
+
+	public static function unlock_access( int $access_id, string $reason, int $actor_user_id ) {
+		global $wpdb;
+
+		$access = self::find_access( $access_id );
+		if ( ! $access ) {
+			return new WP_Error( 'portal_access_not_found', __( 'The sender portal access record could not be found.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		$reason = sanitize_textarea_field( $reason );
+		if ( '' === trim( $reason ) ) {
+			return new WP_Error( 'portal_unlock_reason_required', __( 'Record why the invitation is being unlocked.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		$updated = $wpdb->update(
+			SC_EI_Database::table( 'portal_access' ),
+			array(
+				'failed_attempts' => 0,
+				'locked_until'    => null,
+				'row_version'     => absint( $access['row_version'] ) + 1,
+				'updated_at'      => current_time( 'mysql', true ),
+			),
+			array(
+				'id'          => $access_id,
+				'row_version' => absint( $access['row_version'] ),
+			),
+			array( '%d', '%s', '%d', '%s' ),
+			array( '%d', '%d' )
+		);
+		if ( 1 !== $updated ) {
+			return new WP_Error( 'portal_unlock_conflict', __( 'The invitation changed before it could be unlocked.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		self::record_event( 'invitation_unlocked', absint( $access['inquiry_id'] ), $access_id, 0, 'access', $access_id, 'success', array( 'actor_user_id' => $actor_user_id, 'reason' => $reason ) );
+		SC_EI_Audit_Log::record( 'portal_invitation_unlocked', 'Authorized human reviewer reset portal invitation email-challenge lockout.', array( 'access_id' => $access_id, 'reason' => $reason ), absint( $access['inquiry_id'] ), null, $actor_user_id );
+		return self::find_access( $access_id );
 	}
 
 	public static function find_session( int $id ): ?array {
@@ -1046,6 +1569,7 @@ final class SC_EI_Portal_Repository {
 		$access = SC_EI_Database::table( 'portal_access' );
 		$sessions = SC_EI_Database::table( 'portal_sessions' );
 		$events = SC_EI_Database::table( 'portal_events' );
+		$recovery = SC_EI_Database::table( 'portal_recovery_requests' );
 		$today = gmdate( 'Y-m-d 00:00:00' );
 		$row = (array) $wpdb->get_row(
 			$wpdb->prepare(
@@ -1070,11 +1594,29 @@ final class SC_EI_Portal_Repository {
 		);
 		$row['failed_today'] = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$events} WHERE event_type IN ('invitation_failed','csrf_rejected','permission_rejected','rate_limit_triggered') AND created_at >= %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT COUNT(*) FROM {$events} WHERE event_type IN ('invitation_failed','invitation_token_rejected','invitation_email_rejected','csrf_rejected','permission_rejected','rate_limit_triggered','recovery_request_throttled') AND created_at >= %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$today
 			)
 		);
-		foreach ( array( 'invited', 'active', 'suspended', 'revoked', 'expired', 'locked', 'active_sessions', 'messages_today', 'failed_today' ) as $key ) {
+		$row['pending_recovery'] = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$recovery} WHERE status = 'pending' AND expires_at > %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				current_time( 'mysql', true )
+			)
+		);
+		$row['recovery_today'] = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$recovery} WHERE requested_at >= %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$today
+			)
+		);
+		$row['activation_rollbacks_today'] = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$events} WHERE event_type = 'activation_rolled_back' AND created_at >= %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$today
+			)
+		);
+		foreach ( array( 'invited', 'active', 'suspended', 'revoked', 'expired', 'locked', 'active_sessions', 'messages_today', 'failed_today', 'pending_recovery', 'recovery_today', 'activation_rollbacks_today' ) as $key ) {
 			$row[ $key ] = absint( $row[ $key ] ?? 0 );
 		}
 		return $row;
@@ -1164,6 +1706,7 @@ final class SC_EI_Portal_Repository {
 		$now = current_time( 'mysql', true );
 		$session_table = SC_EI_Database::table( 'portal_sessions' );
 		$access_table = SC_EI_Database::table( 'portal_access' );
+		$recovery_table = SC_EI_Database::table( 'portal_recovery_requests' );
 		$expired_sessions = $wpdb->query(
 			$wpdb->prepare(
 				"UPDATE {$session_table}
@@ -1186,9 +1729,29 @@ final class SC_EI_Portal_Repository {
 				$now
 			)
 		);
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE " . SC_EI_Database::table( 'inquiries' ) . " i
+				INNER JOIN {$access_table} a ON a.inquiry_id = i.id
+				SET i.portal_status = 'expired', i.portal_last_activity_at = %s, i.updated_at = %s
+				WHERE a.status = 'expired' AND i.portal_status = 'invited'", // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$now,
+				$now
+			)
+		);
+		$expired_recovery = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$recovery_table}
+				SET status = 'expired', updated_at = %s, row_version = row_version + 1
+				WHERE status IN ('pending','processing') AND expires_at < %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$now,
+				$now
+			)
+		);
 		return array(
 			'expired_sessions' => false === $expired_sessions ? 0 : absint( $expired_sessions ),
 			'expired_access'   => false === $expired_access ? 0 : absint( $expired_access ),
+			'expired_recovery' => false === $expired_recovery ? 0 : absint( $expired_recovery ),
 			'completed_at'     => $now,
 		);
 	}
@@ -1196,9 +1759,10 @@ final class SC_EI_Portal_Repository {
 	public static function export_for_inquiry( int $inquiry_id ): array {
 		$access = self::access_for_inquiry( $inquiry_id );
 		return array(
-			'access'   => $access,
-			'sessions' => $access ? self::sessions( absint( $access['id'] ), false ) : array(),
-			'events'   => self::events( array( 'inquiry_id' => $inquiry_id, 'limit' => 1000 ) ),
+			'access'            => $access,
+			'sessions'          => $access ? self::sessions( absint( $access['id'] ), false ) : array(),
+			'events'            => self::events( array( 'inquiry_id' => $inquiry_id, 'limit' => 1000 ) ),
+			'recovery_requests' => self::recovery_requests( array( 'inquiry_id' => $inquiry_id, 'limit' => 1000 ) ),
 		);
 	}
 
@@ -1256,6 +1820,17 @@ final class SC_EI_Portal_Repository {
 				$inquiry_id
 			)
 		);
+		$recovery_result = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE " . SC_EI_Database::table( 'portal_recovery_requests' ) . "
+				SET reference_hash = '', email_hash = '', recovery_reason = '',
+					request_ip_hash = '', request_user_agent_hash = '', decision_note = '',
+					updated_at = %s
+				WHERE inquiry_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$now,
+				$inquiry_id
+			)
+		);
 		$inquiry = SC_EI_Inquiry_Repository::find( $inquiry_id );
 		$inquiry_result = $wpdb->update(
 			SC_EI_Database::table( 'inquiries' ),
@@ -1269,7 +1844,7 @@ final class SC_EI_Portal_Repository {
 			array( '%s', '%s', '%d', '%s' ),
 			array( '%d' )
 		);
-		return false !== $access_result && false !== $events_result && false !== $inquiry_result;
+		return false !== $access_result && false !== $events_result && false !== $recovery_result && false !== $inquiry_result;
 	}
 
 	public static function invitation_url( array $access, string $raw_token ): string {
@@ -1294,6 +1869,10 @@ final class SC_EI_Portal_Repository {
 		return hash_hmac( 'sha256', $value, wp_salt( 'auth' ) );
 	}
 
+	public static function reference_hash( string $reference ): string {
+		return hash_hmac( 'sha256', strtoupper( trim( sanitize_text_field( $reference ) ) ), wp_salt( 'secure_auth' ) );
+	}
+
 	public static function email_hash( string $email ): string {
 		return hash_hmac( 'sha256', strtolower( trim( sanitize_email( $email ) ) ), wp_salt( 'secure_auth' ) );
 	}
@@ -1308,7 +1887,7 @@ final class SC_EI_Portal_Repository {
 		return $agent ? hash_hmac( 'sha256', $agent, wp_salt( 'nonce' ) ) : '';
 	}
 
-	private static function register_failed_activation( array $access ): void {
+	private static function register_failed_activation( array $access ): array {
 		global $wpdb;
 
 		$settings = self::settings();
@@ -1325,11 +1904,52 @@ final class SC_EI_Portal_Repository {
 				'row_version'     => absint( $access['row_version'] ) + 1,
 				'updated_at'      => current_time( 'mysql', true ),
 			),
-			array( 'id' => absint( $access['id'] ) ),
+			array(
+				'id'          => absint( $access['id'] ),
+				'row_version' => absint( $access['row_version'] ),
+			),
 			array( '%d', '%s', '%d', '%s' ),
-			array( '%d' )
+			array( '%d', '%d' )
 		);
-		self::record_event( 'invitation_failed', absint( $access['inquiry_id'] ), absint( $access['id'] ), 0, 'access', absint( $access['id'] ), 'rejected', array( 'attempts' => $attempts, 'locked' => (bool) $locked_until ) );
+		if ( $locked_until ) {
+			self::record_event( 'invitation_locked', absint( $access['inquiry_id'] ), absint( $access['id'] ), 0, 'access', absint( $access['id'] ), 'locked', array( 'attempts' => $attempts, 'locked_until' => $locked_until ) );
+		}
+		return array(
+			'attempts'     => $attempts,
+			'locked'       => (bool) $locked_until,
+			'locked_until' => $locked_until,
+		);
+	}
+
+	private static function mark_access_expired( array $access ): void {
+		global $wpdb;
+
+		if ( 'invited' !== $access['status'] ) {
+			return;
+		}
+		$now = current_time( 'mysql', true );
+		$wpdb->update(
+			SC_EI_Database::table( 'portal_access' ),
+			array(
+				'status'      => 'expired',
+				'row_version' => absint( $access['row_version'] ) + 1,
+				'updated_at'  => $now,
+			),
+			array(
+				'id'          => absint( $access['id'] ),
+				'row_version' => absint( $access['row_version'] ),
+				'status'      => 'invited',
+			),
+			array( '%s', '%d', '%s' ),
+			array( '%d', '%d', '%s' )
+		);
+		$wpdb->update(
+			SC_EI_Database::table( 'inquiries' ),
+			array( 'portal_status' => 'expired', 'portal_last_activity_at' => $now, 'updated_at' => $now ),
+			array( 'id' => absint( $access['inquiry_id'] ), 'portal_status' => 'invited' ),
+			array( '%s', '%s', '%s' ),
+			array( '%d', '%s' )
+		);
 	}
 
 	private static function random_token( int $bytes ): string {
@@ -1354,6 +1974,12 @@ final class SC_EI_Portal_Repository {
 	private static function access_integer_fields(): array {
 		return array(
 			'inquiry_id', 'invited_by', 'revoked_by', 'failed_attempts', 'row_version',
+		);
+	}
+
+	private static function recovery_integer_fields(): array {
+		return array(
+			'inquiry_id', 'access_id', 'request_count', 'reviewed_by', 'row_version',
 		);
 	}
 

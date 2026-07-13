@@ -1,17 +1,19 @@
 === Sustainable Catalyst Engagement Intake ===
 Contributors: content-catalyst
-Tags: contact, consulting, sender portal, secure messaging, privacy, retention, fit assessment, secure upload, quarantine, microsoft teams
+Tags: contact, consulting, sender portal, authentication recovery, secure messaging, privacy, retention, secure upload, quarantine, microsoft teams
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.8.0
+Stable tag: 0.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Private consulting and contact intake with a secure passwordless sender portal, human-controlled fit assessment, privacy governance, reviewed communications, protected document quarantine, and Microsoft Teams readiness.
+Private consulting and contact intake with patched passwordless portal authentication, human-reviewed recovery, secure messages, protected document quarantine, privacy governance, fit assessment, and Microsoft Teams readiness.
 
 == Description ==
 
-Version 0.8.0 adds a Secure Sender Portal to the existing dual intake, protected uploads, quarantine operations, Administrative Review Workspace, Communication History, Privacy and Retention Center, and Human-Controlled Fit Assessment.
+Version 0.8.1 is a focused Portal Authentication and Recovery Patch for the Secure Sender Portal introduced in v0.8.0.
+
+It preserves the existing public intake, protected documents, quarantine operations, Administrative Review Workspace, Communication History, Privacy and Retention Center, and Human-Controlled Fit Assessment.
 
 Recommended shortcodes:
 
@@ -19,138 +21,176 @@ Recommended shortcodes:
 * Contact page: `[sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst"]`
 * Private sender portal page: `[sc_sender_portal title="Secure Sender Portal"]`
 
-The sender portal provides:
+== Authentication repairs ==
 
-* One-time passwordless invitations
-* Inquiry-email activation challenge
-* Expiring invitations
-* Absolute and idle session expiration
-* Maximum active-session limits
-* Revocable sessions and access
-* Activation lockout after failed attempts
-* HttpOnly SameSite Strict cookies
-* Session-derived CSRF protection
-* Rate limits
-* No-store, noindex, no-referrer, frame-denial, and same-origin headers
-* Secure portal-only messages
-* Explicit publication of existing outbound communications
-* Private follow-up documents through the protected quarantine pipeline
-* Contact preference updates
-* Microsoft Teams scheduling preference updates
-* Privacy requests
-* Inquiry withdrawal requests
-* Sender self-revocation
-* Hashed IP and browser fingerprints
-* Private portal audit exports
-* Privacy export and approved-erasure integration
+v0.8.1 adds:
 
-The portal does not create a WordPress account, public password, inquiry-reference lookup, or public file download.
+* Atomic invitation activation
+* Rollback when access, inquiry, or session persistence fails
+* Invitation preservation after safe rollback
+* Correctable activation failures that return to the same invitation
+* Safe handling of expired activation-form nonces
+* Verified invitation-state inspection
+* HTTPS enforcement for production authentication and recovery
+* `__Host-sc_ei_sender_session` production cookie
+* Migration support for active v0.8.0 legacy cookies
+* Explicit session-cookie establishment recovery
+* Optimistic access and inquiry version checks
 
-Raw invitation and session credentials are never stored. Only keyed hashes are persisted.
+The invitation is consumed only after:
 
-The portal never sends an invitation automatically. An authorized administrator receives the one-time link once and must deliver it through an approved channel.
+1. the access record updates successfully
+2. the inquiry portal state updates successfully
+3. the session record is created successfully
 
-Secure portal messages remain inside the portal and Communication History. They are not automatically sent through email.
+A failure in any stage rolls the transaction back.
 
-== Sender-safe boundary ==
+== Lockout correction ==
 
-The portal can show:
+An incorrect invitation token never increments the sender's email-challenge lockout.
 
-* Inquiry reference
-* Submission date
-* Sender-safe status
-* Original project summary
-* Explicitly portal-visible messages
-* Private document names, sizes, dates, and broad storage state
-* Approved Microsoft Teams meeting information
-* Contact, scheduling, privacy, withdrawal, and access controls
+Lockout applies only when:
 
-It never shows:
+1. the invitation public ID exists
+2. the invitation token is correct
+3. the email challenge is incorrect
 
-* Internal notes
-* Human fit assessments
-* Review judgments or assignments
-* Risk ratings
-* Legal-hold details
-* Retention deliberations
-* Audit narratives
-* Internal escalation
-* Private operational reasoning
-* Protected file paths
-* Internal-only communications
+This prevents denial-of-service attempts using only a leaked invitation identifier.
+
+Authorized managers can reset a verified email-challenge lockout after human review using:
+
+`UNLOCK <ACCESS-ID>`
+
+== Sender recovery ==
+
+The public portal now contains a recovery form for expired, consumed, lost, locked, revoked, or browser-bound access.
+
+The public response is always generic. It does not reveal whether:
+
+* an inquiry reference exists
+* an email address exists
+* portal access exists
+* a recovery request matched
+* a request was deduplicated or throttled
+
+Matched requests enter:
+
+`Engagement Intake → Sender Portal → Authentication Recovery Queue`
+
+Recovery requires:
+
+* a dedicated management capability
+* an unexpired pending request
+* human review
+* written rationale
+* typed confirmation
+
+Approval requires:
+
+`RECOVER <RECOVERY-ID>`
+
+Decline requires:
+
+`DECLINE <RECOVERY-ID>`
+
+Approval issues a new one-time invitation, revokes existing sessions through the normal invitation-reissue path, and displays the raw link once to the authorized administrator.
+
+It does not send the invitation automatically.
+
+== Recovery abuse controls ==
+
+* Keyed-IP hourly rate limit
+* Matched and unmatched attempts share the same limit
+* Generic response after throttling
+* Honeypot field
+* Minimum reason length
+* Request deduplication
+* Expiring review queue
+* Hashed reference, email, IP, and browser values
+* No unmatched identity record is persisted
+* No public access link is generated
+
+== Cookie migration ==
+
+Production HTTPS uses:
+
+`__Host-sc_ei_sender_session`
+
+The cookie has:
+
+* Secure
+* HttpOnly
+* SameSite Strict
+* Path `/`
+* No Domain attribute
+
+During the patch transition, an active v0.8.0 `sc_ei_sender_session` cookie can be read and migrated to the new `__Host-` cookie.
+
+The legacy cookie is cleared after successful migration.
+
+== Privacy and audit ==
+
+Portal recovery records are included in:
+
+* private data inventory
+* WordPress privacy export
+* portal audit export
+* Diagnostics
+* approved inquiry erasure
+
+Approved erasure clears:
+
+* reference and email hashes
+* recovery reason
+* hashed IP and browser values
+* human decision notes
+
+Limited categorical lifecycle and audit tombstones can remain.
 
 == Installation ==
 
-1. Back up the WordPress database and protected storage.
-2. Install and activate v0.8.0.
-3. Create a private WordPress page containing `[sc_sender_portal title="Secure Sender Portal"]`.
-4. Exclude the page from navigation, search, indexing, caching, CDN caching, and optimization.
-5. Open Engagement Intake → Sender Portal.
-6. Save the exact portal page URL.
-7. Open Engagement Intake → Diagnostics.
-8. Confirm database version 0.8.0 and portal schema 1.0.0.
-9. Confirm the portal access, session, and event tables.
-10. Confirm the hourly portal cleanup event.
-11. Test invitation activation in a private browser.
-12. Test invalid-token lockout.
-13. Test idle and absolute session expiration.
-14. Test session and access revocation.
-15. Test secure messages without email delivery.
-16. Test protected document upload and quarantine.
-17. Test privacy restrictions and approved erasure.
-18. Test the portal audit export.
-
-== Upgrade from 0.7.0 ==
-
-The upgrade preserves all prior inquiry, attachment, review, fit, communication, privacy, retention, audit, scanner, storage, and Teams records.
-
-It adds:
-
-* Three portal tables
-* Eleven inquiry portal fields
-* Four communication publication fields
-* Portal roles and capabilities
-* Sender portal shortcode and views
-* Administrative portal workspace
-* Hourly session and invitation expiration
-* Portal data in authenticated REST, review packets, privacy export, inventory, diagnostics, and erasure
-
-Activation does not:
-
-* Create portal access for any sender
-* Send an invitation
-* Create a WordPress account
-* Publish an internal communication
-* Expose a private file
-* Change inquiry status
-* Schedule a meeting
-* Accept an engagement
-* Delete portal audit events
-
-== Security notes ==
-
-* Serve the portal only over HTTPS.
-* Do not place the portal page in public navigation.
-* Exclude it from page caches and CDN caches.
-* Do not share one-time invitations through public channels.
-* Reissue invitations after suspected disclosure.
-* Review portal-visible communication before publication.
-* Treat sender-uploaded files as untrusted until quarantine and scanner review are complete.
-* Portal audit event retention is configured for governance review; v0.8.0 does not silently purge those events.
+1. Back up the database and protected storage.
+2. Upgrade directly from v0.8.0 to v0.8.1.
+3. Keep the existing sender portal page and shortcode.
+4. Confirm the portal is served over HTTPS.
+5. Clear page, object, CDN, and browser caches.
+6. Open Engagement Intake → Diagnostics.
+7. Confirm database version `0.8.1`.
+8. Confirm portal schema version `1.1.0`.
+9. Confirm the portal recovery table and fields.
+10. Confirm the hourly cleanup event.
+11. Open Engagement Intake → Sender Portal.
+12. Review authentication recovery policy settings.
+13. Test a v0.8.0 active session cookie in staging.
+14. Test a fresh invitation.
+15. Test an incorrect token and confirm lockout does not increment.
+16. Test a correct token with an incorrect email and confirm lockout increments.
+17. Test a failed activation transaction and confirm the invitation remains usable.
+18. Test generic recovery responses for matched and unmatched details.
+19. Test human approval, decline, typed unlock, and one-time link display.
+20. Test privacy export and approved erasure in staging.
 
 == Changelog ==
 
+= 0.8.1 =
+* Added atomic invitation activation and rollback.
+* Preserved invitations after session or inquiry persistence failure.
+* Preserved invitation context after correctable activation errors.
+* Added safe expired-form recovery.
+* Prevented incorrect tokens from incrementing email lockout.
+* Added verified invitation states.
+* Added HTTPS enforcement.
+* Added `__Host-` production cookie.
+* Added v0.8.0 legacy-cookie migration.
+* Added generic sender recovery requests.
+* Added shared throttling for matched and unmatched recovery attempts.
+* Added deduplication and expiring recovery review.
+* Added human recovery approval and decline.
+* Added typed invitation lockout reset.
+* Added recovery privacy export, erasure, inventory, audit, and Diagnostics integration.
+
 = 0.8.0 =
 * Added the Secure Sender Portal.
-* Added passwordless one-time invitation activation.
-* Added inquiry-email challenge, terms acceptance, lockout, sessions, CSRF, rate limits, revocation, and expiration.
-* Added secure portal messages without automatic email.
-* Added explicit outbound communication publication.
-* Added protected follow-up uploads through quarantine.
-* Added sender contact and Teams preference updates.
-* Added privacy and withdrawal requests.
-* Added access/session audit and private export.
-* Added privacy export, erasure, REST, review packet, inquiry, communication, inventory, and Diagnostics integration.
 
 = 0.7.0 =
 * Added Human-Controlled Fit Assessment.

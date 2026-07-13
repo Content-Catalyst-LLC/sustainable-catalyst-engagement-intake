@@ -1,6 +1,6 @@
 <?php
 /**
- * Passwordless sender portal session and CSRF controls.
+ * Passwordless sender portal session, cookie, and CSRF controls.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -10,17 +10,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class SC_EI_Portal_Session {
 
 	public static function current( bool $touch = true ) {
+		$settings = SC_EI_Portal_Repository::settings();
+		if ( ! empty( $settings['portal_require_https'] ) && ! SC_EI_Portal_Schema::secure_transport_available() ) {
+			return new WP_Error( 'portal_https_required', __( 'A secure HTTPS connection is required for sender portal access.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		$cookie_source = 'host';
 		$raw = isset( $_COOKIE[ SC_EI_Portal_Schema::COOKIE_NAME ] )
 			? sanitize_text_field( wp_unslash( $_COOKIE[ SC_EI_Portal_Schema::COOKIE_NAME ] ) )
 			: '';
+		if (
+			'' === $raw
+			&& ! empty( $settings['portal_allow_legacy_cookie'] )
+			&& isset( $_COOKIE[ SC_EI_Portal_Schema::LEGACY_COOKIE_NAME ] )
+		) {
+			$raw = sanitize_text_field( wp_unslash( $_COOKIE[ SC_EI_Portal_Schema::LEGACY_COOKIE_NAME ] ) );
+			$cookie_source = 'legacy';
+		}
 		if ( '' === $raw ) {
 			return new WP_Error( 'portal_session_missing', __( 'Secure sender portal access is required.', 'sustainable-catalyst-engagement-intake' ) );
 		}
+
 		$session = SC_EI_Portal_Repository::find_session_by_hash( SC_EI_Portal_Repository::hash_secret( $raw ) );
 		if ( ! $session || 'active' !== $session['status'] || ! empty( $session['revoked_at'] ) ) {
 			self::clear_cookie();
-			return new WP_Error( 'portal_session_invalid', __( 'The secure portal session is no longer active.', 'sustainable-catalyst-engagement-intake' ) );
+			return new WP_Error( 'portal_session_invalid', __( 'The secure portal session is no longer active. Submit a recovery request for a fresh invitation.', 'sustainable-catalyst-engagement-intake' ) );
 		}
+
 		$now = time();
 		if (
 			strtotime( $session['expires_at'] . ' UTC' ) < $now
@@ -29,38 +45,61 @@ final class SC_EI_Portal_Session {
 			SC_EI_Portal_Repository::revoke_session( absint( $session['id'] ), 'Session expired.', 0 );
 			SC_EI_Portal_Repository::record_event( 'session_expired', absint( $session['inquiry_id'] ), absint( $session['access_id'] ), absint( $session['id'] ), 'session', absint( $session['id'] ), 'expired' );
 			self::clear_cookie();
-			return new WP_Error( 'portal_session_expired', __( 'The secure portal session expired. Use a new invitation to continue.', 'sustainable-catalyst-engagement-intake' ) );
+			return new WP_Error( 'portal_session_expired', __( 'The secure portal session expired. Submit a recovery request for a fresh invitation.', 'sustainable-catalyst-engagement-intake' ) );
 		}
+
 		$access = SC_EI_Portal_Repository::find_access( absint( $session['access_id'] ) );
 		if ( ! $access || 'active' !== $access['status'] ) {
 			self::clear_cookie();
-			return new WP_Error( 'portal_access_inactive', __( 'Sender portal access is not active.', 'sustainable-catalyst-engagement-intake' ) );
+			return new WP_Error( 'portal_access_inactive', __( 'Sender portal access is not active. Submit a recovery request when continued access is appropriate.', 'sustainable-catalyst-engagement-intake' ) );
 		}
+
 		$current_agent = SC_EI_Portal_Repository::request_user_agent_hash();
 		if ( $session['user_agent_hash'] && ! hash_equals( (string) $session['user_agent_hash'], $current_agent ) ) {
 			SC_EI_Portal_Repository::record_event( 'session_revoked', absint( $session['inquiry_id'] ), absint( $session['access_id'] ), absint( $session['id'] ), 'session', absint( $session['id'] ), 'rejected', array( 'reason' => 'user_agent_changed' ) );
 			SC_EI_Portal_Repository::revoke_session( absint( $session['id'] ), 'Browser identity changed.', 0 );
 			self::clear_cookie();
-			return new WP_Error( 'portal_session_browser_changed', __( 'The browser identity changed. Request a new portal invitation.', 'sustainable-catalyst-engagement-intake' ) );
+			return new WP_Error( 'portal_session_browser_changed', __( 'The browser identity changed. Submit a recovery request for a fresh invitation.', 'sustainable-catalyst-engagement-intake' ) );
 		}
+
 		$inquiry = SC_EI_Inquiry_Repository::find( absint( $session['inquiry_id'] ) );
 		if ( ! $inquiry || 'erased' === $inquiry['privacy_status'] ) {
 			self::clear_cookie();
 			return new WP_Error( 'portal_inquiry_unavailable', __( 'The linked inquiry is unavailable.', 'sustainable-catalyst-engagement-intake' ) );
 		}
+
 		$current_ip = SC_EI_Portal_Repository::request_ip_hash();
 		if ( $session['ip_hash'] && $current_ip && ! hash_equals( (string) $session['ip_hash'], $current_ip ) ) {
 			SC_EI_Portal_Repository::record_event( 'session_seen', absint( $session['inquiry_id'] ), absint( $session['access_id'] ), absint( $session['id'] ), 'session', absint( $session['id'] ), 'recorded', array( 'ip_changed' => true ) );
 		}
+
+		if ( 'legacy' === $cookie_source && is_ssl() && ! headers_sent() ) {
+			if ( self::set_cookie( $raw, $session['expires_at'] ) ) {
+				self::clear_legacy_cookie();
+				$cookie_source = 'host';
+				SC_EI_Portal_Repository::record_event(
+					'legacy_cookie_migrated',
+					absint( $session['inquiry_id'] ),
+					absint( $session['access_id'] ),
+					absint( $session['id'] ),
+					'session',
+					absint( $session['id'] ),
+					'success'
+				);
+			}
+		}
+
 		if ( $touch ) {
 			SC_EI_Portal_Repository::touch_session( $session );
 		}
+
 		return array(
 			'access'             => $access,
 			'session'            => $session,
 			'inquiry'            => $inquiry,
 			'permissions'        => json_decode( (string) $access['permissions_json'], true ) ?: array(),
 			'_raw_session_token' => $raw,
+			'_cookie_source'     => $cookie_source,
 		);
 	}
 
@@ -126,37 +165,71 @@ final class SC_EI_Portal_Session {
 
 	public static function set_cookie( string $raw_token, string $expires_at ): bool {
 		$expires = strtotime( $expires_at . ' UTC' );
-		if ( ! $expires ) {
+		if ( ! $expires || headers_sent() ) {
 			return false;
 		}
-		$options = array(
-			'expires'  => $expires,
-			'path'     => '/',
-			'domain'   => defined( 'COOKIE_DOMAIN' ) && COOKIE_DOMAIN ? COOKIE_DOMAIN : '',
-			'secure'   => is_ssl(),
-			'httponly' => true,
-			'samesite' => 'Strict',
+		if ( is_ssl() ) {
+			$set = setcookie(
+				SC_EI_Portal_Schema::COOKIE_NAME,
+				$raw_token,
+				array(
+					'expires'  => $expires,
+					'path'     => '/',
+					'secure'   => true,
+					'httponly' => true,
+					'samesite' => 'Strict',
+				)
+			);
+			if ( $set ) {
+				$_COOKIE[ SC_EI_Portal_Schema::COOKIE_NAME ] = $raw_token;
+				self::clear_legacy_cookie();
+			}
+			return $set;
+		}
+
+		if ( ! SC_EI_Portal_Schema::secure_transport_available() ) {
+			return false;
+		}
+		$set = setcookie(
+			SC_EI_Portal_Schema::LEGACY_COOKIE_NAME,
+			$raw_token,
+			array(
+				'expires'  => $expires,
+				'path'     => '/',
+				'secure'   => false,
+				'httponly' => true,
+				'samesite' => 'Strict',
+			)
 		);
-		$set = setcookie( SC_EI_Portal_Schema::COOKIE_NAME, $raw_token, $options );
 		if ( $set ) {
-			$_COOKIE[ SC_EI_Portal_Schema::COOKIE_NAME ] = $raw_token;
+			$_COOKIE[ SC_EI_Portal_Schema::LEGACY_COOKIE_NAME ] = $raw_token;
 		}
 		return $set;
 	}
 
 	public static function clear_cookie(): void {
-		setcookie(
-			SC_EI_Portal_Schema::COOKIE_NAME,
-			'',
-			array(
-				'expires'  => time() - HOUR_IN_SECONDS,
-				'path'     => '/',
-				'domain'   => defined( 'COOKIE_DOMAIN' ) && COOKIE_DOMAIN ? COOKIE_DOMAIN : '',
-				'secure'   => is_ssl(),
-				'httponly' => true,
-				'samesite' => 'Strict',
-			)
-		);
-		unset( $_COOKIE[ SC_EI_Portal_Schema::COOKIE_NAME ] );
+		self::clear_named_cookie( SC_EI_Portal_Schema::COOKIE_NAME, true );
+		self::clear_legacy_cookie();
+	}
+
+	private static function clear_legacy_cookie(): void {
+		self::clear_named_cookie( SC_EI_Portal_Schema::LEGACY_COOKIE_NAME, is_ssl() );
+	}
+
+	private static function clear_named_cookie( string $name, bool $secure ): void {
+		if ( ! headers_sent() ) {
+			setcookie(
+				$name,
+				'',
+				array(
+					'expires'  => time() - HOUR_IN_SECONDS,
+					'path'     => '/',
+					'secure'   => $secure,
+					'httponly' => true,
+					'samesite' => 'Strict',
+				)
+			);
+		}
+		unset( $_COOKIE[ $name ] );
 	}
 }

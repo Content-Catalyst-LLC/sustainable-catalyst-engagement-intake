@@ -18,6 +18,7 @@ final class SC_EI_Portal_Public {
 		foreach (
 			array(
 				'sc_ei_portal_activate'          => 'handle_activate',
+				'sc_ei_portal_recovery'          => 'handle_recovery',
 				'sc_ei_portal_logout'            => 'handle_logout',
 				'sc_ei_portal_send_message'      => 'handle_message',
 				'sc_ei_portal_upload_documents'  => 'handle_upload',
@@ -38,6 +39,7 @@ final class SC_EI_Portal_Public {
 
 		$is_portal = ! empty( $_GET['sc_ei_portal_invite'] )
 			|| ! empty( $_COOKIE[ SC_EI_Portal_Schema::COOKIE_NAME ] )
+			|| ! empty( $_COOKIE[ SC_EI_Portal_Schema::LEGACY_COOKIE_NAME ] )
 			|| ( $post instanceof WP_Post && has_shortcode( (string) $post->post_content, 'sc_sender_portal' ) );
 		if ( ! $is_portal ) {
 			return;
@@ -85,9 +87,11 @@ final class SC_EI_Portal_Public {
 		$error_code = isset( $_GET['sc_ei_portal_error'] ) ? sanitize_key( wp_unslash( $_GET['sc_ei_portal_error'] ) ) : '';
 		$invite_public_id = isset( $_GET['sc_ei_portal_invite'] ) ? sanitize_text_field( wp_unslash( $_GET['sc_ei_portal_invite'] ) ) : '';
 		$invite_token = isset( $_GET['sc_ei_portal_token'] ) ? sanitize_text_field( wp_unslash( $_GET['sc_ei_portal_token'] ) ) : '';
+		$invitation_state = SC_EI_Portal_Repository::inspect_invitation( $invite_public_id, $invite_token );
 
 		$context = SC_EI_Portal_Session::current();
 		if ( is_wp_error( $context ) ) {
+			$context_error = $context->get_error_code();
 			ob_start();
 			include SC_EI_DIR . 'public/views/sender-portal-login.php';
 			return (string) ob_get_clean();
@@ -114,20 +118,63 @@ final class SC_EI_Portal_Public {
 	}
 
 	public static function handle_activate(): void {
-		check_admin_referer( 'sc_ei_portal_activate' );
 		$public_id = isset( $_POST['portal_public_id'] ) ? sanitize_text_field( wp_unslash( $_POST['portal_public_id'] ) ) : '';
 		$token = isset( $_POST['portal_token'] ) ? sanitize_text_field( wp_unslash( $_POST['portal_token'] ) ) : '';
+		$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'sc_ei_portal_activate' ) ) {
+			self::redirect_activation( $public_id, $token, 'portal_activation_form_expired' );
+		}
+
 		$email = isset( $_POST['portal_email'] ) ? sanitize_email( wp_unslash( $_POST['portal_email'] ) ) : '';
 		$terms = ! empty( $_POST['portal_terms'] );
 		$result = SC_EI_Portal_Repository::activate_invitation( $public_id, $token, $email, $terms );
 		if ( is_wp_error( $result ) ) {
-			self::redirect( 'overview', '', $result->get_error_code() );
+			self::redirect_activation( $public_id, $token, $result->get_error_code() );
 		}
+
 		if ( ! SC_EI_Portal_Session::set_cookie( $result['raw_token'], $result['expires_at'] ) ) {
-			SC_EI_Portal_Repository::revoke_session( absint( $result['session']['id'] ), 'Session cookie could not be set.', 0 );
+			SC_EI_Portal_Repository::revoke_session( absint( $result['session']['id'] ), 'Session cookie could not be established.', 0 );
+			$access = SC_EI_Portal_Repository::find_access( absint( $result['session']['access_id'] ) );
+			$permissions = $access ? json_decode( (string) $access['permissions_json'], true ) : array();
+			$reissued = $access
+				? SC_EI_Portal_Repository::issue_invitation(
+					absint( $access['inquiry_id'] ),
+					array(
+						'invite_ttl_hours' => SC_EI_Portal_Repository::settings()['portal_invite_ttl_hours'],
+						'permissions'      => is_array( $permissions ) ? $permissions : SC_EI_Portal_Schema::default_permissions(),
+						'invitation_note'  => 'Automatically reissued after browser session-cookie establishment failed.',
+					),
+					0
+				)
+				: new WP_Error( 'portal_cookie_failed' );
+			if ( ! is_wp_error( $reissued ) ) {
+				wp_safe_redirect(
+					add_query_arg(
+						'sc_ei_portal_error',
+						'portal_cookie_failed',
+						$reissued['url']
+					),
+					303
+				);
+				exit;
+			}
 			self::redirect( 'overview', '', 'portal_cookie_failed' );
 		}
 		self::redirect( 'overview', 'portal_activated' );
+	}
+
+	public static function handle_recovery(): void {
+		$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+		$honeypot = isset( $_POST['portal_company_website'] ) ? trim( (string) wp_unslash( $_POST['portal_company_website'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'sc_ei_portal_recovery' ) || '' !== $honeypot ) {
+			self::redirect( 'overview', 'portal_recovery_received' );
+		}
+		SC_EI_Portal_Repository::request_recovery(
+			isset( $_POST['portal_reference'] ) ? wp_unslash( $_POST['portal_reference'] ) : '',
+			isset( $_POST['portal_recovery_email'] ) ? wp_unslash( $_POST['portal_recovery_email'] ) : '',
+			isset( $_POST['portal_recovery_reason'] ) ? wp_unslash( $_POST['portal_recovery_reason'] ) : ''
+		);
+		self::redirect( 'overview', 'portal_recovery_received' );
 	}
 
 	public static function handle_logout(): void {
@@ -351,6 +398,26 @@ final class SC_EI_Portal_Public {
 			SC_EI_Portal_Repository::record_event( 'rate_limit_triggered', absint( $context['inquiry']['id'] ), absint( $context['access']['id'] ), absint( $context['session']['id'] ), 'session', absint( $context['session']['id'] ), 'rejected', array( 'limit' => 'update_hour' ) );
 		}
 		return $limited;
+	}
+
+	private static function redirect_activation( string $public_id, string $token, string $error ): void {
+		$settings = SC_EI_Portal_Repository::settings();
+		$args = array(
+			'portal_view'         => 'overview',
+			'sc_ei_portal_error' => sanitize_key( $error ),
+		);
+		if ( '' !== $public_id && '' !== $token ) {
+			$args['sc_ei_portal_invite'] = rawurlencode( $public_id );
+			$args['sc_ei_portal_token'] = rawurlencode( $token );
+		}
+		wp_safe_redirect(
+			add_query_arg(
+				$args,
+				SC_EI_Portal_Schema::sanitize_portal_page_url( (string) $settings['portal_page_url'] )
+			),
+			303
+		);
+		exit;
 	}
 
 	private static function redirect( string $view, string $result = '', string $error = '' ): void {

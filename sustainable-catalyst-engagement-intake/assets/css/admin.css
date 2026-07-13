@@ -2317,3 +2317,31 @@
     display: grid;
   }
 }
+
+
+/* v0.8.1 portal authentication recovery */
+.sc-ei-portal-recovery-queue {
+  border-top: 5px solid #6d1b2b;
+}
+
+.sc-ei-portal-recovery-table th,
+.sc-ei-portal-recovery-table td {
+  vertical-align: top;
+}
+
+.sc-ei-portal-recovery-form {
+  display: grid;
+  gap: 7px;
+  min-width: 240px;
+}
+
+.sc-ei-portal-recovery-form select,
+.sc-ei-portal-recovery-form textarea,
+.sc-ei-portal-recovery-form input {
+  width: 100%;
+}
+
+.sc-ei-portal-recovery-control {
+  border-left: 5px solid #a66a00;
+  background: #fff9e7;
+}

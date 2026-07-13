@@ -314,4 +314,44 @@
     });
   });
 
+  document.querySelectorAll(".sc-ei-portal-recovery-form").forEach((form) => {
+    const decision = form.querySelector("select[name='recovery_decision']");
+    const input = form.querySelector("input[name='recovery_confirmation']");
+    const recoveryId = form.querySelector("input[name='recovery_id']")?.value || "";
+    const sync = () => {
+      if (!input) return;
+      const expected = decision?.value === "decline" ? `DECLINE ${recoveryId}` : `RECOVER ${recoveryId}`;
+      input.placeholder = expected;
+      input.setAttribute("aria-label", `Type ${expected}`);
+    };
+    decision?.addEventListener("change", sync);
+    form.addEventListener("submit", (event) => {
+      const expected = decision?.value === "decline" ? `DECLINE ${recoveryId}` : `RECOVER ${recoveryId}`;
+      if (!input || input.value.trim().toUpperCase() !== expected) {
+        event.preventDefault();
+        window.alert(`Type ${expected} exactly.`);
+        input?.focus();
+        return;
+      }
+      const message = decision?.value === "decline"
+        ? "Decline this portal recovery request?"
+        : "Approve recovery and issue a fresh one-time invitation? Existing sessions will be revoked and no email will be sent automatically.";
+      if (!window.confirm(message)) event.preventDefault();
+    });
+    sync();
+  });
+
+  document.querySelectorAll("form input[name='unlock_confirmation']").forEach((input) => {
+    const form = input.closest("form");
+    form?.addEventListener("submit", (event) => {
+      const accessId = form.querySelector("input[name='access_id']")?.value || "";
+      const expected = `UNLOCK ${accessId}`;
+      if (input.value.trim().toUpperCase() !== expected) {
+        event.preventDefault();
+        window.alert(`Type ${expected} exactly.`);
+        input.focus();
+      }
+    });
+  });
+
 })();

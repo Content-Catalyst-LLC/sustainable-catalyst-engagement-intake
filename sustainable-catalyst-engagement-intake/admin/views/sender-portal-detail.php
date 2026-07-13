@@ -10,6 +10,9 @@ $success = array(
 	'portal_reply_recorded'          => __( 'Secure staff reply recorded in the portal. No email was sent.', 'sustainable-catalyst-engagement-intake' ),
 	'portal_communication_published' => __( 'The outbound communication is now visible in the sender portal.', 'sustainable-catalyst-engagement-intake' ),
 	'portal_communication_hidden'    => __( 'The communication is no longer visible in the sender portal.', 'sustainable-catalyst-engagement-intake' ),
+	'portal_recovery_completed'      => __( 'Recovery approved and a fresh one-time invitation was issued. Copy it now.', 'sustainable-catalyst-engagement-intake' ),
+	'portal_recovery_declined'       => __( 'Recovery request declined.', 'sustainable-catalyst-engagement-intake' ),
+	'portal_invitation_unlocked'     => __( 'Invitation email-challenge lockout reset.', 'sustainable-catalyst-engagement-intake' ),
 );
 $permissions = json_decode( (string) $access['permissions_json'], true ) ?: array();
 ?>
@@ -49,6 +52,39 @@ $permissions = json_decode( (string) $access['permissions_json'], true ) ?: arra
 					<dt><?php esc_html_e( 'Permissions', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( implode( ', ', array_map( static fn( string $key ): string => SC_EI_Portal_Schema::label( SC_EI_Portal_Schema::permissions(), $key ), $permissions ) ) ); ?></dd>
 				</dl>
 			</section>
+
+			<?php if ( current_user_can( 'sc_intake_view_portal_recovery' ) ) : ?>
+				<section class="sc-ei-admin__card sc-ei-admin__card--wide">
+					<h2><?php esc_html_e( 'Authentication Recovery History', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+					<p><?php esc_html_e( 'A recovery request never confirms a public match and never creates access automatically. Review evidence and the inquiry record before approving a fresh invitation.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+					<table class="widefat striped sc-ei-portal-recovery-table">
+						<thead><tr><th><?php esc_html_e( 'Request', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'Reason', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'State', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'Human review', 'sustainable-catalyst-engagement-intake' ); ?></th></tr></thead>
+						<tbody>
+							<?php if ( ! $recovery_requests ) : ?><tr><td colspan="4"><?php esc_html_e( 'No recovery requests are recorded for this access record.', 'sustainable-catalyst-engagement-intake' ); ?></td></tr><?php endif; ?>
+							<?php foreach ( $recovery_requests as $recovery ) : ?>
+								<tr>
+									<td><strong>#<?php echo esc_html( $recovery['id'] ); ?></strong><br><?php echo esc_html( get_date_from_gmt( $recovery['requested_at'], 'M j, Y g:i a' ) ); ?><br><span class="description"><?php echo esc_html( sprintf( __( '%d submissions', 'sustainable-catalyst-engagement-intake' ), absint( $recovery['request_count'] ) ) ); ?></span></td>
+									<td><?php echo nl2br( esc_html( $recovery['recovery_reason'] ) ); ?></td>
+									<td><span class="sc-ei-fit-state sc-ei-fit-state--<?php echo esc_attr( $recovery['status'] ); ?>"><?php echo esc_html( SC_EI_Portal_Schema::label( SC_EI_Portal_Schema::recovery_statuses(), $recovery['status'] ) ); ?></span><br><span class="description"><?php echo esc_html( sprintf( __( 'Expires %s UTC', 'sustainable-catalyst-engagement-intake' ), $recovery['expires_at'] ) ); ?></span></td>
+									<td>
+										<?php if ( 'pending' === $recovery['status'] && current_user_can( 'sc_intake_manage_portal_recovery' ) ) : ?>
+											<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-portal-recovery-form">
+												<input type="hidden" name="action" value="sc_ei_review_portal_recovery"><input type="hidden" name="recovery_id" value="<?php echo esc_attr( $recovery['id'] ); ?>"><?php wp_nonce_field( 'sc_ei_review_portal_recovery_' . absint( $recovery['id'] ) ); ?>
+												<select name="recovery_decision"><option value="complete"><?php esc_html_e( 'Approve and issue fresh invitation', 'sustainable-catalyst-engagement-intake' ); ?></option><option value="decline"><?php esc_html_e( 'Decline recovery', 'sustainable-catalyst-engagement-intake' ); ?></option></select>
+												<textarea name="recovery_decision_note" rows="3" required placeholder="<?php esc_attr_e( 'Human review rationale', 'sustainable-catalyst-engagement-intake' ); ?>"></textarea>
+												<input type="text" name="recovery_confirmation" required autocomplete="off" placeholder="<?php echo esc_attr( 'RECOVER ' . absint( $recovery['id'] ) ); ?>">
+												<button type="submit" class="button"><?php esc_html_e( 'Record Decision', 'sustainable-catalyst-engagement-intake' ); ?></button>
+											</form>
+										<?php else : ?>
+											<?php echo esc_html( $recovery['decision_note'] ?: '—' ); ?><?php if ( $recovery['reviewed_by_name'] ) : ?><br><span class="description"><?php echo esc_html( $recovery['reviewed_by_name'] ); ?></span><?php endif; ?>
+										<?php endif; ?>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</section>
+			<?php endif; ?>
 
 			<?php if ( current_user_can( 'sc_intake_issue_portal_invites' ) ) : ?>
 				<section class="sc-ei-admin__card sc-ei-admin__card--wide">
@@ -117,6 +153,19 @@ $permissions = json_decode( (string) $access['permissions_json'], true ) ?: arra
 				</dl>
 				<?php if ( 'requested' === $inquiry['sender_withdrawal_status'] ) : ?><div class="sc-ei-diagnostic-warning"><strong><?php esc_html_e( 'Human action required:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo esc_html( $inquiry['sender_withdrawal_reason'] ); ?></div><?php endif; ?>
 			</section>
+
+			<?php if ( current_user_can( 'sc_intake_manage_portal_recovery' ) && ( absint( $access['failed_attempts'] ) || $access['locked_until'] ) ) : ?>
+				<section class="sc-ei-admin__card sc-ei-portal-recovery-control">
+					<h2><?php esc_html_e( 'Reset Invitation Lockout', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+					<p><?php esc_html_e( 'Use only after confirming the sender and reviewing the authentication event history. Incorrect tokens do not increment this lockout; it reflects verified-token email challenge failures.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-portal-admin-form">
+						<input type="hidden" name="action" value="sc_ei_unlock_portal_access"><input type="hidden" name="access_id" value="<?php echo esc_attr( $access['id'] ); ?>"><?php wp_nonce_field( 'sc_ei_unlock_portal_access_' . absint( $access['id'] ) ); ?>
+						<label><span><?php esc_html_e( 'Human review reason', 'sustainable-catalyst-engagement-intake' ); ?></span><textarea name="unlock_reason" rows="3" required></textarea></label>
+						<label><span><?php echo esc_html( sprintf( __( 'Type UNLOCK %d', 'sustainable-catalyst-engagement-intake' ), absint( $access['id'] ) ) ); ?></span><input type="text" name="unlock_confirmation" required autocomplete="off"></label>
+						<button type="submit" class="button"><?php esc_html_e( 'Reset Lockout', 'sustainable-catalyst-engagement-intake' ); ?></button>
+					</form>
+				</section>
+			<?php endif; ?>
 
 			<?php if ( current_user_can( 'sc_intake_revoke_portal_access' ) ) : ?>
 				<section class="sc-ei-admin__card sc-ei-portal-danger-zone">

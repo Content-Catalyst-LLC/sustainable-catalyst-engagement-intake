@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -37,6 +37,7 @@ final class SC_EI_Database {
 		$portal_access = self::table( 'portal_access' );
 		$portal_sessions = self::table( 'portal_sessions' );
 		$portal_events = self::table( 'portal_events' );
+		$portal_recovery_requests = self::table( 'portal_recovery_requests' );
 		$communication_templates = self::table( 'communication_templates' );
 		$privacy_requests = self::table( 'privacy_requests' );
 		$consent_events = self::table( 'consent_events' );
@@ -495,6 +496,44 @@ final class SC_EI_Database {
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
+
+		$sql_portal_recovery_requests = "CREATE TABLE {$portal_recovery_requests} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NULL,
+			access_id bigint(20) unsigned NULL,
+			status varchar(30) NOT NULL DEFAULT 'pending',
+			match_status varchar(20) NOT NULL DEFAULT 'matched',
+			reference_hash char(64) NOT NULL DEFAULT '',
+			email_hash char(64) NOT NULL DEFAULT '',
+			recovery_reason longtext NULL,
+			request_ip_hash char(64) NOT NULL DEFAULT '',
+			request_user_agent_hash char(64) NOT NULL DEFAULT '',
+			request_count int(10) unsigned NOT NULL DEFAULT 1,
+			requested_at datetime NOT NULL,
+			last_requested_at datetime NOT NULL,
+			expires_at datetime NOT NULL,
+			reviewed_by bigint(20) unsigned NULL,
+			reviewed_at datetime NULL,
+			decision_note longtext NULL,
+			completed_at datetime NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY inquiry_id (inquiry_id),
+			KEY access_id (access_id),
+			KEY status (status),
+			KEY match_status (match_status),
+			KEY email_hash (email_hash),
+			KEY request_ip_hash (request_ip_hash),
+			KEY requested_at (requested_at),
+			KEY expires_at (expires_at),
+			KEY reviewed_by (reviewed_by),
+			KEY completed_at (completed_at)
+		) {$charset_collate};";
+
 		$sql_communications = "CREATE TABLE {$communications} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			inquiry_id bigint(20) unsigned NOT NULL,
@@ -787,6 +826,7 @@ final class SC_EI_Database {
 		dbDelta( $sql_portal_access );
 		dbDelta( $sql_portal_sessions );
 		dbDelta( $sql_portal_events );
+		dbDelta( $sql_portal_recovery_requests );
 		dbDelta( $sql_communications );
 		dbDelta( $sql_communication_events );
 		dbDelta( $sql_communication_templates );
@@ -912,7 +952,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -1148,6 +1188,13 @@ final class SC_EI_Database {
 				'target_type', 'target_id', 'outcome', 'ip_hash', 'user_agent_hash',
 				'context_json', 'created_at',
 			),
+			'portal_recovery_requests' => array(
+				'public_id', 'inquiry_id', 'access_id', 'status', 'match_status',
+				'reference_hash', 'email_hash', 'recovery_reason', 'request_ip_hash',
+				'request_user_agent_hash', 'request_count', 'requested_at',
+				'last_requested_at', 'expires_at', 'reviewed_by', 'reviewed_at',
+				'decision_note', 'completed_at', 'row_version', 'created_at', 'updated_at',
+			),
 		);
 		$result = array();
 		foreach ( $tables as $table_name => $columns ) {
@@ -1249,7 +1296,7 @@ final class SC_EI_Database {
 	public static function drop_all(): void {
 		global $wpdb;
 
-		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
+		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
 			$table = self::table( $name );
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}

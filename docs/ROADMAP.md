@@ -67,3 +67,12 @@ Planned. Reusable private workflow components without combining public and priva
 ## v1.0.0 — Unified Contact and Engagement Platform
 
 Planned. Production contact hub, private engagement workflow, communications, scheduling, proposals, privacy lifecycle, and operational intelligence.
+
+
+## v0.8.0 — Secure Sender Portal
+
+Completed. Passwordless one-time invitations, email challenge, revocable sessions, secure messages, protected follow-up documents, contact and Teams updates, privacy and withdrawal controls, audit export, privacy lifecycle integration, and strict internal-data boundaries.
+
+## v0.8.1 — Portal Authentication and Recovery Patch
+
+Current release. Atomic invitation activation, wrong-token lockout isolation, `__Host-` cookie migration, invitation-state recovery, non-enumerating sender recovery requests, human approval and decline, typed lockout reset, recovery privacy controls, and authentication diagnostics.
