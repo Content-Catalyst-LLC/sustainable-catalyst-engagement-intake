@@ -31,6 +31,7 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'inquiry_type'      => __( 'Type', 'sustainable-catalyst-engagement-intake' ),
 			'origin'            => __( 'Experience / Source', 'sustainable-catalyst-engagement-intake' ),
 			'conversion_route'  => __( 'Conversion Route', 'sustainable-catalyst-engagement-intake' ),
+			'documents'         => __( 'Documents', 'sustainable-catalyst-engagement-intake' ),
 			'status'            => __( 'Inquiry Status', 'sustainable-catalyst-engagement-intake' ),
 			'scheduling_status' => __( 'Teams Status', 'sustainable-catalyst-engagement-intake' ),
 			'created_at'        => __( 'Received', 'sustainable-catalyst-engagement-intake' ),
@@ -75,6 +76,12 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 
 			case 'conversion_route':
 				return esc_html( $item['conversion_route'] ? ucwords( str_replace( '_', ' ', $item['conversion_route'] ) ) : '—' );
+
+			case 'documents':
+				$count = SC_EI_Attachment_Repository::count_for_inquiry( absint( $item['id'] ) );
+				return $count
+					? sprintf( '<strong>%1$d</strong><br><span class="description">%2$s</span>', $count, esc_html__( 'private', 'sustainable-catalyst-engagement-intake' ) )
+					: '—';
 
 			case 'status':
 				return sprintf(

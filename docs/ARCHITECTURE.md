@@ -15,7 +15,7 @@ Private contact and engagement metadata.
 
 ### `wp_sc_ei_attachments`
 
-Attachment metadata and quarantine state. Physical protected storage arrives in v0.3.0.
+Attachment metadata, quarantine and approval state, integrity fingerprints, storage verification state, retention metadata, and protected physical-file paths.
 
 ### `wp_sc_ei_audit_log`
 
@@ -30,6 +30,8 @@ Access is controlled by dedicated capabilities:
 - `sc_intake_view`
 - `sc_intake_review`
 - `sc_intake_download_files`
+- `sc_intake_release_files`
+- `sc_intake_manage_file_retention`
 - `sc_intake_add_notes`
 - `sc_intake_change_status`
 - `sc_intake_communicate`
@@ -37,11 +39,12 @@ Access is controlled by dedicated capabilities:
 - `sc_intake_delete`
 - `sc_intake_manage_settings`
 
-## Future extension
+## Release layers
 
-v0.2.0 adds conditional public forms.  
-v0.3.0 adds protected document storage and quarantine.  
-Later versions add communication history, retention automation, sender portal, scheduling, proposals, analytics, and Workflow Core.
+v0.2.x established conditional public forms, Teams preferences, dual experiences, and conversion routing.  
+v0.3.0 added protected document storage and quarantine.  
+v0.3.1 adds atomic storage commits, request-envelope reliability, reconciliation, integrity tracking, retention previews, and cache/CDN hardening.  
+Later versions add administrative review, communication history, sender portal, connected scheduling, proposals, analytics, and Workflow Core.
 
 
 ## Dual public experiences

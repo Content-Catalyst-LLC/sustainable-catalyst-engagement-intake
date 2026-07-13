@@ -10,8 +10,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</p>
 
 	<div class="sc-ei-admin__notice">
-		<strong><?php esc_html_e( 'v0.2.2 dual intake experiences active', 'sustainable-catalyst-engagement-intake' ); ?></strong>
-		<span><?php esc_html_e( 'Source attribution, conversion routes, published-fee guidance, and Teams preferences are recorded privately. Secure document uploads remain disabled until v0.3.0.', 'sustainable-catalyst-engagement-intake' ); ?></span>
+		<strong><?php esc_html_e( 'v0.3.1 production upload reliability active', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+		<span><?php esc_html_e( 'Atomic storage, request-size detection, integrity tracking, reconciliation, retention controls, source attribution, Teams preferences, and protected quarantine are active.', 'sustainable-catalyst-engagement-intake' ); ?></span>
 	</div>
 
 	<form method="get">

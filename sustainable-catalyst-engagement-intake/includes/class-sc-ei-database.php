@@ -106,22 +106,48 @@ final class SC_EI_Database {
 			stored_name varchar(255) NOT NULL DEFAULT '',
 			relative_path text NULL,
 			mime_type varchar(191) NOT NULL DEFAULT '',
+			detected_mime varchar(191) NOT NULL DEFAULT '',
 			extension varchar(32) NOT NULL DEFAULT '',
 			size_bytes bigint(20) unsigned NOT NULL DEFAULT 0,
 			sha256 char(64) NOT NULL DEFAULT '',
-			quarantine_status varchar(80) NOT NULL DEFAULT 'pending',
-			validation_status varchar(80) NOT NULL DEFAULT 'pending',
-			scan_status varchar(80) NOT NULL DEFAULT 'not_scanned',
+			signature_type varchar(80) NOT NULL DEFAULT '',
+			validator_version varchar(40) NOT NULL DEFAULT '',
+			document_category varchar(80) NOT NULL DEFAULT 'other',
+			document_notes text NULL,
+			confidentiality varchar(40) NOT NULL DEFAULT 'non_confidential',
+			quarantine_status varchar(80) NOT NULL DEFAULT 'quarantined',
+			validation_status varchar(80) NOT NULL DEFAULT 'validated',
+			scan_status varchar(80) NOT NULL DEFAULT 'not_configured',
+			scanner_provider varchar(120) NOT NULL DEFAULT 'none',
+			scan_message text NULL,
+			integrity_status varchar(80) NOT NULL DEFAULT 'verified',
+			storage_status varchar(40) NOT NULL DEFAULT 'unverified',
+			last_verified_at datetime NULL,
+			last_verified_by bigint(20) unsigned NULL,
+			last_verification_source varchar(40) NOT NULL DEFAULT '',
+			last_verification_message text NULL,
 			retention_until datetime NULL,
 			metadata_json longtext NULL,
+			approved_by bigint(20) unsigned NULL,
+			approved_at datetime NULL,
+			rejected_by bigint(20) unsigned NULL,
+			rejected_at datetime NULL,
+			replacement_requested_at datetime NULL,
+			deleted_by bigint(20) unsigned NULL,
+			downloaded_count int(10) unsigned NOT NULL DEFAULT 0,
+			last_downloaded_at datetime NULL,
 			uploaded_at datetime NOT NULL,
 			deleted_at datetime NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY public_id (public_id),
 			KEY inquiry_id (inquiry_id),
+			KEY sha256 (sha256),
 			KEY quarantine_status (quarantine_status),
 			KEY validation_status (validation_status),
-			KEY retention_until (retention_until)
+			KEY scan_status (scan_status),
+			KEY storage_status (storage_status),
+			KEY retention_until (retention_until),
+			KEY deleted_at (deleted_at)
 		) {$charset_collate};";
 
 		$sql_audit = "CREATE TABLE {$audit_log} (
@@ -185,6 +211,44 @@ final class SC_EI_Database {
 			'scheduling_status',
 			'teams_meeting_url',
 			'scheduled_start_utc',
+		);
+
+		$result = array();
+		foreach ( $columns as $column ) {
+			$found             = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$result[ $column ] = ( $found === $column );
+		}
+
+		return $result;
+	}
+
+	public static function attachment_columns_exist(): array {
+		global $wpdb;
+
+		$table   = self::table( 'attachments' );
+		$columns = array(
+			'detected_mime',
+			'signature_type',
+			'validator_version',
+			'document_category',
+			'confidentiality',
+			'scanner_provider',
+			'scan_message',
+			'integrity_status',
+			'storage_status',
+			'last_verified_at',
+			'last_verified_by',
+			'last_verification_source',
+			'last_verification_message',
+			'retention_until',
+			'approved_by',
+			'approved_at',
+			'rejected_by',
+			'rejected_at',
+			'replacement_requested_at',
+			'deleted_by',
+			'downloaded_count',
+			'last_downloaded_at',
 		);
 
 		$result = array();

@@ -13,6 +13,8 @@ final class SC_EI_Capabilities {
 		'sc_intake_view',
 		'sc_intake_review',
 		'sc_intake_download_files',
+		'sc_intake_release_files',
+		'sc_intake_manage_file_retention',
 		'sc_intake_add_notes',
 		'sc_intake_change_status',
 		'sc_intake_communicate',
@@ -48,13 +50,42 @@ final class SC_EI_Capabilities {
 				'read'                     => true,
 				'sc_intake_view'           => true,
 				'sc_intake_review'         => true,
-				'sc_intake_download_files' => true,
-				'sc_intake_add_notes'      => true,
+				'sc_intake_download_files'       => true,
+				'sc_intake_release_files'        => true,
+				'sc_intake_manage_file_retention'=> true,
+				'sc_intake_add_notes'            => true,
 				'sc_intake_change_status'  => true,
 				'sc_intake_communicate'    => true,
 				'sc_intake_export'         => true,
 			)
 		);
+
+		$reviewer = get_role( 'sc_engagement_reviewer' );
+		if ( $reviewer ) {
+			foreach ( array( 'read', 'sc_intake_view', 'sc_intake_review', 'sc_intake_add_notes', 'sc_intake_change_status' ) as $capability ) {
+				$reviewer->add_cap( $capability );
+			}
+		}
+
+		$manager = get_role( 'sc_engagement_manager' );
+		if ( $manager ) {
+			foreach (
+				array(
+					'read',
+					'sc_intake_view',
+					'sc_intake_review',
+					'sc_intake_download_files',
+					'sc_intake_release_files',
+					'sc_intake_manage_file_retention',
+					'sc_intake_add_notes',
+					'sc_intake_change_status',
+					'sc_intake_communicate',
+					'sc_intake_export',
+				) as $capability
+			) {
+				$manager->add_cap( $capability );
+			}
+		}
 	}
 
 	public static function uninstall(): void {

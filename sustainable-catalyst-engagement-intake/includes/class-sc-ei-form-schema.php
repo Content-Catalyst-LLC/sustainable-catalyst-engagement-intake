@@ -129,6 +129,32 @@ final class SC_EI_Form_Schema {
 		return 'speaking_media' === $type;
 	}
 
+	public static function document_categories(): array {
+		return apply_filters(
+			'sc_ei_document_categories',
+			array(
+				'project_brief'          => __( 'Project brief', 'sustainable-catalyst-engagement-intake' ),
+				'strategy_plan'          => __( 'Strategy or planning document', 'sustainable-catalyst-engagement-intake' ),
+				'research_report'        => __( 'Research report', 'sustainable-catalyst-engagement-intake' ),
+				'proposal'               => __( 'Existing proposal', 'sustainable-catalyst-engagement-intake' ),
+				'technical_documentation'=> __( 'Technical documentation', 'sustainable-catalyst-engagement-intake' ),
+				'data_spreadsheet'       => __( 'Data or spreadsheet', 'sustainable-catalyst-engagement-intake' ),
+				'presentation'           => __( 'Presentation or briefing material', 'sustainable-catalyst-engagement-intake' ),
+				'policy_governance'      => __( 'Policy or governance document', 'sustainable-catalyst-engagement-intake' ),
+				'media_brief'            => __( 'Media brief', 'sustainable-catalyst-engagement-intake' ),
+				'other'                  => __( 'Other', 'sustainable-catalyst-engagement-intake' ),
+			)
+		);
+	}
+
+	public static function document_confidentiality_options(): array {
+		return array(
+			'non_confidential' => __( 'Non-confidential', 'sustainable-catalyst-engagement-intake' ),
+			'confidential'     => __( 'Confidential business material', 'sustainable-catalyst-engagement-intake' ),
+			'unsure'           => __( 'Unsure — review before use', 'sustainable-catalyst-engagement-intake' ),
+		);
+	}
+
 	public static function contact_methods(): array {
 		return SC_EI_Teams::contact_methods();
 	}

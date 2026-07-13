@@ -4,6 +4,7 @@
   const config = window.scEiPublic || {};
   const routeGuidance = config.routeGuidance || {};
   const pricingGuidance = config.pricingGuidance || {};
+  const uploadConfig = config.uploadConfig || {};
 
   const emit = (name, detail = {}) => {
     window.dispatchEvent(new CustomEvent(`scEi:${name}`, { detail }));
@@ -22,7 +23,9 @@
       this.variant = form.querySelector("[name='form_variant']")?.value || form.dataset.mode || "advanced";
       this.source = form.querySelector("[name='source_page']")?.value || this.container?.dataset.sourcePage || "other";
       this.entryCta = form.querySelector("[name='entry_cta']")?.value || "unspecified";
+      this.isSubmitting = false;
       this.suggestTimezone();
+      this.bindUploads();
       emit("formView", this.eventDetail());
     }
 
@@ -46,6 +49,87 @@
           // Manual entry remains available.
         }
       });
+    }
+
+    bindUploads() {
+      this.form.querySelectorAll("[data-sc-ei-files]").forEach((input) => {
+        input.addEventListener("change", () => this.updateUploadState(input));
+        this.updateUploadState(input);
+      });
+    }
+
+    updateUploadState(input) {
+      const files = Array.from(input.files || []);
+      const maxFiles = Number(input.dataset.maxFiles || uploadConfig.max_files || uploadConfig.maxFiles || 5);
+      const maxBytes = Number(input.dataset.maxBytes || uploadConfig.max_file_bytes || uploadConfig.maxBytes || (20 * 1024 * 1024));
+      const maxTotalBytes = Number(input.dataset.maxTotalBytes || uploadConfig.max_total_bytes || uploadConfig.maxTotalBytes || (100 * 1024 * 1024));
+      const totalBytes = files.reduce((total, file) => total + file.size, 0);
+      const allowed = values(input.dataset.allowedExtensions || (uploadConfig.allowedExtensions || []).join(","))
+        .map((item) => item.toLowerCase());
+      let message = "";
+
+      if (files.length > maxFiles) {
+        message = config.i18n?.fileCountError || "Too many documents are selected.";
+      } else if (files.some((file) => file.size > maxBytes)) {
+        message = config.i18n?.fileSizeError || "One or more documents exceed the per-file size limit.";
+      } else if (totalBytes > maxTotalBytes) {
+        message = config.i18n?.fileTotalError || "The combined document size exceeds the safe request limit.";
+      } else if (files.some((file) => {
+        const name = file.name || "";
+        const extension = name.includes(".") ? name.split(".").pop().toLowerCase() : "";
+        return !allowed.includes(extension);
+      })) {
+        message = config.i18n?.fileTypeError || "One or more selected document types are not allowed.";
+      }
+
+      input.setCustomValidity(message);
+
+      const countField = this.form.querySelector("[data-sc-ei-document-count]");
+      const bytesField = this.form.querySelector("[data-sc-ei-document-bytes]");
+      if (countField) countField.value = String(files.length);
+      if (bytesField) bytesField.value = String(totalBytes);
+
+      const section = input.closest("[data-sc-ei-document-section]");
+      const consent = section?.querySelector("[data-sc-ei-document-consent]");
+      const requiredMark = section?.querySelector("[data-sc-ei-document-required]");
+      if (consent) {
+        consent.required = files.length > 0;
+        if (!files.length) consent.checked = false;
+      }
+      if (requiredMark) requiredMark.hidden = files.length === 0;
+
+      const summary = section?.querySelector("[data-sc-ei-file-summary]");
+      if (summary) {
+        summary.innerHTML = "";
+        if (files.length) {
+          const list = document.createElement("ul");
+          files.forEach((file) => {
+            const item = document.createElement("li");
+            item.textContent = `${file.name} — ${this.formatBytes(file.size)}`;
+            list.appendChild(item);
+          });
+          summary.appendChild(list);
+        }
+        if (message) {
+          const error = document.createElement("p");
+          error.className = "sc-ei-file-summary__error";
+          error.textContent = message;
+          summary.appendChild(error);
+        }
+      }
+
+      emit("documentsSelected", this.eventDetail({
+        count: files.length,
+        totalBytes,
+        valid: !message
+      }));
+    }
+
+    formatBytes(bytes) {
+      const value = Number(bytes || 0);
+      if (value < 1024) return `${value} B`;
+      if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+      return `${(value / (1024 * 1024)).toFixed(1)} MB`;
     }
 
     setConditional(container, shouldShow) {
@@ -120,10 +204,29 @@
     }
 
     async submit() {
+      if (this.isSubmitting) return;
       if (!this.validate(this.currentValidationScope?.() || this.form)) return;
 
+      if (navigator.onLine === false) {
+        this.showErrors([config.i18n?.networkOffline || "The browser is offline."]);
+        return;
+      }
+
+      this.isSubmitting = true;
       this.setSubmitting(true);
       this.clearErrors();
+      const statusNodes = this.form.querySelectorAll("[data-sc-ei-upload-status]");
+      statusNodes.forEach((node) => {
+        node.hidden = false;
+        node.textContent = config.i18n?.uploadingSecurely || "Uploading and verifying securely.";
+      });
+
+      const controller = new AbortController();
+      const timeout = window.setTimeout(
+        () => controller.abort(),
+        Number(uploadConfig.timeoutMilliseconds || 180000)
+      );
+
       emit("submissionStarted", this.eventDetail());
 
       try {
@@ -131,7 +234,13 @@
           method: "POST",
           body: new FormData(this.form),
           credentials: "same-origin",
-          headers: { "Accept": "application/json" }
+          cache: "no-store",
+          redirect: "error",
+          signal: controller.signal,
+          headers: {
+            "Accept": "application/json",
+            "Cache-Control": "no-store"
+          }
         });
 
         const data = await response.json().catch(() => ({}));
@@ -142,26 +251,68 @@
         this.onSuccess(data);
         emit("submissionSuccess", this.eventDetail({
           reference: data.reference || "",
+          requestId: data.request_id || "",
           conversionRoute: data.conversion_route || "",
-          schedulingStatus: data.scheduling_status || "not_requested"
+          schedulingStatus: data.scheduling_status || "not_requested",
+          attachmentCount: Number(data.attachment_count || 0),
+          attachmentErrors: Array.isArray(data.attachment_errors) ? data.attachment_errors.length : 0
         }));
       } catch (error) {
-        this.showErrors([error.message || config.i18n?.genericError || "Submission failed."]);
-        emit("submissionError", this.eventDetail({ message: error.message || "Submission failed." }));
+        const message = error?.name === "AbortError"
+          ? (config.i18n?.uploadTimeout || "The secure upload timed out.")
+          : (error.message || config.i18n?.genericError || "Submission failed.");
+        this.showErrors([message]);
+        emit("submissionError", this.eventDetail({ message }));
       } finally {
+        window.clearTimeout(timeout);
+        statusNodes.forEach((node) => {
+          node.hidden = true;
+          node.textContent = "";
+        });
         this.setSubmitting(false);
+        this.isSubmitting = false;
       }
     }
 
     onSuccess(data) {
       const reference = this.success?.querySelector("[data-sc-ei-reference]");
       if (reference) reference.textContent = data.reference || "";
+
+      const attachmentCount = Number(data.attachment_count || 0);
+      const attachmentErrors = Array.isArray(data.attachment_errors) ? data.attachment_errors : [];
+      const attachmentSummary = this.success?.querySelector("[data-sc-ei-attachment-summary]");
+      const attachmentWarnings = this.success?.querySelector("[data-sc-ei-attachment-warnings]");
+
+      if (attachmentSummary) {
+        attachmentSummary.hidden = attachmentCount < 1;
+        attachmentSummary.textContent = attachmentCount > 0
+          ? `${attachmentCount} ${config.i18n?.documentsQuarantined || "document(s) placed in protected quarantine"}.`
+          : "";
+      }
+
+      if (attachmentWarnings) {
+        attachmentWarnings.innerHTML = "";
+        attachmentWarnings.hidden = attachmentErrors.length < 1;
+        if (attachmentErrors.length) {
+          const strong = document.createElement("strong");
+          strong.textContent = "Document upload warnings";
+          const list = document.createElement("ul");
+          attachmentErrors.forEach((message) => {
+            const item = document.createElement("li");
+            item.textContent = message;
+            list.appendChild(item);
+          });
+          attachmentWarnings.append(strong, list);
+        }
+      }
+
       if (this.success) {
         this.success.hidden = false;
         this.success.setAttribute("tabindex", "-1");
         this.success.focus();
       }
       this.form.reset();
+      this.form.querySelectorAll("[data-sc-ei-files]").forEach((input) => this.updateUploadState(input));
     }
   }
 
@@ -316,7 +467,13 @@
       });
 
       fields.forEach((field) => {
-        if (["privacy_consent", "authorization_consent", "follow_up_consent", "calendar_invite_consent", "company_website"].includes(field.name)) return;
+        if (["privacy_consent", "authorization_consent", "follow_up_consent", "calendar_invite_consent", "document_upload_consent", "company_website"].includes(field.name)) return;
+
+        if (field.type === "file") {
+          const names = Array.from(field.files || []).map((file) => `${file.name} (${this.formatBytes(file.size)})`);
+          if (names.length) this.addReviewItem(list, "Selected documents", names.join(", "));
+          return;
+        }
 
         if (field.name === "preferred_weekdays[]") {
           if (processedCheckboxGroups.has(field.name)) return;

@@ -10,6 +10,13 @@ $meeting_requests   = SC_EI_Teams::meeting_requests();
 $scheduling_statuses= SC_EI_Teams::scheduling_statuses();
 $duration_options   = SC_EI_Teams::duration_options();
 $weekday_options    = SC_EI_Teams::weekdays();
+$attachment_statuses = array(
+	'quarantined'          => __( 'Quarantined', 'sustainable-catalyst-engagement-intake' ),
+	'approved'             => __( 'Approved', 'sustainable-catalyst-engagement-intake' ),
+	'replacement_requested'=> __( 'Replacement Requested', 'sustainable-catalyst-engagement-intake' ),
+	'rejected'             => __( 'Rejected', 'sustainable-catalyst-engagement-intake' ),
+	'deleted'              => __( 'Deleted', 'sustainable-catalyst-engagement-intake' ),
+);
 
 $preferred_weekdays = json_decode( (string) ( $inquiry['preferred_weekdays'] ?? '[]' ), true );
 $preferred_weekdays = is_array( $preferred_weekdays ) ? $preferred_weekdays : array();
@@ -54,6 +61,18 @@ $scheduled_end_input   = SC_EI_Teams::format_utc_for_input( $inquiry['scheduled_
 		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Microsoft Teams scheduling record updated.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
 	<?php elseif ( 'scheduling_error' === $message ) : ?>
 		<div class="notice notice-error is-dismissible"><p><?php esc_html_e( 'The Teams scheduling update was rejected. Check the status, time zone, meeting URL, and meeting times.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
+	<?php elseif ( 'attachment_updated' === $message ) : ?>
+		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Private attachment status updated.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
+	<?php elseif ( 'attachment_retention_updated' === $message ) : ?>
+		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Private attachment retention date updated.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
+	<?php elseif ( 'attachment_deleted' === $message ) : ?>
+		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Private attachment deleted from protected storage.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
+	<?php elseif ( 'attachment_verified' === $message ) : ?>
+		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'The private attachment exists in the expected storage area and matches its recorded size and SHA-256 fingerprint.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
+	<?php elseif ( 'attachment_verification_failed' === $message ) : ?>
+		<div class="notice notice-error is-dismissible"><p><?php esc_html_e( 'Attachment verification found a missing, altered, misplaced, or unresolvable file. Download and approval remain protected by fresh integrity checks.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
+	<?php elseif ( 'attachment_error' === $message ) : ?>
+		<div class="notice notice-error is-dismissible"><p><?php esc_html_e( 'The attachment action could not be completed. Review its validation, scan, integrity, permissions, and storage state.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
 	<?php elseif ( 'error' === $message ) : ?>
 		<div class="notice notice-error is-dismissible"><p><?php esc_html_e( 'The requested update could not be completed.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
 	<?php endif; ?>
@@ -204,16 +223,173 @@ $scheduled_end_input   = SC_EI_Teams::format_utc_for_input( $inquiry['scheduled_
 				<?php endif; ?>
 			<?php endforeach; ?>
 
-			<section class="sc-ei-admin__card">
-				<h2><?php esc_html_e( 'Attachment foundation', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<section class="sc-ei-admin__card sc-ei-admin__card--documents">
+				<p class="sc-ei-admin__card-kicker sc-ei-admin__card-kicker--documents"><?php esc_html_e( 'Protected Storage', 'sustainable-catalyst-engagement-intake' ); ?></p>
+				<h2><?php esc_html_e( 'Documents and Quarantine Review', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+				<p class="description"><?php esc_html_e( 'Files have no public Media Library URL. Downloads are authenticated, nonce-protected, integrity-checked, and audited. Treat quarantined documents as untrusted until reviewed.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+
 				<?php if ( $attachments ) : ?>
-					<ul>
+					<div class="sc-ei-attachments">
 						<?php foreach ( $attachments as $attachment ) : ?>
-							<li><?php echo esc_html( $attachment['original_name'] ); ?> — <?php echo esc_html( $attachment['validation_status'] ); ?></li>
+							<?php
+							$attachment_metadata = json_decode( (string) ( $attachment['metadata_json'] ?? '{}' ), true );
+							$attachment_metadata = is_array( $attachment_metadata ) ? $attachment_metadata : array();
+							$security_flags = isset( $attachment_metadata['security_flags'] ) && is_array( $attachment_metadata['security_flags'] )
+								? $attachment_metadata['security_flags']
+								: array();
+							$is_deleted = ! empty( $attachment['deleted_at'] );
+							$can_download = current_user_can( 'sc_intake_download_files' )
+								&& ! $is_deleted
+								&& ! in_array( $attachment['quarantine_status'], array( 'deleted', 'rejected' ), true )
+								&& 'infected' !== $attachment['scan_status'];
+							$download_url = wp_nonce_url(
+								add_query_arg(
+									array(
+										'action'     => 'sc_ei_download_attachment',
+										'attachment' => absint( $attachment['id'] ),
+									),
+									admin_url( 'admin-post.php' )
+								),
+								'sc_ei_download_attachment_' . absint( $attachment['id'] )
+							);
+							$retention_date = $attachment['retention_until']
+								? get_date_from_gmt( $attachment['retention_until'], 'Y-m-d' )
+								: '';
+							?>
+							<article class="sc-ei-attachment sc-ei-attachment--<?php echo esc_attr( $attachment['quarantine_status'] ); ?>">
+								<header class="sc-ei-attachment__header">
+									<div>
+										<h3><?php echo esc_html( $attachment['original_name'] ); ?></h3>
+										<p>
+											<?php echo esc_html( strtoupper( $attachment['extension'] ) ); ?>
+											· <?php echo esc_html( size_format( (int) $attachment['size_bytes'], 2 ) ); ?>
+											· <?php echo esc_html( $attachment['mime_type'] ); ?>
+										</p>
+									</div>
+									<span class="sc-ei-status sc-ei-status--file-<?php echo esc_attr( $attachment['quarantine_status'] ); ?>">
+										<?php echo esc_html( $attachment_statuses[ $attachment['quarantine_status'] ] ?? ucwords( str_replace( '_', ' ', $attachment['quarantine_status'] ) ) ); ?>
+									</span>
+								</header>
+
+								<dl class="sc-ei-admin__details sc-ei-admin__details--attachment">
+									<dt><?php esc_html_e( 'Validation', 'sustainable-catalyst-engagement-intake' ); ?></dt>
+									<dd><?php echo esc_html( ucwords( str_replace( '_', ' ', $attachment['validation_status'] ) ) ); ?> · <?php echo esc_html( $attachment['signature_type'] ); ?> · validator <?php echo esc_html( $attachment['validator_version'] ); ?></dd>
+
+									<dt><?php esc_html_e( 'Malware scan', 'sustainable-catalyst-engagement-intake' ); ?></dt>
+									<dd><?php echo esc_html( ucwords( str_replace( '_', ' ', $attachment['scan_status'] ) ) ); ?><?php if ( $attachment['scanner_provider'] ) : ?> · <?php echo esc_html( $attachment['scanner_provider'] ); ?><?php endif; ?></dd>
+
+									<dt><?php esc_html_e( 'Integrity', 'sustainable-catalyst-engagement-intake' ); ?></dt>
+									<dd>
+										<?php echo esc_html( ucwords( str_replace( '_', ' ', $attachment['integrity_status'] ) ) ); ?>
+										· <code><?php echo esc_html( substr( $attachment['sha256'], 0, 16 ) ); ?>…</code>
+										<br><span class="description"><?php echo esc_html( $attachment['last_verification_message'] ?: __( 'No reliability verification message recorded.', 'sustainable-catalyst-engagement-intake' ) ); ?></span>
+									</dd>
+
+									<dt><?php esc_html_e( 'Storage state', 'sustainable-catalyst-engagement-intake' ); ?></dt>
+									<dd>
+										<span class="sc-ei-storage-state sc-ei-storage-state--<?php echo esc_attr( $attachment['storage_status'] ?: 'unverified' ); ?>"><?php echo esc_html( ucwords( str_replace( '_', ' ', $attachment['storage_status'] ?: 'unverified' ) ) ); ?></span>
+										<?php if ( $attachment['last_verified_at'] ) : ?>
+											<br><span class="description"><?php echo esc_html( sprintf( __( 'Last verified %1$s via %2$s', 'sustainable-catalyst-engagement-intake' ), get_date_from_gmt( $attachment['last_verified_at'], 'M j, Y g:i a' ), $attachment['last_verification_source'] ?: 'unknown' ) ); ?></span>
+										<?php endif; ?>
+									</dd>
+
+									<dt><?php esc_html_e( 'Classification', 'sustainable-catalyst-engagement-intake' ); ?></dt>
+									<dd><?php echo esc_html( ucwords( str_replace( '_', ' ', $attachment['document_category'] ) ) ); ?> · <?php echo esc_html( ucwords( str_replace( '_', ' ', $attachment['confidentiality'] ) ) ); ?></dd>
+
+									<dt><?php esc_html_e( 'Retention', 'sustainable-catalyst-engagement-intake' ); ?></dt>
+									<dd><?php echo $attachment['retention_until'] ? esc_html( get_date_from_gmt( $attachment['retention_until'], 'F j, Y g:i a' ) ) : '—'; ?></dd>
+
+									<dt><?php esc_html_e( 'Activity', 'sustainable-catalyst-engagement-intake' ); ?></dt>
+									<dd><?php echo esc_html( sprintf( __( '%1$d downloads; uploaded %2$s', 'sustainable-catalyst-engagement-intake' ), absint( $attachment['downloaded_count'] ), get_date_from_gmt( $attachment['uploaded_at'], 'M j, Y g:i a' ) ) ); ?></dd>
+								</dl>
+
+								<?php if ( $attachment['document_notes'] ) : ?>
+									<div class="sc-ei-attachment__notes"><strong><?php esc_html_e( 'Sender notes', 'sustainable-catalyst-engagement-intake' ); ?></strong><p><?php echo nl2br( esc_html( $attachment['document_notes'] ) ); ?></p></div>
+								<?php endif; ?>
+
+								<?php if ( $attachment['scan_message'] ) : ?>
+									<div class="sc-ei-attachment__scan"><strong><?php esc_html_e( 'Scanner message', 'sustainable-catalyst-engagement-intake' ); ?></strong><p><?php echo esc_html( $attachment['scan_message'] ); ?></p></div>
+								<?php endif; ?>
+
+								<?php if ( $security_flags ) : ?>
+									<div class="sc-ei-admin__sensitive">
+										<strong><?php esc_html_e( 'Security review flags', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+										<ul>
+											<?php foreach ( $security_flags as $flag ) : ?>
+												<li><?php echo esc_html( ucwords( str_replace( '_', ' ', $flag ) ) ); ?></li>
+											<?php endforeach; ?>
+										</ul>
+									</div>
+								<?php endif; ?>
+
+								<div class="sc-ei-attachment__actions">
+									<?php if ( current_user_can( 'sc_intake_download_files' ) && ! $is_deleted ) : ?>
+										<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+											<input type="hidden" name="action" value="sc_ei_verify_attachment_integrity">
+											<input type="hidden" name="attachment_id" value="<?php echo esc_attr( $attachment['id'] ); ?>">
+											<?php wp_nonce_field( 'sc_ei_verify_attachment_integrity_' . absint( $attachment['id'] ) ); ?>
+											<button type="submit" class="button"><?php esc_html_e( 'Verify Storage and Integrity', 'sustainable-catalyst-engagement-intake' ); ?></button>
+										</form>
+									<?php endif; ?>
+									<?php if ( $can_download ) : ?>
+										<a class="button button-secondary" href="<?php echo esc_url( $download_url ); ?>">
+											<?php echo 'approved' === $attachment['quarantine_status'] ? esc_html__( 'Download approved file', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'Download quarantined file', 'sustainable-catalyst-engagement-intake' ); ?>
+										</a>
+									<?php endif; ?>
+								</div>
+
+								<?php if ( current_user_can( 'sc_intake_release_files' ) && ! $is_deleted ) : ?>
+									<form class="sc-ei-attachment__form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+										<input type="hidden" name="action" value="sc_ei_update_attachment_status">
+										<input type="hidden" name="attachment_id" value="<?php echo esc_attr( $attachment['id'] ); ?>">
+										<?php wp_nonce_field( 'sc_ei_update_attachment_status_' . absint( $attachment['id'] ) ); ?>
+										<label>
+											<span><?php esc_html_e( 'Quarantine action', 'sustainable-catalyst-engagement-intake' ); ?></span>
+											<select name="attachment_status">
+												<option value="quarantined" <?php selected( $attachment['quarantine_status'], 'quarantined' ); ?>><?php esc_html_e( 'Keep quarantined', 'sustainable-catalyst-engagement-intake' ); ?></option>
+												<option value="approved" <?php selected( $attachment['quarantine_status'], 'approved' ); ?>><?php esc_html_e( 'Approve for controlled use', 'sustainable-catalyst-engagement-intake' ); ?></option>
+												<option value="replacement_requested" <?php selected( $attachment['quarantine_status'], 'replacement_requested' ); ?>><?php esc_html_e( 'Request replacement', 'sustainable-catalyst-engagement-intake' ); ?></option>
+												<option value="rejected"><?php esc_html_e( 'Reject and delete file', 'sustainable-catalyst-engagement-intake' ); ?></option>
+											</select>
+										</label>
+										<label>
+											<span><?php esc_html_e( 'Private action note', 'sustainable-catalyst-engagement-intake' ); ?></span>
+											<textarea name="attachment_status_note" rows="2"></textarea>
+										</label>
+										<button type="submit" class="button"><?php esc_html_e( 'Apply Attachment Action', 'sustainable-catalyst-engagement-intake' ); ?></button>
+									</form>
+								<?php endif; ?>
+
+								<?php if ( current_user_can( 'sc_intake_manage_file_retention' ) && ! $is_deleted ) : ?>
+									<form class="sc-ei-attachment__form sc-ei-attachment__form--inline" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+										<input type="hidden" name="action" value="sc_ei_update_attachment_retention">
+										<input type="hidden" name="attachment_id" value="<?php echo esc_attr( $attachment['id'] ); ?>">
+										<?php wp_nonce_field( 'sc_ei_update_attachment_retention_' . absint( $attachment['id'] ) ); ?>
+										<label>
+											<span><?php esc_html_e( 'Delete after', 'sustainable-catalyst-engagement-intake' ); ?></span>
+											<input type="date" name="retention_date" value="<?php echo esc_attr( $retention_date ); ?>">
+										</label>
+										<button type="submit" class="button"><?php esc_html_e( 'Update Retention', 'sustainable-catalyst-engagement-intake' ); ?></button>
+									</form>
+								<?php endif; ?>
+
+								<?php if ( current_user_can( 'sc_intake_delete' ) && ! $is_deleted ) : ?>
+									<form class="sc-ei-attachment__form sc-ei-attachment__form--delete" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('<?php echo esc_js( __( 'Permanently delete this private file from protected storage?', 'sustainable-catalyst-engagement-intake' ) ); ?>');">
+										<input type="hidden" name="action" value="sc_ei_delete_attachment">
+										<input type="hidden" name="attachment_id" value="<?php echo esc_attr( $attachment['id'] ); ?>">
+										<?php wp_nonce_field( 'sc_ei_delete_attachment_' . absint( $attachment['id'] ) ); ?>
+										<label>
+											<span><?php esc_html_e( 'Deletion reason', 'sustainable-catalyst-engagement-intake' ); ?></span>
+											<input type="text" name="delete_reason" required>
+										</label>
+										<button type="submit" class="button button-link-delete"><?php esc_html_e( 'Permanently Delete File', 'sustainable-catalyst-engagement-intake' ); ?></button>
+									</form>
+								<?php endif; ?>
+							</article>
 						<?php endforeach; ?>
-					</ul>
+					</div>
 				<?php else : ?>
-					<p><?php esc_html_e( 'No attachment metadata exists for this inquiry. Secure upload handling is planned for v0.3.0.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+					<p><?php esc_html_e( 'No documents were submitted with this inquiry.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 				<?php endif; ?>
 			</section>
 

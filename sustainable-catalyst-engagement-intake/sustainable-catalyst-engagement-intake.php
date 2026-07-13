@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Sustainable Catalyst Engagement Intake
  * Plugin URI:  https://sustainablecatalyst.com/
- * Description: Dual private intake experiences with a compact Consulting form, an advanced Contact Hub, conversion routing, Microsoft Teams scheduling readiness, audit history, privacy tools, and administrative workflow.
- * Version:     0.2.2
+ * Description: Dual private intake experiences with reliable secure document quarantine, storage reconciliation, validated downloads, Microsoft Teams scheduling readiness, conversion routing, privacy tools, and administrative workflow.
+ * Version:     0.3.1
  * Author:      Content Catalyst LLC
  * Author URI:  https://sustainablecatalyst.com/
  * Text Domain: sustainable-catalyst-engagement-intake
@@ -18,8 +18,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SC_EI_VERSION', '0.2.2' );
-define( 'SC_EI_DB_VERSION', '0.2.2' );
+define( 'SC_EI_VERSION', '0.3.1' );
+define( 'SC_EI_DB_VERSION', '0.3.1' );
+define( 'SC_EI_VALIDATOR_VERSION', '1.0.1' );
 define( 'SC_EI_FILE', __FILE__ );
 define( 'SC_EI_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SC_EI_URL', plugin_dir_url( __FILE__ ) );
@@ -30,9 +31,16 @@ require_once SC_EI_DIR . 'includes/class-sc-ei-statuses.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-capabilities.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-teams.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-conversion.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-upload-environment.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-storage.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-storage-reconciler.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-file-scanner.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-upload-validator.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-audit-log.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-inquiry-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-attachment-repository.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-upload-manager.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-retention.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-form-schema.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-form-handler.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-public.php';
@@ -45,6 +53,7 @@ require_once SC_EI_DIR . 'includes/class-sc-ei-activator.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-plugin.php';
 
 register_activation_hook( __FILE__, array( 'SC_EI_Activator', 'activate' ) );
+register_deactivation_hook( __FILE__, array( 'SC_EI_Activator', 'deactivate' ) );
 
 function sc_ei_bootstrap(): void {
 	SC_EI_Plugin::instance()->boot();

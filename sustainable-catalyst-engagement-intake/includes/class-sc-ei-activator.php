@@ -17,6 +17,8 @@ final class SC_EI_Activator {
 
 		SC_EI_Database::install();
 		SC_EI_Capabilities::install();
+		SC_EI_Storage::ensure();
+		SC_EI_Retention::schedule();
 
 		if ( false === get_option( 'sc_ei_settings', false ) ) {
 			add_option( 'sc_ei_settings', SC_EI_Admin::default_settings(), '', false );
@@ -26,8 +28,12 @@ final class SC_EI_Activator {
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Engagement Intake v0.2.2 activated with compact Consulting and advanced Contact intake experiences, source attribution, and conversion routing.',
+			'Engagement Intake v0.3.1 activated with atomic protected storage, upload request diagnostics, storage reconciliation, integrity verification, retention previews, cache bypass hardening, and v0.3.0 secure intake capabilities.',
 			array( 'version' => SC_EI_VERSION )
 		);
+	}
+
+	public static function deactivate(): void {
+		SC_EI_Retention::unschedule();
 	}
 }

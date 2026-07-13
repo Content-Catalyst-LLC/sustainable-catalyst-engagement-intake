@@ -108,7 +108,7 @@ final class SC_EI_REST {
 	}
 
 	public static function submit( WP_REST_Request $request ) {
-		$result = SC_EI_Form_Handler::process( $request->get_params() );
+		$result = SC_EI_Form_Handler::process( $request->get_params(), $request->get_file_params() );
 
 		if ( is_wp_error( $result ) ) {
 			return new WP_Error(
@@ -126,6 +126,10 @@ final class SC_EI_REST {
 				'scheduling_status' => $result['scheduling_status'] ?? 'not_requested',
 				'form_variant'      => $result['form_variant'] ?? 'advanced',
 				'conversion_route'  => $result['conversion_route'] ?? '',
+				'attachment_count'  => absint( $result['attachment_count'] ?? 0 ),
+				'attachments'       => $result['attachments'] ?? array(),
+				'attachment_errors' => $result['attachment_errors'] ?? array(),
+				'request_id'        => $result['request_id'] ?? '',
 				'message'           => __( 'Your private inquiry record has been created.', 'sustainable-catalyst-engagement-intake' ),
 			),
 			201
@@ -136,7 +140,16 @@ final class SC_EI_REST {
 		if ( in_array( $code, array( 'rate_limited' ), true ) ) {
 			return 429;
 		}
-		if ( in_array( $code, array( 'storage_error' ), true ) ) {
+		if ( in_array( $code, array( 'submission_in_progress', 'duplicate_submission' ), true ) ) {
+			return 409;
+		}
+		if ( in_array( $code, array( 'request_too_large', 'upload_truncated', 'file_too_large' ), true ) ) {
+			return 413;
+		}
+		if ( in_array( $code, array( 'uploads_disabled', 'upload_temp_unavailable' ), true ) ) {
+			return 503;
+		}
+		if ( in_array( $code, array( 'storage_error', 'storage_unavailable', 'storage_move_failed', 'storage_commit_failed' ), true ) ) {
 			return 500;
 		}
 		return 400;

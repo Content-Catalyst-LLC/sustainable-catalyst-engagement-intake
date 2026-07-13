@@ -23,20 +23,25 @@ Core fields:
 
 ## Attachment metadata
 
-The table is installed in v0.1.0 so later releases do not need to redesign the data model.
+The attachment table began as a foundation in v0.1.0 and now supports the full v0.3.x protected-document lifecycle.
 
 Fields include:
 
 - Inquiry relationship
 - UUID
-- Original and stored filenames
+- Original and randomized stored filenames
 - Protected relative path
-- MIME type and extension
+- Declared and detected MIME types
+- Extension and signature type
 - Size and SHA-256 digest
-- Quarantine, validation, and scan states
+- Validator version
+- Document category, notes, and confidentiality classification
+- Quarantine, validation, scan, integrity, and storage states
+- Scanner provider and message
+- Last verification time, user, source, and message
 - Retention date
-- Upload and deletion timestamps
-- Additional metadata
+- Approval, rejection, replacement, download, upload, and deletion metadata
+- Additional sanitized metadata
 
 ## Audit record
 
@@ -49,7 +54,16 @@ Examples:
 - `status_changed`
 - `internal_note`
 - `personal_data_erased`
-- Future: `attachment_uploaded`, `attachment_downloaded`, `message_sent`, `retention_scheduled`, `inquiry_deleted`
+- `attachment_quarantined`
+- `attachment_integrity_checked`
+- `attachment_downloaded`
+- `attachment_status_changed`
+- `attachment_retention_updated`
+- `attachment_deleted`
+- `storage_reconciliation_completed`
+- `storage_repair_completed`
+- `manual_retention_cleanup_completed`
+- Future: `message_sent`, `retention_scheduled`, `inquiry_deleted`
 
 
 ## Microsoft Teams communication and scheduling fields

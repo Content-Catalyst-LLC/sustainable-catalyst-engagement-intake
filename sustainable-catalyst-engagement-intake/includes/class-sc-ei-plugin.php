@@ -33,10 +33,12 @@ final class SC_EI_Plugin {
 
 		SC_EI_Database::maybe_upgrade();
 		SC_EI_Capabilities::install();
+		SC_EI_Upload_Environment::register();
 		SC_EI_Privacy::register();
 		SC_EI_REST::register();
 		SC_EI_Form_Handler::register();
 		SC_EI_Public::register();
+		SC_EI_Retention::register();
 
 		if ( is_admin() ) {
 			SC_EI_Admin::register();

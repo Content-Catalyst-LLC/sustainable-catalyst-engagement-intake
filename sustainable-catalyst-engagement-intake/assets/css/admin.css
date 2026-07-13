@@ -284,3 +284,318 @@
 .sc-ei-admin td.column-conversion_route {
   min-width: 150px;
 }
+
+
+.sc-ei-admin__card--documents {
+  border-top-color: #2f5f4a;
+}
+
+.sc-ei-admin__card-kicker--documents {
+  color: #2f5f4a;
+}
+
+.sc-ei-attachments {
+  display: grid;
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.sc-ei-attachment {
+  padding: 18px;
+  border: 1px solid #d8d1c3;
+  border-left: 5px solid #6a7d71;
+  background: #fbfaf6;
+}
+
+.sc-ei-attachment--approved {
+  border-left-color: #187b32;
+  background: #f4faf6;
+}
+
+.sc-ei-attachment--rejected,
+.sc-ei-attachment--deleted {
+  border-left-color: #8f1515;
+  background: #fff7f7;
+  opacity: .82;
+}
+
+.sc-ei-attachment--replacement_requested {
+  border-left-color: #b77b00;
+  background: #fffaf0;
+}
+
+.sc-ei-attachment__header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.sc-ei-attachment__header h3 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.sc-ei-attachment__header p {
+  margin: 0;
+  color: #5a5a5a;
+  font-size: 12px;
+}
+
+.sc-ei-admin__details--attachment {
+  margin-bottom: 14px;
+}
+
+.sc-ei-attachment__notes,
+.sc-ei-attachment__scan {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #d8d1c3;
+  background: #fff;
+}
+
+.sc-ei-attachment__notes strong,
+.sc-ei-attachment__scan strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.sc-ei-attachment__notes p,
+.sc-ei-attachment__scan p {
+  margin: 0;
+}
+
+.sc-ei-attachment__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.sc-ei-attachment__form {
+  display: grid;
+  grid-template-columns: minmax(180px, .8fr) minmax(240px, 1.4fr) auto;
+  gap: 10px;
+  align-items: end;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #d8d1c3;
+}
+
+.sc-ei-attachment__form label,
+.sc-ei-attachment__form label span {
+  display: block;
+}
+
+.sc-ei-attachment__form label span {
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sc-ei-attachment__form select,
+.sc-ei-attachment__form textarea,
+.sc-ei-attachment__form input[type="date"],
+.sc-ei-attachment__form input[type="text"] {
+  width: 100%;
+}
+
+.sc-ei-attachment__form--inline {
+  grid-template-columns: minmax(200px, 320px) auto;
+}
+
+.sc-ei-attachment__form--delete {
+  grid-template-columns: minmax(240px, 1fr) auto;
+  border-top-color: #e5b5b5;
+}
+
+.sc-ei-status--file-approved {
+  border-color: #187b32;
+  background: #f2faf4;
+}
+
+.sc-ei-status--file-quarantined {
+  border-color: #6a7d71;
+  background: #f4faf6;
+}
+
+.sc-ei-status--file-replacement_requested {
+  border-color: #b77b00;
+  background: #fffaf0;
+}
+
+.sc-ei-status--file-rejected,
+.sc-ei-status--file-deleted {
+  border-color: #8f1515;
+  background: #fff4f4;
+}
+
+.sc-ei-admin td.column-documents {
+  text-align: center;
+  width: 80px;
+}
+
+@media (max-width: 1000px) {
+  .sc-ei-attachment__form,
+  .sc-ei-attachment__form--inline,
+  .sc-ei-attachment__form--delete {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 782px) {
+  .sc-ei-attachment__header {
+    display: block;
+  }
+
+  .sc-ei-attachment__header .sc-ei-status {
+    margin-top: 10px;
+  }
+}
+
+
+.sc-ei-admin__card--wide {
+  grid-column: 1 / -1;
+}
+
+.sc-ei-diagnostics-grid--production {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sc-ei-diagnostic-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.sc-ei-diagnostic-metrics > div {
+  padding: 14px;
+  border: 1px solid #d8d1c3;
+  background: #fff;
+}
+
+.sc-ei-diagnostic-metrics strong,
+.sc-ei-diagnostic-metrics span {
+  display: block;
+}
+
+.sc-ei-diagnostic-metrics strong {
+  margin-bottom: 3px;
+  font-size: 18px;
+}
+
+.sc-ei-diagnostic-metrics span {
+  color: #5a5a5a;
+  font-size: 12px;
+}
+
+.sc-ei-checks--columns {
+  columns: 2;
+  column-gap: 24px;
+}
+
+.sc-ei-diagnostic-warning {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border: 1px solid #d49b2f;
+  border-left: 5px solid #b77b00;
+  background: #fffaf0;
+}
+
+.sc-ei-diagnostic-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.sc-ei-diagnostic-actions form,
+.sc-ei-attachment__actions form {
+  margin: 0;
+}
+
+.sc-ei-diagnostic-details {
+  margin: 12px 0;
+  border: 1px solid #d8d1c3;
+  background: #fff;
+}
+
+.sc-ei-diagnostic-details summary {
+  padding: 12px 14px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.sc-ei-diagnostic-table-wrap {
+  overflow-x: auto;
+  padding: 0 12px 12px;
+}
+
+.sc-ei-danger-zone {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid #d7a2a2;
+  border-left: 5px solid #8f1515;
+  background: #fff5f5;
+}
+
+.sc-ei-danger-zone label,
+.sc-ei-danger-zone label strong {
+  display: block;
+}
+
+.sc-ei-danger-zone input {
+  min-width: 220px;
+  margin-top: 5px;
+}
+
+.sc-ei-storage-state {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid #aaa;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+.sc-ei-storage-state--healthy {
+  border-color: #187b32;
+  background: #f2faf4;
+  color: #0f5d25;
+}
+
+.sc-ei-storage-state--missing,
+.sc-ei-storage-state--hash_mismatch,
+.sc-ei-storage-state--unresolvable {
+  border-color: #8f1515;
+  background: #fff4f4;
+  color: #8f1515;
+}
+
+.sc-ei-storage-state--size_mismatch,
+.sc-ei-storage-state--misplaced,
+.sc-ei-storage-state--unverified {
+  border-color: #b77b00;
+  background: #fffaf0;
+  color: #7a5200;
+}
+
+@media (max-width: 1000px) {
+  .sc-ei-diagnostics-grid--production {
+    grid-template-columns: 1fr;
+  }
+
+  .sc-ei-checks--columns {
+    columns: 1;
+  }
+}

@@ -5,7 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 <div class="wrap sc-ei-admin">
 	<h1><?php esc_html_e( 'Engagement Intake Settings', 'sustainable-catalyst-engagement-intake' ); ?></h1>
-	<p><?php esc_html_e( 'v0.2.2 keeps conservative data-preservation defaults while adding dual intake attribution, conversion routing, and Teams scheduling-readiness controls. Automated retention processing arrives in a later release.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+	<p><?php esc_html_e( 'v0.3.1 stabilizes protected document intake with atomic storage commits, request-envelope checks, server-aware limits, reconciliation, storage probes, retention previews, explicit cache bypass headers, and v0.3.0 workflow capabilities.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 
 	<form method="post" action="options.php">
 		<?php settings_fields( 'sc_ei_settings_group' ); ?>
@@ -44,8 +44,62 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</section>
 
 		<section class="sc-ei-admin__card sc-ei-admin__settings-card">
+			<h2><?php esc_html_e( 'Secure document intake', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<p><?php esc_html_e( 'Files are stored outside the public Media Library with randomized internal names. The configured path should be outside the public web root whenever hosting permits.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row"><label for="sc-ei-upload-max-files"><?php esc_html_e( 'Maximum files per inquiry', 'sustainable-catalyst-engagement-intake' ); ?></label></th>
+					<td><input id="sc-ei-upload-max-files" type="number" min="1" max="10" name="sc_ei_settings[upload_max_files]" value="<?php echo esc_attr( $settings['upload_max_files'] ); ?>"></td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="sc-ei-upload-max-mb"><?php esc_html_e( 'Maximum size per file', 'sustainable-catalyst-engagement-intake' ); ?></label></th>
+					<td><input id="sc-ei-upload-max-mb" type="number" min="1" max="100" name="sc_ei_settings[upload_max_file_mb]" value="<?php echo esc_attr( $settings['upload_max_file_mb'] ); ?>"> <?php esc_html_e( 'MB', 'sustainable-catalyst-engagement-intake' ); ?></td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Allowed extensions', 'sustainable-catalyst-engagement-intake' ); ?></th>
+					<td>
+						<fieldset>
+							<?php foreach ( SC_EI_Upload_Validator::supported_extensions() as $extension => $label ) : ?>
+								<label class="sc-ei-settings-check">
+									<input type="checkbox" name="sc_ei_settings[allowed_upload_extensions][]" value="<?php echo esc_attr( $extension ); ?>" <?php checked( in_array( $extension, (array) $settings['allowed_upload_extensions'], true ) ); ?>>
+									<?php echo esc_html( strtoupper( $extension ) . ' — ' . $label ); ?>
+								</label><br>
+							<?php endforeach; ?>
+						</fieldset>
+						<p class="description"><?php esc_html_e( 'Executable files, archives, macros, encrypted documents, active-content PDFs, and extension/MIME mismatches remain blocked regardless of this selection.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="sc-ei-attachment-retention"><?php esc_html_e( 'Default attachment retention', 'sustainable-catalyst-engagement-intake' ); ?></label></th>
+					<td><input id="sc-ei-attachment-retention" type="number" min="7" max="3650" name="sc_ei_settings[attachment_retention_days]" value="<?php echo esc_attr( $settings['attachment_retention_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="sc-ei-private-storage"><?php esc_html_e( 'Private storage path', 'sustainable-catalyst-engagement-intake' ); ?></label></th>
+					<td>
+						<?php $sc_ei_locked_storage_path = (string) get_option( 'sc_ei_storage_base_dir', '' ); ?>
+						<input id="sc-ei-private-storage" type="text" class="large-text code" name="sc_ei_settings[private_storage_path]" value="<?php echo esc_attr( $sc_ei_locked_storage_path ?: $settings['private_storage_path'] ); ?>" placeholder="<?php echo esc_attr( dirname( ABSPATH ) . '/sc-engagement-intake-private' ); ?>" <?php echo $sc_ei_locked_storage_path ? 'readonly' : ''; ?>>
+						<p class="description"><?php esc_html_e( 'Optional absolute server path. Leave empty for automatic selection. The selected path is locked when the first accepted document is stored so existing files do not become orphaned. SC_EI_PRIVATE_STORAGE_PATH overrides the lock and should only be changed with a deliberate storage migration.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+						<?php if ( get_option( 'sc_ei_storage_base_dir', '' ) ) : ?>
+							<p><strong><?php esc_html_e( 'Locked effective path:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <code><?php echo esc_html( get_option( 'sc_ei_storage_base_dir', '' ) ); ?></code></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'External scanner requirement', 'sustainable-catalyst-engagement-intake' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="sc_ei_settings[require_external_scanner]" value="1" <?php checked( $settings['require_external_scanner'], 1 ); ?>>
+							<?php esc_html_e( 'Reject and delete uploads unless an integrated scanner reports them clean.', 'sustainable-catalyst-engagement-intake' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Leave off until a scanner integration uses the sc_ei_scan_attachment and sc_ei_scanner_probe filters.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+					</td>
+				</tr>
+			</table>
+		</section>
+
+		<section class="sc-ei-admin__card sc-ei-admin__settings-card">
 			<h2><?php esc_html_e( 'Microsoft Teams scheduling readiness', 'sustainable-catalyst-engagement-intake' ); ?></h2>
-			<p><?php esc_html_e( 'Microsoft Teams is the only supported live meeting platform. v0.2.2 stores preferences and approved meeting records; Microsoft Graph event creation is not enabled yet.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<p><?php esc_html_e( 'Microsoft Teams is the only supported live meeting platform. v0.3.1 stores preferences and approved meeting records; Microsoft Graph event creation is not enabled yet.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row"><label for="sc-ei-teams-organizer"><?php esc_html_e( 'Teams organizer email', 'sustainable-catalyst-engagement-intake' ); ?></label></th>

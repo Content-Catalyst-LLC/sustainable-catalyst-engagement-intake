@@ -1,88 +1,86 @@
-# Release Notes — v0.2.2
+# Release Notes — v0.3.1
 
 ## Purpose
 
-Create the strongest intake experience for Sustainable Catalyst by separating conversion-focused consulting intake from broad institutional contact routing while preserving one private administrative system.
+Stabilize the v0.3.0 private document pipeline in real WordPress and hosting environments before adding broader review, communication, or sender-portal workflows.
 
-## Compact Consulting Intake
+## Atomic storage
 
-Designed for visitors who have already reviewed the Consulting page.
+Files no longer move directly from PHP temporary storage to their final name.
 
-It collects:
+Each accepted file:
 
-- Name
-- Email
-- Organization
-- Best-fit engagement
-- Budget range
-- Problem
-- Desired outcome
-- Desired start date
-- Public link
-- Email-first or Teams fit-call next step
+1. moves to a randomized `.part-*` staging name
+2. receives restrictive best-effort permissions
+3. is rechecked for expected byte size
+4. is rechecked for expected SHA-256
+5. is atomically renamed to its final `.qtn` name
+6. is rechecked after commit
+7. locks the effective storage path after success
 
-A Teams fit-call request reveals only:
+A failed transaction removes the staged or committed file.
 
-- Teams email
-- Time zone
-- General availability
-- Calendar invitation consent
+## Request envelope
 
-## Advanced Contact Hub
+v0.3.1 detects conditions that commonly appear as unexplained empty forms:
 
-Designed for the Contact page.
+- request content length exceeds PHP `post_max_size`
+- PHP file uploads disabled
+- temporary upload directory missing or unwritable
+- browser selected more files than PHP delivered
+- plugin settings exceed PHP file or request limits
 
-It supports ten inquiry routes and conditional detail collection for:
+The admin-post fallback is marked with `sc_ei_submission=1`, preventing the oversize interceptor from affecting other WordPress forms.
 
-- General questions
-- Consulting
-- Research collaboration
-- Platform and technical work
-- Workshops and training
-- Monthly advisory
-- Speaking, media, and press
-- Open-source work
-- Institutional partnership
-- Other inquiries
+## Reconciliation
 
-## Conversion routing
+The operator can run a read-only scan comparing active attachment rows with managed files.
 
-Private records now include:
+Detected issue types:
 
-- `form_variant`
-- `source_page`
-- `entry_cta`
-- `conversion_route`
-- `guidance_flags`
+- missing
+- SHA-256 mismatch
+- size mismatch
+- misplaced between quarantine and approved areas
+- unresolvable relative path
+- orphan `.qtn` file
 
-The referring URL remains in private metadata.
+Per-record verification metadata is updated. Orphans are reported but not removed.
 
-## Guidance
+## Retention
 
-The compact form can explain:
+A preview shows the expired queue without deletion.
 
-- free fit-call boundaries
-- $375 strategic consultation
-- $1,500 diagnostic
-- $5,000–$8,500 strategy sprint
-- platform builds beginning at $12,000
-- $1,500–$4,500 workshops
-- $2,500–$6,000+ monthly advisory
-- custom institutional partnership scope
+Manual execution requires:
 
-Guidance is educational and non-blocking.
+- `sc_intake_delete`
+- nonce
+- exact phrase `DELETE EXPIRED`
 
-## Event hooks
+Cron and manual runs use a short-lived lock and save counts, bytes, and failures.
 
-The release includes PHP and browser events for privacy-conscious conversion measurement. No GA4, Microsoft, Meta, or other analytics provider is enabled automatically.
+## Cache behavior
 
-## Boundaries
+The plugin sends explicit no-store headers for forms and REST submissions. Cloudflare and hosting configuration must still exclude the form pages and endpoints from full-page caching.
 
-v0.2.2 does not:
+## Live verification checklist
 
-- create a fit score
-- automatically approve or reject
-- expose a public inquiry record
-- create a Teams meeting
-- expose live calendar availability
-- accept physical files
+1. Activate v0.3.1.
+2. Open Diagnostics.
+3. Confirm migration fields.
+4. Run Storage Probe.
+5. Run Storage Reconciliation.
+6. Preview retention.
+7. Submit TXT, PDF, PNG, DOCX, XLSX, and CSV test files.
+8. Test one oversized file.
+9. Test excessive combined size.
+10. Test compact and advanced forms on mobile.
+11. Confirm Cloudflare does not cache nonces or REST responses.
+12. Verify an attachment manually and download it.
+13. Review audit events.
+
+## Idempotency
+
+The client blocks duplicate in-flight submissions. The server atomically locks each request ID, returns HTTP 409 for a concurrent copy, and stores the completed response for 15 minutes. Retrying the same timed-out request returns the original reference and attachment result.
+
+Abandoned request locks older than one hour are removed by a throttled maintenance pass.

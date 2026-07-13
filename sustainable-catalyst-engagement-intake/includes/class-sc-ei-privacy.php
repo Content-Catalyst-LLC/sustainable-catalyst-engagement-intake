@@ -45,47 +45,7 @@ final class SC_EI_Privacy {
 		$data = array();
 		foreach ( $results as $row ) {
 			$item_data = array();
-			foreach (
-				array(
-					'reference'          => 'Inquiry reference',
-					'inquiry_type'       => 'Inquiry type',
-					'status'             => 'Status',
-					'form_variant'       => 'Intake experience',
-					'source_page'        => 'Source page',
-					'entry_cta'          => 'Entry CTA',
-					'conversion_route'   => 'Conversion route',
-					'contact_name'       => 'Name',
-					'contact_email'      => 'Email',
-					'organization'       => 'Organization',
-					'role_title'         => 'Role',
-					'subject'            => 'Subject',
-					'message'            => 'Message',
-					'project_summary'    => 'Project summary',
-					'desired_outcome'    => 'Desired outcome',
-					'service_interest'   => 'Service interest',
-					'budget_range'       => 'Budget range',
-					'desired_start_date' => 'Desired start date',
-					'deadline_date'      => 'Deadline',
-					'preferred_contact_method' => 'Preferred contact method',
-					'teams_email'        => 'Microsoft Teams email',
-					'phone_number'       => 'Phone number',
-					'timezone'           => 'Time zone',
-					'city'               => 'City',
-					'country'            => 'Country',
-					'meeting_request'    => 'Microsoft Teams meeting request',
-					'preferred_weekdays' => 'Preferred weekdays',
-					'preferred_time_windows' => 'Preferred time windows',
-					'preferred_duration' => 'Preferred duration',
-					'participant_count'  => 'Participant count',
-					'participant_emails' => 'Participant emails',
-					'accessibility_needs'=> 'Accessibility needs',
-					'calendar_invite_consent' => 'Calendar invitation consent',
-					'scheduling_notes'   => 'Scheduling notes',
-					'scheduling_status'  => 'Scheduling status',
-					'created_at'         => 'Submitted at',
-					'updated_at'         => 'Last updated',
-				) as $key => $label
-			) {
+			foreach ( self::inquiry_export_fields() as $key => $label ) {
 				if ( isset( $row[ $key ] ) && '' !== (string) $row[ $key ] ) {
 					$item_data[] = array(
 						'name'  => $label,
@@ -100,6 +60,41 @@ final class SC_EI_Privacy {
 				'item_id'     => 'sc-ei-' . $row['id'],
 				'data'        => $item_data,
 			);
+
+			foreach ( SC_EI_Attachment_Repository::for_inquiry( absint( $row['id'] ), true ) as $attachment ) {
+				$attachment_data = array();
+				foreach (
+					array(
+						'original_name'     => 'Original document name',
+						'mime_type'         => 'Document MIME type',
+						'extension'         => 'Document extension',
+						'size_bytes'        => 'Document size in bytes',
+						'document_category' => 'Document category',
+						'document_notes'    => 'Document notes',
+						'confidentiality'   => 'Confidentiality classification',
+						'quarantine_status' => 'Quarantine status',
+						'validation_status' => 'Validation status',
+						'scan_status'       => 'Malware scan status',
+						'retention_until'   => 'Retention until',
+						'uploaded_at'       => 'Uploaded at',
+						'deleted_at'        => 'Deleted at',
+					) as $key => $label
+				) {
+					if ( isset( $attachment[ $key ] ) && '' !== (string) $attachment[ $key ] ) {
+						$attachment_data[] = array(
+							'name'  => $label,
+							'value' => (string) $attachment[ $key ],
+						);
+					}
+				}
+
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-documents',
+					'group_label' => __( 'Engagement Intake Documents', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-attachment-' . $attachment['id'],
+					'data'        => $attachment_data,
+				);
+			}
 		}
 
 		return array(
@@ -120,31 +115,83 @@ final class SC_EI_Privacy {
 			ARRAY_A
 		);
 
-		$removed = false;
+		$removed  = false;
+		$retained = false;
+		$messages = array();
+
 		foreach ( $rows as $row ) {
-			$anonymous_email = 'deleted+' . absint( $row['id'] ) . '@example.invalid';
+			$inquiry_id = absint( $row['id'] );
+			$now        = current_time( 'mysql', true );
+
+			foreach ( SC_EI_Attachment_Repository::for_inquiry( $inquiry_id, true ) as $attachment ) {
+				$file_deleted = ! empty( $attachment['deleted_at'] )
+					|| SC_EI_Storage::delete_file( (string) $attachment['relative_path'] );
+
+				if ( ! $file_deleted ) {
+					$retained   = true;
+					$messages[] = __( 'At least one private document could not be deleted from protected storage and requires administrative review.', 'sustainable-catalyst-engagement-intake' );
+					continue;
+				}
+
+				$attachment_updated = $wpdb->update(
+					SC_EI_Database::table( 'attachments' ),
+					array(
+						'original_name'              => '[erased]',
+						'document_notes'             => '',
+						'metadata_json'              => '{}',
+						'quarantine_status'          => 'deleted',
+						'storage_status'             => 'deleted',
+						'integrity_status'           => 'deleted',
+						'last_verified_at'           => $now,
+						'last_verified_by'           => 0,
+						'last_verification_source'   => 'privacy_erasure',
+						'last_verification_message'  => 'Physical file deleted or confirmed absent during privacy erasure.',
+						'deleted_by'                 => 0,
+						'deleted_at'                 => $attachment['deleted_at'] ?: $now,
+					),
+					array( 'id' => absint( $attachment['id'] ) ),
+					array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%d', '%s' ),
+					array( '%d' )
+				);
+
+				if ( false === $attachment_updated ) {
+					$retained = true;
+				} else {
+					$removed = true;
+					SC_EI_Audit_Log::record(
+						'attachment_personal_data_erased',
+						'Private document deleted and identifying attachment metadata erased through WordPress privacy tools.',
+						array(),
+						$inquiry_id,
+						absint( $attachment['id'] ),
+						0
+					);
+				}
+			}
+
+			$anonymous_email = 'deleted+' . $inquiry_id . '@example.invalid';
 			$updated         = $wpdb->update(
 				$table,
 				array(
-					'contact_name'    => '',
-					'contact_email'   => $anonymous_email,
-					'organization'    => '',
-					'role_title'      => '',
-					'teams_email'     => '',
-					'phone_number'    => '',
-					'city'            => '',
-					'country'         => '',
+					'contact_name'       => '',
+					'contact_email'      => $anonymous_email,
+					'organization'       => '',
+					'role_title'         => '',
+					'teams_email'        => '',
+					'phone_number'       => '',
+					'city'               => '',
+					'country'            => '',
 					'participant_emails' => '[]',
-					'accessibility_needs' => '',
-					'scheduling_notes' => '',
-					'message'         => '[Personal data erased through WordPress privacy tools.]',
-					'project_summary' => '',
-					'desired_outcome' => '',
-					'relevant_links'  => '[]',
-					'metadata_json'   => '{}',
-					'updated_at'      => current_time( 'mysql', true ),
+					'accessibility_needs'=> '',
+					'scheduling_notes'   => '',
+					'message'            => '[Personal data erased through WordPress privacy tools.]',
+					'project_summary'    => '',
+					'desired_outcome'    => '',
+					'relevant_links'     => '[]',
+					'metadata_json'      => '{}',
+					'updated_at'         => $now,
 				),
-				array( 'id' => absint( $row['id'] ) ),
+				array( 'id' => $inquiry_id ),
 				array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
 				array( '%d' )
 			);
@@ -155,16 +202,62 @@ final class SC_EI_Privacy {
 					'personal_data_erased',
 					'Personal data erased through WordPress privacy tools.',
 					array( 'reference' => $row['reference'] ),
-					absint( $row['id'] )
+					$inquiry_id,
+					null,
+					0
 				);
+			} else {
+				$retained = true;
 			}
 		}
 
 		return array(
 			'items_removed'  => $removed,
-			'items_retained' => false,
-			'messages'       => array(),
+			'items_retained' => $retained,
+			'messages'       => array_values( array_unique( $messages ) ),
 			'done'           => true,
+		);
+	}
+
+	private static function inquiry_export_fields(): array {
+		return array(
+			'reference'                => 'Inquiry reference',
+			'inquiry_type'             => 'Inquiry type',
+			'status'                   => 'Status',
+			'form_variant'             => 'Intake experience',
+			'source_page'              => 'Source page',
+			'entry_cta'                => 'Entry CTA',
+			'conversion_route'         => 'Conversion route',
+			'contact_name'             => 'Name',
+			'contact_email'            => 'Email',
+			'organization'             => 'Organization',
+			'role_title'               => 'Role',
+			'subject'                  => 'Subject',
+			'message'                  => 'Message',
+			'project_summary'          => 'Project summary',
+			'desired_outcome'          => 'Desired outcome',
+			'service_interest'         => 'Service interest',
+			'budget_range'             => 'Budget range',
+			'desired_start_date'       => 'Desired start date',
+			'deadline_date'            => 'Deadline',
+			'preferred_contact_method' => 'Preferred contact method',
+			'teams_email'              => 'Microsoft Teams email',
+			'phone_number'             => 'Phone number',
+			'timezone'                 => 'Time zone',
+			'city'                     => 'City',
+			'country'                  => 'Country',
+			'meeting_request'          => 'Microsoft Teams meeting request',
+			'preferred_weekdays'       => 'Preferred weekdays',
+			'preferred_time_windows'   => 'Preferred time windows',
+			'preferred_duration'       => 'Preferred duration',
+			'participant_count'        => 'Participant count',
+			'participant_emails'       => 'Participant emails',
+			'accessibility_needs'      => 'Accessibility needs',
+			'calendar_invite_consent'  => 'Calendar invitation consent',
+			'scheduling_notes'         => 'Scheduling notes',
+			'scheduling_status'        => 'Scheduling status',
+			'created_at'               => 'Submitted at',
+			'updated_at'               => 'Last updated',
 		);
 	}
 }

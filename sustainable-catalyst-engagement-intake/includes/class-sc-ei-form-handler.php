@@ -45,7 +45,7 @@ final class SC_EI_Form_Handler {
 	}
 
 	public static function handle_post(): void {
-		$result = self::process( wp_unslash( $_POST ) );
+		$result = self::process( wp_unslash( $_POST ), $_FILES );
 		$target = self::safe_redirect_target( $_POST['redirect_to'] ?? '' );
 
 		if ( is_wp_error( $result ) ) {
@@ -60,20 +60,27 @@ final class SC_EI_Form_Handler {
 			$target = add_query_arg(
 				array(
 					'sc_ei_result'    => 'success',
-					'sc_ei_reference' => rawurlencode( $result['reference'] ),
+					'sc_ei_reference'    => rawurlencode( $result['reference'] ),
+					'sc_ei_files'        => absint( $result['attachment_count'] ?? 0 ),
+					'sc_ei_file_warning' => empty( $result['attachment_errors'] ) ? 0 : 1,
 				),
 				$target
 			);
 		}
 
-		wp_safe_redirect( $target );
+		wp_safe_redirect( $target, 303 );
 		exit;
 	}
 
-	public static function process( array $raw ) {
+	public static function process( array $raw, array $files = array() ) {
 		$nonce = isset( $raw['sc_ei_nonce'] ) ? sanitize_text_field( (string) $raw['sc_ei_nonce'] ) : '';
 		if ( ! wp_verify_nonce( $nonce, self::NONCE_ACTION ) ) {
 			return new WP_Error( 'security_check', __( 'The form security check expired. Please reload the page and try again.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		$envelope = SC_EI_Upload_Environment::validate_request_envelope( $raw, $files );
+		if ( is_wp_error( $envelope ) ) {
+			return $envelope;
 		}
 
 		if ( ! empty( $raw['company_website'] ) ) {
@@ -100,6 +107,10 @@ final class SC_EI_Form_Handler {
 		$source_page  = SC_EI_Conversion::sanitize_source( (string) ( $raw['source_page'] ?? 'other' ) );
 		$entry_cta    = SC_EI_Conversion::sanitize_entry_cta( (string) ( $raw['entry_cta'] ?? 'unspecified' ) );
 		$form_id      = sanitize_key( (string) ( $raw['form_id'] ?? '' ) );
+		$request_id   = sanitize_text_field( (string) ( $raw['request_id'] ?? '' ) );
+		if ( ! preg_match( '/^[a-f0-9-]{36}$/i', $request_id ) ) {
+			$request_id = wp_generate_uuid4();
+		}
 		$attribution_signature = sanitize_text_field( (string) ( $raw['attribution_signature'] ?? '' ) );
 		$expected_attribution  = self::attribution_signature( $form_variant, $source_page, $entry_cta, $form_id );
 
@@ -241,6 +252,28 @@ final class SC_EI_Form_Handler {
 		$weekdays          = SC_EI_Teams::sanitize_weekdays( $raw['preferred_weekdays'] ?? array() );
 		$participant_emails= SC_EI_Teams::sanitize_participant_emails( $raw['participant_emails'] ?? '' );
 
+		$document_category = sanitize_key( (string) ( $raw['document_category'] ?? 'other' ) );
+		if ( ! array_key_exists( $document_category, SC_EI_Form_Schema::document_categories() ) ) {
+			$document_category = 'other';
+		}
+
+		$document_confidentiality = sanitize_key( (string) ( $raw['document_confidentiality'] ?? 'non_confidential' ) );
+		if ( ! array_key_exists( $document_confidentiality, SC_EI_Form_Schema::document_confidentiality_options() ) ) {
+			$document_confidentiality = 'non_confidential';
+		}
+
+		$document_notes = self::clean_textarea( $raw['document_notes'] ?? '' );
+		$upload_items   = SC_EI_Upload_Manager::normalize_files( $files, 'documents' );
+
+		if ( $upload_items && empty( $raw['document_upload_consent'] ) ) {
+			return new WP_Error( 'document_consent_required', __( 'Confirm that you are authorized to upload the selected documents and understand that they will be quarantined for review.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		$successful_response = get_transient( self::request_success_key( $request_id ) );
+		if ( is_array( $successful_response ) && ! empty( $successful_response['reference'] ) ) {
+			return $successful_response;
+		}
+
 		$rate_check = self::check_rate_limit( $email );
 		if ( is_wp_error( $rate_check ) ) {
 			return $rate_check;
@@ -251,6 +284,11 @@ final class SC_EI_Form_Handler {
 			return new WP_Error( 'duplicate_submission', __( 'This inquiry appears to have already been submitted. Check for the confirmation reference before sending it again.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 
+		if ( ! self::acquire_request_lock( $request_id ) ) {
+			return new WP_Error( 'submission_in_progress', __( 'This inquiry is already being processed. Keep the page open and check for the confirmation before submitting again.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		try {
 		$metadata = array(
 			'form_mode'          => $mode,
 			'form_variant'       => $form_variant,
@@ -267,8 +305,15 @@ final class SC_EI_Form_Handler {
 			'audience'           => self::clean_single( $raw['audience'] ?? '', 191 ),
 			'follow_up_consent'  => empty( $raw['follow_up_consent'] ) ? 'no' : 'yes',
 			'source_url'         => esc_url_raw( (string) ( $raw['source_url'] ?? '' ) ),
-			'privacy_notice'     => 'engagement-intake-v0.2.2',
+			'privacy_notice'     => 'engagement-intake-v0.3.1',
 			'meeting_platform'   => 'microsoft_teams',
+			'request_id'         => $request_id,
+			'documents_selected' => count( $upload_items ),
+			'document_selection_count' => absint( $raw['document_selection_count'] ?? 0 ),
+			'document_selection_bytes' => absint( $raw['document_selection_bytes'] ?? 0 ),
+			'request_content_length'   => SC_EI_Upload_Environment::content_length(),
+			'document_category'  => $document_category,
+			'document_confidentiality' => $document_confidentiality,
 		);
 
 		$links = self::clean_links( $raw['relevant_links'] ?? '' );
@@ -311,7 +356,7 @@ final class SC_EI_Form_Handler {
 					'scheduling_status'       => $meeting_requested ? 'requested' : 'not_requested',
 					'relevant_links'          => $links,
 					'metadata'                => $metadata,
-					'consent_version'         => 'engagement-intake-v0.2.2',
+					'consent_version'         => 'engagement-intake-v0.3.1',
 					'consent_at'              => current_time( 'mysql', true ),
 				)
 			);
@@ -337,6 +382,9 @@ final class SC_EI_Form_Handler {
 				'preferred_contact_method' => $contact_method,
 				'meeting_request'          => $meeting_request,
 				'timezone'                 => $timezone,
+				'request_id'               => $request_id,
+				'documents_selected'       => count( $upload_items ),
+				'request_content_length'   => SC_EI_Upload_Environment::content_length(),
 			),
 			$id,
 			null,
@@ -358,8 +406,36 @@ final class SC_EI_Form_Handler {
 			);
 		}
 
+		$attachment_result = SC_EI_Upload_Manager::process_inquiry_uploads(
+			$record,
+			$files,
+			array(
+				'form_variant'             => $form_variant,
+				'source_page'              => $source_page,
+				'document_category'        => $document_category,
+				'document_notes'           => $document_notes,
+				'document_confidentiality' => $document_confidentiality,
+				'request_id'                => $request_id,
+			)
+		);
+
 		set_transient( $duplicate_key, 1, 10 * MINUTE_IN_SECONDS );
 		self::increment_rate_limit( $email );
+
+		$response = array(
+			'id'                => $id,
+			'reference'         => $record['reference'],
+			'status'            => $record['status'],
+			'scheduling_status' => $record['scheduling_status'],
+			'form_variant'      => $record['form_variant'],
+			'conversion_route'  => $record['conversion_route'],
+			'attachment_count'  => $attachment_result['count'],
+			'attachments'       => $attachment_result['accepted'],
+			'attachment_errors' => $attachment_result['errors'],
+			'request_id'        => $request_id,
+		);
+
+		set_transient( self::request_success_key( $request_id ), $response, 15 * MINUTE_IN_SECONDS );
 
 		do_action( 'sc_ei_public_inquiry_created', $record, $raw );
 		do_action(
@@ -374,14 +450,39 @@ final class SC_EI_Form_Handler {
 			)
 		);
 
-		return array(
-			'id'                => $id,
-			'reference'         => $record['reference'],
-			'status'            => $record['status'],
-			'scheduling_status' => $record['scheduling_status'],
-			'form_variant'      => $record['form_variant'],
-			'conversion_route'  => $record['conversion_route'],
-		);
+		return $response;
+		} finally {
+			self::release_request_lock( $request_id );
+		}
+	}
+
+	private static function acquire_request_lock( string $request_id ): bool {
+		$key      = self::request_lock_key( $request_id );
+		$acquired = add_option( $key, time(), '', false );
+
+		if ( $acquired ) {
+			return true;
+		}
+
+		$created_at = absint( get_option( $key, 0 ) );
+		if ( $created_at > 0 && $created_at < time() - 15 * MINUTE_IN_SECONDS ) {
+			delete_option( $key );
+			return add_option( $key, time(), '', false );
+		}
+
+		return false;
+	}
+
+	private static function release_request_lock( string $request_id ): void {
+		delete_option( self::request_lock_key( $request_id ) );
+	}
+
+	private static function request_lock_key( string $request_id ): string {
+		return 'sc_ei_lock_' . substr( hash_hmac( 'sha256', strtolower( $request_id ), wp_salt( 'auth' ) ), 0, 32 );
+	}
+
+	private static function request_success_key( string $request_id ): string {
+		return 'sc_ei_success_' . substr( hash_hmac( 'sha256', strtolower( $request_id ), wp_salt( 'auth' ) ), 0, 32 );
 	}
 
 	private static function validate_timing( array $raw ) {

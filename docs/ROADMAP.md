@@ -2,7 +2,7 @@
 
 ## v0.1.0 — Private Inquiry Records and Plugin Foundation
 
-Current release.
+Completed.
 
 ## v0.2.0 — Adaptive Contact Hub and Conditional Forms
 
@@ -14,11 +14,15 @@ Completed. Teams-only response preferences, time-zone and location fields, avail
 
 ## v0.2.2 — Dual Intake Experiences and Conversion Routing
 
-Current release. Compact Consulting intake, advanced Contact Hub, source attribution, published-fee guidance, conversion routes, admin filters, and event hooks.
+Completed. Compact Consulting intake, advanced Contact Hub, source attribution, published-fee guidance, conversion routes, admin filters, and event hooks.
 
 ## v0.3.0 — Secure Document Intake and Quarantine
 
-Protected upload storage, validation, quarantine, scanning, signed downloads, and attachment audit history.
+Completed. Protected multi-file intake, fail-closed validation, quarantine and approved storage, scanner bridge, audited downloads, retention cleanup, privacy erasure, and administrative document workflow.
+
+## v0.3.1 — Production Storage and Upload Reliability
+
+Current release. Atomic storage commits, server request-envelope checks, storage probes and repair, reconciliation, integrity tracking, retention previews, guarded cleanup, cache bypass hardening, and mobile upload reliability.
 
 ## v0.4.0 — Administrative Review Workspace
 

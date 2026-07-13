@@ -111,12 +111,20 @@ final class SC_EI_Public {
 		$form_id                = 'sc-ei-compact-' . self::$form_count;
 		$settings               = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 		$default_teams_duration = absint( $settings['default_teams_duration'] ?? 20 );
+		$effective_upload_limits = SC_EI_Upload_Environment::effective_limits( $settings );
+		$upload_max_files       = $effective_upload_limits['max_files'];
+		$upload_max_mb          = max( 1, (int) floor( $effective_upload_limits['max_file_bytes'] / MB_IN_BYTES ) );
+		$upload_total_max_bytes = $effective_upload_limits['max_total_bytes'];
+		$upload_extensions      = array_values( array_intersect( array_keys( SC_EI_Upload_Validator::supported_extensions() ), (array) ( $settings['allowed_upload_extensions'] ?? array() ) ) );
+		$request_id             = wp_generate_uuid4();
 		$started_at             = time();
 		$signature              = SC_EI_Form_Handler::timing_signature( $started_at, $form_id );
 		$attribution_signature  = SC_EI_Form_Handler::attribution_signature( 'compact', $source, $entry_cta, $form_id );
 		$result                 = isset( $_GET['sc_ei_result'] ) ? sanitize_key( wp_unslash( $_GET['sc_ei_result'] ) ) : '';
 		$error                  = isset( $_GET['sc_ei_error'] ) ? sanitize_key( wp_unslash( $_GET['sc_ei_error'] ) ) : '';
 		$reference              = isset( $_GET['sc_ei_reference'] ) ? sanitize_text_field( wp_unslash( $_GET['sc_ei_reference'] ) ) : '';
+		$file_count             = isset( $_GET['sc_ei_files'] ) ? absint( $_GET['sc_ei_files'] ) : 0;
+		$file_warning           = ! empty( $_GET['sc_ei_file_warning'] );
 
 		ob_start();
 		?>
@@ -127,13 +135,14 @@ final class SC_EI_Public {
 				<p><?php echo esc_html( $intro ); ?></p>
 			</div>
 
-			<?php echo self::render_feedback( $result, $error, $reference ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+			<?php echo self::render_feedback( $result, $error, $reference, $file_count, $file_warning ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 
 			<form
 				id="<?php echo esc_attr( $form_id ); ?>"
 				class="sc-ei-form sc-ei-form--compact"
 				method="post"
-				action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
+				enctype="multipart/form-data"
+				action="<?php echo esc_url( add_query_arg( 'sc_ei_submission', '1', admin_url( 'admin-post.php' ) ) ); ?>"
 				data-sc-ei-compact-form
 				data-mode="compact"
 				novalidate
@@ -148,6 +157,9 @@ final class SC_EI_Public {
 				<input type="hidden" name="form_id" value="<?php echo esc_attr( $form_id ); ?>">
 				<input type="hidden" name="form_started_at" value="<?php echo esc_attr( $started_at ); ?>">
 				<input type="hidden" name="form_signature" value="<?php echo esc_attr( $signature ); ?>">
+				<input type="hidden" name="request_id" value="<?php echo esc_attr( $request_id ); ?>">
+				<input type="hidden" name="document_selection_count" value="0" data-sc-ei-document-count>
+				<input type="hidden" name="document_selection_bytes" value="0" data-sc-ei-document-bytes>
 				<input type="hidden" name="redirect_to" value="<?php echo esc_url( self::current_url() ); ?>">
 				<input type="hidden" name="source_url" value="<?php echo esc_url( self::current_url() ); ?>">
 				<input type="hidden" name="preferred_duration" value="<?php echo esc_attr( $default_teams_duration ); ?>">
@@ -233,6 +245,8 @@ final class SC_EI_Public {
 					</div>
 				</div>
 
+				<?php echo self::render_document_fields( $form_id, $upload_max_files, $upload_max_mb, $upload_total_max_bytes, $upload_extensions, true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+
 				<div class="sc-ei-field">
 					<label for="<?php echo esc_attr( $form_id . '-next-step' ); ?>"><?php esc_html_e( 'Preferred next step', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label>
 					<select id="<?php echo esc_attr( $form_id . '-next-step' ); ?>" name="compact_next_step" required data-sc-ei-compact-next-step>
@@ -271,7 +285,7 @@ final class SC_EI_Public {
 
 				<div class="sc-ei-privacy-box sc-ei-privacy-box--compact">
 					<strong><?php esc_html_e( 'Private inquiry boundary', 'sustainable-catalyst-engagement-intake' ); ?></strong>
-					<p><?php esc_html_e( 'Do not submit confidential documents or sensitive regulated information in this form. Secure document intake arrives in v0.3.0.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+					<p><?php esc_html_e( 'Selected documents are validated and placed in protected quarantine. Do not submit passwords, payment-card data, regulated health records, highly sensitive personal data, export-controlled material, or files you are not authorized to share.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 				</div>
 
 				<label class="sc-ei-check">
@@ -280,7 +294,7 @@ final class SC_EI_Public {
 				</label>
 				<label class="sc-ei-check">
 					<input type="checkbox" name="authorization_consent" value="1" required>
-					<span><?php esc_html_e( 'I am authorized to share the information and public links included here.', 'sustainable-catalyst-engagement-intake' ); ?> <b aria-hidden="true">*</b></span>
+					<span><?php esc_html_e( 'I am authorized to share the information, public links, and documents included here.', 'sustainable-catalyst-engagement-intake' ); ?> <b aria-hidden="true">*</b></span>
 				</label>
 				<input type="hidden" name="follow_up_consent" value="1">
 
@@ -295,6 +309,8 @@ final class SC_EI_Public {
 					<h3><?php esc_html_e( 'Your private consulting inquiry has been recorded.', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 					<p><?php esc_html_e( 'Save this reference:', 'sustainable-catalyst-engagement-intake' ); ?></p>
 					<strong data-sc-ei-reference></strong>
+					<p data-sc-ei-attachment-summary hidden></p>
+					<div class="sc-ei-success__warnings" data-sc-ei-attachment-warnings hidden></div>
 					<p><?php esc_html_e( 'A Teams fit-call request remains pending until the inquiry is reviewed and approved.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 				</div>
 			</form>
@@ -317,12 +333,20 @@ final class SC_EI_Public {
 
 		$settings               = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 		$default_teams_duration = absint( $settings['default_teams_duration'] ?? 20 );
+		$effective_upload_limits = SC_EI_Upload_Environment::effective_limits( $settings );
+		$upload_max_files       = $effective_upload_limits['max_files'];
+		$upload_max_mb          = max( 1, (int) floor( $effective_upload_limits['max_file_bytes'] / MB_IN_BYTES ) );
+		$upload_total_max_bytes = $effective_upload_limits['max_total_bytes'];
+		$upload_extensions      = array_values( array_intersect( array_keys( SC_EI_Upload_Validator::supported_extensions() ), (array) ( $settings['allowed_upload_extensions'] ?? array() ) ) );
+		$request_id             = wp_generate_uuid4();
 		$started_at             = time();
 		$signature              = SC_EI_Form_Handler::timing_signature( $started_at, $form_id );
 		$attribution_signature = SC_EI_Form_Handler::attribution_signature( $mode, $source, $entry_cta, $form_id );
 		$result     = isset( $_GET['sc_ei_result'] ) ? sanitize_key( wp_unslash( $_GET['sc_ei_result'] ) ) : '';
 		$error      = isset( $_GET['sc_ei_error'] ) ? sanitize_key( wp_unslash( $_GET['sc_ei_error'] ) ) : '';
 		$reference  = isset( $_GET['sc_ei_reference'] ) ? sanitize_text_field( wp_unslash( $_GET['sc_ei_reference'] ) ) : '';
+		$file_count = isset( $_GET['sc_ei_files'] ) ? absint( $_GET['sc_ei_files'] ) : 0;
+		$file_warning = ! empty( $_GET['sc_ei_file_warning'] );
 
 		ob_start();
 		?>
@@ -333,7 +357,7 @@ final class SC_EI_Public {
 				<p><?php echo esc_html( $intro ); ?></p>
 			</div>
 
-			<?php echo self::render_feedback( $result, $error, $reference ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+			<?php echo self::render_feedback( $result, $error, $reference, $file_count, $file_warning ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 
 			<?php if ( 'advanced' === $mode ) : ?>
 				<div class="sc-ei-route-grid" aria-label="<?php esc_attr_e( 'Choose an inquiry path', 'sustainable-catalyst-engagement-intake' ); ?>">
@@ -351,7 +375,8 @@ final class SC_EI_Public {
 				id="<?php echo esc_attr( $form_id ); ?>"
 				class="sc-ei-form"
 				method="post"
-				action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
+				enctype="multipart/form-data"
+				action="<?php echo esc_url( add_query_arg( 'sc_ei_submission', '1', admin_url( 'admin-post.php' ) ) ); ?>"
 				data-sc-ei-form
 				data-mode="<?php echo esc_attr( $mode ); ?>"
 				novalidate
@@ -365,6 +390,9 @@ final class SC_EI_Public {
 				<input type="hidden" name="form_id" value="<?php echo esc_attr( $form_id ); ?>">
 				<input type="hidden" name="form_started_at" value="<?php echo esc_attr( $started_at ); ?>">
 				<input type="hidden" name="form_signature" value="<?php echo esc_attr( $signature ); ?>">
+				<input type="hidden" name="request_id" value="<?php echo esc_attr( $request_id ); ?>">
+				<input type="hidden" name="document_selection_count" value="0" data-sc-ei-document-count>
+				<input type="hidden" name="document_selection_bytes" value="0" data-sc-ei-document-bytes>
 				<input type="hidden" name="redirect_to" value="<?php echo esc_url( self::current_url() ); ?>">
 				<input type="hidden" name="source_url" value="<?php echo esc_url( self::current_url() ); ?>">
 				<?php wp_nonce_field( SC_EI_Form_Handler::nonce_action(), 'sc_ei_nonce' ); ?>
@@ -524,7 +552,7 @@ final class SC_EI_Public {
 						<div class="sc-ei-field">
 							<label for="<?php echo esc_attr( $form_id . '-materials' ); ?>"><?php esc_html_e( 'Current materials, systems, or evidence', 'sustainable-catalyst-engagement-intake' ); ?></label>
 							<textarea id="<?php echo esc_attr( $form_id . '-materials' ); ?>" name="current_materials" rows="4" maxlength="12000"></textarea>
-							<p class="sc-ei-help"><?php esc_html_e( 'Secure document uploads arrive in v0.3.0. For now, describe the materials and add non-confidential links below.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+							<p class="sc-ei-help"><?php esc_html_e( 'Describe the materials here, then use the protected document section below for authorized supporting files.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 						</div>
 
 						<div class="sc-ei-field">
@@ -669,6 +697,8 @@ final class SC_EI_Public {
 						<p class="sc-ei-help"><?php esc_html_e( 'Do not include private download links, credentials, regulated records, or material you are not authorized to share.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 					</div>
 
+					<?php echo self::render_document_fields( $form_id, $upload_max_files, $upload_max_mb, $upload_total_max_bytes, $upload_extensions, false ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+
 					<div class="sc-ei-field">
 						<label for="<?php echo esc_attr( $form_id . '-referral' ); ?>"><?php esc_html_e( 'How did you find Sustainable Catalyst?', 'sustainable-catalyst-engagement-intake' ); ?></label>
 						<select id="<?php echo esc_attr( $form_id . '-referral' ); ?>" name="referral_source">
@@ -696,7 +726,7 @@ final class SC_EI_Public {
 					<div class="sc-ei-privacy-box">
 						<strong><?php esc_html_e( 'Privacy and document boundary', 'sustainable-catalyst-engagement-intake' ); ?></strong>
 						<p>
-							<?php esc_html_e( 'Do not submit passwords, payment-card data, regulated health records, highly sensitive personal information, export-controlled material, or confidential documents through this v0.2.2 form. Secure document intake is introduced in v0.3.0.', 'sustainable-catalyst-engagement-intake' ); ?>
+							<?php esc_html_e( 'Uploaded documents are structurally validated and stored in protected quarantine. Do not submit passwords, payment-card data, regulated health records, highly sensitive personal information, export-controlled material, or files you are not authorized to share.', 'sustainable-catalyst-engagement-intake' ); ?>
 						</p>
 					</div>
 
@@ -707,7 +737,7 @@ final class SC_EI_Public {
 
 					<label class="sc-ei-check">
 						<input type="checkbox" name="authorization_consent" value="1" required>
-						<span><?php esc_html_e( 'I am authorized to share the information and links included in this submission.', 'sustainable-catalyst-engagement-intake' ); ?> <b aria-hidden="true">*</b></span>
+						<span><?php esc_html_e( 'I am authorized to share the information, links, and documents included in this submission.', 'sustainable-catalyst-engagement-intake' ); ?> <b aria-hidden="true">*</b></span>
 					</label>
 
 					<label class="sc-ei-check">
@@ -728,6 +758,8 @@ final class SC_EI_Public {
 					<h3><?php esc_html_e( 'Your private inquiry record has been created. A Teams meeting request remains pending until it is reviewed and approved.', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 					<p><?php esc_html_e( 'Save this reference for future communication:', 'sustainable-catalyst-engagement-intake' ); ?></p>
 					<strong data-sc-ei-reference></strong>
+					<p data-sc-ei-attachment-summary hidden></p>
+					<div class="sc-ei-success__warnings" data-sc-ei-attachment-warnings hidden></div>
 					<p><?php esc_html_e( 'Submission does not create an engagement, confidentiality agreement, acceptance, or obligation to respond.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 				</div>
 			</form>
@@ -737,12 +769,23 @@ final class SC_EI_Public {
 		return (string) ob_get_clean();
 	}
 
-	private static function render_feedback( string $result, string $error, string $reference ): string {
+	private static function render_feedback( string $result, string $error, string $reference, int $file_count = 0, bool $file_warning = false ): string {
 		if ( 'success' === $result && $reference ) {
+			$document_message = '';
+			if ( $file_count > 0 ) {
+				$document_message = ' ' . sprintf(
+					_n( '%d document was placed in protected quarantine.', '%d documents were placed in protected quarantine.', $file_count, 'sustainable-catalyst-engagement-intake' ),
+					$file_count
+				);
+			}
+			if ( $file_warning ) {
+				$document_message .= ' ' . __( 'At least one selected document was not accepted. Keep the inquiry reference and use it when providing a corrected document through an approved follow-up route.', 'sustainable-catalyst-engagement-intake' );
+			}
+
 			return sprintf(
 				'<div class="sc-ei-feedback sc-ei-feedback--success" role="status"><strong>%1$s</strong><span>%2$s</span></div>',
 				esc_html__( 'Inquiry received.', 'sustainable-catalyst-engagement-intake' ),
-				esc_html( sprintf( __( 'Reference: %s', 'sustainable-catalyst-engagement-intake' ), $reference ) )
+				esc_html( sprintf( __( 'Reference: %1$s.%2$s', 'sustainable-catalyst-engagement-intake' ), $reference, $document_message ) )
 			);
 		}
 
@@ -764,7 +807,12 @@ final class SC_EI_Public {
 			'too_fast'             => __( 'The form was submitted too quickly. Review the information and try again.', 'sustainable-catalyst-engagement-intake' ),
 			'rate_limited'         => __( 'Too many submissions were sent in a short period. Try again later.', 'sustainable-catalyst-engagement-intake' ),
 			'duplicate_submission' => __( 'This inquiry appears to have already been submitted.', 'sustainable-catalyst-engagement-intake' ),
+			'submission_in_progress' => __( 'This inquiry is already being processed. Keep the page open and check for the confirmation before submitting again.', 'sustainable-catalyst-engagement-intake' ),
 			'attribution_invalid'  => __( 'The form attribution check failed. Reload the page and try again.', 'sustainable-catalyst-engagement-intake' ),
+			'request_too_large'    => __( 'The submission exceeded the server request-size limit. Reduce the combined document size and submit again.', 'sustainable-catalyst-engagement-intake' ),
+			'upload_truncated'     => __( 'The server received fewer documents than the browser selected. Reduce the file count or size and submit again.', 'sustainable-catalyst-engagement-intake' ),
+			'uploads_disabled'     => __( 'File uploads are disabled on the server. Remove the documents or contact the site administrator.', 'sustainable-catalyst-engagement-intake' ),
+			'upload_temp_unavailable' => __( 'The server upload-temporary directory is unavailable. Remove the documents or contact the site administrator.', 'sustainable-catalyst-engagement-intake' ),
 			'storage_error'        => __( 'The inquiry could not be stored. Try again or use another contact route.', 'sustainable-catalyst-engagement-intake' ),
 		);
 
@@ -803,12 +851,94 @@ final class SC_EI_Public {
 		return $map[ $type ] ?? '';
 	}
 
+	private static function render_document_fields( string $form_id, int $max_files, int $max_mb, int $max_total_bytes, array $extensions, bool $compact ): string {
+		$accept = implode( ',', array_map( static fn( string $extension ): string => '.' . $extension, $extensions ) );
+		$allowed_label = implode( ', ', array_map( 'strtoupper', $extensions ) );
+
+		ob_start();
+		?>
+		<section class="sc-ei-document-intake<?php echo $compact ? ' sc-ei-document-intake--compact' : ''; ?>" data-sc-ei-document-section>
+			<p class="sc-ei-section-kicker"><?php esc_html_e( 'Protected Document Intake', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<h3><?php echo esc_html( $compact ? __( 'Add supporting documents', 'sustainable-catalyst-engagement-intake' ) : __( 'Documents and supporting materials', 'sustainable-catalyst-engagement-intake' ) ); ?></h3>
+			<p>
+				<?php
+				echo esc_html(
+					sprintf(
+						/* translators: 1: maximum files, 2: maximum megabytes per file, 3: extensions, 4: combined size */
+						__( 'Optional. Up to %1$d files, %2$d MB each, with a combined limit of %4$s. Allowed: %3$s. Files are renamed internally, validated, and stored in protected quarantine rather than the public Media Library.', 'sustainable-catalyst-engagement-intake' ),
+						$max_files,
+						$max_mb,
+						$allowed_label,
+						size_format( $max_total_bytes, 1 )
+					)
+				);
+				?>
+			</p>
+
+			<div class="sc-ei-field">
+				<label for="<?php echo esc_attr( $form_id . '-documents' ); ?>"><?php esc_html_e( 'Select documents', 'sustainable-catalyst-engagement-intake' ); ?></label>
+				<input
+					id="<?php echo esc_attr( $form_id . '-documents' ); ?>"
+					type="file"
+					name="documents[]"
+					multiple
+					accept="<?php echo esc_attr( $accept ); ?>"
+					data-sc-ei-files
+					data-max-files="<?php echo esc_attr( $max_files ); ?>"
+					data-max-bytes="<?php echo esc_attr( $max_mb * MB_IN_BYTES ); ?>"
+					data-max-total-bytes="<?php echo esc_attr( $max_total_bytes ); ?>"
+					data-allowed-extensions="<?php echo esc_attr( implode( ',', $extensions ) ); ?>"
+				>
+				<div class="sc-ei-file-summary" data-sc-ei-file-summary aria-live="polite"></div>
+				<div class="sc-ei-upload-status" data-sc-ei-upload-status role="status" aria-live="polite" hidden></div>
+			</div>
+
+			<div class="sc-ei-field-grid">
+				<div class="sc-ei-field">
+					<label for="<?php echo esc_attr( $form_id . '-document-category' ); ?>"><?php esc_html_e( 'Document category', 'sustainable-catalyst-engagement-intake' ); ?></label>
+					<select id="<?php echo esc_attr( $form_id . '-document-category' ); ?>" name="document_category">
+						<?php foreach ( SC_EI_Form_Schema::document_categories() as $key => $label ) : ?>
+							<option value="<?php echo esc_attr( $key ); ?>" <?php selected( 'other', $key ); ?>><?php echo esc_html( $label ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</div>
+
+				<div class="sc-ei-field">
+					<label for="<?php echo esc_attr( $form_id . '-document-confidentiality' ); ?>"><?php esc_html_e( 'Confidentiality classification', 'sustainable-catalyst-engagement-intake' ); ?></label>
+					<select id="<?php echo esc_attr( $form_id . '-document-confidentiality' ); ?>" name="document_confidentiality">
+						<?php foreach ( SC_EI_Form_Schema::document_confidentiality_options() as $key => $label ) : ?>
+							<option value="<?php echo esc_attr( $key ); ?>" <?php selected( 'non_confidential', $key ); ?>><?php echo esc_html( $label ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</div>
+			</div>
+
+			<div class="sc-ei-field">
+				<label for="<?php echo esc_attr( $form_id . '-document-notes' ); ?>"><?php esc_html_e( 'Document notes', 'sustainable-catalyst-engagement-intake' ); ?></label>
+				<textarea id="<?php echo esc_attr( $form_id . '-document-notes' ); ?>" name="document_notes" rows="3" maxlength="12000" placeholder="<?php esc_attr_e( 'Explain what the files contain and how they relate to the inquiry.', 'sustainable-catalyst-engagement-intake' ); ?>"></textarea>
+			</div>
+
+			<div class="sc-ei-document-warning">
+				<strong><?php esc_html_e( 'Do not upload', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+				<p><?php esc_html_e( 'Passwords, payment-card data, regulated health records, government identification, highly sensitive personal data, export-controlled material, executable code, ZIP archives, macro-enabled files, encrypted files, or documents you are not authorized to share.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			</div>
+
+			<label class="sc-ei-check">
+				<input type="checkbox" name="document_upload_consent" value="1" data-sc-ei-document-consent>
+				<span><?php esc_html_e( 'I am authorized to upload the selected documents and understand that accepted files will be stored in protected quarantine for authorized review and retention-controlled deletion.', 'sustainable-catalyst-engagement-intake' ); ?> <b aria-hidden="true" data-sc-ei-document-required hidden>*</b></span>
+			</label>
+		</section>
+		<?php
+		return (string) ob_get_clean();
+	}
+
 	private static function protect_dynamic_form_page(): void {
 		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
 			define( 'DONOTCACHEPAGE', true );
 		}
 		if ( ! headers_sent() ) {
 			nocache_headers();
+			SC_EI_Upload_Environment::send_no_cache_headers();
 		}
 	}
 
@@ -817,6 +947,7 @@ final class SC_EI_Public {
 			return;
 		}
 		self::$assets_enqueued = true;
+		$settings = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
 		wp_enqueue_style(
 			'sc-ei-public',
@@ -840,11 +971,28 @@ final class SC_EI_Public {
 				'restUrl' => esc_url_raw( rest_url( 'sc-engagement-intake/v1/submit' ) ),
 				'routeGuidance'  => SC_EI_Conversion::route_guidance(),
 				'pricingGuidance'=> SC_EI_Conversion::compact_guidance(),
+				'uploadConfig'   => array_merge(
+					SC_EI_Upload_Environment::effective_limits( $settings ),
+					array(
+						'allowedExtensions' => array_values( (array) ( $settings['allowed_upload_extensions'] ?? array() ) ),
+						'timeoutMilliseconds'=> 180000,
+					)
+				),
 				'i18n'    => array(
 					'validationHeading' => __( 'Review these fields:', 'sustainable-catalyst-engagement-intake' ),
 					'submitting'        => __( 'Submitting…', 'sustainable-catalyst-engagement-intake' ),
 					'submit'            => __( 'Submit Private Inquiry', 'sustainable-catalyst-engagement-intake' ),
 					'genericError'      => __( 'The inquiry could not be submitted. Review the fields or try again.', 'sustainable-catalyst-engagement-intake' ),
+					'compactSubmit'      => __( 'Submit Engagement Inquiry', 'sustainable-catalyst-engagement-intake' ),
+					'fileCountError'     => __( 'Too many documents are selected.', 'sustainable-catalyst-engagement-intake' ),
+					'fileSizeError'      => __( 'One or more documents exceed the per-file size limit.', 'sustainable-catalyst-engagement-intake' ),
+					'fileTypeError'      => __( 'One or more selected document types are not allowed.', 'sustainable-catalyst-engagement-intake' ),
+					'fileTotalError'     => __( 'The combined document size exceeds the safe request limit.', 'sustainable-catalyst-engagement-intake' ),
+					'documentConsent'    => __( 'Confirm the protected document upload authorization.', 'sustainable-catalyst-engagement-intake' ),
+					'documentsQuarantined'=> __( 'document(s) placed in protected quarantine', 'sustainable-catalyst-engagement-intake' ),
+					'uploadingSecurely'    => __( 'Uploading and verifying the inquiry securely. Keep this page open.', 'sustainable-catalyst-engagement-intake' ),
+					'uploadTimeout'        => __( 'The secure upload took too long to complete. The server may still be processing it; check for a confirmation before submitting again.', 'sustainable-catalyst-engagement-intake' ),
+					'networkOffline'       => __( 'The browser is offline. Reconnect before submitting the inquiry.', 'sustainable-catalyst-engagement-intake' ),
 				),
 			)
 		);
@@ -855,6 +1003,6 @@ final class SC_EI_Public {
 		$host   = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : wp_parse_url( home_url(), PHP_URL_HOST );
 		$uri    = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '/contact/';
 		$url    = $scheme . $host . $uri;
-		return remove_query_arg( array( 'sc_ei_result', 'sc_ei_error', 'sc_ei_reference' ), esc_url_raw( $url ) );
+		return remove_query_arg( array( 'sc_ei_result', 'sc_ei_error', 'sc_ei_reference', 'sc_ei_files', 'sc_ei_file_warning' ), esc_url_raw( $url ) );
 	}
 }

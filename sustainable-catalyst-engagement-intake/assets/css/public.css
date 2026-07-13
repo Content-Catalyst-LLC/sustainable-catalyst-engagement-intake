@@ -670,3 +670,123 @@
     padding: 14px;
   }
 }
+
+
+/* Secure document intake and quarantine */
+.sc-ei-document-intake {
+  margin: 24px 0;
+  padding: 20px;
+  border: 1px solid var(--sc-ei-border);
+  border-top: 5px solid #2f5f4a;
+  background: #f4faf6;
+}
+
+.sc-ei-document-intake--compact {
+  padding: 18px;
+}
+
+.sc-ei-document-intake h3 {
+  margin: 0 0 8px;
+  color: var(--sc-ei-black);
+  font-size: 1.2rem;
+}
+
+.sc-ei-document-intake > p {
+  margin: 0 0 18px;
+  color: var(--sc-ei-muted);
+  font-size: .86rem;
+  line-height: 1.6;
+}
+
+.sc-ei-document-intake input[type="file"] {
+  min-height: 48px;
+  padding: 9px;
+  background: var(--sc-ei-white);
+  border: 1px dashed #6a7d71;
+}
+
+.sc-ei-file-summary {
+  margin-top: 10px;
+  font-size: .82rem;
+}
+
+.sc-ei-file-summary ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.sc-ei-file-summary__error {
+  margin: 8px 0 0;
+  color: var(--sc-ei-red);
+  font-weight: 800;
+}
+
+.sc-ei-document-warning {
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid #b77b00;
+  border-left: 5px solid #b77b00;
+  background: #fffaf0;
+}
+
+.sc-ei-document-warning strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--sc-ei-black);
+}
+
+.sc-ei-document-warning p {
+  margin: 0;
+  color: var(--sc-ei-muted);
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+.sc-ei-success__warnings {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border: 1px solid #b77b00;
+  background: #fffaf0;
+  color: var(--sc-ei-text);
+}
+
+.sc-ei-success__warnings strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.sc-ei-success__warnings ul {
+  margin: 0 0 0 18px;
+}
+
+@media (max-width: 760px) {
+  .sc-ei-document-intake {
+    padding: 15px;
+  }
+}
+
+
+.sc-ei-upload-status {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid #6a7d71;
+  background: #f4faf6;
+  font-size: .84rem;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .sc-ei-document-intake input[type="file"] {
+    width: 100%;
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .sc-ei-file-summary li {
+    overflow-wrap: anywhere;
+  }
+
+  .sc-ei-form.is-submitting {
+    scroll-margin-top: 24px;
+  }
+}
