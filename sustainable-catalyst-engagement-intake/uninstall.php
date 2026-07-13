@@ -18,6 +18,8 @@ $delete   = ! empty( $settings['delete_data_on_uninstall'] );
 
 SC_EI_Retention::unschedule();
 SC_EI_Notification_Service::unschedule();
+wp_clear_scheduled_hook( 'sc_ei_graph_process_queue' );
+wp_clear_scheduled_hook( 'sc_ei_graph_catchup' );
 SC_EI_Capabilities::uninstall();
 
 if ( $delete ) {
@@ -40,6 +42,10 @@ if ( $delete ) {
 	delete_option( 'sc_ei_fit_schema_version' );
 	delete_option( 'sc_ei_portal_schema_version' );
 	delete_option( 'sc_ei_workflow_schema_version' );
+	delete_option( 'sc_ei_graph_schema_version' );
+	delete_option( 'sc_ei_graph_credentials' );
+	delete_option( 'sc_ei_graph_circuit' );
+	delete_option( 'sc_ei_graph_last_health' );
 	delete_option( 'sc_ei_last_workflow_cleanup' );
 	delete_option( 'sc_ei_last_portal_cleanup' );
 	delete_transient( 'sc_ei_retention_cleanup_lock' );
@@ -54,9 +60,11 @@ if ( $delete ) {
 	$review_bulk_like    = $wpdb->esc_like( '_transient_sc_ei_bulk_review_result_' ) . '%';
 	$review_bulk_timeout = $wpdb->esc_like( '_transient_timeout_sc_ei_bulk_review_result_' ) . '%';
 	$mail_lock_like       = $wpdb->esc_like( 'sc_ei_mail_lock_' ) . '%';
+	$graph_token_like     = $wpdb->esc_like( '_site_transient_sc_ei_graph_token_' ) . '%';
+	$graph_token_timeout  = $wpdb->esc_like( '_site_transient_timeout_sc_ei_graph_token_' ) . '%';
 	$wpdb->query(
 		$wpdb->prepare(
-			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$lock_like,
 			$success_like,
 			$timeout_like,
@@ -64,7 +72,9 @@ if ( $delete ) {
 			$bulk_timeout,
 			$review_bulk_like,
 			$review_bulk_timeout,
-			$mail_lock_like
+			$mail_lock_like,
+			$graph_token_like,
+			$graph_token_timeout
 		)
 	);
 }

@@ -45,6 +45,11 @@ final class SC_EI_Diagnostics {
 		$fit_metrics = SC_EI_Fit_Repository::metrics();
 		$portal_metrics = SC_EI_Portal_Repository::metrics();
 		$workflow_metrics = SC_EI_Workflow_Repository::metrics();
+		$graph_credentials = SC_EI_Graph_Credentials::public_status();
+		$graph_crypto = SC_EI_Graph_Crypto::status();
+		$graph_circuit = SC_EI_Graph_Client::circuit_status();
+		$graph_health = SC_EI_Graph_Repository::last_health();
+		$graph_metrics = SC_EI_Graph_Repository::metrics();
 
 		$notification_policies = array(
 			'sender_acknowledgment' => ! empty( $settings['sender_acknowledgment_enabled'] ),
@@ -118,7 +123,10 @@ final class SC_EI_Diagnostics {
 				'last_cleanup'            => get_option( 'sc_ei_last_workflow_cleanup', array() ),
 				'microsoft_teams_only'    => true,
 				'automatic_calendar'      => false,
-				'graph_api_connected'     => false,
+				'graph_api_configured'    => ! empty( $graph_credentials['configured'] ),
+				'graph_api_connected'     => ! empty( $graph_health['ok'] ),
+				'graph_human_triggered'   => true,
+				'graph_manual_fallback'   => true,
 				'automatic_email'         => false,
 				'automatic_contract'      => false,
 				'automatic_payment'       => false,
@@ -130,6 +138,34 @@ final class SC_EI_Diagnostics {
 				'max_meeting_slots'       => absint( $settings['workflow_max_meeting_slots'] ?? 5 ),
 				'meeting_expiry_days'     => absint( $settings['workflow_meeting_offer_expiry_days'] ?? 7 ),
 				'proposal_expiry_days'    => absint( $settings['workflow_proposal_expiry_days'] ?? 14 ),
+			),
+			'graph_schema_version'   => SC_EI_GRAPH_SCHEMA_VERSION,
+			'graph'                  => array(
+				'enabled'                 => ! empty( $settings['graph_enabled'] ),
+				'credentials'             => $graph_credentials,
+				'crypto'                  => $graph_crypto,
+				'circuit'                 => $graph_circuit,
+				'health'                  => $graph_health,
+				'metrics'                 => $graph_metrics,
+				'catchup_scheduled'       => (bool) wp_next_scheduled( 'sc_ei_graph_catchup' ),
+				'next_catchup_utc'        => ( $graph_catchup = wp_next_scheduled( 'sc_ei_graph_catchup' ) ) ? gmdate( 'Y-m-d H:i:s', $graph_catchup ) : null,
+				'queue_scheduled'         => (bool) wp_next_scheduled( 'sc_ei_graph_process_queue' ),
+				'next_queue_utc'          => ( $graph_queue = wp_next_scheduled( 'sc_ei_graph_process_queue' ) ) ? gmdate( 'Y-m-d H:i:s', $graph_queue ) : null,
+				'app_only'                => true,
+				'global_cloud_only'       => ! empty( $settings['graph_global_cloud_only'] ),
+				'encrypted_credentials'   => ! empty( $graph_crypto['available'] ),
+				'encrypted_token_cache'   => true,
+				'transaction_id'          => true,
+				'retry_after'             => true,
+				'exponential_backoff'     => true,
+				'bounded_attempts'        => absint( $settings['graph_max_attempts'] ?? 6 ),
+				'circuit_breaker'         => true,
+				'human_triggered_only'    => true,
+				'manual_fallback'         => true,
+				'include_sender_attendee' => ! empty( $settings['graph_include_sender_attendee'] ),
+				'calendar_consent_required'=> ! empty( $settings['graph_require_calendar_consent'] ),
+				'automatic_contract'      => false,
+				'automatic_payment'       => false,
 			),
 			'fit_columns'            => $fit_columns,
 			'fit_schema_version'     => SC_EI_FIT_SCHEMA_VERSION,
@@ -257,8 +293,10 @@ final class SC_EI_Diagnostics {
 				'proposal_workflow'     => true,
 				'proposal_versioning'   => true,
 				'proposal_acceptance_is_signature' => false,
-				'graph_api_connected'   => false,
-				'organizer_configured'  => ! empty( $settings['teams_organizer_email'] ),
+				'graph_api_connected'   => ! empty( $graph_health['ok'] ),
+				'graph_api_configured'  => ! empty( $graph_credentials['configured'] ),
+				'graph_manual_fallback' => true,
+				'organizer_configured'  => ! empty( $settings['teams_organizer_email'] ) || ! empty( $graph_credentials['organizer_user'] ),
 			),
 			'wordpress_version'    => get_bloginfo( 'version' ),
 			'php_version'          => PHP_VERSION,
@@ -303,6 +341,21 @@ final class SC_EI_Diagnostics {
 			&& ! empty( $results['workflow_controls']['proposal_version_hash'] )
 			&& ! empty( $results['workflow_controls']['human_publish_required'] )
 			&& ! empty( $results['workflow_controls']['human_contract_attestation'] );
+		$graph_ok = true;
+		if ( ! empty( $results['graph']['enabled'] ) ) {
+			$graph_ok = ! empty( $results['graph']['crypto']['available'] )
+				&& ! empty( $results['graph']['credentials']['configured'] )
+				&& empty( $results['graph']['credentials']['secret_expired'] )
+				&& ! empty( $results['graph']['catchup_scheduled'] )
+				&& ! empty( $results['graph']['app_only'] )
+				&& ! empty( $results['graph']['global_cloud_only'] )
+				&& ! empty( $results['graph']['transaction_id'] )
+				&& ! empty( $results['graph']['retry_after'] )
+				&& ! empty( $results['graph']['exponential_backoff'] )
+				&& ! empty( $results['graph']['human_triggered_only'] )
+				&& ! empty( $results['graph']['manual_fallback'] )
+				&& ! empty( $results['graph']['health']['ok'] );
+		}
 		$fit_ok = ! in_array( false, $results['fit_columns'], true )
 			&& empty( $results['fit_human_control']['automatic_recommendation'] )
 			&& empty( $results['fit_human_control']['automatic_acceptance'] )
@@ -373,7 +426,7 @@ final class SC_EI_Diagnostics {
 				&& ! empty( $results['communication_templates']['active_count'] );
 		}
 
-		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $portal_ok && $workflow_ok && $fit_ok && $privacy_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
+		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $portal_ok && $workflow_ok && $graph_ok && $fit_ok && $privacy_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
 			? 'healthy'
 			: 'attention';
 	}

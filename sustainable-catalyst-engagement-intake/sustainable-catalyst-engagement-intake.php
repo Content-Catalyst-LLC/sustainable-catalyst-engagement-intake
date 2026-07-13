@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Sustainable Catalyst Engagement Intake
  * Plugin URI:  https://sustainablecatalyst.com/
- * Description: Private consulting and contact intake with human-approved Microsoft Teams scheduling offers, versioned proposal workflow, secure sender responses, portal authentication and recovery, privacy governance, reviewed communications, and protected quarantine.
- * Version:     0.9.0
+ * Description: Private engagement intake with optional Microsoft Graph calendar-backed Teams creation, idempotent retries and reconciliation, human-approved scheduling and proposals, secure sender responses, privacy governance, and protected quarantine.
+ * Version:     0.9.1
  * Author:      Content Catalyst LLC
  * Author URI:  https://sustainablecatalyst.com/
  * Text Domain: sustainable-catalyst-engagement-intake
@@ -18,15 +18,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SC_EI_VERSION', '0.9.0' );
-define( 'SC_EI_DB_VERSION', '0.9.0' );
+define( 'SC_EI_VERSION', '0.9.1' );
+define( 'SC_EI_DB_VERSION', '0.9.1' );
 define( 'SC_EI_VALIDATOR_VERSION', '1.0.1' );
 define( 'SC_EI_REVIEW_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_COMMUNICATION_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_PRIVACY_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_FIT_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_PORTAL_SCHEMA_VERSION', '1.2.0' );
-define( 'SC_EI_WORKFLOW_SCHEMA_VERSION', '1.0.0' );
+define( 'SC_EI_WORKFLOW_SCHEMA_VERSION', '1.1.0' );
+define( 'SC_EI_GRAPH_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_FILE', __FILE__ );
 define( 'SC_EI_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SC_EI_URL', plugin_dir_url( __FILE__ ) );
@@ -55,6 +56,10 @@ require_once SC_EI_DIR . 'includes/class-sc-ei-review-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-fit-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-portal-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-portal-session.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-graph-crypto.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-graph-credentials.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-graph-client.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-graph-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-workflow-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-template-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-communication-repository.php';
@@ -83,6 +88,7 @@ require_once SC_EI_DIR . 'includes/class-sc-ei-review-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-fit-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-portal-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-workflow-admin.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-graph-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-communication-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-privacy-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-activator.php';

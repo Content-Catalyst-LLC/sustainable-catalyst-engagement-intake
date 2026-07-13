@@ -44,6 +44,14 @@ final class SC_EI_Workflow_Admin {
 		$proposals = $inquiry ? SC_EI_Workflow_Repository::proposals_for_inquiry( $inquiry_id, false ) : array();
 		$events = $inquiry ? SC_EI_Workflow_Repository::events_for_inquiry( $inquiry_id, 500 ) : array();
 		$settings = SC_EI_Workflow_Repository::settings();
+		$graph_settings = SC_EI_Graph_Repository::settings();
+		$graph_credentials = SC_EI_Graph_Credentials::public_status();
+		$graph_circuit = SC_EI_Graph_Client::circuit_status();
+		$graph_health = SC_EI_Graph_Repository::last_health();
+		$graph_operations = array();
+		foreach ( $meetings as $meeting_record ) {
+			$graph_operations[ $meeting_record['id'] ] = SC_EI_Graph_Repository::operations_for_meeting( absint( $meeting_record['id'] ), 50 );
+		}
 		include SC_EI_DIR . 'admin/views/teams-proposals.php';
 	}
 

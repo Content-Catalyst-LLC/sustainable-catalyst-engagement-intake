@@ -284,7 +284,7 @@ $effective       = $diagnostics['effective_limits'];
 			<ul class="sc-ei-checks">
 				<li><span class="<?php echo $diagnostics['workflow_controls']['cleanup_scheduled'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'hourly meeting-offer and proposal expiration scheduled', 'sustainable-catalyst-engagement-intake' ); ?></li>
 				<li><span class="<?php echo $diagnostics['workflow_controls']['microsoft_teams_only'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'Microsoft Teams is the only supported meeting platform', 'sustainable-catalyst-engagement-intake' ); ?></li>
-				<li><span class="<?php echo ! $diagnostics['workflow_controls']['automatic_calendar'] && ! $diagnostics['workflow_controls']['graph_api_connected'] && ! $diagnostics['workflow_controls']['automatic_email'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'no automatic calendar creation, Graph API booking, or workflow email', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo ! $diagnostics['workflow_controls']['automatic_calendar'] && $diagnostics['workflow_controls']['graph_human_triggered'] && $diagnostics['workflow_controls']['graph_manual_fallback'] && ! $diagnostics['workflow_controls']['automatic_email'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'Graph event creation is human-triggered and manual Teams fallback remains available', 'sustainable-catalyst-engagement-intake' ); ?></li>
 				<li><span class="<?php echo ! $diagnostics['workflow_controls']['automatic_contract'] && ! $diagnostics['workflow_controls']['automatic_payment'] && ! $diagnostics['workflow_controls']['portal_acceptance_signature'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'portal acceptance is not a contract, signature, invoice, or payment', 'sustainable-catalyst-engagement-intake' ); ?></li>
 				<li><span class="<?php echo $diagnostics['workflow_controls']['proposal_version_hash'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'proposal versions retain SHA-256 content hashes', 'sustainable-catalyst-engagement-intake' ); ?></li>
 				<li><span class="<?php echo $diagnostics['workflow_controls']['human_publish_required'] && $diagnostics['workflow_controls']['human_contract_attestation'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'human publication and external-contract attestation required', 'sustainable-catalyst-engagement-intake' ); ?></li>
@@ -297,6 +297,37 @@ $effective       = $diagnostics['effective_limits'];
 				<dt><?php esc_html_e( 'Next cleanup UTC', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $diagnostics['workflow_controls']['next_cleanup_utc'] ?: __( 'Not scheduled', 'sustainable-catalyst-engagement-intake' ) ); ?></dd>
 			</dl>
 			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-workflow' ) ); ?>"><?php esc_html_e( 'Open Teams and Proposal Workflow', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
+		</section>
+
+		<section class="sc-ei-admin__card sc-ei-admin__card--wide">
+			<p class="sc-ei-admin__card-kicker"><?php esc_html_e( 'Optional Microsoft 365 Connector', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<h2><?php esc_html_e( 'Microsoft Graph Reliability Health', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<div class="sc-ei-diagnostic-metrics">
+				<div><strong><?php echo $diagnostics['graph']['enabled'] ? esc_html__( 'Enabled', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'Disabled', 'sustainable-catalyst-engagement-intake' ); ?></strong><span><?php esc_html_e( 'connector', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['graph']['metrics']['queued'] ) ); ?></strong><span><?php esc_html_e( 'queued / retrying', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['graph']['metrics']['synced_meetings'] ) ); ?></strong><span><?php esc_html_e( 'synced meetings', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['graph']['metrics']['pending_join_url'] ) ); ?></strong><span><?php esc_html_e( 'join URLs pending', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['graph']['metrics']['failed'] ) ); ?></strong><span><?php esc_html_e( 'permanent failures', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( $diagnostics['graph_schema_version'] ); ?></strong><span><?php esc_html_e( 'Graph schema', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+			</div>
+			<ul class="sc-ei-checks">
+				<li><span class="<?php echo $diagnostics['graph']['crypto']['available'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( sprintf( __( 'authenticated local encryption: %s', 'sustainable-catalyst-engagement-intake' ), $diagnostics['graph']['crypto']['available'] ? $diagnostics['graph']['crypto']['preferred'] : __( 'unavailable', 'sustainable-catalyst-engagement-intake' ) ) ); ?></li>
+				<li><span class="<?php echo ! $diagnostics['graph']['enabled'] || $diagnostics['graph']['credentials']['configured'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'encrypted application credential vault complete when enabled', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['graph']['catchup_scheduled'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'hourly stale-lock recovery and queue catch-up scheduled', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['graph']['transaction_id'] && $diagnostics['graph']['retry_after'] && $diagnostics['graph']['exponential_backoff'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'persistent transaction IDs, Retry-After, and bounded exponential backoff', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['graph']['app_only'] && $diagnostics['graph']['global_cloud_only'] && $diagnostics['graph']['human_triggered_only'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'app-only global cloud connector with human-triggered creation', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['graph']['manual_fallback'] && ! $diagnostics['graph']['automatic_contract'] && ! $diagnostics['graph']['automatic_payment'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'manual Teams fallback retained; no Graph contract or payment action', 'sustainable-catalyst-engagement-intake' ); ?></li>
+			</ul>
+			<dl class="sc-ei-admin__details">
+				<dt><?php esc_html_e( 'Credential state', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo $diagnostics['graph']['credentials']['configured'] ? esc_html__( 'configured', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'incomplete', 'sustainable-catalyst-engagement-intake' ); ?></dd>
+				<dt><?php esc_html_e( 'Secret expiry', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $diagnostics['graph']['credentials']['secret_expires_at'] ?: '—' ); ?></dd>
+				<dt><?php esc_html_e( 'Circuit state', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo $diagnostics['graph']['circuit']['open'] ? esc_html__( 'open', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'closed', 'sustainable-catalyst-engagement-intake' ); ?></dd>
+				<dt><?php esc_html_e( 'Last health check', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $diagnostics['graph']['health']['checked_at'] ?: __( 'not run', 'sustainable-catalyst-engagement-intake' ) ); ?></dd>
+				<dt><?php esc_html_e( 'Health result', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo $diagnostics['graph']['health']['ok'] ? esc_html__( 'passed', 'sustainable-catalyst-engagement-intake' ) : esc_html( $diagnostics['graph']['health']['error_code'] ?: __( 'not verified', 'sustainable-catalyst-engagement-intake' ) ); ?></dd>
+				<dt><?php esc_html_e( 'Next catch-up UTC', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $diagnostics['graph']['next_catchup_utc'] ?: __( 'not scheduled', 'sustainable-catalyst-engagement-intake' ) ); ?></dd>
+				<dt><?php esc_html_e( 'Sender attendee invitations', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo $diagnostics['graph']['include_sender_attendee'] ? esc_html__( 'enabled with calendar-consent requirement', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'disabled', 'sustainable-catalyst-engagement-intake' ); ?></dd>
+			</dl>
+			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-graph' ) ); ?>"><?php esc_html_e( 'Open Microsoft Graph Reliability', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
 		</section>
 
 		<section class="sc-ei-admin__card sc-ei-admin__card--wide">
@@ -415,7 +446,7 @@ $effective       = $diagnostics['effective_limits'];
 			<h2><?php esc_html_e( 'Database Migrations', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<h3><?php esc_html_e( 'Tables', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['tables'] as $name => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $name ); ?></li><?php endforeach; ?></ul>
-			<h3><?php esc_html_e( 'v0.9.0 inquiry, attachment, review, fit assessment, sender portal, Teams scheduling, proposal workflow, communication, and privacy fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<h3><?php esc_html_e( 'v0.9.1 inquiry, attachment, review, fit assessment, sender portal, Teams scheduling, Microsoft Graph reliability, proposal workflow, communication, and privacy fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['attachment_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
 			<h3><?php esc_html_e( 'Sender portal tables and fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks sc-ei-checks--columns"><?php foreach ( $diagnostics['portal_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>

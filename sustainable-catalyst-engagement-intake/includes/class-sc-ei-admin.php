@@ -72,6 +72,7 @@ final class SC_EI_Admin {
 		SC_EI_Fit_Admin::submenu();
 		SC_EI_Portal_Admin::submenu();
 		SC_EI_Workflow_Admin::submenu();
+		SC_EI_Graph_Admin::submenu();
 		SC_EI_Communication_Admin::submenu();
 		SC_EI_Privacy_Admin::submenu();
 
@@ -157,7 +158,7 @@ final class SC_EI_Admin {
 	public static function default_settings(): array {
 		return array_merge(
 			array(
-				'delete_data_on_uninstall'           => 0,
+			'delete_data_on_uninstall'           => 0,
 				'abandoned_draft_days'               => 30,
 				'minimum_completion_seconds'         => 3,
 				'submissions_per_hour'               => 5,
@@ -196,7 +197,8 @@ final class SC_EI_Admin {
 			SC_EI_Privacy_Schema::default_settings(),
 			SC_EI_Fit_Schema::default_settings(),
 			SC_EI_Portal_Schema::default_settings(),
-			SC_EI_Workflow_Schema::default_settings()
+			SC_EI_Workflow_Schema::default_settings(),
+			SC_EI_Graph_Credentials::defaults()
 		);
 	}
 
@@ -312,6 +314,25 @@ final class SC_EI_Admin {
 			'workflow_no_auto_calendar'          => 1,
 			'workflow_no_auto_contract'          => 1,
 			'workflow_no_auto_payment'           => 1,
+			'graph_enabled'                     => empty( $value['graph_enabled'] ) ? 0 : 1,
+			'graph_tenant_id'                   => sanitize_text_field( (string) ( $value['graph_tenant_id'] ?? $current['graph_tenant_id'] ) ),
+			'graph_client_id'                   => sanitize_text_field( (string) ( $value['graph_client_id'] ?? $current['graph_client_id'] ) ),
+			'graph_organizer_user'              => sanitize_email( (string) ( $value['graph_organizer_user'] ?? $current['graph_organizer_user'] ) ),
+			'graph_calendar_id'                 => sanitize_text_field( (string) ( $value['graph_calendar_id'] ?? $current['graph_calendar_id'] ) ),
+			'graph_secret_expires_at'           => sanitize_text_field( (string) ( $value['graph_secret_expires_at'] ?? $current['graph_secret_expires_at'] ) ),
+			'graph_include_sender_attendee'     => empty( $value['graph_include_sender_attendee'] ) ? 0 : 1,
+			'graph_require_calendar_consent'    => 1,
+			'graph_allow_remote_cancel'         => empty( $value['graph_allow_remote_cancel'] ) ? 0 : 1,
+			'graph_retry_enabled'               => empty( $value['graph_retry_enabled'] ) ? 0 : 1,
+			'graph_max_attempts'                => max( 1, min( 20, absint( $value['graph_max_attempts'] ?? $current['graph_max_attempts'] ) ) ),
+			'graph_retry_base_seconds'          => max( 15, min( 900, absint( $value['graph_retry_base_seconds'] ?? $current['graph_retry_base_seconds'] ) ) ),
+			'graph_retry_max_seconds'           => max( 60, min( DAY_IN_SECONDS, absint( $value['graph_retry_max_seconds'] ?? $current['graph_retry_max_seconds'] ) ) ),
+			'graph_request_timeout_seconds'     => max( 10, min( 60, absint( $value['graph_request_timeout_seconds'] ?? $current['graph_request_timeout_seconds'] ) ) ),
+			'graph_token_skew_seconds'          => max( 60, min( 900, absint( $value['graph_token_skew_seconds'] ?? $current['graph_token_skew_seconds'] ) ) ),
+			'graph_circuit_failure_threshold'   => max( 2, min( 20, absint( $value['graph_circuit_failure_threshold'] ?? $current['graph_circuit_failure_threshold'] ) ) ),
+			'graph_circuit_cooldown_minutes'    => max( 1, min( 1440, absint( $value['graph_circuit_cooldown_minutes'] ?? $current['graph_circuit_cooldown_minutes'] ) ) ),
+			'graph_reconcile_delay_seconds'     => max( 10, min( 900, absint( $value['graph_reconcile_delay_seconds'] ?? $current['graph_reconcile_delay_seconds'] ) ) ),
+			'graph_global_cloud_only'           => 1,
 			'delete_data_on_uninstall'           => empty( $value['delete_data_on_uninstall'] ) ? 0 : 1,
 			'default_unaccepted_retention_days'  => max( 30, min( 3650, absint( $value['default_unaccepted_retention_days'] ?? $current['default_unaccepted_retention_days'] ) ) ),
 			'withdrawn_retention_days'           => max( 1, min( 3650, absint( $value['withdrawn_retention_days'] ?? $current['withdrawn_retention_days'] ) ) ),

@@ -64,7 +64,7 @@ if ( '__Host-sc_ei_sender_session' !== SC_EI_Portal_Schema::COOKIE_NAME ) {
 	fail_portal( 'The production session cookie is not __Host-prefixed.' );
 }
 if ( 'sc_ei_sender_session' !== SC_EI_Portal_Schema::LEGACY_COOKIE_NAME ) {
-	fail_portal( 'The v0.9.0 compatibility cookie is unavailable.' );
+	fail_portal( 'The v0.9.1 compatibility cookie is unavailable.' );
 }
 pass_portal( '__Host production cookie and explicit legacy migration cookie defined' );
 
@@ -121,4 +121,4 @@ if (
 }
 pass_portal( 'privacy restrictions preserve recovery-adjacent privacy access without new processing' );
 
-echo "Engagement Intake v0.9.0 portal schema fixtures passed.\n";
+echo "Engagement Intake v0.9.1 portal schema fixtures passed.\n";

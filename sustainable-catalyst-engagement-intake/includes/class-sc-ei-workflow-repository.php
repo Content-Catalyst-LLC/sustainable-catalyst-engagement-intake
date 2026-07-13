@@ -88,6 +88,29 @@ final class SC_EI_Workflow_Repository {
 			'selected_start_utc' => null,
 			'selected_end_utc'   => null,
 			'teams_url'          => $teams_url,
+			'graph_sync_status'  => 'not_requested',
+			'graph_transaction_id'=> '',
+			'graph_event_id'     => '',
+			'graph_i_cal_uid'    => '',
+			'graph_change_key'   => '',
+			'graph_etag'         => '',
+			'graph_web_link'     => '',
+			'graph_join_url'     => '',
+			'graph_organizer'    => '',
+			'graph_calendar_id'  => '',
+			'graph_payload_hash' => '',
+			'graph_remote_start_utc'=> null,
+			'graph_remote_end_utc'=> null,
+			'graph_last_request_id'=> '',
+			'graph_last_client_request_id'=> '',
+			'graph_last_error_code'=> '',
+			'graph_last_error_message'=> '',
+			'graph_attempt_count'=> 0,
+			'graph_last_attempt_at'=> null,
+			'graph_last_success_at'=> null,
+			'graph_next_retry_at'=> null,
+			'graph_reconciled_at'=> null,
+			'graph_deleted_at'  => null,
 			'sender_note'        => '',
 			'alternative_request'=> '',
 			'admin_note'         => sanitize_textarea_field( (string) ( $input['admin_note'] ?? '' ) ),
@@ -418,6 +441,9 @@ final class SC_EI_Workflow_Repository {
 		$data = array(
 			'status'              => $status,
 			'cancellation_reason' => 'canceled' === $status ? $reason : $offer['cancellation_reason'],
+			'graph_sync_status'   => ( 'canceled' === $status && ! empty( $offer['graph_event_id'] ) && empty( $offer['graph_deleted_at'] ) )
+				? 'cancel_required'
+				: $offer['graph_sync_status'],
 			'completed_at'        => 'completed' === $status ? $now : $offer['completed_at'],
 			'canceled_at'         => 'canceled' === $status ? $now : $offer['canceled_at'],
 			'row_version'         => absint( $offer['row_version'] ) + 1,
@@ -974,6 +1000,7 @@ final class SC_EI_Workflow_Repository {
 				array()
 			),
 			'events'           => self::events_for_inquiry( $inquiry_id, 2000 ),
+			'microsoft_graph'  => SC_EI_Graph_Repository::export_for_inquiry( $inquiry_id ),
 		);
 	}
 
@@ -1007,7 +1034,8 @@ final class SC_EI_Workflow_Repository {
 				$inquiry_id
 			)
 		);
-		return false !== $meetings && false !== $proposals && false !== $events;
+		$graph = SC_EI_Graph_Repository::redact_for_privacy( $inquiry_id, $now );
+		return false !== $meetings && false !== $proposals && false !== $events && $graph;
 	}
 
 	public static function expire_stale(): array {
@@ -1213,6 +1241,28 @@ final class SC_EI_Workflow_Repository {
 		);
 	}
 
+	public static function note_graph_event(
+		int $inquiry_id,
+		int $actor_user_id,
+		int $meeting_offer_id,
+		string $event_type,
+		string $from_status,
+		string $to_status,
+		array $context = array()
+	): void {
+		self::record_event(
+			$inquiry_id,
+			$actor_user_id > 0 ? 'staff' : 'system',
+			$actor_user_id,
+			'meeting',
+			$meeting_offer_id,
+			$event_type,
+			$from_status,
+			$to_status,
+			$context
+		);
+	}
+
 	private static function record_event(
 		int $inquiry_id,
 		string $actor_type,
@@ -1262,7 +1312,7 @@ final class SC_EI_Workflow_Repository {
 	}
 
 	private static function meeting_integer_fields(): array {
-		return array( 'inquiry_id', 'access_id', 'duration_minutes', 'published_by', 'finalized_by', 'row_version', 'created_by' );
+		return array( 'inquiry_id', 'access_id', 'duration_minutes', 'graph_attempt_count', 'published_by', 'finalized_by', 'row_version', 'created_by' );
 	}
 
 	private static function proposal_integer_fields(): array {

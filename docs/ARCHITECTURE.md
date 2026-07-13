@@ -301,3 +301,22 @@ workflow schema
 Meeting and proposal records are separate from inquiry review and portal authentication records.
 
 Proposal versions are immutable. Published and pending version pointers prevent a draft revision from replacing sender-visible content before publication.
+
+
+## v0.9.1 Microsoft Graph connector architecture
+
+```text
+Graph credential vault
+→ encrypted token cache
+→ restricted Graph client
+→ durable operation repository
+→ human-triggered administrator actions
+→ Teams workflow reconciliation
+→ audit, privacy, export, and Diagnostics
+```
+
+The background queue processes only preauthorized operations. It does not autonomously select meetings to book.
+
+Request payloads are encrypted separately from operation metadata.
+
+Graph state is linked to but remains distinct from local meeting workflow state.

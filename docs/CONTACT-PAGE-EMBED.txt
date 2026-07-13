@@ -1,4 +1,4 @@
-Sustainable Catalyst Engagement Intake v0.9.0 Shortcodes
+Sustainable Catalyst Engagement Intake v0.9.1 Shortcodes
 ================================================================
 
 Consulting page
@@ -10,8 +10,8 @@ Contact page
 Secure sender portal
 [sc_sender_portal title="Secure Sender Portal"]
 
-v0.9.0 notes
-- Meetings and proposals are sections inside the existing secure sender portal.
-- No additional public shortcode is required.
-- Existing access records may need a fresh invitation to receive the new meeting and proposal permissions.
-- Keep the portal on HTTPS and excluded from caches and public navigation.
+Microsoft Graph notes
+- No new public shortcode is required.
+- Graph configuration is under Engagement Intake → Microsoft Graph.
+- Per-meeting Graph actions appear under Engagement Intake → Teams & Proposals.
+- Existing manual Teams URL finalization remains available.

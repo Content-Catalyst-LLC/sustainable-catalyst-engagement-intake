@@ -1,0 +1,95 @@
+Sustainable Catalyst Engagement Intake v0.9.1
+Final Validation Report
+================================================================
+All plugin PHP files pass php -l: PASSED
+Public JavaScript passes node --check: PASSED
+Admin JavaScript passes node --check: PASSED
+Push script passes bash -n: PASSED
+Smoke suite passes: PASSED
+Validator Fixtures suite passes: PASSED
+Storage Fixtures suite passes: PASSED
+Upload Environment Fixtures suite passes: PASSED
+Scanner Fixtures suite passes: PASSED
+Quarantine Operations suite passes: PASSED
+Review Schema Fixtures suite passes: PASSED
+Review Operations suite passes: PASSED
+Communication Schema Fixtures suite passes: PASSED
+Communication Operations suite passes: PASSED
+Privacy Schema Fixtures suite passes: PASSED
+Privacy Operations suite passes: PASSED
+Fit Schema Fixtures suite passes: PASSED
+Fit Operations suite passes: PASSED
+Portal Schema Fixtures suite passes: PASSED
+Portal Operations suite passes: PASSED
+Portal Auth Recovery suite passes: PASSED
+Workflow Schema Fixtures suite passes: PASSED
+Workflow Operations suite passes: PASSED
+Graph Crypto Fixtures suite passes: PASSED
+Graph Client Fixtures suite passes: PASSED
+Graph Credentials suite passes: PASSED
+Graph Operations suite passes: PASSED
+Schema Mapping suite passes: PASSED
+Push-safe secret scan passes: PASSED
+macOS mbstring fixture compatibility guard: PASSED
+Installable ZIP CRC passes: PASSED
+Repository ZIP CRC passes: PASSED
+Installable ZIP has one plugin root: PASSED
+Repository ZIP has named v0.9.1 root: PASSED
+Installable ZIP excludes tests, tools, and push script: PASSED
+Fresh installable PHP passes: PASSED
+Fresh installable public JavaScript passes: PASSED
+Fresh installable admin JavaScript passes: PASSED
+Fresh installable version passes: PASSED
+Fresh installable DB marker passes: PASSED
+Fresh installable workflow schema passes: PASSED
+Fresh installable Graph schema passes: PASSED
+Fresh installable Graph table passes: PASSED
+Fresh installable OAuth scope passes: PASSED
+Fresh installable idempotency passes: PASSED
+All fresh repository suites pass: PASSED
+End-to-end temporary Git push passes: PASSED
+
+Plugin PHP files linted: 81
+Release suites: 24
+Explicit PASS assertions: 469
+Installable ZIP entries: 86
+Repository ZIP entries: 151
+Installable ZIP SHA-256: 0e1718fc969f9923dd3bc70b21ab90924475475aaa6a09552b5932faa07ed783
+Repository ZIP SHA-256: f6f5f7bd1c8a817b10ba66e36cb9313c03b8a99d3ea3222a5fb2233ac43c47da
+Push script SHA-256: 3e349e45acf393e68e1d5e9f33280c002d26a283597f2aebcbc3c93af6ade9a5
+
+Graph schema coverage:
+- Graph operation: 30 non-ID fields
+- Expanded meeting-offer Graph linkage: 25 fields
+
+Fixture portability repair:
+- graph-client-fixtures defines mb_substr only when the PHP runtime does not provide it
+- validated with mbstring available and the lean fallback remains present
+
+Critical Graph assertions:
+- OAuth scope is https://graph.microsoft.com/.default
+- Graph beta is absent
+- credentials and token cache use authenticated encryption
+- credential rotation clears old and new token caches
+- create retries reuse persistent transactionId
+- operation payloads are encrypted
+- queue claims are optimistic and stale locks recover
+- Retry-After and bounded exponential backoff are present
+- circuit breaker and request IDs are present
+- Teams onlineMeeting.joinUrl is reconciled
+- stale local state blocks remote creation
+- reconciliation cannot reopen closed meetings
+- permanent failure retry preserves idempotency
+- remote deletion is explicit and human controlled
+- manual Teams URL fallback remains available
+
+Known limitations:
+- The package was not activated against the live production WordPress database.
+- The v0.9.1 dbDelta migration was not exercised against production MySQL.
+- No live Microsoft Entra tenant or Microsoft Graph calendar was used during build validation.
+- Application Calendars.ReadWrite admin consent and Exchange Application RBAC must be configured externally.
+- Live throttling, Retry-After, token expiry, secret rotation, circuit opening, join-link delay, remote cancellation, and attendee invitation behavior require staging verification.
+- v0.9.1 supports Microsoft global cloud only.
+- Sender attendee inclusion can cause Microsoft 365 to send calendar invitations; it is disabled by default and requires recorded consent.
+- Privacy erasure redacts local Graph data but does not automatically delete a remote Microsoft 365 event.
+- PHP ZipArchive is unavailable in the build container, so executable DOCX/XLSX fixtures were skipped.

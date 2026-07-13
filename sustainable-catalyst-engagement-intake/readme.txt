@@ -1,200 +1,306 @@
 === Sustainable Catalyst Engagement Intake ===
 Contributors: content-catalyst
-Tags: contact, consulting, microsoft teams, scheduling, proposal workflow, sender portal, privacy, secure upload, quarantine
+Tags: microsoft graph, microsoft teams, calendar, scheduling, proposals, sender portal, privacy, quarantine
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.9.0
+Stable tag: 0.9.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Private engagement intake with human-approved Microsoft Teams scheduling offers, versioned proposals, sender-safe portal responses, privacy governance, secure messaging, and protected document quarantine.
+Optional Microsoft Graph calendar-backed Teams creation with encrypted credentials, idempotent retries, reconciliation, circuit breaking, human controls, manual fallback, proposals, privacy, and protected intake.
 
 == Description ==
 
-Version 0.9.0 adds a controlled Microsoft Teams Scheduling and Proposal Workflow to the Secure Sender Portal and administrative engagement workspace.
+Version 0.9.1 adds an optional Microsoft Graph Reliability connector to the human-approved Teams Scheduling and Proposal Workflow introduced in v0.9.0.
 
-It preserves all earlier intake, authentication, recovery, review, fit assessment, communication, privacy, retention, quarantine, scanner, and protected-storage capabilities.
+The existing manual Microsoft Teams URL workflow remains available at all times.
 
-Recommended shortcodes:
+The connector is designed for:
 
-* Consulting page: `[sc_engagement_inquiry mode="compact" source="consulting-page" entry_cta="discuss-an-engagement" title="Discuss an Engagement"]`
-* Contact page: `[sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst"]`
-* Secure sender portal: `[sc_sender_portal title="Secure Sender Portal"]`
+* One Microsoft Entra tenant
+* Application-only client-credentials authentication
+* Microsoft Graph v1.0
+* Microsoft global cloud
+* One configured Microsoft 365 organizer mailbox
+* The organizer default calendar or one configured calendar ID
+* Human-triggered calendar event creation
+* Microsoft Teams online meetings attached to Outlook calendar events
 
-== Teams scheduling ==
+== Required Microsoft configuration ==
 
-Authorized staff can create:
+The Entra application requires:
 
-* Draft meeting offers
-* Up to the configured number of proposed time slots
-* UTC-backed slot records with a sender timezone
-* Purpose and preparation notes
-* Expiration dates
-* Optional Microsoft Teams URL
-* Human-published portal offers
+* Microsoft Graph application permission `Calendars.ReadWrite`
+* Administrator consent
+* A client secret
+* An organizer user principal name
+* Calendar access for the configured organizer
 
-The sender can:
+Because application `Calendars.ReadWrite` can otherwise authorize broad mailbox access, production deployments should use Exchange Online Application RBAC to scope the application to the intended organizer mailbox or mailbox set.
 
-* Accept one offered time
-* Request an alternative time
-* Decline the meeting
-* Open the finalized Microsoft Teams link
-* Download an authenticated ICS file after final scheduling
+Legacy Application Access Policies are not the preferred new deployment model.
 
-The plugin does not:
+v0.9.1 does not support sovereign-cloud Graph endpoints.
 
-* Create a Microsoft 365 calendar event
-* Call Microsoft Graph
-* Send an invitation automatically
-* Support Zoom or Google Meet
-* Treat a selected time as final when a Teams link is still pending
+== Credential security ==
 
-A staff member must finalize the accepted slot and record the Teams URL.
+The connector stores:
 
-== Proposal workflow ==
+* Tenant identifier
+* Client identifier
+* Client secret
+* Organizer user
+* Optional calendar identifier
+* Secret expiry metadata
 
-Authorized staff can create structured proposals containing:
+The credential vault is stored separately from ordinary plugin settings.
 
-* Title and executive summary
-* Scope
-* Deliverables
-* Exclusions
-* Assumptions
-* Timeline
-* Fee summary
-* Payment terms
-* Proposal terms and boundaries
-* Currency and total value
-* Expiration date
-* Version note
+The client secret is protected using:
 
-Each version is immutable and receives:
+* Sodium secretbox when available
+* OpenSSL AES-256-GCM fallback
 
-* Sequential version number
-* SHA-256 content hash
-* Creator and creation time
+Encryption keys are derived from WordPress salts.
 
-Published proposal content remains visible while staff prepares an unpublished revision. The revision replaces the sender-visible version only after a deliberate publish action.
+The client secret is never redisplayed.
 
-== Sender proposal response ==
+Cached access tokens are also encrypted and stored in short-lived site transients.
 
-The sender can:
+Rotating or clearing credentials invalidates the previous token cache.
 
-* Accept for external contracting
-* Decline with a note
-* Open an authenticated print-friendly view
+== Human-triggered event creation ==
 
-Acceptance requires:
+A Graph event can be created only when:
 
-* Typed `ACCEPT <PROPOSAL-NUMBER>` confirmation
-* Authority attestation
-* Acknowledgment that portal acceptance is not an executed contract
+1. A sender has accepted one approved meeting time.
+2. The local meeting state is `accepted_pending_link`.
+3. An authorized staff member enters `GRAPH <MEETING-OFFER-NUMBER>`.
+4. The connector is enabled and healthy.
+5. Credentials are complete.
+6. The meeting still has the same eligible local state.
 
-Decline requires:
+The Graph connector does not automatically create events merely because a sender selected a time.
 
-* Typed `DECLINE <PROPOSAL-NUMBER>` confirmation
-* A response note
+== Idempotency ==
 
-Portal acceptance records intent to proceed to contracting. It is not:
+Each meeting receives one persistent Graph `transactionId`.
 
-* An electronic signature
-* An executed contract
-* A payment authorization
-* An invoice
-* An active engagement
+The durable create operation uses:
 
-== External contract boundary ==
+* The persistent transaction ID
+* A unique local idempotency key
+* A SHA-256 request hash
+* An encrypted request payload
+* An optimistic queue claim
 
-Only authorized staff can mark a proposal contracted.
+A retry reuses the same payload, idempotency key, and transaction ID.
 
-The administrator must:
+This protects against duplicate events after timeouts or ambiguous transport failures.
 
-* Record an external contract reference
-* Add an administrative note
-* Type `CONTRACT <PROPOSAL-NUMBER>`
+== Durable operation queue ==
 
-This action attests that an agreement was executed outside the plugin.
+The connector stores create, reconcile, and delete operations in:
 
-The plugin does not generate, sign, or store an electronic signature contract and does not collect payment.
+`{prefix}sc_ei_graph_operations`
 
-== Workflow expiration ==
+Operation states include:
 
-Hourly cleanup marks stale:
+* pending
+* processing
+* retry_wait
+* succeeded
+* permanent_failure
+* canceled
 
-* Published meeting offers as expired
-* Published proposals as expired
+The queue records:
 
-The cleanup does not:
+* Attempt count
+* Maximum attempts
+* Scheduling and retry times
+* Lock token and lock time
+* HTTP method and endpoint path
+* Response status
+* Graph error code
+* Retry-After delay
+* Microsoft request ID
+* Client request ID
+* Encrypted request payload
+* Redacted response snapshot
+* Human actor
+* Audit context
 
-* Delete workflow history
-* Cancel a finalized meeting
-* Withdraw an accepted proposal
-* Delete proposal versions
-* Change an inquiry to accepted automatically
+== Retry behavior ==
 
-== Privacy and audit ==
+Retryable responses include common throttling and transient service codes.
 
-Meeting offers, proposals, versions, and workflow events are included in:
+The connector:
+
+* Honors `Retry-After`
+* Uses bounded exponential backoff with jitter when no retry delay is supplied
+* Limits total attempts
+* Recovers stale processing locks
+* Runs an hourly catch-up job
+* Opens a circuit breaker after repeated failures
+* Allows a human to reset the circuit
+* Allows a human to retry a permanent failure using the same idempotency data
+
+== Teams link reconciliation ==
+
+The event is created with:
+
+* `isOnlineMeeting = true`
+* `onlineMeetingProvider = teamsForBusiness`
+* UTC start and end
+* The persistent `transactionId`
+
+The connector reads the supported `onlineMeeting.joinUrl`.
+
+If the event exists but the join URL is still initializing, the connector queues a reconciliation operation.
+
+The local meeting is finalized only after a valid Microsoft Teams join URL is available.
+
+Reconciliation cannot reopen canceled, completed, declined, or superseded local meetings.
+
+== Sender attendee setting ==
+
+Sender attendee inclusion is disabled by default.
+
+When enabled:
+
+* Calendar consent must be recorded.
+* The sender is added as a required event attendee.
+* Microsoft 365 can send the attendee a calendar invitation as part of the human-triggered event creation.
+
+This is distinct from the plugin email notification system.
+
+== Remote deletion ==
+
+Authorized staff can enter:
+
+`DELETE GRAPH <MEETING-OFFER-NUMBER>`
+
+Deleting an organizer event can cause Microsoft 365 to send cancellation notices to attendees.
+
+Remote deletion is therefore:
+
+* Disabled unless permitted in connector settings
+* Capability gated
+* Nonce protected
+* Typed-confirmation protected
+* Audited
+* Queued with retry controls
+
+Local meeting cancellation never silently deletes the remote event. It marks Graph follow-up as required.
+
+== Manual fallback ==
+
+The original v0.9.0 manual finalization remains available:
+
+`SCHEDULE <MEETING-OFFER-NUMBER>`
+
+Staff can paste a valid Teams URL even when:
+
+* Graph is disabled
+* Credentials are incomplete
+* The circuit is open
+* Microsoft Graph is unavailable
+* A permanent Graph failure occurred
+* The deployment does not use Microsoft 365
+
+== Privacy and export ==
+
+Graph operation records are included in:
 
 * Private data inventory
 * WordPress privacy export
-* Authenticated workflow export
-* Review packet context
-* Authenticated REST context
+* Workflow export
+* Redacted Graph operations export
 * Diagnostics
-* Approved inquiry erasure
+* Approved erasure
 
-Approved erasure removes personal workflow narratives such as:
+Exports never include:
 
-* Sender scheduling notes
-* Alternative-time requests
-* Administrative meeting notes
-* Cancellation reasons
-* Sender proposal response notes
-* External contract references
-* Workflow event context
+* Client secret
+* Access token
+* Decrypted request payload
+* Encryption key
 
-Categorical lifecycle evidence and content hashes can remain as limited audit tombstones.
+Approved erasure removes:
+
+* Encrypted operation payload
+* Graph error narratives
+* Response snapshot
+* Event identifiers
+* Calendar UID
+* Join URL
+* Web link
+* Graph event context
+
+A remote Microsoft 365 event is not automatically deleted during privacy erasure. It must be reviewed and handled separately under the organization’s Microsoft 365 retention and legal obligations.
 
 == Installation ==
 
-1. Back up the database and protected storage.
-2. Upgrade from v0.8.1 to v0.9.0.
-3. Keep the existing sender portal page and shortcode.
-4. Clear WordPress, object, host, reverse-proxy, CDN, and browser caches.
-5. Open Engagement Intake → Diagnostics.
-6. Confirm database version `0.9.0`.
-7. Confirm portal schema version `1.2.0`.
-8. Confirm workflow schema version `1.0.0`.
-9. Confirm all four workflow tables.
-10. Confirm the hourly workflow cleanup event.
-11. Open Engagement Intake → Teams & Proposals.
-12. Test a draft meeting offer.
-13. Publish proposed Teams times.
-14. Test sender acceptance and alternative request.
-15. Finalize a Teams link and test the ICS file.
-16. Create and publish a proposal.
-17. Create an unpublished revision and confirm the previous version remains visible.
-18. Publish the revision.
-19. Test sender acceptance and decline.
-20. Test external-contract attestation.
-21. Test privacy export and approved erasure in staging.
+1. Back up the WordPress database and protected storage.
+2. Upgrade from v0.9.0 to v0.9.1.
+3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
+4. Open Engagement Intake → Diagnostics.
+5. Confirm database version `0.9.1`.
+6. Confirm workflow schema `1.1.0`.
+7. Confirm Graph schema `1.0.0`.
+8. Confirm the Graph operations table and meeting linkage fields.
+9. Confirm the hourly Graph catch-up event.
+10. Create or identify the Microsoft Entra application.
+11. Grant application `Calendars.ReadWrite`.
+12. Grant administrator consent.
+13. Scope mailbox access with Exchange Application RBAC.
+14. Open Engagement Intake → Microsoft Graph.
+15. Save encrypted tenant, client, secret, organizer, and calendar settings.
+16. Enable the connector.
+17. Run `TEST GRAPH`.
+18. Test one accepted meeting in staging.
+19. Confirm one remote calendar event.
+20. Confirm the Teams join URL reconciliation.
+21. Test a throttled or simulated retry.
+22. Test manual fallback.
+23. Test remote cancellation behavior.
+24. Test privacy and redacted export behavior.
 
 == Changelog ==
 
+= 0.9.1 =
+* Added optional Microsoft Graph application connector.
+* Added authenticated encryption for client credentials.
+* Added encrypted token caching.
+* Added client-secret expiry and fingerprint metadata.
+* Added application-only token acquisition.
+* Added correct `https://graph.microsoft.com/.default` scope.
+* Added global v1.0 Graph endpoint restriction.
+* Added configurable organizer mailbox and calendar.
+* Added human-triggered event creation.
+* Added persistent Graph transaction IDs.
+* Added encrypted durable operation payloads.
+* Added idempotent create operations.
+* Added optimistic queue claims.
+* Added stale-lock recovery.
+* Added Retry-After support.
+* Added bounded exponential backoff with jitter.
+* Added maximum attempts.
+* Added circuit breaking.
+* Added one-time token refresh after 401.
+* Added Graph request and client-request IDs.
+* Added Teams join URL reconciliation.
+* Added local-state race protection.
+* Added remote cancellation.
+* Added manual retry preserving idempotency.
+* Added manual linkage reset.
+* Added connector health tests.
+* Added Graph queue administration and redacted export.
+* Added Graph privacy, erasure, workflow, inquiry, and Diagnostics integration.
+* Preserved the manual Teams URL workflow.
+* Preserved no automatic contract, signature, invoice, payment, or engagement activation.
+
 = 0.9.0 =
 * Added Teams Scheduling and Proposal Workflow.
-* Added human-published meeting offers with multiple UTC-backed slots.
-* Added sender accept, alternative, and decline responses.
-* Added human meeting finalization with validated Microsoft Teams links.
-* Added authenticated ICS download after final scheduling.
-* Added structured versioned proposals with SHA-256 content hashes.
-* Added pending proposal versions that do not disrupt published content.
-* Added typed sender acceptance and decline.
-* Added authority and non-contract boundary attestations.
-* Added human-recorded external contract references.
-* Added workflow events, metrics, exports, privacy integration, erasure, expiration, capabilities, and Diagnostics.
-* Preserved no Graph booking, no automatic email, no electronic signature, no payment, and no automatic engagement activation.
 
 = 0.8.1 =
 * Added Portal Authentication and Recovery Patch.
@@ -213,15 +319,3 @@ Categorical lifecycle evidence and content hashes can remain as limited audit to
 
 = 0.4.0 =
 * Added Administrative Review Workspace.
-
-= 0.3.2 =
-* Added Quarantine Operations and Scanner Readiness.
-
-= 0.3.1 =
-* Added Production Storage and Upload Reliability.
-
-= 0.3.0 =
-* Added Secure Document Intake and Quarantine.
-
-= 0.2.2 =
-* Added Dual Intake Experiences and Conversion Routing.

@@ -80,4 +80,9 @@ Completed. Atomic invitation activation, wrong-token lockout isolation, `__Host-
 
 ## v0.9.0 — Teams Scheduling and Proposal Workflow
 
-Current release. Human-published Microsoft Teams offers, sender slot responses, human-finalized meeting records, authenticated ICS, structured versioned proposals, stable published revisions, typed sender intent responses, external contract attestation, workflow events, privacy lifecycle integration, and strict no-calendar/no-contract/no-payment automation boundaries.
+Completed. Human-published Microsoft Teams offers, sender slot responses, human-finalized meeting records, authenticated ICS, structured versioned proposals, stable published revisions, typed sender intent responses, external contract attestation, workflow events, privacy lifecycle integration, and strict no-calendar/no-contract/no-payment automation boundaries.
+
+
+## v0.9.1 — Microsoft Graph Reliability Patch
+
+Current release. Optional application-only Microsoft Graph calendar connector, encrypted credentials and tokens, persistent transaction IDs, durable encrypted operations, Retry-After and bounded backoff, circuit breaking, Teams join URL reconciliation, request diagnostics, manual permanent-failure recovery, privacy lifecycle integration, and full manual Teams fallback.

@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-VERSION="0.9.0"
+VERSION="0.9.1"
 PLUGIN_SLUG="sustainable-catalyst-engagement-intake"
 REPO_ARCHIVE_BASENAME="${PLUGIN_SLUG}-v${VERSION}-repo.zip"
 
@@ -16,7 +16,7 @@ SKIP_PUSH="${SC_EI_SKIP_PUSH:-0}"
 SKIP_REMOTE_CHECK="${SC_EI_SKIP_REMOTE_CHECK:-0}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v090.XXXXXX")"
+WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v091.XXXXXX")"
 
 cleanup() {
   rm -rf "${WORK_DIR}"
@@ -118,56 +118,66 @@ find_source_directory() {
 validate_release_markers() {
   local main_file="${REPO_DIR}/${PLUGIN_SLUG}/${PLUGIN_SLUG}.php"
   local database="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-database.php"
-  local workflow_schema="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-workflow-schema.php"
-  local workflow_repo="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-workflow-repository.php"
-  local workflow_admin="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-workflow-admin.php"
-  local portal_public="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-portal-public.php"
-  local portal_view="${REPO_DIR}/${PLUGIN_SLUG}/public/views/sender-portal.php"
-  local proposal_print="${REPO_DIR}/${PLUGIN_SLUG}/public/views/proposal-print.php"
+  local graph_crypto="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-graph-crypto.php"
+  local graph_credentials="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-graph-credentials.php"
+  local graph_client="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-graph-client.php"
+  local graph_repo="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-graph-repository.php"
+  local graph_admin="${REPO_DIR}/${PLUGIN_SLUG}/includes/class-sc-ei-graph-admin.php"
+  local workflow_view="${REPO_DIR}/${PLUGIN_SLUG}/admin/views/teams-proposals.php"
 
   grep -Fq "Version:     ${VERSION}" "${main_file}" || die "Plugin version marker is missing."
-  grep -Fq "SC_EI_DB_VERSION', '0.9.0'" "${main_file}" || die "Database version marker 0.9.0 is missing."
-  grep -Fq "SC_EI_PORTAL_SCHEMA_VERSION', '1.2.0'" "${main_file}" || die "Portal schema marker 1.2.0 is missing."
-  grep -Fq "SC_EI_WORKFLOW_SCHEMA_VERSION', '1.0.0'" "${main_file}" || die "Workflow schema marker 1.0.0 is missing."
+  grep -Fq "SC_EI_DB_VERSION', '0.9.1'" "${main_file}" || die "Database version marker 0.9.1 is missing."
+  grep -Fq "SC_EI_WORKFLOW_SCHEMA_VERSION', '1.1.0'" "${main_file}" || die "Workflow schema marker 1.1.0 is missing."
+  grep -Fq "SC_EI_GRAPH_SCHEMA_VERSION', '1.0.0'" "${main_file}" || die "Graph schema marker 1.0.0 is missing."
 
-  grep -Fq '$sql_meeting_offers' "${database}" || die "Meeting-offer table declaration is missing."
-  grep -Fq '$sql_proposals' "${database}" || die "Proposal table declaration is missing."
-  grep -Fq '$sql_proposal_versions' "${database}" || die "Proposal-version table declaration is missing."
-  grep -Fq '$sql_workflow_events' "${database}" || die "Workflow-event table declaration is missing."
-  grep -Fq 'pending_version_id bigint' "${database}" || die "Pending proposal version pointer is missing."
+  grep -Fq '$sql_graph_operations' "${database}" || die "Graph operation table declaration is missing."
+  grep -Fq 'dbDelta( $sql_graph_operations )' "${database}" || die "Graph operation table installation is missing."
+  grep -Fq 'graph_transaction_id char(36)' "${database}" || die "Persistent Graph transaction field is missing."
+  grep -Fq 'graph_join_url text' "${database}" || die "Graph join URL field is missing."
+  grep -Fq 'UNIQUE KEY idempotency_key' "${database}" || die "Graph idempotency uniqueness is missing."
 
-  grep -Fq "'workflow_no_auto_calendar'         => 1" "${workflow_schema}" || die "No-calendar safeguard is missing."
-  grep -Fq "'workflow_no_auto_contract'         => 1" "${workflow_schema}" || die "No-contract safeguard is missing."
-  grep -Fq "'workflow_no_auto_payment'          => 1" "${workflow_schema}" || die "No-payment safeguard is missing."
+  grep -Fq 'sodium_crypto_secretbox' "${graph_crypto}" || die "Sodium encryption support is missing."
+  grep -Fq 'aes-256-gcm' "${graph_crypto}" || die "OpenSSL AES-256-GCM fallback is missing."
 
-  grep -Fq "SC_EI_Teams::is_teams_url" "${workflow_repo}" || die "Teams URL validation is missing."
-  grep -Fq "METHOD:PUBLISH" "${workflow_repo}" || die "Authenticated ICS generation is missing."
-  grep -Fq "'content_hash'       => hash( 'sha256'" "${workflow_repo}" || die "Proposal content hashing is missing."
-  grep -Fq "COALESCE(p.pending_version_id, p.current_version_id)" "${workflow_repo}" || die "Administrative pending-version lookup is missing."
-  grep -Fq "'current_version_id' => absint( \$proposal['pending_version_id'] )" "${workflow_repo}" || die "Proposal version promotion is missing."
-  grep -Fq "'status'          => 'accepted_pending_contract'" "${workflow_repo}" || die "Non-contract proposal acceptance state is missing."
-  grep -Fq "'automatic_contract'  => false" "${workflow_repo}" || die "Automatic-contract prohibition is missing."
-  grep -Fq "'automatic_payment'   => false" "${workflow_repo}" || die "Automatic-payment prohibition is missing."
+  grep -Fq 'SC_EI_Graph_Crypto::seal_array( $vault )' "${graph_credentials}" || die "Encrypted credential vault is missing."
+  grep -Fq 'SC_EI_Graph_Crypto::seal_array( $payload )' "${graph_credentials}" || die "Encrypted token cache is missing."
+  grep -Fq '$old_token_key = self::token_cache_key_for_runtime( $current )' "${graph_credentials}" || die "Credential rotation token invalidation is missing."
 
-  grep -Fq "'SCHEDULE ' . strtoupper" "${workflow_admin}" || die "Typed meeting finalization is missing."
-  grep -Fq "'CONTRACT ' : 'WITHDRAW '" "${workflow_admin}" || die "Typed proposal contract or withdrawal control is missing."
-
-  grep -Fq "sc_ei_portal_respond_meeting" "${portal_public}" || die "Portal meeting response action is missing."
-  grep -Fq "sc_ei_portal_respond_proposal" "${portal_public}" || die "Portal proposal response action is missing."
-  grep -Fq "handle_proposal_print" "${portal_public}" || die "Authenticated proposal print action is missing."
-  grep -Fq "Content-Security-Policy" "${portal_public}" || die "Proposal print CSP is missing."
-
-  grep -Fq "not an electronic signature, executed contract, payment authorization, or active engagement" "${portal_view}" \
-    || die "Sender-facing proposal boundary is missing."
-  if grep -Fq "onclick=" "${proposal_print}"; then
-    die "Proposal print view contains inline script."
+  grep -Fq "GRAPH_RESOURCE . '/.default'" "${graph_client}" || die "Correct Graph OAuth resource scope is missing."
+  if grep -Fq "GRAPH_BASE . '/.default'" "${graph_client}"; then
+    die "Graph OAuth scope incorrectly includes the v1.0 API path."
   fi
-
-  if grep -Fq "graph.microsoft.com" "${workflow_repo}"; then
-    die "Workflow repository contains Microsoft Graph booking."
+  if grep -Fq "graph.microsoft.com/beta" "${graph_client}"; then
+    die "Graph beta API usage is not allowed."
   fi
-  if grep -Fq "wp_mail(" "${workflow_repo}"; then
-    die "Workflow repository contains automatic email delivery."
+  grep -Fq "'client-request-id'" "${graph_client}" || die "Graph client request correlation is missing."
+  grep -Fq 'parse_retry_after' "${graph_client}" || die "Retry-After handling is missing."
+  grep -Fq 'consecutive_failures' "${graph_client}" || die "Graph circuit breaker is missing."
+
+  grep -Fq "'transactionId'         => (string) \$offer['graph_transaction_id']" "${graph_repo}" || die "Graph transactionId payload is missing."
+  grep -Fq "hash( 'sha256', 'create|' . \$meeting_offer_id . '|' . \$transaction_id )" "${graph_repo}" || die "Local Graph idempotency key is missing."
+  grep -Fq 'SC_EI_Graph_Crypto::seal_array' "${graph_repo}" || die "Encrypted Graph operation payload is missing."
+  grep -Fq 'graph_stale_lock_recovered' "${graph_repo}" || die "Stale Graph lock recovery is missing."
+  grep -Fq 'SC_EI_Graph_Client::retry_delay' "${graph_repo}" || die "Bounded Graph retry scheduling is missing."
+  grep -Fq 'public static function retry_operation' "${graph_repo}" || die "Same-operation manual retry is missing."
+  grep -Fq "'idempotency_preserved'=> true" "${graph_repo}" || die "Manual retry idempotency evidence is missing."
+  grep -Fq "'graph_local_state_blocked'" "${graph_repo}" || die "Stale local-state remote-create protection is missing."
+  grep -Fq "'remote_exists_local_closed'" "${graph_repo}" || die "Closed-meeting resurrection protection is missing."
+  grep -Fq "onlineMeeting']['joinUrl" "${graph_repo}" || die "Supported Teams joinUrl reconciliation is missing."
+
+  grep -Fq "'GRAPH ' . strtoupper" "${graph_admin}" || die "Typed Graph event creation is missing."
+  grep -Fq "'RECONCILE ' . strtoupper" "${graph_admin}" || die "Typed Graph reconciliation is missing."
+  grep -Fq "'DELETE GRAPH ' . strtoupper" "${graph_admin}" || die "Typed remote event deletion is missing."
+  grep -Fq "'RETRY GRAPH ' . \$operation_id" "${graph_admin}" || die "Typed Graph operation retry is missing."
+
+  grep -Fq 'Manual Teams URL finalization remains available regardless of connector state.' "${workflow_view}" \
+    || die "Manual Teams fallback boundary is missing."
+
+  if grep -Fq "wp_mail(" "${graph_repo}"; then
+    die "Graph repository contains direct email delivery."
+  fi
+  if grep -Fq "proposal" "${graph_repo}"; then
+    die "Graph repository is coupled to proposal or contract automation."
   fi
 }
 
@@ -193,6 +203,10 @@ run_release_tests() {
     "tests/portal-auth-recovery.php"
     "tests/workflow-schema-fixtures.php"
     "tests/workflow-operations.php"
+    "tests/graph-crypto-fixtures.php"
+    "tests/graph-client-fixtures.php"
+    "tests/graph-credentials.php"
+    "tests/graph-operations.php"
     "tests/schema-mapping.php"
   )
 
@@ -281,7 +295,7 @@ validate_release_markers
 log "Running push-safe secret scan..."
 if grep -RInE -I \
   --exclude-dir=.git \
-  --exclude='PUSH_ENGAGEMENT_INTAKE_V090_CLEAN.sh' \
+  --exclude='PUSH_ENGAGEMENT_INTAKE_V091_CLEAN.sh' \
   '(AIza[0-9A-Za-z_-]{20,}|sk-[0-9A-Za-z]{20,}|ghp_[0-9A-Za-z]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' \
   "${REPO_DIR}"
 then

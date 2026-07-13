@@ -358,3 +358,37 @@ For higher-risk intake:
 - no payment collection
 - human external-contract attestation
 - workflow privacy export and erasure
+
+
+## v0.9.1 Microsoft Graph controls
+
+- application-only client credentials
+- Microsoft Graph v1.0 only
+- global cloud only
+- Calendars.ReadWrite only
+- Exchange Application RBAC recommended
+- authenticated encrypted credential vault
+- authenticated encrypted access-token cache
+- client secret never redisplayed
+- credential fingerprint and expiry
+- persistent Graph transaction ID
+- encrypted operation payload
+- local idempotency key
+- SHA-256 request hash
+- optimistic queue claims
+- stale-lock recovery
+- Retry-After
+- bounded exponential backoff with jitter
+- circuit breaker
+- one-time 401 token refresh
+- request ID correlation
+- human-triggered event creation
+- local-state eligibility check
+- Teams join URL validation
+- closed-meeting resurrection prevention
+- explicit remote cancellation
+- same-operation manual retry
+- manual Teams fallback
+- redacted export
+- privacy erasure integration
+- no contract, signature, invoice, payment, or engagement automation

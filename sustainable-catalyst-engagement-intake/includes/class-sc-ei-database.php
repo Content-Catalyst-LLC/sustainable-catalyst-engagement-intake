@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'proposals', 'proposal_versions', 'workflow_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -39,6 +39,7 @@ final class SC_EI_Database {
 		$portal_events = self::table( 'portal_events' );
 		$portal_recovery_requests = self::table( 'portal_recovery_requests' );
 		$meeting_offers = self::table( 'meeting_offers' );
+		$graph_operations = self::table( 'graph_operations' );
 		$proposals = self::table( 'proposals' );
 		$proposal_versions = self::table( 'proposal_versions' );
 		$workflow_events = self::table( 'workflow_events' );
@@ -555,6 +556,29 @@ final class SC_EI_Database {
 			selected_start_utc datetime NULL,
 			selected_end_utc datetime NULL,
 			teams_url text NULL,
+			graph_sync_status varchar(40) NOT NULL DEFAULT 'not_requested',
+			graph_transaction_id char(36) NOT NULL DEFAULT '',
+			graph_event_id text NULL,
+			graph_i_cal_uid varchar(255) NOT NULL DEFAULT '',
+			graph_change_key text NULL,
+			graph_etag varchar(255) NOT NULL DEFAULT '',
+			graph_web_link text NULL,
+			graph_join_url text NULL,
+			graph_organizer varchar(191) NOT NULL DEFAULT '',
+			graph_calendar_id varchar(255) NOT NULL DEFAULT '',
+			graph_payload_hash char(64) NOT NULL DEFAULT '',
+			graph_remote_start_utc datetime NULL,
+			graph_remote_end_utc datetime NULL,
+			graph_last_request_id varchar(191) NOT NULL DEFAULT '',
+			graph_last_client_request_id char(36) NOT NULL DEFAULT '',
+			graph_last_error_code varchar(120) NOT NULL DEFAULT '',
+			graph_last_error_message longtext NULL,
+			graph_attempt_count smallint(5) unsigned NOT NULL DEFAULT 0,
+			graph_last_attempt_at datetime NULL,
+			graph_last_success_at datetime NULL,
+			graph_next_retry_at datetime NULL,
+			graph_reconciled_at datetime NULL,
+			graph_deleted_at datetime NULL,
 			sender_note longtext NULL,
 			alternative_request longtext NULL,
 			admin_note longtext NULL,
@@ -579,8 +603,60 @@ final class SC_EI_Database {
 			KEY status (status),
 			KEY expires_at (expires_at),
 			KEY selected_start_utc (selected_start_utc),
+			KEY graph_sync_status (graph_sync_status),
+			KEY graph_transaction_id (graph_transaction_id),
+			KEY graph_last_success_at (graph_last_success_at),
+			KEY graph_next_retry_at (graph_next_retry_at),
 			KEY published_by (published_by),
 			KEY finalized_by (finalized_by),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+
+		$sql_graph_operations = "CREATE TABLE {$graph_operations} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			meeting_offer_id bigint(20) unsigned NOT NULL,
+			operation_type varchar(30) NOT NULL DEFAULT 'create',
+			status varchar(30) NOT NULL DEFAULT 'pending',
+			idempotency_key char(64) NOT NULL DEFAULT '',
+			request_hash char(64) NOT NULL DEFAULT '',
+			payload_json longtext NULL,
+			attempt_count smallint(5) unsigned NOT NULL DEFAULT 0,
+			max_attempts smallint(5) unsigned NOT NULL DEFAULT 6,
+			scheduled_at datetime NOT NULL,
+			next_retry_at datetime NULL,
+			locked_at datetime NULL,
+			lock_token char(36) NOT NULL DEFAULT '',
+			started_at datetime NULL,
+			completed_at datetime NULL,
+			http_method varchar(10) NOT NULL DEFAULT '',
+			endpoint_path text NULL,
+			response_status smallint(5) unsigned NOT NULL DEFAULT 0,
+			graph_error_code varchar(120) NOT NULL DEFAULT '',
+			graph_error_message longtext NULL,
+			retry_after_seconds int(10) unsigned NOT NULL DEFAULT 0,
+			request_id varchar(191) NOT NULL DEFAULT '',
+			client_request_id char(36) NOT NULL DEFAULT '',
+			response_snapshot_json longtext NULL,
+			actor_user_id bigint(20) unsigned NULL,
+			context_json longtext NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY idempotency_key (idempotency_key),
+			KEY inquiry_id (inquiry_id),
+			KEY meeting_offer_id (meeting_offer_id),
+			KEY operation_type (operation_type),
+			KEY status (status),
+			KEY scheduled_at (scheduled_at),
+			KEY next_retry_at (next_retry_at),
+			KEY locked_at (locked_at),
+			KEY request_id (request_id),
+			KEY actor_user_id (actor_user_id),
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
@@ -975,6 +1051,7 @@ final class SC_EI_Database {
 		dbDelta( $sql_portal_events );
 		dbDelta( $sql_portal_recovery_requests );
 		dbDelta( $sql_meeting_offers );
+		dbDelta( $sql_graph_operations );
 		dbDelta( $sql_proposals );
 		dbDelta( $sql_proposal_versions );
 		dbDelta( $sql_workflow_events );
@@ -1103,7 +1180,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'proposals', 'proposal_versions', 'workflow_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -1365,11 +1442,28 @@ final class SC_EI_Database {
 			'meeting_offers' => array(
 				'public_id', 'inquiry_id', 'access_id', 'offer_number', 'status', 'title',
 				'purpose', 'duration_minutes', 'timezone', 'slots_json', 'selected_slot_key',
-				'selected_start_utc', 'selected_end_utc', 'teams_url', 'sender_note',
+				'selected_start_utc', 'selected_end_utc', 'teams_url', 'graph_sync_status',
+				'graph_transaction_id', 'graph_event_id', 'graph_i_cal_uid', 'graph_change_key',
+				'graph_etag', 'graph_web_link', 'graph_join_url', 'graph_organizer',
+				'graph_calendar_id', 'graph_payload_hash', 'graph_remote_start_utc',
+				'graph_remote_end_utc', 'graph_last_request_id', 'graph_last_client_request_id',
+				'graph_last_error_code', 'graph_last_error_message', 'graph_attempt_count',
+				'graph_last_attempt_at', 'graph_last_success_at', 'graph_next_retry_at',
+				'graph_reconciled_at', 'graph_deleted_at', 'sender_note',
 				'alternative_request', 'admin_note', 'expires_at', 'published_by',
 				'published_at', 'responded_at', 'finalized_by', 'finalized_at',
 				'completed_at', 'canceled_at', 'cancellation_reason', 'row_version',
 				'created_by', 'created_at', 'updated_at',
+			),
+			'graph_operations' => array(
+				'public_id', 'inquiry_id', 'meeting_offer_id', 'operation_type', 'status',
+				'idempotency_key', 'request_hash', 'payload_json', 'attempt_count',
+				'max_attempts', 'scheduled_at', 'next_retry_at', 'locked_at', 'lock_token',
+				'started_at', 'completed_at', 'http_method', 'endpoint_path',
+				'response_status', 'graph_error_code', 'graph_error_message',
+				'retry_after_seconds', 'request_id', 'client_request_id',
+				'response_snapshot_json', 'actor_user_id', 'context_json',
+				'row_version', 'created_at', 'updated_at',
 			),
 			'proposals' => array(
 				'public_id', 'inquiry_id', 'access_id', 'proposal_number', 'status',
@@ -1492,7 +1586,7 @@ final class SC_EI_Database {
 	public static function drop_all(): void {
 		global $wpdb;
 
-		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'workflow_events', 'proposal_versions', 'proposals', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
+		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'workflow_events', 'proposal_versions', 'proposals', 'graph_operations', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
 			$table = self::table( $name );
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}

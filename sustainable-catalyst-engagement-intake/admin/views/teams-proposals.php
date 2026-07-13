@@ -67,6 +67,16 @@ $success = array(
 			</p>
 		</header>
 
+		<section class="sc-ei-admin__card sc-ei-admin__card--wide sc-ei-graph-workflow-status">
+			<div class="sc-ei-graph-status-row">
+				<div><strong><?php esc_html_e( 'Microsoft Graph connector', 'sustainable-catalyst-engagement-intake' ); ?></strong><span><?php echo ! empty( $graph_settings['graph_enabled'] ) ? esc_html__( 'enabled', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'disabled — manual Teams finalization remains available', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php esc_html_e( 'Credential vault', 'sustainable-catalyst-engagement-intake' ); ?></strong><span><?php echo $graph_credentials['configured'] ? esc_html__( 'configured', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'incomplete', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php esc_html_e( 'Circuit', 'sustainable-catalyst-engagement-intake' ); ?></strong><span><?php echo $graph_circuit['open'] ? esc_html__( 'temporarily open', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'closed', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php esc_html_e( 'Last health check', 'sustainable-catalyst-engagement-intake' ); ?></strong><span><?php echo esc_html( $graph_health['checked_at'] ?: __( 'not run', 'sustainable-catalyst-engagement-intake' ) ); ?></span></div>
+			</div>
+			<p><?php esc_html_e( 'Graph creation is always a separate human action after the sender selects a time. Manual Teams URL finalization remains available regardless of connector state.', 'sustainable-catalyst-engagement-intake' ); ?> <?php if ( current_user_can( 'sc_intake_view_graph' ) ) : ?><a href="<?php echo esc_url( SC_EI_Graph_Admin::url() ); ?>"><?php esc_html_e( 'Open Microsoft Graph Reliability', 'sustainable-catalyst-engagement-intake' ); ?></a><?php endif; ?></p>
+		</section>
+
 		<div class="sc-ei-workflow-layout">
 			<main>
 				<?php if ( current_user_can( 'sc_intake_create_meeting_offers' ) ) : ?>
@@ -101,6 +111,63 @@ $success = array(
 							<p><?php echo nl2br( esc_html( $meeting['purpose'] ) ); ?></p>
 							<ul><?php foreach ( $slots as $slot ) : ?><li><?php echo esc_html( SC_EI_Teams::format_utc_for_input( $slot['start_utc'], $meeting['timezone'] ) . ' · ' . $meeting['timezone'] ); ?><?php echo $meeting['selected_slot_key'] === $slot['key'] ? ' · ' . esc_html__( 'selected', 'sustainable-catalyst-engagement-intake' ) : ''; ?></li><?php endforeach; ?></ul>
 							<?php if ( $meeting['alternative_request'] ) : ?><div class="sc-ei-diagnostic-warning"><strong><?php esc_html_e( 'Alternative requested:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo nl2br( esc_html( $meeting['alternative_request'] ) ); ?></div><?php endif; ?>
+							<div class="sc-ei-graph-meeting-panel">
+								<div class="sc-ei-graph-meeting-state">
+									<strong><?php esc_html_e( 'Microsoft Graph state', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+									<span class="sc-ei-fit-state sc-ei-fit-state--<?php echo esc_attr( $meeting['graph_sync_status'] ?: 'not_requested' ); ?>"><?php echo esc_html( ucwords( str_replace( '_', ' ', $meeting['graph_sync_status'] ?: 'not_requested' ) ) ); ?></span>
+									<?php if ( $meeting['graph_last_error_code'] ) : ?><span class="sc-ei-graph-error"><?php echo esc_html( $meeting['graph_last_error_code'] ); ?><?php if ( $meeting['graph_last_error_message'] ) : ?> · <?php echo esc_html( $meeting['graph_last_error_message'] ); ?><?php endif; ?></span><?php endif; ?>
+									<?php if ( $meeting['graph_last_request_id'] ) : ?><span class="description"><?php echo esc_html( 'request-id ' . $meeting['graph_last_request_id'] ); ?></span><?php endif; ?>
+									<?php if ( $meeting['graph_next_retry_at'] ) : ?><span class="description"><?php echo esc_html( sprintf( __( 'Next retry %s UTC', 'sustainable-catalyst-engagement-intake' ), $meeting['graph_next_retry_at'] ) ); ?></span><?php endif; ?>
+								</div>
+
+								<?php if ( ! empty( $graph_settings['graph_enabled'] ) && $graph_credentials['configured'] && 'accepted_pending_link' === $meeting['status'] && empty( $meeting['graph_event_id'] ) && current_user_can( 'sc_intake_create_graph_events' ) ) : ?>
+									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-inline-confirm-form">
+										<input type="hidden" name="action" value="sc_ei_create_graph_event"><input type="hidden" name="meeting_offer_id" value="<?php echo esc_attr( $meeting['id'] ); ?>"><?php wp_nonce_field( 'sc_ei_create_graph_event_' . absint( $meeting['id'] ) ); ?>
+										<input type="text" name="graph_confirmation" required autocomplete="off" placeholder="<?php echo esc_attr( 'GRAPH ' . strtoupper( $meeting['offer_number'] ) ); ?>">
+										<button class="button button-primary"><?php esc_html_e( 'Create Calendar-Backed Teams Event', 'sustainable-catalyst-engagement-intake' ); ?></button>
+									</form>
+								<?php endif; ?>
+
+								<?php if ( ! empty( $meeting['graph_event_id'] ) ) : ?>
+									<dl class="sc-ei-admin__details sc-ei-graph-remote-details">
+										<dt><?php esc_html_e( 'Remote event', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( substr( hash( 'sha256', $meeting['graph_event_id'] ), 0, 16 ) ); ?></dd>
+										<dt><?php esc_html_e( 'Remote interval', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( ( $meeting['graph_remote_start_utc'] ?: '—' ) . ' → ' . ( $meeting['graph_remote_end_utc'] ?: '—' ) ); ?></dd>
+										<dt><?php esc_html_e( 'Join URL', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo $meeting['graph_join_url'] ? esc_html__( 'ready and copied into the sender-safe Teams field', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'pending reconciliation', 'sustainable-catalyst-engagement-intake' ); ?></dd>
+									</dl>
+									<div class="sc-ei-graph-action-grid">
+										<?php if ( current_user_can( 'sc_intake_reconcile_graph_events' ) && empty( $meeting['graph_deleted_at'] ) ) : ?>
+											<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-inline-confirm-form">
+												<input type="hidden" name="action" value="sc_ei_reconcile_graph_event"><input type="hidden" name="meeting_offer_id" value="<?php echo esc_attr( $meeting['id'] ); ?>"><?php wp_nonce_field( 'sc_ei_reconcile_graph_event_' . absint( $meeting['id'] ) ); ?>
+												<input type="text" name="graph_confirmation" required autocomplete="off" placeholder="<?php echo esc_attr( 'RECONCILE ' . strtoupper( $meeting['offer_number'] ) ); ?>">
+												<button class="button"><?php esc_html_e( 'Reconcile Remote Event', 'sustainable-catalyst-engagement-intake' ); ?></button>
+											</form>
+										<?php endif; ?>
+										<?php if ( current_user_can( 'sc_intake_cancel_graph_events' ) && ! empty( $graph_settings['graph_allow_remote_cancel'] ) && empty( $meeting['graph_deleted_at'] ) ) : ?>
+											<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-inline-confirm-form">
+												<input type="hidden" name="action" value="sc_ei_delete_graph_event"><input type="hidden" name="meeting_offer_id" value="<?php echo esc_attr( $meeting['id'] ); ?>"><?php wp_nonce_field( 'sc_ei_delete_graph_event_' . absint( $meeting['id'] ) ); ?>
+												<input type="text" name="graph_confirmation" required autocomplete="off" placeholder="<?php echo esc_attr( 'DELETE GRAPH ' . strtoupper( $meeting['offer_number'] ) ); ?>">
+												<button class="button"><?php esc_html_e( 'Delete Remote Event', 'sustainable-catalyst-engagement-intake' ); ?></button>
+											</form>
+										<?php endif; ?>
+									</div>
+								<?php endif; ?>
+
+								<?php if ( current_user_can( 'sc_intake_reconcile_graph_events' ) && in_array( $meeting['graph_sync_status'], array( 'permanent_failure', 'deleted', 'remote_canceled', 'reset_manual' ), true ) ) : ?>
+									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-portal-admin-form sc-ei-graph-reset-form">
+										<input type="hidden" name="action" value="sc_ei_reset_graph_linkage"><input type="hidden" name="meeting_offer_id" value="<?php echo esc_attr( $meeting['id'] ); ?>"><?php wp_nonce_field( 'sc_ei_reset_graph_linkage_' . absint( $meeting['id'] ) ); ?>
+										<label><span><?php esc_html_e( 'Linkage reset reason', 'sustainable-catalyst-engagement-intake' ); ?></span><textarea name="graph_reset_reason" rows="2" required></textarea></label>
+										<label><span><?php echo esc_html( 'RESET GRAPH ' . strtoupper( $meeting['offer_number'] ) ); ?></span><input type="text" name="graph_confirmation" required autocomplete="off"></label>
+										<button class="button"><?php esc_html_e( 'Reset Local Graph Linkage', 'sustainable-catalyst-engagement-intake' ); ?></button>
+									</form>
+								<?php endif; ?>
+
+								<?php $meeting_graph_operations = $graph_operations[ $meeting['id'] ] ?? array(); ?>
+								<?php if ( $meeting_graph_operations ) : ?>
+									<details class="sc-ei-graph-operation-history"><summary><?php echo esc_html( sprintf( __( 'Graph operation history (%d)', 'sustainable-catalyst-engagement-intake' ), count( $meeting_graph_operations ) ) ); ?></summary>
+										<table class="widefat striped"><thead><tr><th><?php esc_html_e( 'Type', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'State', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'Attempts', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'Request', 'sustainable-catalyst-engagement-intake' ); ?></th></tr></thead><tbody><?php foreach ( $meeting_graph_operations as $graph_operation ) : ?><tr><td><?php echo esc_html( $graph_operation['operation_type'] ); ?></td><td><?php echo esc_html( $graph_operation['status'] ); ?><?php if ( $graph_operation['graph_error_code'] ) : ?><br><span class="sc-ei-graph-error"><?php echo esc_html( $graph_operation['graph_error_code'] ); ?></span><?php endif; ?></td><td><?php echo esc_html( absint( $graph_operation['attempt_count'] ) . '/' . absint( $graph_operation['max_attempts'] ) ); ?></td><td><?php echo esc_html( $graph_operation['request_id'] ?: '—' ); ?></td></tr><?php endforeach; ?></tbody></table>
+									</details>
+								<?php endif; ?>
+							</div>
 							<?php if ( 'draft' === $meeting['status'] && current_user_can( 'sc_intake_publish_meeting_offers' ) ) : ?>
 								<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-inline-confirm-form"><input type="hidden" name="action" value="sc_ei_publish_meeting_offer"><input type="hidden" name="meeting_offer_id" value="<?php echo esc_attr( $meeting['id'] ); ?>"><?php wp_nonce_field( 'sc_ei_publish_meeting_offer_' . absint( $meeting['id'] ) ); ?><input type="text" name="publish_confirmation" placeholder="<?php echo esc_attr( 'PUBLISH ' . strtoupper( $meeting['offer_number'] ) ); ?>" required><button class="button"><?php esc_html_e( 'Publish Offer', 'sustainable-catalyst-engagement-intake' ); ?></button></form>
 							<?php endif; ?>

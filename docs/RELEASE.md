@@ -1,58 +1,57 @@
-# Release Notes — v0.9.0
+# Release Notes — v0.9.1
 
 ## Release
 
-Teams Scheduling and Proposal Workflow
+Microsoft Graph Reliability Patch
 
 ## Outcome
 
-Add a sender-safe pathway from reviewed inquiry to Teams meeting and proposal while keeping all high-consequence decisions under human control.
+Optionally convert an accepted Teams time into a Microsoft 365 calendar-backed Teams event while preserving human control and manual fallback.
 
-## Human control
+## Reliability contract
 
-The release does not automatically:
+```text
+encrypted credentials
++ encrypted token cache
++ persistent transactionId
++ encrypted durable operation
++ optimistic claim
++ Retry-After
++ bounded exponential backoff
++ circuit breaker
++ reconciliation
++ request IDs
++ manual same-operation retry
+```
 
-- approve an inquiry
-- create a Microsoft 365 calendar event
-- call Microsoft Graph
-- send workflow email
-- sign a contract
+## Fixed boundaries
+
+The connector does not:
+
+- automatically discover and book accepted times
+- use delegated user login
+- use Graph beta
+- use sovereign cloud endpoints
+- create proposals or contracts
+- sign documents
 - collect payment
-- activate an engagement
-
-## Meeting controls
-
-```text
-PUBLISH <OFFER>
-SCHEDULE <OFFER>
-COMPLETE <OFFER>
-CANCEL <OFFER>
-```
-
-## Proposal controls
-
-```text
-PUBLISH <PROPOSAL>
-ACCEPT <PROPOSAL>
-DECLINE <PROPOSAL>
-WITHDRAW <PROPOSAL>
-CONTRACT <PROPOSAL>
-```
+- remove manual Teams finalization
+- expose client secrets or access tokens
 
 ## Production verification
 
-1. Confirm database and workflow schemas.
-2. Confirm role capabilities.
-3. Confirm sender portal permissions.
-4. Publish a multi-slot meeting offer.
-5. Test sender accept, alternative, and decline.
-6. Finalize a Teams link.
-7. Download and inspect ICS.
-8. Publish a proposal.
-9. Draft a revision and confirm the published version remains visible.
-10. Publish the revision.
-11. Test typed acceptance and decline.
-12. Test external-contract attestation.
-13. Test expiration cleanup.
-14. Test workflow export.
-15. Test privacy export and erasure.
+1. Verify Entra application permission and admin consent.
+2. Verify Exchange Application RBAC scope.
+3. Verify encrypted credential storage.
+4. Verify token scope.
+5. Verify health check.
+6. Verify idempotent create.
+7. Verify join URL reconciliation.
+8. Verify Retry-After.
+9. Verify circuit opening and reset.
+10. Verify permanent-failure retry.
+11. Verify remote deletion behavior.
+12. Verify local-state race protection.
+13. Verify manual fallback.
+14. Verify redacted exports.
+15. Verify privacy erasure.

@@ -344,6 +344,15 @@ final class SC_EI_Privacy {
 							'selected_start_utc' => 'Selected start UTC',
 							'selected_end_utc'   => 'Selected end UTC',
 							'teams_url'          => 'Microsoft Teams URL',
+							'graph_sync_status'  => 'Microsoft Graph synchronization state',
+							'graph_transaction_id'=> 'Graph idempotent transaction ID',
+							'graph_i_cal_uid'    => 'Remote calendar UID',
+							'graph_join_url'     => 'Remote Teams join URL',
+							'graph_remote_start_utc' => 'Remote start UTC',
+							'graph_remote_end_utc' => 'Remote end UTC',
+							'graph_last_error_code' => 'Last Graph error code',
+							'graph_last_request_id' => 'Last Graph request ID',
+							'graph_last_success_at' => 'Last Graph success at',
 							'sender_note'        => 'Sender response note',
 							'alternative_request'=> 'Alternative time request',
 							'expires_at'         => 'Offer expires at',
@@ -401,6 +410,36 @@ final class SC_EI_Privacy {
 					),
 				);
 			}
+			foreach ( (array) ( $workflow['microsoft_graph']['operations'] ?? array() ) as $graph_operation ) {
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-microsoft-graph',
+					'group_label' => __( 'Engagement Intake Microsoft Graph Calendar Operations', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-graph-operation-' . $graph_operation['id'],
+					'data'        => self::export_fields(
+						$graph_operation,
+						array(
+							'operation_type'     => 'Operation type',
+							'status'             => 'Operation state',
+							'attempt_count'      => 'Attempt count',
+							'max_attempts'       => 'Maximum attempts',
+							'scheduled_at'       => 'Scheduled at',
+							'next_retry_at'      => 'Next retry at',
+							'started_at'         => 'Started at',
+							'completed_at'       => 'Completed at',
+							'response_status'    => 'HTTP response status',
+							'graph_error_code'   => 'Graph error code',
+							'graph_error_message'=> 'Graph error message',
+							'retry_after_seconds'=> 'Retry delay in seconds',
+							'request_id'         => 'Microsoft Graph request ID',
+							'client_request_id'  => 'Client request ID',
+							'created_at'         => 'Created at',
+							'updated_at'         => 'Updated at',
+							'payload_encrypted'  => 'Request payload stored encrypted',
+						)
+					),
+				);
+			}
+
 			foreach ( (array) ( $workflow['events'] ?? array() ) as $workflow_event ) {
 				$data[] = array(
 					'group_id'    => 'sc-engagement-intake-workflow-events',
@@ -573,7 +612,7 @@ final class SC_EI_Privacy {
 	/**
 	 * WordPress eraser bridge.
 	 *
-	 * v0.9.0 retains the queue-only behavior introduced in v0.6.0 and does not erase synchronously. It creates a tracked case and queues
+	 * v0.9.1 retains the queue-only behavior introduced in v0.6.0 and does not erase synchronously. It creates a tracked case and queues
 	 * legal-hold-aware lifecycle actions for human approval and verified execution.
 	 */
 	public static function erase_by_email( string $email_address, int $page = 1 ): array {

@@ -19,10 +19,11 @@ $caps       = file_get_contents( $plugin . '/includes/class-sc-ei-capabilities.p
 $admin_view = file_get_contents( $plugin . '/admin/views/teams-proposals.php' );
 
 $checks = array(
-	'v0.9.0 release markers' => strpos( $main, 'Version:     0.9.0' ) !== false
-		&& strpos( $main, "SC_EI_DB_VERSION', '0.9.0'" ) !== false
+	'v0.9.1 release markers' => strpos( $main, 'Version:     0.9.1' ) !== false
+		&& strpos( $main, "SC_EI_DB_VERSION', '0.9.1'" ) !== false
 		&& strpos( $main, "SC_EI_PORTAL_SCHEMA_VERSION', '1.2.0'" ) !== false
-		&& strpos( $main, "SC_EI_WORKFLOW_SCHEMA_VERSION', '1.0.0'" ) !== false,
+		&& strpos( $main, "SC_EI_WORKFLOW_SCHEMA_VERSION', '1.1.0'" ) !== false
+		&& strpos( $main, "SC_EI_GRAPH_SCHEMA_VERSION', '1.0.0'" ) !== false,
 	'four workflow tables declared' => strpos( $db, '$sql_meeting_offers' ) !== false
 		&& strpos( $db, '$sql_proposals' ) !== false
 		&& strpos( $db, '$sql_proposal_versions' ) !== false
@@ -45,8 +46,9 @@ $checks = array(
 		&& strpos( $repo, 'workflow_meeting_slots_required' ) !== false,
 	'Teams URL validation' => strpos( $repo, 'SC_EI_Teams::is_teams_url' ) !== false
 		&& strpos( $repo, 'workflow_teams_url_invalid' ) !== false,
-	'no automatic calendar or Graph booking' => strpos( $schema, "'workflow_no_auto_calendar'         => 1" ) !== false
-		&& strpos( $diagnostic, "'graph_api_connected'     => false" ) !== false
+	'human-triggered Graph and manual fallback' => strpos( $schema, "'workflow_no_auto_calendar'         => 1" ) !== false
+		&& strpos( $diagnostic, "'graph_human_triggered'   => true" ) !== false
+		&& strpos( $diagnostic, "'graph_manual_fallback'   => true" ) !== false
 		&& strpos( $diagnostic, "'automatic_calendar'      => false" ) !== false,
 	'meeting sender response uses optimistic status lock' => strpos( $repo, "'status'      => 'offered'" ) !== false
 		&& strpos( $repo, 'workflow_meeting_conflict' ) !== false,
@@ -125,4 +127,4 @@ if ( $failed ) {
 foreach ( $checks as $label => $passed ) {
 	echo 'PASS: ' . $label . PHP_EOL;
 }
-echo "Engagement Intake v0.9.0 Teams scheduling and proposal workflow checks passed.\n";
+echo "Engagement Intake v0.9.1 Teams scheduling and proposal workflow checks passed.\n";

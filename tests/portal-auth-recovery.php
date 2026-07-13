@@ -1,6 +1,6 @@
 <?php
 /**
- * Focused static safety assertions for v0.9.0 authentication and recovery.
+ * Focused static safety assertions for v0.9.1 authentication and recovery.
  */
 
 $root = dirname( __DIR__ );
@@ -71,7 +71,7 @@ if (
 	|| false === strpos( $session, 'legacy_cookie_migrated' )
 	|| false === strpos( $session, 'clear_legacy_cookie' )
 ) {
-	fwrite( STDERR, "Legacy v0.9.0 session migration is missing.\n" );
+	fwrite( STDERR, "Legacy v0.9.1 session migration is missing.\n" );
 	exit( 1 );
 }
 echo "PASS: active v0.8.0 sessions can migrate to the __Host cookie\n";
@@ -124,4 +124,4 @@ if (
 }
 echo "PASS: recovery approval, decline, and unlock require deliberate typed actions\n";
 
-echo "Engagement Intake v0.9.0 focused authentication and recovery checks passed.\n";
+echo "Engagement Intake v0.9.1 focused authentication and recovery checks passed.\n";

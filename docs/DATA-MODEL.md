@@ -392,3 +392,32 @@ A proposal stores workflow state and pointers to its current published and pendi
 A proposal version stores structured content and a SHA-256 hash.
 
 Workflow events preserve actor type, actor identifier, target, state transition, and sanitized context.
+
+
+## v0.9.1 Graph data model
+
+New table:
+
+```text
+graph_operations
+```
+
+Meeting offers now retain:
+
+```text
+Graph synchronization state
+persistent transaction ID
+event ID and calendar UID
+change key and ETag
+web and join URLs
+organizer and calendar
+request hash
+remote start and end
+request identifiers
+error and retry state
+attempt and reconciliation timestamps
+```
+
+Operation payloads are authenticated-encrypted.
+
+Exports remove payload envelopes and expose only a boolean encrypted-payload marker.

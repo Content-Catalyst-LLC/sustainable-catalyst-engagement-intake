@@ -2435,3 +2435,111 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* v0.9.1 Microsoft Graph reliability */
+.sc-ei-graph-admin-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(300px, .65fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.sc-ei-graph-admin-layout .sc-ei-admin__card {
+  margin-bottom: 18px;
+}
+
+.sc-ei-graph-settings-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sc-ei-graph-operation-table th,
+.sc-ei-graph-operation-table td {
+  vertical-align: top;
+}
+
+.sc-ei-graph-workflow-status {
+  border-top: 5px solid #6d1b2b;
+}
+
+.sc-ei-graph-status-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sc-ei-graph-status-row > div {
+  padding: 12px;
+  border: 1px solid #d8d0c2;
+  background: #f7f3ea;
+}
+
+.sc-ei-graph-status-row strong,
+.sc-ei-graph-status-row span {
+  display: block;
+}
+
+.sc-ei-graph-meeting-panel {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0;
+  padding: 16px;
+  border: 1px solid #cfc7bb;
+  border-left: 6px solid #6d1b2b;
+  background: #fffdf8;
+}
+
+.sc-ei-graph-meeting-state {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.sc-ei-graph-meeting-state strong {
+  margin-right: auto;
+}
+
+.sc-ei-graph-error {
+  color: #9a1d1d;
+  font-weight: 700;
+}
+
+.sc-ei-graph-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sc-ei-graph-action-grid form,
+.sc-ei-graph-reset-form {
+  margin: 0;
+}
+
+.sc-ei-graph-remote-details {
+  margin: 0;
+}
+
+.sc-ei-graph-operation-history {
+  padding-top: 10px;
+  border-top: 1px solid #d8d0c2;
+}
+
+.sc-ei-graph-operation-history summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+@media (max-width: 1100px) {
+  .sc-ei-graph-admin-layout,
+  .sc-ei-graph-status-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 782px) {
+  .sc-ei-graph-settings-form,
+  .sc-ei-graph-action-grid {
+    grid-template-columns: 1fr;
+  }
+}

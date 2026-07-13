@@ -285,4 +285,4 @@ pass_scanner( 'infected attachment deleted and rejected' );
 wp_delete_file( $sample );
 wp_delete_file( $clean_path );
 
-echo "Engagement Intake v0.9.0 scanner fixtures passed.\n";
+echo "Engagement Intake v0.9.1 scanner fixtures passed.\n";
