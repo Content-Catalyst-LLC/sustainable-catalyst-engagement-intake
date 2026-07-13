@@ -22,7 +22,11 @@ Completed. Protected multi-file intake, fail-closed validation, quarantine and a
 
 ## v0.3.1 — Production Storage and Upload Reliability
 
-Current release. Atomic storage commits, server request-envelope checks, storage probes and repair, reconciliation, integrity tracking, retention previews, guarded cleanup, cache bypass hardening, and mobile upload reliability.
+Completed. Atomic storage commits, server request-envelope checks, storage probes and repair, reconciliation, integrity tracking, retention previews, guarded cleanup, cache bypass hardening, and mobile upload reliability.
+
+## v0.3.2 — Quarantine Operations and Scanner Readiness
+
+Current release. Cross-inquiry quarantine queue, scanner readiness testing and retry, clean-mode activation safeguards, guarded bulk controls, access reporting, storage utilization, CSV export, and untrusted-document isolation guidance.
 
 ## v0.4.0 — Administrative Review Workspace
 

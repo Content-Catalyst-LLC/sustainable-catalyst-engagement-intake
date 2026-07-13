@@ -51,7 +51,10 @@ $scheduled_start_input = SC_EI_Teams::format_utc_for_input( $inquiry['scheduled_
 $scheduled_end_input   = SC_EI_Teams::format_utc_for_input( $inquiry['scheduled_end_utc'] ?? null, $display_timezone );
 ?>
 <div class="wrap sc-ei-admin">
-	<p><a href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake' ) ); ?>">← <?php esc_html_e( 'Back to inquiries', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
+	<p class="sc-ei-admin__breadcrumb">
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake' ) ); ?>">← <?php esc_html_e( 'Back to inquiries', 'sustainable-catalyst-engagement-intake' ); ?></a>
+		· <a href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-quarantine' ) ); ?>"><?php esc_html_e( 'Open Quarantine Operations', 'sustainable-catalyst-engagement-intake' ); ?></a>
+	</p>
 
 	<?php if ( 'status_updated' === $message ) : ?>
 		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Inquiry status updated.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
@@ -71,6 +74,10 @@ $scheduled_end_input   = SC_EI_Teams::format_utc_for_input( $inquiry['scheduled_
 		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'The private attachment exists in the expected storage area and matches its recorded size and SHA-256 fingerprint.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
 	<?php elseif ( 'attachment_verification_failed' === $message ) : ?>
 		<div class="notice notice-error is-dismissible"><p><?php esc_html_e( 'Attachment verification found a missing, altered, misplaced, or unresolvable file. Download and approval remain protected by fresh integrity checks.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
+	<?php elseif ( 'attachment_scan_clean' === $message ) : ?>
+		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'The private attachment was rescanned and reported clean.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
+	<?php elseif ( 'attachment_scan_attention' === $message ) : ?>
+		<div class="notice notice-warning is-dismissible"><p><?php esc_html_e( 'The scanner retry requires attention. Review the result, storage state, and whether the file was rejected or deleted.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
 	<?php elseif ( 'attachment_error' === $message ) : ?>
 		<div class="notice notice-error is-dismissible"><p><?php esc_html_e( 'The attachment action could not be completed. Review its validation, scan, integrity, permissions, and storage state.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
 	<?php elseif ( 'error' === $message ) : ?>
@@ -307,9 +314,15 @@ $scheduled_end_input   = SC_EI_Teams::format_utc_for_input( $inquiry['scheduled_
 									<div class="sc-ei-attachment__notes"><strong><?php esc_html_e( 'Sender notes', 'sustainable-catalyst-engagement-intake' ); ?></strong><p><?php echo nl2br( esc_html( $attachment['document_notes'] ) ); ?></p></div>
 								<?php endif; ?>
 
-								<?php if ( $attachment['scan_message'] ) : ?>
-									<div class="sc-ei-attachment__scan"><strong><?php esc_html_e( 'Scanner message', 'sustainable-catalyst-engagement-intake' ); ?></strong><p><?php echo esc_html( $attachment['scan_message'] ); ?></p></div>
-								<?php endif; ?>
+								<div class="sc-ei-attachment__scan">
+									<strong><?php esc_html_e( 'Scanner history', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+									<p>
+										<?php echo esc_html( sprintf( _n( '%d attempt', '%d attempts', absint( $attachment['scan_attempts'] ), 'sustainable-catalyst-engagement-intake' ), absint( $attachment['scan_attempts'] ) ) ); ?>
+										<?php if ( $attachment['last_scanned_at'] ) : ?> · <?php echo esc_html( get_date_from_gmt( $attachment['last_scanned_at'], 'M j, Y g:i a' ) ); ?><?php endif; ?>
+										<?php if ( $attachment['scanner_provider'] ) : ?> · <?php echo esc_html( $attachment['scanner_provider'] ); ?><?php endif; ?>
+									</p>
+									<?php if ( $attachment['scan_message'] ) : ?><p><?php echo esc_html( $attachment['scan_message'] ); ?></p><?php endif; ?>
+								</div>
 
 								<?php if ( $security_flags ) : ?>
 									<div class="sc-ei-admin__sensitive">
@@ -323,6 +336,14 @@ $scheduled_end_input   = SC_EI_Teams::format_utc_for_input( $inquiry['scheduled_
 								<?php endif; ?>
 
 								<div class="sc-ei-attachment__actions">
+									<?php if ( current_user_can( 'sc_intake_manage_scanner' ) && ! $is_deleted ) : ?>
+										<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+											<input type="hidden" name="action" value="sc_ei_retry_attachment_scan">
+											<input type="hidden" name="attachment_id" value="<?php echo esc_attr( $attachment['id'] ); ?>">
+											<?php wp_nonce_field( 'sc_ei_retry_attachment_scan_' . absint( $attachment['id'] ) ); ?>
+											<button type="submit" class="button"><?php esc_html_e( 'Retry External Scan', 'sustainable-catalyst-engagement-intake' ); ?></button>
+										</form>
+									<?php endif; ?>
 									<?php if ( current_user_can( 'sc_intake_download_files' ) && ! $is_deleted ) : ?>
 										<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 											<input type="hidden" name="action" value="sc_ei_verify_attachment_integrity">

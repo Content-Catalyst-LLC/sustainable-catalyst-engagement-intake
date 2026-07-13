@@ -28,7 +28,7 @@ final class SC_EI_Activator {
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Engagement Intake v0.3.1 activated with atomic protected storage, upload request diagnostics, storage reconciliation, integrity verification, retention previews, cache bypass hardening, and v0.3.0 secure intake capabilities.',
+			'Engagement Intake v0.3.2 activated with cross-inquiry quarantine operations, scanner readiness testing and retry, guarded bulk file actions, access audit reporting, storage utilization, isolation guidance, and v0.3.1 reliability controls.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}

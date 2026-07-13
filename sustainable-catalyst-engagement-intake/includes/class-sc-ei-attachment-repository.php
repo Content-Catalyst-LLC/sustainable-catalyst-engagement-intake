@@ -34,6 +34,9 @@ final class SC_EI_Attachment_Repository {
 			'scan_status'              => sanitize_key( $input['scan_status'] ?? 'not_configured' ),
 			'scanner_provider'         => sanitize_text_field( $input['scanner_provider'] ?? 'none' ),
 			'scan_message'             => sanitize_textarea_field( $input['scan_message'] ?? '' ),
+			'scan_attempts'            => absint( $input['scan_attempts'] ?? 0 ),
+			'last_scanned_at'          => self::sanitize_datetime( $input['last_scanned_at'] ?? null ),
+			'last_scanned_by'          => ! empty( $input['last_scanned_by'] ) ? absint( $input['last_scanned_by'] ) : null,
 			'integrity_status'         => sanitize_key( $input['integrity_status'] ?? 'verified' ),
 			'storage_status'           => sanitize_key( $input['storage_status'] ?? 'unverified' ),
 			'last_verified_at'         => self::sanitize_datetime( $input['last_verified_at'] ?? null ),
@@ -61,6 +64,8 @@ final class SC_EI_Attachment_Repository {
 			'rejected_by',
 			'deleted_by',
 			'last_verified_by',
+			'last_scanned_by',
+			'scan_attempts',
 			'downloaded_count',
 		);
 		$formats = array_map(
@@ -125,6 +130,179 @@ final class SC_EI_Attachment_Repository {
 				$inquiry_id
 			)
 		);
+	}
+
+	public static function query_operations( array $args = array() ): array {
+		global $wpdb;
+
+		$defaults = array(
+			'quarantine_status' => '',
+			'scan_status'       => '',
+			'validation_status' => '',
+			'storage_status'    => '',
+			'document_category' => '',
+			'confidentiality'   => '',
+			'retention'         => '',
+			'search'            => '',
+			'page'              => 1,
+			'per_page'          => 20,
+			'orderby'           => 'uploaded_at',
+			'order'             => 'DESC',
+		);
+		$args = wp_parse_args( $args, $defaults );
+
+		$attachments = SC_EI_Database::table( 'attachments' );
+		$inquiries   = SC_EI_Database::table( 'inquiries' );
+		$where       = array( 'a.deleted_at IS NULL' );
+		$values      = array();
+
+		$filters = array(
+			'quarantine_status' => array( 'quarantined', 'approved', 'replacement_requested', 'rejected' ),
+			'scan_status'       => array( 'not_configured', 'clean', 'infected', 'error', 'skipped' ),
+			'validation_status' => array( 'validated', 'rejected', 'error' ),
+			'storage_status'    => array( 'healthy', 'missing', 'hash_mismatch', 'size_mismatch', 'misplaced', 'unresolvable', 'unverified' ),
+			'confidentiality'   => array_keys( SC_EI_Form_Schema::document_confidentiality_options() ),
+			'document_category' => array_keys( SC_EI_Form_Schema::document_categories() ),
+		);
+
+		foreach ( $filters as $key => $allowed ) {
+			$value = sanitize_key( (string) $args[ $key ] );
+			if ( in_array( $value, $allowed, true ) ) {
+				$where[]  = "a.{$key} = %s";
+				$values[] = $value;
+			}
+		}
+
+		$retention = sanitize_key( (string) $args['retention'] );
+		$now       = current_time( 'mysql', true );
+		$soon      = gmdate( 'Y-m-d H:i:s', time() + ( 30 * DAY_IN_SECONDS ) );
+
+		if ( 'expired' === $retention ) {
+			$where[]  = 'a.retention_until IS NOT NULL AND a.retention_until <= %s';
+			$values[] = $now;
+		} elseif ( 'due_30' === $retention ) {
+			$where[]  = 'a.retention_until IS NOT NULL AND a.retention_until > %s AND a.retention_until <= %s';
+			$values[] = $now;
+			$values[] = $soon;
+		} elseif ( 'future' === $retention ) {
+			$where[]  = 'a.retention_until IS NOT NULL AND a.retention_until > %s';
+			$values[] = $soon;
+		} elseif ( 'none' === $retention ) {
+			$where[] = 'a.retention_until IS NULL';
+		}
+
+		$search = sanitize_text_field( (string) $args['search'] );
+		if ( '' !== $search ) {
+			$like = '%' . $wpdb->esc_like( $search ) . '%';
+			$where[] = '(a.original_name LIKE %s OR a.sha256 LIKE %s OR i.reference LIKE %s OR i.contact_name LIKE %s OR i.contact_email LIKE %s OR i.organization LIKE %s)';
+			array_push( $values, $like, $like, $like, $like, $like, $like );
+		}
+
+		$allowed_orderby = array(
+			'original_name'    => 'a.original_name',
+			'size_bytes'       => 'a.size_bytes',
+			'quarantine_status'=> 'a.quarantine_status',
+			'scan_status'      => 'a.scan_status',
+			'storage_status'   => 'a.storage_status',
+			'retention_until'  => 'a.retention_until',
+			'last_scanned_at'  => 'a.last_scanned_at',
+			'uploaded_at'      => 'a.uploaded_at',
+			'reference'        => 'i.reference',
+		);
+		$orderby = $allowed_orderby[ sanitize_key( (string) $args['orderby'] ) ] ?? 'a.uploaded_at';
+		$order   = 'ASC' === strtoupper( (string) $args['order'] ) ? 'ASC' : 'DESC';
+		$page    = max( 1, absint( $args['page'] ) );
+		$per_page= max( 1, min( 100, absint( $args['per_page'] ) ) );
+		$offset  = ( $page - 1 ) * $per_page;
+		$where_sql = implode( ' AND ', $where );
+
+		$count_sql = "SELECT COUNT(*) FROM {$attachments} a INNER JOIN {$inquiries} i ON i.id = a.inquiry_id WHERE {$where_sql}";
+		$data_sql  = "SELECT a.*, i.reference, i.contact_name, i.contact_email, i.organization, i.inquiry_type, i.status AS inquiry_status
+			FROM {$attachments} a
+			INNER JOIN {$inquiries} i ON i.id = a.inquiry_id
+			WHERE {$where_sql}
+			ORDER BY {$orderby} {$order}, a.id {$order}
+			LIMIT %d OFFSET %d";
+
+		$count_query = $values ? $wpdb->prepare( $count_sql, $values ) : $count_sql;
+		$total       = (int) $wpdb->get_var( $count_query );
+
+		$data_values   = array_merge( $values, array( $per_page, $offset ) );
+		$prepared_data = $wpdb->prepare( $data_sql, $data_values );
+		$items         = (array) $wpdb->get_results( $prepared_data, ARRAY_A );
+
+		return array(
+			'items'       => $items,
+			'total'       => $total,
+			'total_pages' => max( 1, (int) ceil( $total / $per_page ) ),
+		);
+	}
+
+	public static function operational_summary(): array {
+		global $wpdb;
+
+		$table = SC_EI_Database::table( 'attachments' );
+		$now   = current_time( 'mysql', true );
+		$sql   = $wpdb->prepare(
+			"SELECT
+				COUNT(*) AS active_count,
+				COALESCE(SUM(size_bytes), 0) AS active_bytes,
+				SUM(CASE WHEN quarantine_status = 'quarantined' THEN 1 ELSE 0 END) AS quarantined_count,
+				SUM(CASE WHEN quarantine_status = 'approved' THEN 1 ELSE 0 END) AS approved_count,
+				SUM(CASE WHEN quarantine_status = 'replacement_requested' THEN 1 ELSE 0 END) AS replacement_count,
+				SUM(CASE WHEN scan_status = 'clean' THEN 1 ELSE 0 END) AS clean_count,
+				SUM(CASE WHEN scan_status = 'infected' THEN 1 ELSE 0 END) AS infected_count,
+				SUM(CASE WHEN scan_status IN ('error', 'skipped', 'not_configured') THEN 1 ELSE 0 END) AS scan_attention_count,
+				SUM(CASE WHEN storage_status <> 'healthy' THEN 1 ELSE 0 END) AS storage_attention_count,
+				SUM(CASE WHEN retention_until IS NOT NULL AND retention_until <= %s THEN 1 ELSE 0 END) AS expired_count,
+				SUM(downloaded_count) AS total_downloads
+			FROM {$table}
+			WHERE deleted_at IS NULL", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$now
+		);
+		$row = $wpdb->get_row( $sql, ARRAY_A );
+
+		$keys = array(
+			'active_count',
+			'active_bytes',
+			'quarantined_count',
+			'approved_count',
+			'replacement_count',
+			'clean_count',
+			'infected_count',
+			'scan_attention_count',
+			'storage_attention_count',
+			'expired_count',
+			'total_downloads',
+		);
+
+		$result = array();
+		foreach ( $keys as $key ) {
+			$result[ $key ] = absint( $row[ $key ] ?? 0 );
+		}
+		return $result;
+	}
+
+	public static function find_many( array $ids, int $limit = 50 ): array {
+		global $wpdb;
+
+		$ids = array_slice(
+			array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) ),
+			0,
+			max( 1, min( 100, $limit ) )
+		);
+		if ( ! $ids ) {
+			return array();
+		}
+
+		$table        = SC_EI_Database::table( 'attachments' );
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		$sql          = $wpdb->prepare(
+			"SELECT * FROM {$table} WHERE id IN ({$placeholders}) ORDER BY id ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$ids
+		);
+
+		return (array) $wpdb->get_results( $sql, ARRAY_A );
 	}
 
 	public static function for_reconciliation( int $limit = 500 ): array {
@@ -214,7 +392,7 @@ final class SC_EI_Attachment_Repository {
 			return false;
 		}
 
-		if ( 'manual' === $source || 'download' === $source ) {
+		if ( ! in_array( $source, array( 'reconciliation', 'upload' ), true ) ) {
 			$current = self::find( $id );
 			SC_EI_Audit_Log::record(
 				'attachment_integrity_checked',
@@ -275,6 +453,64 @@ final class SC_EI_Attachment_Repository {
 			'message' => $message,
 			'ok'      => 'healthy' === $status,
 		);
+	}
+
+	public static function update_scan_result(
+		int $id,
+		array $scan,
+		int $actor_user_id,
+		string $source = 'manual_retry'
+	): bool {
+		global $wpdb;
+
+		$current = self::find( $id );
+		if ( ! $current || ! empty( $current['deleted_at'] ) ) {
+			return false;
+		}
+
+		$allowed = array( 'not_configured', 'clean', 'infected', 'error', 'skipped' );
+		$status  = sanitize_key( (string) ( $scan['status'] ?? 'error' ) );
+		if ( ! in_array( $status, $allowed, true ) ) {
+			$status = 'error';
+		}
+
+		$now = current_time( 'mysql', true );
+		$updated = $wpdb->update(
+			SC_EI_Database::table( 'attachments' ),
+			array(
+				'scan_status'      => $status,
+				'scanner_provider' => sanitize_text_field( (string) ( $scan['provider'] ?? 'unknown' ) ),
+				'scan_message'     => sanitize_textarea_field( (string) ( $scan['message'] ?? '' ) ),
+				'scan_attempts'    => absint( $current['scan_attempts'] ?? 0 ) + 1,
+				'last_scanned_at'  => $now,
+				'last_scanned_by'  => $actor_user_id,
+			),
+			array( 'id' => $id ),
+			array( '%s', '%s', '%s', '%d', '%s', '%d' ),
+			array( '%d' )
+		);
+
+		if ( false === $updated ) {
+			return false;
+		}
+
+		SC_EI_Audit_Log::record(
+			'attachment_scan_completed',
+			'External scanner operation completed for a private attachment.',
+			array(
+				'old_status' => $current['scan_status'],
+				'new_status' => $status,
+				'provider'   => sanitize_text_field( (string) ( $scan['provider'] ?? 'unknown' ) ),
+				'message'    => sanitize_textarea_field( (string) ( $scan['message'] ?? '' ) ),
+				'attempt'    => absint( $current['scan_attempts'] ?? 0 ) + 1,
+				'source'     => sanitize_key( $source ),
+			),
+			(int) $current['inquiry_id'],
+			$id,
+			$actor_user_id
+		);
+
+		return true;
 	}
 
 	public static function update_quarantine_status( int $id, string $status, int $actor_user_id, string $note = '' ): bool {

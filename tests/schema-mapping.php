@@ -112,4 +112,4 @@ function assert_update_formats( string $source, string $needle, string $label ):
 assert_update_formats( $privacy, '$attachment_updated = $wpdb->update(', 'Attachment privacy eraser' );
 assert_update_formats( $privacy, '$updated         = $wpdb->update(', 'Inquiry privacy eraser' );
 
-echo "Engagement Intake v0.3.1 schema checks passed.\n";
+echo "Engagement Intake v0.3.2 schema checks passed.\n";

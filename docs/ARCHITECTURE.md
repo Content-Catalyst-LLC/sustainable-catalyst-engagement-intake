@@ -44,7 +44,8 @@ Access is controlled by dedicated capabilities:
 v0.2.x established conditional public forms, Teams preferences, dual experiences, and conversion routing.  
 v0.3.0 added protected document storage and quarantine.  
 v0.3.1 adds atomic storage commits, request-envelope reliability, reconciliation, integrity tracking, retention previews, and cache/CDN hardening.  
-Later versions add administrative review, communication history, sender portal, connected scheduling, proposals, analytics, and Workflow Core.
+v0.3.2 adds a cross-inquiry quarantine operations layer, scanner readiness and retry, guarded bulk file actions, access reporting, and isolation guidance.  
+Later versions add broader administrative review, communication history, sender portal, connected scheduling, proposals, analytics, and Workflow Core.
 
 
 ## Dual public experiences
@@ -60,3 +61,19 @@ The Consulting page and Contact page use separate public renderers but share:
 - retention settings
 
 This prevents duplicated records and duplicated plugin maintenance.
+
+
+## Quarantine operations layer
+
+The operational layer remains private and capability-controlled.
+
+```text
+Attachment repository
+→ cross-inquiry queue
+→ scanner operations
+→ storage and integrity verification
+→ human quarantine decision
+→ access and operations audit
+```
+
+It does not expose files, create Media Library records, or merge private inquiry data into public Feature Suggestions or Knowledge Library records.

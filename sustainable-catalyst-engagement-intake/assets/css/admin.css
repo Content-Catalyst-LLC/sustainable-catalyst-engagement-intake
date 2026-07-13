@@ -599,3 +599,278 @@
     columns: 1;
   }
 }
+
+
+/* v0.3.2 Quarantine Operations and Scanner Readiness */
+.sc-ei-operation-tabs {
+  margin: 20px 0 0;
+}
+
+.sc-ei-quarantine-summary,
+.sc-ei-audit-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.sc-ei-quarantine-summary > div,
+.sc-ei-audit-summary > div {
+  padding: 14px;
+  border: 1px solid #d8d1c3;
+  border-top: 4px solid #2f5f4a;
+  background: #fff;
+}
+
+.sc-ei-quarantine-summary strong,
+.sc-ei-quarantine-summary span,
+.sc-ei-audit-summary strong,
+.sc-ei-audit-summary span {
+  display: block;
+}
+
+.sc-ei-quarantine-summary strong,
+.sc-ei-audit-summary strong {
+  margin-bottom: 4px;
+  color: #161616;
+  font-size: 20px;
+}
+
+.sc-ei-quarantine-summary span,
+.sc-ei-audit-summary span {
+  color: #5d5d5d;
+  font-size: 12px;
+}
+
+.sc-ei-quarantine-summary .sc-ei-summary-attention {
+  border-top-color: #b77b00;
+  background: #fffaf0;
+}
+
+.sc-ei-quarantine-summary .sc-ei-summary-danger {
+  border-top-color: #8f1515;
+  background: #fff5f5;
+}
+
+.sc-ei-operation-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, .8fr);
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.sc-ei-readiness-state {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 12px 0 16px;
+  padding: 13px 14px;
+  border: 1px solid #d8d1c3;
+}
+
+.sc-ei-readiness-state strong,
+.sc-ei-readiness-state span {
+  display: block;
+}
+
+.sc-ei-readiness-state--ready {
+  border-left: 5px solid #187b32;
+  background: #f2faf4;
+}
+
+.sc-ei-readiness-state--attention {
+  border-left: 5px solid #b77b00;
+  background: #fffaf0;
+}
+
+.sc-ei-readiness-inline {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sc-ei-readiness-inline--ready {
+  background: #dff3e4;
+  color: #0f5d25;
+}
+
+.sc-ei-readiness-inline--attention {
+  background: #fff0c8;
+  color: #7a5200;
+}
+
+.sc-ei-operation-filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 14px 0 18px;
+  padding: 12px;
+  border: 1px solid #d8d1c3;
+  background: #f8f7f2;
+}
+
+.sc-ei-operation-filter-form input[type="search"] {
+  min-width: min(360px, 100%);
+  flex: 1 1 280px;
+}
+
+.sc-ei-operation-filter-form select,
+.sc-ei-operation-filter-form input[type="date"] {
+  max-width: 220px;
+}
+
+.sc-ei-quarantine-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+  max-width: 100%;
+}
+
+.sc-ei-quarantine-bulk .description {
+  max-width: 420px;
+}
+
+.sc-ei-scan-state {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid #aaa;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+.sc-ei-scan-state--clean {
+  border-color: #187b32;
+  background: #f2faf4;
+  color: #0f5d25;
+}
+
+.sc-ei-scan-state--infected {
+  border-color: #8f1515;
+  background: #fff1f1;
+  color: #8f1515;
+}
+
+.sc-ei-scan-state--error,
+.sc-ei-scan-state--skipped,
+.sc-ei-scan-state--not_configured {
+  border-color: #b77b00;
+  background: #fffaf0;
+  color: #7a5200;
+}
+
+.sc-ei-inline-warning,
+.sc-ei-retention-expired {
+  color: #8f1515;
+  font-weight: 800;
+}
+
+.sc-ei-audit-event {
+  display: inline-block;
+  padding: 3px 7px;
+  border: 1px solid #c7c1b5;
+  border-radius: 999px;
+  background: #f8f7f2;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sc-ei-isolation-guidance {
+  border-top: 5px solid #2f5f4a;
+}
+
+.sc-ei-guidance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 18px 0;
+}
+
+.sc-ei-guidance-grid > div {
+  padding: 16px;
+  border: 1px solid #d8d1c3;
+  background: #fff;
+}
+
+.sc-ei-guidance-grid h3 {
+  margin-top: 0;
+}
+
+.sc-ei-guidance-grid ul {
+  margin: 0 0 0 18px;
+}
+
+.sc-ei-guidance-grid li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.sc-ei-quarantine-queue-card .wp-list-table th,
+.sc-ei-quarantine-queue-card .wp-list-table td {
+  vertical-align: top;
+}
+
+.sc-ei-quarantine-queue-card .column-cb {
+  width: 32px;
+}
+
+.sc-ei-quarantine-queue-card .column-file {
+  min-width: 220px;
+}
+
+.sc-ei-quarantine-queue-card .column-inquiry {
+  min-width: 160px;
+}
+
+.sc-ei-quarantine-queue-card .column-classification,
+.sc-ei-quarantine-queue-card .column-scan_status,
+.sc-ei-quarantine-queue-card .column-storage_status {
+  min-width: 150px;
+}
+
+.sc-ei-attachment__actions {
+  align-items: center;
+}
+
+@media (max-width: 1200px) {
+  .sc-ei-operation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sc-ei-guidance-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 782px) {
+  .sc-ei-operation-filter-form,
+  .sc-ei-quarantine-bulk {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .sc-ei-operation-filter-form input,
+  .sc-ei-operation-filter-form select,
+  .sc-ei-operation-filter-form .button,
+  .sc-ei-quarantine-bulk input,
+  .sc-ei-quarantine-bulk select,
+  .sc-ei-quarantine-bulk .button {
+    width: 100%;
+    max-width: none;
+  }
+
+  .sc-ei-quarantine-summary,
+  .sc-ei-audit-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

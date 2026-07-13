@@ -154,3 +154,24 @@ For higher-risk intake:
 - request-level idempotency prevents concurrent duplicate inquiry creation
 - successful response replay is limited to 15 minutes
 - abandoned request locks are pruned after one hour
+
+
+## v0.3.2 quarantine operations controls
+
+- dedicated scanner-management, bulk-file-action, and file-audit capabilities
+- generated benign scanner test contains no submitted user content
+- readiness requires configured probe, clean result, successful deletion, freshness, and provider/version match
+- scanner exceptions and unknown statuses fail to `error`
+- clean-required mode cannot be newly enabled without readiness
+- already-enabled clean-required policy remains fail closed when readiness degrades
+- administrative rescans verify storage and SHA-256 first
+- infected rescans block download and attempt immediate physical deletion
+- bulk selection is limited to 50 records
+- bulk scanner retries use a separate configurable limit
+- approval rechecks validation, scanner policy, storage, and integrity
+- bulk physical deletion requires exact typed confirmation
+- reconciliation orphans are never automatically deleted
+- access audit CSV is capability- and nonce-protected
+- CSV values beginning with spreadsheet formula characters are neutralized
+- audit export never includes physical file contents
+- isolation guidance remains necessary even after a clean scan

@@ -1,108 +1,117 @@
 === Sustainable Catalyst Engagement Intake ===
 Contributors: content-catalyst
-Tags: contact, consulting, intake, secure upload, quarantine, storage diagnostics, microsoft teams, privacy
+Tags: contact, consulting, intake, secure upload, quarantine, scanner readiness, file audit, microsoft teams, privacy
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.3.1
+Stable tag: 0.3.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Dual private intake experiences with reliable protected document quarantine, storage reconciliation, validated downloads, Microsoft Teams scheduling readiness, conversion routing, privacy tools, and audit history.
+Private contact and consulting intake with secure document quarantine operations, scanner readiness, reliable protected storage, Microsoft Teams preferences, privacy tools, and audit history.
 
 == Description ==
 
-Version 0.3.1 is the production reliability patch for the secure document pipeline introduced in v0.3.0.
+Version 0.3.2 adds the operational layer for private documents collected through the compact Consulting form and advanced Contact Hub.
 
 Recommended shortcodes:
 
-* Consulting page: `[sc_engagement_inquiry mode="compact" source="consulting-page" title="Discuss an Engagement"]`
-* Contact page: `[sc_contact_hub mode="advanced" source="contact-page" title="Contact Sustainable Catalyst"]`
+* Consulting page: `[sc_engagement_inquiry mode="compact" source="consulting-page" entry_cta="discuss-an-engagement" title="Discuss an Engagement"]`
+* Contact page: `[sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst"]`
 
-Reliability improvements include:
+Quarantine Operations provides:
 
-* Atomic staging and final file commit
-* Size and SHA-256 verification after the server move
-* Final verification after atomic rename
-* Storage-path lock only after the first committed document
-* Storage write/read/rename/delete probe
-* Protection-file and directory repair
-* Stale partial-upload cleanup
-* Database-to-filesystem reconciliation
-* Missing, altered, size-mismatched, misplaced, unresolvable, and orphan-file reporting
-* Per-document manual integrity verification
-* Persistent storage-status and last-verification metadata
-* PHP `post_max_size` overrun interception
-* Browser-selected versus server-received file-count comparison
-* Server upload-temporary-directory checks
-* Effective limits derived from plugin and PHP settings
-* Browser, proxy, CDN, Cloudflare, and surrogate no-store headers
-* Client-side three-minute upload timeout with duplicate-submission guidance
-* Retention cleanup preview
-* Guarded manual retention execution
-* Storage utilization and free-space diagnostics
-* Mobile file-input improvements
+* Cross-inquiry private document queue
+* Search by file, inquiry, contact, organization, or SHA-256
+* Filters for quarantine, validation, scanner, storage, category, confidentiality, and retention state
+* Scanner readiness status and generated benign test file
+* Single-file and guarded bulk scanner retries
+* Storage and integrity rechecks
+* Approval, return-to-quarantine, replacement request, retention, and rejection controls
+* Maximum 50 records per bulk operation
+* Configurable scanner retry batch limit
+* Exact confirmation before bulk physical deletion
+* Storage utilization and free-space reporting
+* Private document access and operations audit
+* Filtered CSV audit export with spreadsheet-formula neutralization
+* Isolation guidance for reviewing untrusted files
+* Human-controlled decisions with no automatic approval
 
-Files are never added to the WordPress Media Library and receive no public URL.
+Scanner-required mode:
+
+* Newly enabling it requires a configured scanner integration.
+* A recent generated benign file must be reported clean.
+* The test file must be deleted successfully.
+* The configured scanner provider and integration version must still match the tested configuration.
+* Once enabled, the policy remains fail-closed if readiness later degrades.
+* New uploads not reported clean are rejected and deleted.
+
+No antivirus engine is bundled. The readiness test verifies that a benign file can be submitted to the integration and reported clean; it does not prove that every malicious file will be detected.
+
+Files remain outside the WordPress Media Library and receive no public URL.
 
 == Installation ==
 
-1. Upload and activate the plugin.
-2. Open Engagement Intake → Diagnostics.
-3. Confirm database version 0.3.1.
-4. Confirm the new attachment verification fields.
-5. Run Storage Probe.
-6. Run Storage Reconciliation.
-7. Preview Expired Cleanup.
-8. Confirm Fileinfo and ZipArchive when required formats are enabled.
-9. Exclude form and submission routes from full-page caching.
+1. Back up the WordPress database and private storage directory.
+2. Upload and activate v0.3.2.
+3. Open Engagement Intake → Diagnostics.
+4. Confirm database version 0.3.2 and scanner migration fields.
+5. Run Storage Probe and Storage Reconciliation.
+6. Open Engagement Intake → Quarantine.
+7. Run the benign scanner readiness test when an external scanner is integrated.
+8. Review the queue, access audit, storage utilization, and isolation guidance.
+9. Enable clean-required mode only after readiness shows Ready.
+10. Test compact and advanced forms with non-sensitive documents.
 
-== Upgrade from 0.3.0 ==
+== Upgrade from 0.3.1 ==
 
-The upgrade preserves inquiry, attachment, Teams, conversion, privacy, and audit records.
+The upgrade preserves all inquiry, attachment, storage, audit, Teams, privacy, retention, and conversion data.
 
 The attachment table gains:
 
-* storage status
-* last verification time
-* last verifying user
-* verification source
-* verification message
+* scanner attempt count
+* last scanner time
+* last scanner actor
+* index on last scanner time
 
-No physical files are moved during database migration.
+Existing attachments remain in place. Scanner attempt metadata begins with the existing stored state until a new upload or administrative rescan occurs.
 
 == Frequently Asked Questions ==
 
-= Does v0.3.1 automatically delete orphan files? =
+= Does the plugin include antivirus software? =
 
-No. Reconciliation is read-only. It reports orphan files for human review.
+No. The plugin provides a strict structural validator and an integration bridge. Connect an external scanner through `sc_ei_scan_attachment` and `sc_ei_scanner_probe`.
 
-= What does Repair Storage Protections change? =
+= Does a clean readiness test guarantee the scanner catches malware? =
 
-It recreates known protection files, reapplies best-effort directory permissions, removes staging files older than one hour, and runs the storage probe. It does not delete committed `.qtn` files or attachment records.
+No. It confirms that the configured integration can receive a generated benign file, report it clean, and allow the temporary test file to be deleted. It is an operational readiness signal, not proof of detection quality.
 
-= What happens when a request exceeds post_max_size? =
+= What happens when an administrative rescan reports infected? =
 
-The plugin detects the overrun on its marked admin-post route or REST route and returns a clear request-too-large response instead of silently accepting an empty request.
+The result is stored, downloads remain blocked, and the plugin attempts to delete the physical file and mark the attachment rejected. If deletion fails, the infected status remains visible and immediate administrative action is required.
 
-= Can retention cleanup be tested without deletion? =
+= Can bulk actions approve documents automatically? =
 
-Yes. The preview lists expired records, bytes, and whether each physical file is present. Manual deletion requires the deletion capability, a nonce, and the exact phrase `DELETE EXPIRED`.
+No. An authorized human must select the documents and choose the action. Approval still requires validated content, acceptable scanner policy, and a current healthy storage and integrity check.
 
-= Does this release include antivirus? =
+= Are orphan files automatically deleted? =
 
-No. Strict validation remains separate from antivirus. An external scanner can connect through the documented scanner filters.
+No. Reconciliation remains read-only. Orphan files are reported for investigation.
+
+= What is included in the CSV audit export? =
+
+Event metadata, inquiry reference, private document name, actor, message, and sanitized context. Physical file contents are never exported.
 
 == Changelog ==
 
+= 0.3.2 =
+* Added cross-inquiry Quarantine Operations.
+* Added scanner readiness testing, retry operations, clean-mode safeguards, guarded bulk controls, storage utilization, access reporting, CSV export, and isolation guidance.
+
 = 0.3.1 =
-* Added production storage and upload reliability controls.
-* Added atomic commits, reconciliation, integrity rechecks, request-envelope diagnostics, retention previews, guarded cleanup, and cache/CDN bypass hardening.
+* Added atomic storage commits, reconciliation, integrity tracking, retention previews, and upload reliability.
 
 = 0.3.0 =
-* Added protected document intake and quarantine.
+* Added secure document intake and quarantine.
 
 = 0.2.2 =
 * Added compact Consulting and advanced Contact intake experiences with conversion routing.
-
-= 0.2.1 =
-* Added Microsoft Teams communication preferences and scheduling readiness.

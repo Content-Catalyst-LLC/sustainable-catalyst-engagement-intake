@@ -26,6 +26,10 @@ final class SC_EI_Admin {
 		add_action( 'admin_post_sc_ei_run_storage_reconciliation', array( __CLASS__, 'handle_storage_reconciliation' ) );
 		add_action( 'admin_post_sc_ei_preview_retention_cleanup', array( __CLASS__, 'handle_retention_preview' ) );
 		add_action( 'admin_post_sc_ei_run_retention_cleanup', array( __CLASS__, 'handle_retention_cleanup' ) );
+		add_action( 'admin_post_sc_ei_run_scanner_readiness_test', array( __CLASS__, 'handle_scanner_readiness_test' ) );
+		add_action( 'admin_post_sc_ei_retry_attachment_scan', array( __CLASS__, 'handle_attachment_scan_retry' ) );
+		add_action( 'admin_post_sc_ei_quarantine_bulk', array( __CLASS__, 'handle_quarantine_bulk' ) );
+		add_action( 'admin_post_sc_ei_export_file_audit', array( __CLASS__, 'handle_file_audit_export' ) );
 		add_filter( 'set-screen-option', array( __CLASS__, 'screen_option' ), 10, 3 );
 		add_filter( 'plugin_action_links_' . SC_EI_BASENAME, array( __CLASS__, 'plugin_links' ) );
 	}
@@ -64,6 +68,33 @@ final class SC_EI_Admin {
 			array( __CLASS__, 'inquiries_page' )
 		);
 
+		$quarantine_hook = add_submenu_page(
+			'sc-engagement-intake',
+			__( 'Quarantine Operations', 'sustainable-catalyst-engagement-intake' ),
+			__( 'Quarantine', 'sustainable-catalyst-engagement-intake' ),
+			'sc_intake_review',
+			'sc-engagement-intake-quarantine',
+			array( __CLASS__, 'quarantine_page' )
+		);
+
+		add_action(
+			"load-{$quarantine_hook}",
+			static function(): void {
+				$view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : 'queue';
+				$is_access = 'access' === $view;
+				add_screen_option(
+					'per_page',
+					array(
+						'label'   => $is_access
+							? __( 'File audit events per page', 'sustainable-catalyst-engagement-intake' )
+							: __( 'Quarantine documents per page', 'sustainable-catalyst-engagement-intake' ),
+						'default' => $is_access ? 25 : 20,
+						'option'  => $is_access ? 'sc_ei_file_audit_per_page' : 'sc_ei_quarantine_per_page',
+					)
+				);
+			}
+		);
+
 		add_submenu_page(
 			'sc-engagement-intake',
 			__( 'Diagnostics', 'sustainable-catalyst-engagement-intake' ),
@@ -94,6 +125,14 @@ final class SC_EI_Admin {
 			array(),
 			SC_EI_VERSION
 		);
+
+		wp_enqueue_script(
+			'sc-ei-admin',
+			SC_EI_URL . 'assets/js/admin.js',
+			array(),
+			SC_EI_VERSION,
+			true
+		);
 	}
 
 	public static function settings(): void {
@@ -123,12 +162,41 @@ final class SC_EI_Admin {
 			'allowed_upload_extensions'           => array( 'pdf', 'docx', 'xlsx', 'csv', 'txt', 'png', 'jpg', 'jpeg' ),
 			'attachment_retention_days'           => 180,
 			'require_external_scanner'            => 0,
+			'scanner_test_freshness_hours'        => 24,
+			'scanner_bulk_retry_limit'            => 25,
 			'private_storage_path'                => '',
 		);
 	}
 
 	public static function sanitize_settings( $value ): array {
-		$value = is_array( $value ) ? $value : array();
+		$value   = is_array( $value ) ? $value : array();
+		$current = wp_parse_args( get_option( 'sc_ei_settings', array() ), self::default_settings() );
+
+		$freshness_hours = max( 1, min( 168, absint( $value['scanner_test_freshness_hours'] ?? 24 ) ) );
+		$bulk_limit      = max( 1, min( 50, absint( $value['scanner_bulk_retry_limit'] ?? 25 ) ) );
+		$requested_clean = empty( $value['require_external_scanner'] ) ? 0 : 1;
+
+		$provisional = array_merge(
+			$current,
+			array(
+				'scanner_test_freshness_hours' => $freshness_hours,
+				'scanner_bulk_retry_limit'     => $bulk_limit,
+			)
+		);
+
+		if (
+			$requested_clean
+			&& empty( $current['require_external_scanner'] )
+			&& ! SC_EI_Scanner_Operations::can_enable_required_mode( $provisional )
+		) {
+			$requested_clean = 0;
+			add_settings_error(
+				'sc_ei_settings',
+				'scanner_readiness_required',
+				__( 'Clean-required scanner mode was not enabled. Run a scanner readiness test and obtain a recent clean result first.', 'sustainable-catalyst-engagement-intake' ),
+				'error'
+			);
+		}
 
 		return array(
 			'delete_data_on_uninstall'          => empty( $value['delete_data_on_uninstall'] ) ? 0 : 1,
@@ -137,14 +205,16 @@ final class SC_EI_Admin {
 			'abandoned_draft_days'              => max( 1, min( 365, absint( $value['abandoned_draft_days'] ?? 30 ) ) ),
 			'minimum_completion_seconds'        => max( 1, min( 30, absint( $value['minimum_completion_seconds'] ?? 3 ) ) ),
 			'submissions_per_hour'              => max( 1, min( 20, absint( $value['submissions_per_hour'] ?? 5 ) ) ),
-			'teams_organizer_email'              => sanitize_email( $value['teams_organizer_email'] ?? '' ),
-			'default_teams_duration'             => in_array( absint( $value['default_teams_duration'] ?? 20 ), array( 20, 30, 45, 60, 90 ), true ) ? absint( $value['default_teams_duration'] ?? 20 ) : 20,
-			'upload_max_files'                   => max( 1, min( 10, absint( $value['upload_max_files'] ?? 5 ) ) ),
-			'upload_max_file_mb'                 => max( 1, min( 100, absint( $value['upload_max_file_mb'] ?? 20 ) ) ),
-			'allowed_upload_extensions'          => self::sanitize_upload_extensions( $value['allowed_upload_extensions'] ?? array() ),
-			'attachment_retention_days'          => max( 7, min( 3650, absint( $value['attachment_retention_days'] ?? 180 ) ) ),
-			'require_external_scanner'           => empty( $value['require_external_scanner'] ) ? 0 : 1,
-			'private_storage_path'               => self::sanitize_private_storage_path( (string) ( $value['private_storage_path'] ?? '' ) ),
+			'teams_organizer_email'             => sanitize_email( $value['teams_organizer_email'] ?? '' ),
+			'default_teams_duration'            => in_array( absint( $value['default_teams_duration'] ?? 20 ), array( 20, 30, 45, 60, 90 ), true ) ? absint( $value['default_teams_duration'] ?? 20 ) : 20,
+			'upload_max_files'                  => max( 1, min( 10, absint( $value['upload_max_files'] ?? 5 ) ) ),
+			'upload_max_file_mb'                => max( 1, min( 100, absint( $value['upload_max_file_mb'] ?? 20 ) ) ),
+			'allowed_upload_extensions'         => self::sanitize_upload_extensions( $value['allowed_upload_extensions'] ?? array() ),
+			'attachment_retention_days'         => max( 7, min( 3650, absint( $value['attachment_retention_days'] ?? 180 ) ) ),
+			'require_external_scanner'          => $requested_clean,
+			'scanner_test_freshness_hours'      => $freshness_hours,
+			'scanner_bulk_retry_limit'          => $bulk_limit,
+			'private_storage_path'              => self::sanitize_private_storage_path( (string) ( $value['private_storage_path'] ?? '' ) ),
 		);
 	}
 
@@ -177,7 +247,7 @@ final class SC_EI_Admin {
 	}
 
 	public static function screen_option( $status, string $option, $value ) {
-		if ( 'sc_ei_inquiries_per_page' === $option ) {
+		if ( in_array( $option, array( 'sc_ei_inquiries_per_page', 'sc_ei_quarantine_per_page', 'sc_ei_file_audit_per_page' ), true ) ) {
 			return max( 1, min( 100, absint( $value ) ) );
 		}
 		return $status;
@@ -187,9 +257,11 @@ final class SC_EI_Admin {
 		array_unshift(
 			$links,
 			sprintf(
-				'<a href="%s">%s</a>',
+				'<a href="%1$s">%2$s</a> · <a href="%3$s">%4$s</a>',
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake' ) ),
-				esc_html__( 'Inquiries', 'sustainable-catalyst-engagement-intake' )
+				esc_html__( 'Inquiries', 'sustainable-catalyst-engagement-intake' ),
+				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-quarantine' ) ),
+				esc_html__( 'Quarantine', 'sustainable-catalyst-engagement-intake' )
 			)
 		);
 		return $links;
@@ -222,6 +294,39 @@ final class SC_EI_Admin {
 		$attachments = SC_EI_Attachment_Repository::for_inquiry( $id );
 		$audit_log   = SC_EI_Audit_Log::for_inquiry( $id );
 		include SC_EI_DIR . 'admin/views/inquiry-view.php';
+	}
+
+	public static function quarantine_page(): void {
+		if ( ! current_user_can( 'sc_intake_review' ) ) {
+			wp_die( esc_html__( 'You do not have permission to review private document quarantine.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		$view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : 'queue';
+		if ( ! in_array( $view, array( 'queue', 'access', 'guidance' ), true ) ) {
+			$view = 'queue';
+		}
+		if ( 'access' === $view && ! current_user_can( 'sc_intake_view_file_audit' ) ) {
+			$view = 'queue';
+		}
+
+		$settings      = wp_parse_args( get_option( 'sc_ei_settings', array() ), self::default_settings() );
+		$summary       = SC_EI_Attachment_Repository::operational_summary();
+		$storage       = SC_EI_Storage::utilization();
+		$readiness     = SC_EI_Scanner_Operations::readiness( $settings );
+		$audit_summary = SC_EI_Audit_Log::file_event_summary();
+
+		$quarantine_table = null;
+		$access_table     = null;
+
+		if ( 'queue' === $view ) {
+			$quarantine_table = new SC_EI_Quarantine_List_Table();
+			$quarantine_table->prepare_items();
+		} elseif ( 'access' === $view ) {
+			$access_table = new SC_EI_File_Access_List_Table();
+			$access_table->prepare_items();
+		}
+
+		include SC_EI_DIR . 'admin/views/quarantine.php';
 	}
 
 	public static function diagnostics_page(): void {
@@ -436,10 +541,338 @@ final class SC_EI_Admin {
 		self::redirect_to_diagnostics( 'retention_cleanup_completed' );
 	}
 
+	public static function handle_scanner_readiness_test(): void {
+		if ( ! current_user_can( 'sc_intake_manage_scanner' ) ) {
+			wp_die( esc_html__( 'You do not have permission to test the external scanner.', 'sustainable-catalyst-engagement-intake' ), '', array( 'response' => 403 ) );
+		}
+
+		check_admin_referer( 'sc_ei_run_scanner_readiness_test' );
+		$result = SC_EI_Scanner_Operations::run_readiness_test( get_current_user_id() );
+		$clean  = 'clean' === sanitize_key( (string) ( $result['scan_status'] ?? '' ) )
+			&& ! empty( $result['probe_configured'] )
+			&& ! empty( $result['test_file_deleted'] );
+
+		self::redirect_to_quarantine( $clean ? 'scanner_test_clean' : 'scanner_test_attention' );
+	}
+
+	public static function handle_attachment_scan_retry(): void {
+		if ( ! current_user_can( 'sc_intake_manage_scanner' ) ) {
+			wp_die( esc_html__( 'You do not have permission to retry private attachment scans.', 'sustainable-catalyst-engagement-intake' ), '', array( 'response' => 403 ) );
+		}
+
+		$id = isset( $_POST['attachment_id'] ) ? absint( $_POST['attachment_id'] ) : 0;
+		check_admin_referer( 'sc_ei_retry_attachment_scan_' . $id );
+
+		$attachment = SC_EI_Attachment_Repository::find( $id );
+		$result     = $attachment
+			? SC_EI_Scanner_Operations::rescan_attachment( $id, get_current_user_id(), 'single_retry' )
+			: array( 'ok' => false, 'status' => 'unavailable' );
+
+		self::redirect_to_inquiry(
+			(int) ( $attachment['inquiry_id'] ?? 0 ),
+			! empty( $result['ok'] ) && 'clean' === ( $result['status'] ?? '' )
+				? 'attachment_scan_clean'
+				: 'attachment_scan_attention'
+		);
+	}
+
+	public static function handle_quarantine_bulk(): void {
+		if ( ! current_user_can( 'sc_intake_bulk_file_actions' ) ) {
+			wp_die( esc_html__( 'You do not have permission to run bulk private-document operations.', 'sustainable-catalyst-engagement-intake' ), '', array( 'response' => 403 ) );
+		}
+
+		check_admin_referer( 'sc_ei_quarantine_bulk' );
+
+		$operation = isset( $_POST['bulk_operation'] ) ? sanitize_key( wp_unslash( $_POST['bulk_operation'] ) ) : '';
+		$ids       = isset( $_POST['attachment_ids'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['attachment_ids'] ) ) : array();
+		$ids       = array_slice( array_values( array_unique( array_filter( $ids ) ) ), 0, 50 );
+
+		$allowed = array( 'retry_scan', 'verify_integrity', 'approve', 'quarantine', 'replacement_requested', 'set_retention', 'reject_delete' );
+		if ( ! $ids || ! in_array( $operation, $allowed, true ) || ! self::bulk_operation_allowed( $operation ) ) {
+			self::redirect_to_quarantine( 'bulk_error' );
+		}
+
+		$settings = wp_parse_args( get_option( 'sc_ei_settings', array() ), self::default_settings() );
+		$result   = array(
+			'operation' => $operation,
+			'selected'  => count( $ids ),
+			'processed' => 0,
+			'succeeded' => 0,
+			'failed'    => 0,
+			'skipped'   => 0,
+			'details'   => array(),
+		);
+
+		if ( 'retry_scan' === $operation ) {
+			$limit      = max( 1, min( 50, absint( $settings['scanner_bulk_retry_limit'] ?? 25 ) ) );
+			$scan_result= SC_EI_Scanner_Operations::bulk_rescan( $ids, get_current_user_id(), $limit );
+			$result['processed'] = absint( $scan_result['processed'] ?? 0 );
+			$result['succeeded'] = absint( $scan_result['clean'] ?? 0 );
+			$result['failed']    = absint( $scan_result['infected'] ?? 0 ) + absint( $scan_result['error'] ?? 0 );
+			$result['skipped']   = max( 0, count( $ids ) - $result['processed'] ) + absint( $scan_result['skipped'] ?? 0 );
+			$result['details']   = (array) ( $scan_result['details'] ?? array() );
+		} else {
+			$retention = null;
+			if ( 'set_retention' === $operation ) {
+				$date = isset( $_POST['bulk_retention_date'] ) ? sanitize_text_field( wp_unslash( $_POST['bulk_retention_date'] ) ) : '';
+				$retention = self::local_date_to_utc_end( $date );
+				if ( ! $retention ) {
+					self::redirect_to_quarantine( 'bulk_error' );
+				}
+			}
+
+			if ( 'reject_delete' === $operation ) {
+				$confirmation = isset( $_POST['bulk_confirmation'] ) ? sanitize_text_field( wp_unslash( $_POST['bulk_confirmation'] ) ) : '';
+				if ( 'REJECT SELECTED' !== $confirmation ) {
+					self::redirect_to_quarantine( 'bulk_error' );
+				}
+			}
+
+			foreach ( SC_EI_Attachment_Repository::find_many( $ids, 50 ) as $attachment ) {
+				$result['processed']++;
+				$success = false;
+				$message = '';
+
+				if ( ! empty( $attachment['deleted_at'] ) ) {
+					$result['skipped']++;
+					$message = 'Attachment already deleted.';
+				} elseif ( 'verify_integrity' === $operation ) {
+					$verification = SC_EI_Attachment_Repository::verify_record( $attachment, get_current_user_id(), 'bulk_verification' );
+					$success = ! empty( $verification['ok'] );
+					$message = (string) ( $verification['message'] ?? '' );
+				} elseif ( 'approve' === $operation ) {
+					if ( self::attachment_can_be_approved( $attachment, $settings ) ) {
+						$success = self::transition_attachment_storage_status(
+							$attachment,
+							'approved',
+							'Private attachment approved through a guarded bulk quarantine operation.'
+						);
+					} else {
+						$message = 'Validation, storage, integrity, or scanner policy blocked approval.';
+					}
+				} elseif ( 'quarantine' === $operation ) {
+					$success = self::transition_attachment_storage_status(
+						$attachment,
+						'quarantined',
+						'Private attachment returned to quarantine through a bulk operation.'
+					);
+				} elseif ( 'replacement_requested' === $operation ) {
+					$success = self::transition_attachment_storage_status(
+						$attachment,
+						'replacement_requested',
+						'Replacement requested through a bulk quarantine operation.'
+					);
+				} elseif ( 'set_retention' === $operation ) {
+					$success = SC_EI_Attachment_Repository::update_retention(
+						absint( $attachment['id'] ),
+						$retention,
+						get_current_user_id()
+					);
+				} elseif ( 'reject_delete' === $operation ) {
+					$deleted = SC_EI_Storage::delete_file( (string) $attachment['relative_path'] );
+					$success = $deleted && SC_EI_Attachment_Repository::mark_deleted(
+						absint( $attachment['id'] ),
+						get_current_user_id(),
+						'Private attachment rejected and physically deleted through a confirmed bulk operation.',
+						'rejected'
+					);
+				}
+
+				if ( $success ) {
+					$result['succeeded']++;
+				} elseif ( 'Attachment already deleted.' !== $message ) {
+					$result['failed']++;
+				}
+
+				if ( count( $result['details'] ) < 50 ) {
+					$result['details'][] = array(
+						'attachment_id' => absint( $attachment['id'] ),
+						'original_name' => sanitize_file_name( (string) $attachment['original_name'] ),
+						'success'       => $success,
+						'message'       => sanitize_text_field( $message ),
+					);
+				}
+			}
+
+			$result['skipped'] += max( 0, count( $ids ) - $result['processed'] );
+		}
+
+		SC_EI_Audit_Log::record(
+			'quarantine_bulk_action_completed',
+			'Guarded bulk private-document operation completed.',
+			$result,
+			null,
+			null,
+			get_current_user_id()
+		);
+
+		set_transient( 'sc_ei_quarantine_bulk_result_' . get_current_user_id(), $result, 5 * MINUTE_IN_SECONDS );
+		self::redirect_to_quarantine( 'bulk_completed' );
+	}
+
+	public static function handle_file_audit_export(): void {
+		if ( ! current_user_can( 'sc_intake_view_file_audit' ) ) {
+			wp_die( esc_html__( 'You do not have permission to export the private document audit.', 'sustainable-catalyst-engagement-intake' ), '', array( 'response' => 403 ) );
+		}
+
+		check_admin_referer( 'sc_ei_export_file_audit' );
+
+		$filters = array(
+			'event_type' => isset( $_GET['event_type'] ) ? sanitize_key( wp_unslash( $_GET['event_type'] ) ) : '',
+			'actor'      => isset( $_GET['actor'] ) ? absint( $_GET['actor'] ) : 0,
+			'date_from'  => isset( $_GET['date_from'] ) ? sanitize_text_field( wp_unslash( $_GET['date_from'] ) ) : '',
+			'date_to'    => isset( $_GET['date_to'] ) ? sanitize_text_field( wp_unslash( $_GET['date_to'] ) ) : '',
+			'search'     => isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '',
+		);
+
+		$rows = array();
+		for ( $page = 1; $page <= 50; $page++ ) {
+			$result = SC_EI_Audit_Log::query_file_events(
+				array_merge(
+					$filters,
+					array(
+						'page'     => $page,
+						'per_page' => 100,
+						'orderby'  => 'created_at',
+						'order'    => 'DESC',
+					)
+				)
+			);
+			$rows = array_merge( $rows, $result['items'] );
+			if ( $page >= absint( $result['total_pages'] ) || count( $rows ) >= 5000 ) {
+				break;
+			}
+		}
+
+		SC_EI_Audit_Log::record(
+			'file_audit_exported',
+			'Authorized user exported a filtered private document audit report.',
+			array(
+				'filters'   => $filters,
+				'row_count' => count( $rows ),
+			),
+			null,
+			null,
+			get_current_user_id()
+		);
+
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="engagement-intake-file-audit-' . gmdate( 'Y-m-d-His' ) . '.csv"' );
+		header( 'X-Content-Type-Options: nosniff' );
+
+		$output = fopen( 'php://output', 'wb' );
+		if ( false === $output ) {
+			wp_die( esc_html__( 'The CSV export stream could not be opened.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		fputcsv(
+			$output,
+			array(
+				'event_id',
+				'created_at_utc',
+				'event_type',
+				'inquiry_reference',
+				'attachment_name',
+				'actor',
+				'actor_email',
+				'message',
+				'context_json',
+			),
+			',',
+			'"',
+			''
+		);
+
+		foreach ( array_slice( $rows, 0, 5000 ) as $row ) {
+			fputcsv(
+				$output,
+				array_map(
+					array( __CLASS__, 'csv_cell' ),
+					array(
+						$row['id'],
+						$row['created_at'],
+						$row['event_type'],
+						$row['reference'],
+						$row['original_name'],
+						$row['actor_name'] ?: 'System',
+						$row['actor_email'],
+						$row['event_message'],
+						$row['context_json'],
+					)
+				),
+				',',
+				'"',
+				''
+			);
+		}
+
+		fclose( $output );
+		exit;
+	}
+
+	private static function bulk_operation_allowed( string $operation ): bool {
+		return match ( $operation ) {
+			'retry_scan'            => current_user_can( 'sc_intake_manage_scanner' ),
+			'verify_integrity'       => current_user_can( 'sc_intake_download_files' ),
+			'approve',
+			'quarantine',
+			'replacement_requested' => current_user_can( 'sc_intake_release_files' ),
+			'set_retention'          => current_user_can( 'sc_intake_manage_file_retention' ),
+			'reject_delete'          => current_user_can( 'sc_intake_delete' ),
+			default                  => false,
+		};
+	}
+
+	private static function attachment_can_be_approved( array $attachment, array $settings ): bool {
+		if ( 'validated' !== (string) $attachment['validation_status'] || 'infected' === (string) $attachment['scan_status'] ) {
+			return false;
+		}
+
+		if ( ! empty( $settings['require_external_scanner'] ) && 'clean' !== (string) $attachment['scan_status'] ) {
+			return false;
+		}
+
+		$verification = SC_EI_Attachment_Repository::verify_record( $attachment, get_current_user_id(), 'bulk_approval' );
+		return ! empty( $verification['ok'] );
+	}
+
+	private static function local_date_to_utc_end( string $date ): ?string {
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+			return null;
+		}
+
+		try {
+			$local = new DateTimeImmutable( $date . ' 23:59:59', wp_timezone() );
+			return $local->setTimezone( new DateTimeZone( 'UTC' ) )->format( 'Y-m-d H:i:s' );
+		} catch ( Throwable $exception ) {
+			return null;
+		}
+	}
+
+	private static function csv_cell( $value ): string {
+		$value = is_scalar( $value ) || null === $value ? (string) $value : wp_json_encode( $value );
+		$value = str_replace( "\0", '', $value );
+		return preg_match( '/^[=+\-@]/', $value ) ? "'" . $value : $value;
+	}
+
 	private static function require_diagnostics_capability(): void {
 		if ( ! current_user_can( 'sc_intake_manage_settings' ) ) {
 			wp_die( esc_html__( 'You do not have permission to run intake diagnostics.', 'sustainable-catalyst-engagement-intake' ), '', array( 'response' => 403 ) );
 		}
+	}
+
+	private static function redirect_to_quarantine( string $message, string $view = 'queue' ): void {
+		$url = add_query_arg(
+			array(
+				'page'      => 'sc-engagement-intake-quarantine',
+				'view'      => sanitize_key( $view ),
+				'sc_ei_msg' => sanitize_key( $message ),
+			),
+			admin_url( 'admin.php' )
+		);
+		wp_safe_redirect( $url, 303 );
+		exit;
 	}
 
 	private static function redirect_to_diagnostics( string $message ): void {

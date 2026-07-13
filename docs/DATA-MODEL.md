@@ -38,6 +38,7 @@ Fields include:
 - Document category, notes, and confidentiality classification
 - Quarantine, validation, scan, integrity, and storage states
 - Scanner provider and message
+- Scanner attempt count, last scanner time, and last scanner actor
 - Last verification time, user, source, and message
 - Retention date
 - Approval, rejection, replacement, download, upload, and deletion metadata
@@ -97,3 +98,16 @@ Examples:
 - Conversion route
 - Guidance flags
 - Referring form URL in private metadata
+
+
+## Scanner operational metadata
+
+v0.3.2 adds:
+
+```text
+scan_attempts
+last_scanned_at
+last_scanned_by
+```
+
+These fields distinguish the current scanner result from its operational history. Detailed result changes remain in the audit ledger.

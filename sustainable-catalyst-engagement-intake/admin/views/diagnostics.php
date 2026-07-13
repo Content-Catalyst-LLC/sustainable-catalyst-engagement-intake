@@ -234,7 +234,7 @@ $effective       = $diagnostics['effective_limits'];
 			<h2><?php esc_html_e( 'Database Migrations', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<h3><?php esc_html_e( 'Tables', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['tables'] as $name => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $name ); ?></li><?php endforeach; ?></ul>
-			<h3><?php esc_html_e( 'v0.3.1 attachment fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<h3><?php esc_html_e( 'v0.3.2 attachment and scanner fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['attachment_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
 		</section>
 
@@ -242,8 +242,12 @@ $effective       = $diagnostics['effective_limits'];
 			<h2><?php esc_html_e( 'Scanner and Retention Scheduler', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<p><strong><?php esc_html_e( 'Scanner configured:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo $diagnostics['scanner']['configured'] ? esc_html__( 'yes', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'no', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<p><strong><?php esc_html_e( 'Provider:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo esc_html( $diagnostics['scanner']['provider'] ); ?></p>
+			<p><strong><?php esc_html_e( 'Readiness:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo $diagnostics['scanner_readiness']['ready'] ? esc_html__( 'ready', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'attention', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<p><strong><?php esc_html_e( 'Last benign test:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo esc_html( $diagnostics['scanner_readiness']['test']['completed_at_utc'] ?? __( 'never', 'sustainable-catalyst-engagement-intake' ) ); ?> · <?php echo esc_html( ucwords( str_replace( '_', ' ', (string) ( $diagnostics['scanner_readiness']['test']['scan_status'] ?? 'not_run' ) ) ) ); ?></p>
 			<p><strong><?php esc_html_e( 'Clean scan required:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo $diagnostics['uploads']['scanner_required'] ? esc_html__( 'yes', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'no', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<p><strong><?php esc_html_e( 'Scan attention records:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo esc_html( number_format_i18n( $diagnostics['quarantine_operations']['scan_attention_count'] ) ); ?></p>
 			<p><strong><?php esc_html_e( 'Daily retention cron:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo $diagnostics['uploads']['retention_cron_scheduled'] ? esc_html__( 'scheduled', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'missing', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-quarantine' ) ); ?>"><?php esc_html_e( 'Open Quarantine Operations', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
 		</section>
 
 		<section class="sc-ei-admin__card">

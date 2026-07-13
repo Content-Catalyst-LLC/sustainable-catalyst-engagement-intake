@@ -2,10 +2,12 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+$scanner_readiness = SC_EI_Scanner_Operations::readiness( $settings );
 ?>
 <div class="wrap sc-ei-admin">
 	<h1><?php esc_html_e( 'Engagement Intake Settings', 'sustainable-catalyst-engagement-intake' ); ?></h1>
-	<p><?php esc_html_e( 'v0.3.1 stabilizes protected document intake with atomic storage commits, request-envelope checks, server-aware limits, reconciliation, storage probes, retention previews, explicit cache bypass headers, and v0.3.0 workflow capabilities.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+	<p><?php esc_html_e( 'v0.3.2 adds cross-inquiry quarantine operations, scanner readiness testing and retry, guarded bulk actions, access reporting, storage utilization, and isolation guidance while preserving the v0.3.1 reliability controls.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 
 	<form method="post" action="options.php">
 		<?php settings_fields( 'sc_ei_settings_group' ); ?>
@@ -91,7 +93,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<input type="checkbox" name="sc_ei_settings[require_external_scanner]" value="1" <?php checked( $settings['require_external_scanner'], 1 ); ?>>
 							<?php esc_html_e( 'Reject and delete uploads unless an integrated scanner reports them clean.', 'sustainable-catalyst-engagement-intake' ); ?>
 						</label>
-						<p class="description"><?php esc_html_e( 'Leave off until a scanner integration uses the sc_ei_scan_attachment and sc_ei_scanner_probe filters.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Newly enabling this fail-closed policy requires a configured integration and a recent clean benign readiness test. An already-enabled policy is not silently disabled when readiness later degrades.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+						<p>
+							<strong><?php esc_html_e( 'Current readiness:', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+							<span class="sc-ei-readiness-inline sc-ei-readiness-inline--<?php echo esc_attr( $scanner_readiness['ready'] ? 'ready' : 'attention' ); ?>">
+								<?php echo $scanner_readiness['ready'] ? esc_html__( 'ready', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'not established', 'sustainable-catalyst-engagement-intake' ); ?>
+							</span>
+							· <?php echo esc_html( $scanner_readiness['probe']['provider'] ); ?>
+							· <?php echo esc_html( ucwords( str_replace( '_', ' ', (string) ( $scanner_readiness['test']['scan_status'] ?? 'not_run' ) ) ) ); ?>
+						</p>
+						<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-quarantine' ) ); ?>"><?php esc_html_e( 'Open Scanner Readiness', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
+						<?php if ( $scanner_readiness['require_clean_enabled'] && ! $scanner_readiness['ready'] ) : ?>
+							<div class="sc-ei-diagnostic-warning"><strong><?php esc_html_e( 'Fail-closed attention:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'New uploads that are not reported clean will be deleted and rejected. Restore the scanner or deliberately turn this policy off.', 'sustainable-catalyst-engagement-intake' ); ?></div>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="sc-ei-scanner-freshness"><?php esc_html_e( 'Scanner test freshness', 'sustainable-catalyst-engagement-intake' ); ?></label></th>
+					<td>
+						<input id="sc-ei-scanner-freshness" type="number" min="1" max="168" name="sc_ei_settings[scanner_test_freshness_hours]" value="<?php echo esc_attr( $settings['scanner_test_freshness_hours'] ); ?>"> <?php esc_html_e( 'hours', 'sustainable-catalyst-engagement-intake' ); ?>
+						<p class="description"><?php esc_html_e( 'A clean test older than this window no longer establishes clean-required readiness.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="sc-ei-scanner-bulk-limit"><?php esc_html_e( 'Bulk scanner retry limit', 'sustainable-catalyst-engagement-intake' ); ?></label></th>
+					<td>
+						<input id="sc-ei-scanner-bulk-limit" type="number" min="1" max="50" name="sc_ei_settings[scanner_bulk_retry_limit]" value="<?php echo esc_attr( $settings['scanner_bulk_retry_limit'] ); ?>"> <?php esc_html_e( 'documents per operation', 'sustainable-catalyst-engagement-intake' ); ?>
+						<p class="description"><?php esc_html_e( 'Use a conservative value when the external scanner has rate, CPU, memory, or API constraints.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 					</td>
 				</tr>
 			</table>
@@ -99,7 +127,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 		<section class="sc-ei-admin__card sc-ei-admin__settings-card">
 			<h2><?php esc_html_e( 'Microsoft Teams scheduling readiness', 'sustainable-catalyst-engagement-intake' ); ?></h2>
-			<p><?php esc_html_e( 'Microsoft Teams is the only supported live meeting platform. v0.3.1 stores preferences and approved meeting records; Microsoft Graph event creation is not enabled yet.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<p><?php esc_html_e( 'Microsoft Teams is the only supported live meeting platform. v0.3.2 stores preferences and approved meeting records; Microsoft Graph event creation is not enabled yet.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row"><label for="sc-ei-teams-organizer"><?php esc_html_e( 'Teams organizer email', 'sustainable-catalyst-engagement-intake' ); ?></label></th>

@@ -21,6 +21,8 @@ final class SC_EI_Diagnostics {
 		$storage       = SC_EI_Storage::storage_health();
 		$utilization   = SC_EI_Storage::utilization();
 		$scanner       = SC_EI_File_Scanner::probe();
+		$scanner_readiness = SC_EI_Scanner_Operations::readiness( $settings );
+		$operations    = SC_EI_Attachment_Repository::operational_summary();
 		$environment   = SC_EI_Upload_Environment::limits();
 		$effective     = SC_EI_Upload_Environment::effective_limits( $settings );
 		$reconciliation= SC_EI_Storage_Reconciler::latest();
@@ -63,6 +65,8 @@ final class SC_EI_Diagnostics {
 			'effective_limits'     => $effective,
 			'cache_headers'        => SC_EI_Upload_Environment::no_cache_headers(),
 			'scanner'              => $scanner,
+			'scanner_readiness'    => $scanner_readiness,
+			'quarantine_operations'=> $operations,
 			'uploads'              => array(
 				'enabled'                  => true,
 				'max_files'                => absint( $settings['upload_max_files'] ?? 5 ),
@@ -139,7 +143,13 @@ final class SC_EI_Diagnostics {
 		if ( array_intersect( array( 'docx', 'xlsx' ), $allowed ) && empty( $results['uploads']['ziparchive_available'] ) ) {
 			$upload_ok = false;
 		}
-		if ( ! empty( $results['uploads']['scanner_required'] ) && empty( $results['scanner']['configured'] ) ) {
+		if (
+			! empty( $results['uploads']['scanner_required'] )
+			&& (
+				empty( $results['scanner']['configured'] )
+				|| empty( $results['scanner_readiness']['ready'] )
+			)
+		) {
 			$upload_ok = false;
 		}
 

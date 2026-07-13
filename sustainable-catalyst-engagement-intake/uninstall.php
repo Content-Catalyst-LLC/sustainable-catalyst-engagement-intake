@@ -29,6 +29,7 @@ if ( $delete ) {
 	delete_option( 'sc_ei_last_storage_reconciliation' );
 	delete_option( 'sc_ei_last_retention_preview' );
 	delete_option( 'sc_ei_last_retention_run' );
+	delete_option( 'sc_ei_scanner_readiness' );
 	delete_transient( 'sc_ei_retention_cleanup_lock' );
 	delete_transient( 'sc_ei_request_lock_cleanup_throttle' );
 
@@ -36,12 +37,16 @@ if ( $delete ) {
 	$lock_like    = $wpdb->esc_like( 'sc_ei_lock_' ) . '%';
 	$success_like = $wpdb->esc_like( '_transient_sc_ei_success_' ) . '%';
 	$timeout_like = $wpdb->esc_like( '_transient_timeout_sc_ei_success_' ) . '%';
+	$bulk_like    = $wpdb->esc_like( '_transient_sc_ei_quarantine_bulk_result_' ) . '%';
+	$bulk_timeout = $wpdb->esc_like( '_transient_timeout_sc_ei_quarantine_bulk_result_' ) . '%';
 	$wpdb->query(
 		$wpdb->prepare(
-			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$lock_like,
 			$success_like,
-			$timeout_like
+			$timeout_like,
+			$bulk_like,
+			$bulk_timeout
 		)
 	);
 }

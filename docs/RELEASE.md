@@ -1,86 +1,107 @@
-# Release Notes — v0.3.1
+# Release Notes — v0.3.2
 
 ## Purpose
 
-Stabilize the v0.3.0 private document pipeline in real WordPress and hosting environments before adding broader review, communication, or sender-portal workflows.
+Provide one private operational surface for reviewing all active documents, testing scanner readiness, retrying scans, managing quarantine state and retention, auditing file access, and following safer isolation practices.
 
-## Atomic storage
+## Administrative workspace
 
-Files no longer move directly from PHP temporary storage to their final name.
+`Engagement Intake → Quarantine`
 
-Each accepted file:
+### Quarantine Queue
 
-1. moves to a randomized `.part-*` staging name
-2. receives restrictive best-effort permissions
-3. is rechecked for expected byte size
-4. is rechecked for expected SHA-256
-5. is atomically renamed to its final `.qtn` name
-6. is rechecked after commit
-7. locks the effective storage path after success
+The queue is cross-inquiry and displays:
 
-A failed transaction removes the staged or committed file.
+- file name, extension, size, and SHA-256 prefix
+- inquiry reference, contact, and organization
+- document category and confidentiality
+- quarantine status
+- scanner status, provider, attempts, last scan, and message
+- storage and integrity status
+- retention date
+- download count and latest access
+- upload time
 
-## Request envelope
+### Scanner Readiness
 
-v0.3.1 detects conditions that commonly appear as unexplained empty forms:
+The readiness card combines:
 
-- request content length exceeds PHP `post_max_size`
-- PHP file uploads disabled
-- temporary upload directory missing or unwritable
-- browser selected more files than PHP delivered
-- plugin settings exceed PHP file or request limits
+- integration probe
+- provider
+- optional integration version
+- generated benign test result
+- test freshness
+- test-file deletion confirmation
+- clean-required mode state
 
-The admin-post fallback is marked with `sc_ei_submission=1`, preventing the oversize interceptor from affecting other WordPress forms.
+A provider or integration-version change invalidates the prior readiness test.
 
-## Reconciliation
+### Access and Operations Audit
 
-The operator can run a read-only scan comparing active attachment rows with managed files.
+The report includes file events, actor, date, file, inquiry, message, and selected context. A filtered CSV export is available to authorized users.
 
-Detected issue types:
+### Isolation Guidance
 
-- missing
-- SHA-256 mismatch
-- size mismatch
-- misplaced between quarantine and approved areas
-- unresolvable relative path
-- orphan `.qtn` file
+The guidance is operational, not merely informational. It establishes that quarantined and non-clean files should be reviewed on an isolated endpoint with macros and remote content disabled.
 
-Per-record verification metadata is updated. Orphans are reported but not removed.
+## Bulk safety
 
-## Retention
+Bulk operations require:
 
-A preview shows the expired queue without deletion.
+- `sc_intake_bulk_file_actions`
+- a per-action capability
+- WordPress nonce
+- selected attachment IDs
+- maximum 50 selected records
+- configurable scanner retry cap
+- current per-file state checks
+- exact confirmation before physical deletion
+- aggregate and per-file audit details
 
-Manual execution requires:
+No bulk action silently approves documents.
 
-- `sc_intake_delete`
-- nonce
-- exact phrase `DELETE EXPIRED`
+## Scanner policy
 
-Cron and manual runs use a short-lived lock and save counts, bytes, and failures.
+The built-in validator is not antivirus.
 
-## Cache behavior
+New clean-required mode activation is blocked unless:
 
-The plugin sends explicit no-store headers for forms and REST submissions. Cloudflare and hosting configuration must still exclude the form pages and endpoints from full-page caching.
+1. the integration probe reports configured
+2. a generated benign test was run recently
+3. the test was reported clean
+4. the generated file was deleted
+5. the current provider still matches
+6. the current integration version still matches when supplied
 
-## Live verification checklist
+The test verifies the clean operational path. It does not measure malware detection accuracy.
 
-1. Activate v0.3.1.
-2. Open Diagnostics.
-3. Confirm migration fields.
+## Infected files
+
+When an administrative rescan reports infected:
+
+1. scan status and provider are stored
+2. download remains blocked
+3. the plugin attempts physical deletion
+4. successful deletion marks the attachment rejected
+5. failed deletion leaves the infected state visible for immediate intervention
+
+## Migration
+
+v0.3.2 adds scanner attempt and last-scan metadata. It does not move physical files or rewrite existing quarantine decisions.
+
+## Recommended deployment sequence
+
+1. Back up database and private storage.
+2. Upgrade to v0.3.2.
+3. Confirm database migration in Diagnostics.
 4. Run Storage Probe.
 5. Run Storage Reconciliation.
-6. Preview retention.
-7. Submit TXT, PDF, PNG, DOCX, XLSX, and CSV test files.
-8. Test one oversized file.
-9. Test excessive combined size.
-10. Test compact and advanced forms on mobile.
-11. Confirm Cloudflare does not cache nonces or REST responses.
-12. Verify an attachment manually and download it.
-13. Review audit events.
-
-## Idempotency
-
-The client blocks duplicate in-flight submissions. The server atomically locks each request ID, returns HTTP 409 for a concurrent copy, and stores the completed response for 15 minutes. Retrying the same timed-out request returns the original reference and attachment result.
-
-Abandoned request locks older than one hour are removed by a throttled maintenance pass.
+6. Open Quarantine Operations.
+7. Review scanner and storage attention queues.
+8. Integrate the external scanner.
+9. Run the benign readiness test.
+10. Enable clean-required mode only when Ready.
+11. Test a clean non-sensitive document.
+12. Test scanner error handling in a staging environment.
+13. Review access audit and CSV export.
+14. Confirm retention and bulk deletion permissions are limited to appropriate administrators.
