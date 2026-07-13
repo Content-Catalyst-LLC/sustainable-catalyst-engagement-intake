@@ -15,7 +15,7 @@ $effective       = $diagnostics['effective_limits'];
 ?>
 <div class="wrap sc-ei-admin">
 	<h1><?php esc_html_e( 'Engagement Intake Production Diagnostics', 'sustainable-catalyst-engagement-intake' ); ?></h1>
-	<p><?php esc_html_e( 'Verify protected storage, upload limits, database migrations, review state, notification transport readiness, communication history, file integrity, reconciliation, and retention before relying on production intake operations.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+	<p><?php esc_html_e( 'Verify protected storage, upload limits, database migrations, privacy lifecycle controls, review state, communication history, file integrity, reconciliation, and queue-only retention before relying on production intake operations.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 
 	<?php if ( 'storage_probe_passed' === $message ) : ?>
 		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Protected storage write, read, rename, and delete probe passed.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
@@ -30,11 +30,11 @@ $effective       = $diagnostics['effective_limits'];
 	<?php elseif ( 'reconciliation_attention' === $message ) : ?>
 		<div class="notice notice-warning is-dismissible"><p><?php esc_html_e( 'Reconciliation found missing, altered, misplaced, unresolvable, or orphaned files. The scan was read-only; review the report below.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
 	<?php elseif ( 'retention_preview_ready' === $message ) : ?>
-		<div class="notice notice-info is-dismissible"><p><?php esc_html_e( 'Retention cleanup preview generated. No files were deleted.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
-	<?php elseif ( 'retention_cleanup_completed' === $message ) : ?>
-		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Expired attachment cleanup completed. Review the run summary below.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
+		<div class="notice notice-info is-dismissible"><p><?php esc_html_e( 'Retention candidate preview generated. No records or files were deleted.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
+	<?php elseif ( 'retention_queue_completed' === $message ) : ?>
+		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Retention candidates were queued for human review. No records or files were deleted.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
 	<?php elseif ( 'retention_confirmation_failed' === $message ) : ?>
-		<div class="notice notice-error is-dismissible"><p><?php esc_html_e( 'Retention cleanup was not run because the confirmation phrase did not match.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
+		<div class="notice notice-error is-dismissible"><p><?php esc_html_e( 'Retention candidates were not queued because the confirmation phrase did not match.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
 	<?php endif; ?>
 
 	<div class="sc-ei-health sc-ei-health--<?php echo esc_attr( $status ); ?>">
@@ -193,41 +193,77 @@ $effective       = $diagnostics['effective_limits'];
 		</section>
 
 		<section class="sc-ei-admin__card sc-ei-admin__card--wide">
-			<h2><?php esc_html_e( 'Retention Cleanup Test and Execution', 'sustainable-catalyst-engagement-intake' ); ?></h2>
-			<p><?php esc_html_e( 'Generate a preview first. The preview does not delete anything. Manual cleanup requires a separate deletion capability and an exact confirmation phrase.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<p class="sc-ei-admin__card-kicker"><?php esc_html_e( 'Privacy Lifecycle', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<h2><?php esc_html_e( 'Retention Candidate Preview and Queue', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<p><?php esc_html_e( 'Diagnostics can preview and queue deterministic candidates. It cannot approve, execute, erase, or delete. Those actions remain in the Privacy and Retention Center with legal-hold review and typed confirmation.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<div class="sc-ei-diagnostic-actions">
-				<?php if ( current_user_can( 'sc_intake_manage_file_retention' ) ) : ?>
+				<?php if ( current_user_can( 'sc_intake_manage_retention_policies' ) ) : ?>
 					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 						<input type="hidden" name="action" value="sc_ei_preview_retention_cleanup">
 						<?php wp_nonce_field( 'sc_ei_preview_retention_cleanup' ); ?>
-						<button type="submit" class="button button-secondary"><?php esc_html_e( 'Preview Expired Cleanup', 'sustainable-catalyst-engagement-intake' ); ?></button>
+						<button type="submit" class="button button-secondary"><?php esc_html_e( 'Preview Retention Candidates', 'sustainable-catalyst-engagement-intake' ); ?></button>
 					</form>
 				<?php endif; ?>
+				<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-privacy&view=queue' ) ); ?>"><?php esc_html_e( 'Open Retention Queue', 'sustainable-catalyst-engagement-intake' ); ?></a>
 			</div>
 
 			<?php if ( $retention ) : ?>
-				<p><strong><?php echo esc_html( sprintf( _n( '%d expired attachment', '%d expired attachments', absint( $retention['count'] ?? 0 ), 'sustainable-catalyst-engagement-intake' ), absint( $retention['count'] ?? 0 ) ) ); ?></strong> · <?php echo esc_html( size_format( absint( $retention['total_bytes'] ?? 0 ), 2 ) ); ?></p>
+				<p><strong><?php echo esc_html( sprintf( _n( '%d lifecycle candidate', '%d lifecycle candidates', absint( $retention['count'] ?? 0 ), 'sustainable-catalyst-engagement-intake' ), absint( $retention['count'] ?? 0 ) ) ); ?></strong> · <?php echo esc_html( size_format( absint( $retention['total_bytes'] ?? 0 ), 2 ) ); ?></p>
+				<p class="description"><?php echo esc_html( sprintf( __( '%1$d private document · %2$d inquiry · %3$d communication candidate(s).', 'sustainable-catalyst-engagement-intake' ), absint( $retention['attachment_count'] ?? 0 ), absint( $retention['inquiry_count'] ?? 0 ), absint( $retention['communication_count'] ?? 0 ) ) ); ?></p>
 				<?php if ( ! empty( $retention['items'] ) ) : ?>
-					<div class="sc-ei-diagnostic-table-wrap"><table class="widefat striped"><thead><tr><th><?php esc_html_e( 'Document', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'Retention date', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'Physical file', 'sustainable-catalyst-engagement-intake' ); ?></th></tr></thead><tbody>
+					<div class="sc-ei-diagnostic-table-wrap"><table class="widefat striped"><thead><tr><th><?php esc_html_e( 'Reference', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'Target', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'Policy / Action', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'Due', 'sustainable-catalyst-engagement-intake' ); ?></th><th><?php esc_html_e( 'Hold', 'sustainable-catalyst-engagement-intake' ); ?></th></tr></thead><tbody>
 						<?php foreach ( $retention['items'] as $item ) : ?>
-							<tr><td><?php echo esc_html( $item['original_name'] ); ?></td><td><?php echo esc_html( $item['retention_until'] ); ?></td><td><?php echo ! empty( $item['file_exists'] ) ? esc_html__( 'present', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'missing', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+							<tr>
+								<td><?php echo esc_html( $item['reference'] ); ?></td>
+								<td><?php echo esc_html( SC_EI_Privacy_Schema::label( SC_EI_Privacy_Schema::target_types(), $item['target_type'] ) . ': ' . $item['label'] ); ?></td>
+								<td><?php echo esc_html( $item['policy_key'] . ' v' . $item['policy_version'] . ' · ' . SC_EI_Privacy_Schema::label( SC_EI_Privacy_Schema::retention_action_types(), $item['action_type'] ) ); ?></td>
+								<td><?php echo esc_html( $item['due_at'] ); ?></td>
+								<td><?php echo ! empty( $item['hold_active'] ) ? esc_html__( 'blocked', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'clear', 'sustainable-catalyst-engagement-intake' ); ?></td>
+							</tr>
 						<?php endforeach; ?>
 					</tbody></table></div>
 				<?php endif; ?>
 
-				<?php if ( current_user_can( 'sc_intake_delete' ) && absint( $retention['count'] ?? 0 ) > 0 ) : ?>
+				<?php if ( current_user_can( 'sc_intake_manage_retention_policies' ) && absint( $retention['count'] ?? 0 ) > 0 ) : ?>
 					<form class="sc-ei-danger-zone" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 						<input type="hidden" name="action" value="sc_ei_run_retention_cleanup">
 						<?php wp_nonce_field( 'sc_ei_run_retention_cleanup' ); ?>
-						<label><strong><?php esc_html_e( 'Type DELETE EXPIRED', 'sustainable-catalyst-engagement-intake' ); ?></strong><input type="text" name="cleanup_confirmation" autocomplete="off" required></label>
-						<button type="submit" class="button button-link-delete"><?php esc_html_e( 'Delete Expired Private Files', 'sustainable-catalyst-engagement-intake' ); ?></button>
+						<label><strong><?php esc_html_e( 'Type QUEUE CANDIDATES', 'sustainable-catalyst-engagement-intake' ); ?></strong><input type="text" name="cleanup_confirmation" autocomplete="off" required></label>
+						<button type="submit" class="button button-primary"><?php esc_html_e( 'Queue for Human Review', 'sustainable-catalyst-engagement-intake' ); ?></button>
 					</form>
 				<?php endif; ?>
 			<?php endif; ?>
 
 			<?php if ( $retention_run ) : ?>
-				<p class="description"><?php echo esc_html( sprintf( __( 'Last cleanup: %1$s · deleted %2$d files (%3$s) · %4$d failures.', 'sustainable-catalyst-engagement-intake' ), $retention_run['completed_at_utc'] ?? 'unknown', absint( $retention_run['deleted_count'] ?? 0 ), size_format( absint( $retention_run['deleted_bytes'] ?? 0 ), 2 ), absint( $retention_run['failed_count'] ?? 0 ) ) ); ?></p>
+				<p class="description"><?php echo esc_html( sprintf( __( 'Last queue scan: %1$s · %2$d queued · %3$d existing · %4$d hold-blocked · %5$d failed.', 'sustainable-catalyst-engagement-intake' ), $retention_run['completed_at_utc'] ?? 'unknown', absint( $retention_run['queued_count'] ?? 0 ), absint( $retention_run['existing_count'] ?? 0 ), absint( $retention_run['blocked_count'] ?? 0 ), absint( $retention_run['failed_count'] ?? 0 ) ) ); ?></p>
 			<?php endif; ?>
+		</section>
+
+		<section class="sc-ei-admin__card sc-ei-admin__card--wide">
+			<p class="sc-ei-admin__card-kicker"><?php esc_html_e( 'Privacy and Retention', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<h2><?php esc_html_e( 'Privacy Center Health', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<div class="sc-ei-diagnostic-metrics">
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['privacy_metrics']['open_requests'] ) ); ?></strong><span><?php esc_html_e( 'open requests', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['privacy_metrics']['overdue_requests'] ) ); ?></strong><span><?php esc_html_e( 'overdue requests', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['privacy_metrics']['active_holds'] ) ); ?></strong><span><?php esc_html_e( 'active holds', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['privacy_metrics']['queued_actions'] ) ); ?></strong><span><?php esc_html_e( 'queued actions', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['privacy_metrics']['blocked_actions'] ) ); ?></strong><span><?php esc_html_e( 'blocked actions', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( $diagnostics['privacy_schema_version'] ); ?></strong><span><?php esc_html_e( 'privacy schema', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+			</div>
+			<ul class="sc-ei-checks">
+				<li><span class="sc-ei-check--ok">●</span> <?php esc_html_e( 'daily retention cron is queue-only', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="sc-ei-check--ok">●</span> <?php esc_html_e( 'non-personal tombstones are retained', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['privacy_lifecycle']['cron_scheduled'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'daily candidate scan scheduled', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['retention_policies']['active_count'] > 0 ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( sprintf( __( '%d active policy versions', 'sustainable-catalyst-engagement-intake' ), absint( $diagnostics['retention_policies']['active_count'] ) ) ); ?></li>
+			</ul>
+			<dl class="sc-ei-admin__details">
+				<dt><?php esc_html_e( 'Approval required', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo $diagnostics['privacy_lifecycle']['approval_required'] ? esc_html__( 'yes', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'no', 'sustainable-catalyst-engagement-intake' ); ?></dd>
+				<dt><?php esc_html_e( 'Distinct approver', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo $diagnostics['privacy_lifecycle']['distinct_approver'] ? esc_html__( 'required', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'not required', 'sustainable-catalyst-engagement-intake' ); ?></dd>
+				<dt><?php esc_html_e( 'Next daily scan UTC', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $diagnostics['privacy_lifecycle']['next_cron_utc'] ?: __( 'Not scheduled', 'sustainable-catalyst-engagement-intake' ) ); ?></dd>
+				<dt><?php esc_html_e( 'Inventory records', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php $inventory_records = $diagnostics['privacy_inventory']; unset( $inventory_records['active_attachment_bytes'] ); echo esc_html( number_format_i18n( array_sum( $inventory_records ) ) ); ?></dd>
+				<dt><?php esc_html_e( 'Active private bytes', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( size_format( absint( $diagnostics['privacy_inventory']['active_attachment_bytes'] ?? 0 ), 2 ) ); ?></dd>
+			</dl>
+			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-privacy' ) ); ?>"><?php esc_html_e( 'Open Privacy and Retention Center', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
 		</section>
 
 		<section class="sc-ei-admin__card sc-ei-admin__card--wide">
@@ -293,19 +329,21 @@ $effective       = $diagnostics['effective_limits'];
 			<h2><?php esc_html_e( 'Database Migrations', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<h3><?php esc_html_e( 'Tables', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['tables'] as $name => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $name ); ?></li><?php endforeach; ?></ul>
-			<h3><?php esc_html_e( 'v0.5.0 inquiry, attachment, review, and communication fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<h3><?php esc_html_e( 'v0.6.0 inquiry, attachment, review, communication, and privacy fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['attachment_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
+			<h3><?php esc_html_e( 'Privacy lifecycle tables and fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<ul class="sc-ei-checks sc-ei-checks--columns"><?php foreach ( $diagnostics['privacy_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
 		</section>
 
 		<section class="sc-ei-admin__card">
-			<h2><?php esc_html_e( 'Scanner and Retention Scheduler', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<h2><?php esc_html_e( 'Scanner and Queue-Only Retention Scheduler', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<p><strong><?php esc_html_e( 'Scanner configured:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo $diagnostics['scanner']['configured'] ? esc_html__( 'yes', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'no', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<p><strong><?php esc_html_e( 'Provider:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo esc_html( $diagnostics['scanner']['provider'] ); ?></p>
 			<p><strong><?php esc_html_e( 'Readiness:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo $diagnostics['scanner_readiness']['ready'] ? esc_html__( 'ready', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'attention', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<p><strong><?php esc_html_e( 'Last benign test:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo esc_html( $diagnostics['scanner_readiness']['test']['completed_at_utc'] ?? __( 'never', 'sustainable-catalyst-engagement-intake' ) ); ?> · <?php echo esc_html( ucwords( str_replace( '_', ' ', (string) ( $diagnostics['scanner_readiness']['test']['scan_status'] ?? 'not_run' ) ) ) ); ?></p>
 			<p><strong><?php esc_html_e( 'Clean scan required:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo $diagnostics['uploads']['scanner_required'] ? esc_html__( 'yes', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'no', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<p><strong><?php esc_html_e( 'Scan attention records:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo esc_html( number_format_i18n( $diagnostics['quarantine_operations']['scan_attention_count'] ) ); ?></p>
-			<p><strong><?php esc_html_e( 'Daily retention cron:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo $diagnostics['uploads']['retention_cron_scheduled'] ? esc_html__( 'scheduled', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'missing', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<p><strong><?php esc_html_e( 'Daily candidate cron:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo $diagnostics['uploads']['retention_cron_scheduled'] ? esc_html__( 'scheduled', 'sustainable-catalyst-engagement-intake' ) : esc_html__( 'missing', 'sustainable-catalyst-engagement-intake' ); ?> · <?php esc_html_e( 'queue only', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-quarantine' ) ); ?>"><?php esc_html_e( 'Open Quarantine Operations', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
 		</section>
 

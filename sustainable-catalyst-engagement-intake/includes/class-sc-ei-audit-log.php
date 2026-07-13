@@ -74,6 +74,26 @@ final class SC_EI_Audit_Log {
 		);
 	}
 
+	public static function privacy_event_types(): array {
+		return array(
+			'privacy_request_created'          => __( 'Privacy Request Created', 'sustainable-catalyst-engagement-intake' ),
+			'privacy_request_updated'          => __( 'Privacy Request Updated', 'sustainable-catalyst-engagement-intake' ),
+			'consent_event_recorded'           => __( 'Consent Event Recorded', 'sustainable-catalyst-engagement-intake' ),
+			'legal_hold_placed'                => __( 'Legal Hold Placed', 'sustainable-catalyst-engagement-intake' ),
+			'legal_hold_released'              => __( 'Legal Hold Released', 'sustainable-catalyst-engagement-intake' ),
+			'retention_policy_version_created' => __( 'Retention Policy Version Created', 'sustainable-catalyst-engagement-intake' ),
+			'retention_preview_generated'      => __( 'Retention Preview Generated', 'sustainable-catalyst-engagement-intake' ),
+			'retention_candidates_queued'      => __( 'Retention Candidates Queued', 'sustainable-catalyst-engagement-intake' ),
+			'retention_action_queued'          => __( 'Retention Action Queued', 'sustainable-catalyst-engagement-intake' ),
+			'retention_action_approved'        => __( 'Retention Action Approved', 'sustainable-catalyst-engagement-intake' ),
+			'retention_action_canceled'        => __( 'Retention Action Canceled', 'sustainable-catalyst-engagement-intake' ),
+			'retention_action_failed'          => __( 'Retention Action Failed', 'sustainable-catalyst-engagement-intake' ),
+			'retention_action_executed'        => __( 'Retention Action Executed', 'sustainable-catalyst-engagement-intake' ),
+			'privacy_inventory_exported'       => __( 'Privacy Inventory Exported', 'sustainable-catalyst-engagement-intake' ),
+			'wordpress_privacy_request_queued' => __( 'WordPress Privacy Request Queued', 'sustainable-catalyst-engagement-intake' ),
+		);
+	}
+
 	public static function query_file_events( array $args = array() ): array {
 		global $wpdb;
 

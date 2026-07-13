@@ -1,98 +1,84 @@
-# Release Notes — v0.5.0
+# Release Notes — v0.6.0
 
-## Purpose
+## Release
 
-Create a private, auditable correspondence layer that connects inquiry intake and human review to sender communication without turning the plugin into an uncontrolled email automation system.
+Privacy and Retention Center
 
-## Operating boundary
+## Primary outcome
 
-The communication layer is designed around four rules:
+Move privacy and retention from scattered settings and direct cleanup into a centralized, human-controlled lifecycle system.
 
-1. saving is not sending
-2. transport acceptance is not delivery
-3. private documents are not email attachments
-4. automated policies are opt-in
+## New workflow
 
-## Manual email workflow
+```text
+policy
+→ preview
+→ queue
+→ hold/dependency review
+→ approval
+→ typed execution
+→ verification
+→ audit
+```
 
-An authorized user:
+## Non-destructive automation
 
-1. opens the inquiry communication thread
-2. selects or writes a plain-text message
-3. saves a version-locked draft
-4. reviews the rendered recipient, subject, body, and privacy classification
-5. confirms the send
-6. receives either an accepted or failed mail-transport result
-7. reviews immutable delivery events and attempts
+Daily automation only queues candidates.
 
-## Automatic policy workflow
+No automatic action can:
 
-An enabled policy:
+- delete a protected file
+- redact an inquiry
+- redact a communication
+- mark an inquiry erased
+- bypass a legal hold
 
-1. evaluates a specific trigger
-2. creates a deduplicated immutable communication
-3. renders a versioned template
-4. uses the same mail transport and event recording
-5. records accepted, failed, or suppressed state
-6. never attaches a file
-7. never changes inquiry fit or status
+## Erasure completeness
 
-## Communication history
+Approved inquiry erasure covers:
 
-History includes messages sent from WordPress and manually recorded interactions completed elsewhere.
+- inquiry contact and narrative fields
+- Teams and scheduling details
+- communications
+- transport-event context
+- review narratives and snapshots
+- consent evidence and subject hashes
+- privacy-request identifiers and narratives
+- released-hold narratives and authorities
+- retention snapshots and failure narratives
 
-This allows Teams, phone, video, and in-person activity to be represented without claiming a live external integration.
+Private documents must already be deleted and verified.
 
-## Follow-up
-
-Each inquiry can hold:
-
-- communication state
-- next follow-up date
-- last communication timestamps
-- unread inbound count
-- do-not-email state and reason
-
-Internal follow-up reminders can be enabled separately.
-
-## Templates
-
-Templates are plain text and versioned.
-
-The template used by a message is retained by key and version even after a new version becomes active.
-
-## Migration
-
-v0.5.0 creates three tables and adds communication fields to inquiries.
-
-Migration does not:
-
-- send email
-- enable automation
-- create historical messages
-- mark email delivered
-- import mailboxes
-- connect Microsoft Graph
-
-## Recommended live verification
+## Production verification
 
 1. Back up database and protected storage.
-2. Upgrade to v0.5.0.
-3. Confirm database and communication table migration.
-4. Confirm templates were seeded.
-5. Configure a domain-authorized sender and reply-to address.
-6. Keep automated policies off.
-7. Run the transport test.
-8. Confirm actual receipt separately.
-9. Create and edit a draft.
-10. Open the same draft in two sessions and confirm stale-save rejection.
-11. Send a test message.
-12. Test an invalid mail transport in staging and confirm failure history.
-13. Test retry.
-14. Test cancel.
-15. Enable do-not-email and confirm suppression.
-16. Record inbound email and Teams meeting history.
-17. Set follow-up and test the hourly reminder in staging.
-18. Export communication CSV.
-19. Test privacy export.
-20. Test privacy erasure in staging.
+2. Upgrade to v0.6.0.
+3. Confirm migrations in Diagnostics.
+4. Review policy periods.
+5. Confirm cron queue-only status.
+6. Test request creation and identity states.
+7. Test consent events and withdrawal restriction.
+8. Test inquiry and attachment holds.
+9. Preview candidates.
+10. Queue candidates.
+11. Confirm no physical deletion.
+12. Approve one staging document action.
+13. Type the execution phrase.
+14. Confirm physical absence and tombstone.
+15. Test an inquiry action with a remaining document and confirm dependency blocking.
+16. Delete the document through an approved action.
+17. Execute inquiry erasure.
+18. Inspect retained tombstone and audit history.
+19. Test the WordPress privacy exporter.
+20. Test the WordPress eraser and confirm it only queues.
+21. Confirm restricted inquiries suppress sender-facing email.
+
+## Limitations
+
+- No automated legal analysis.
+- No jurisdiction detection.
+- No automatic identity verification.
+- No Microsoft Graph.
+- No mailbox ingestion.
+- No provider delivery webhook.
+- No live WordPress production activation was performed in the build environment.

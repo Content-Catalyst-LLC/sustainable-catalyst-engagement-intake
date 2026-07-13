@@ -608,6 +608,21 @@ final class SC_EI_Review_Repository {
 			'reviews'      => self::history( $inquiry_id, 500 ),
 			'attachments'    => $attachments,
 			'communications' => SC_EI_Communication_Repository::for_inquiry( $inquiry_id, 500, true ),
+			'privacy'        => array(
+				'consent_events' => SC_EI_Privacy_Repository::consent_events( array( 'inquiry_id' => $inquiry_id, 'limit' => 500 ) ),
+				'legal_holds' => array_values(
+					array_filter(
+						SC_EI_Privacy_Repository::holds( array( 'search' => (string) $inquiry['reference'], 'limit' => 500 ) ),
+						static fn( array $hold ): bool => absint( $hold['inquiry_id'] ) === $inquiry_id
+					)
+				),
+				'retention_actions' => array_values(
+					array_filter(
+						SC_EI_Privacy_Repository::retention_actions( array( 'search' => (string) $inquiry['reference'], 'limit' => 500 ) ),
+						static fn( array $action ): bool => absint( $action['inquiry_id'] ) === $inquiry_id
+					)
+				),
+			),
 			'audit'          => SC_EI_Audit_Log::for_inquiry( $inquiry_id, 500 ),
 		);
 	}

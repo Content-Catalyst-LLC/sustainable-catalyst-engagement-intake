@@ -35,6 +35,7 @@ final class SC_EI_Plugin {
 		SC_EI_Capabilities::install();
 		SC_EI_Upload_Environment::register();
 		SC_EI_Privacy::register();
+		SC_EI_Privacy_Repository::register();
 		SC_EI_REST::register();
 		SC_EI_Form_Handler::register();
 		SC_EI_Public::register();
@@ -46,6 +47,7 @@ final class SC_EI_Plugin {
 			SC_EI_Admin::register();
 			SC_EI_Review_Admin::register();
 			SC_EI_Communication_Admin::register();
+			SC_EI_Privacy_Admin::register();
 		}
 
 		do_action( 'sc_ei_loaded', $this );

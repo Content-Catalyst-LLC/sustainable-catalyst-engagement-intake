@@ -52,11 +52,15 @@ $links = is_array( $links ) ? $links : array();
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-review' ) ); ?>">← <?php esc_html_e( 'Back to Review Workspace', 'sustainable-catalyst-engagement-intake' ); ?></a>
 		· <a href="<?php echo esc_url( $full_record_url ); ?>"><?php esc_html_e( 'Full inquiry record', 'sustainable-catalyst-engagement-intake' ); ?></a>
 		· <a href="<?php echo esc_url( SC_EI_Communication_Admin::thread_url( absint( $inquiry['id'] ) ) ); ?>"><?php esc_html_e( 'Communications', 'sustainable-catalyst-engagement-intake' ); ?></a>
+		· <a href="<?php echo esc_url( SC_EI_Privacy_Admin::url( 'overview', array( 'inquiry' => absint( $inquiry['id'] ) ) ) ); ?>"><?php esc_html_e( 'Privacy Center', 'sustainable-catalyst-engagement-intake' ); ?></a>
 		· <a href="<?php echo esc_url( $quarantine_url ); ?>"><?php esc_html_e( 'Related quarantine records', 'sustainable-catalyst-engagement-intake' ); ?></a>
 	</p>
 
 	<h1><?php echo esc_html( $inquiry['reference'] ); ?> · <?php esc_html_e( 'Administrative Review', 'sustainable-catalyst-engagement-intake' ); ?></h1>
 	<p><?php echo esc_html( $inquiry['subject'] ?: $inquiry['project_summary'] ?: __( 'Private inquiry review', 'sustainable-catalyst-engagement-intake' ) ); ?></p>
+	<?php if ( in_array( $inquiry['privacy_status'], array( 'restricted', 'erasure_requested' ), true ) || absint( $inquiry['legal_hold_count'] ) > 0 ) : ?>
+		<div class="notice notice-warning"><p><strong><?php echo esc_html( SC_EI_Privacy_Schema::label( SC_EI_Privacy_Schema::privacy_statuses(), $inquiry['privacy_status'] ) ); ?></strong> · <?php echo esc_html( sprintf( __( '%d active legal hold(s). Review privacy controls before changing status or recommending external action.', 'sustainable-catalyst-engagement-intake' ), absint( $inquiry['legal_hold_count'] ) ) ); ?></p></div>
+	<?php endif; ?>
 
 	<?php if ( 'review_saved' === $message ) : ?>
 		<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'The administrative review was saved and an immutable review snapshot was recorded.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>

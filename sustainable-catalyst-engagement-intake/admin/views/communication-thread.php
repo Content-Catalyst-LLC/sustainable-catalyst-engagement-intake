@@ -35,9 +35,13 @@ $export_url = wp_nonce_url(
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-communications' ) ); ?>">← <?php esc_html_e( 'Back to Communications', 'sustainable-catalyst-engagement-intake' ); ?></a>
 		· <a href="<?php echo esc_url( SC_EI_Review_Admin::detail_url( absint( $inquiry['id'] ) ) ); ?>"><?php esc_html_e( 'Administrative Review', 'sustainable-catalyst-engagement-intake' ); ?></a>
 		· <a href="<?php echo esc_url( add_query_arg( array( 'page' => 'sc-engagement-intake', 'action' => 'view', 'inquiry' => absint( $inquiry['id'] ) ), admin_url( 'admin.php' ) ) ); ?>"><?php esc_html_e( 'Full Inquiry Record', 'sustainable-catalyst-engagement-intake' ); ?></a>
+		· <a href="<?php echo esc_url( SC_EI_Privacy_Admin::url( 'overview', array( 'inquiry' => absint( $inquiry['id'] ) ) ) ); ?>"><?php esc_html_e( 'Privacy Center', 'sustainable-catalyst-engagement-intake' ); ?></a>
 	</p>
 	<h1><?php echo esc_html( $inquiry['reference'] ); ?> · <?php esc_html_e( 'Communication History', 'sustainable-catalyst-engagement-intake' ); ?></h1>
 	<p><?php echo esc_html( $inquiry['contact_name'] ); ?> · <?php echo esc_html( $inquiry['contact_email'] ); ?><?php echo $inquiry['organization'] ? ' · ' . esc_html( $inquiry['organization'] ) : ''; ?></p>
+	<?php if ( in_array( $inquiry['privacy_status'], array( 'restricted', 'erasure_requested' ), true ) || absint( $inquiry['legal_hold_count'] ) > 0 ) : ?>
+		<div class="notice notice-warning"><p><strong><?php echo esc_html( SC_EI_Privacy_Schema::label( SC_EI_Privacy_Schema::privacy_statuses(), $inquiry['privacy_status'] ) ); ?></strong> · <?php esc_html_e( 'Review the Privacy Center before sending or recording new external communication.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
+	<?php endif; ?>
 
 	<?php if ( 'communication_draft_saved' === $message ) : ?><div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Draft saved. Review the exact recipient, subject, and body before using the separate Send action.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>
 	<?php elseif ( 'communication_mail_accepted' === $message ) : ?><div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'The email was accepted by the WordPress mail transport. Delivery to an inbox was not independently confirmed.', 'sustainable-catalyst-engagement-intake' ); ?></p></div>

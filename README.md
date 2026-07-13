@@ -1,18 +1,21 @@
 # Sustainable Catalyst Engagement Intake
 
-**Version:** 0.5.0  
-**Release:** Notifications and Communication History
+**Version:** 0.6.0  
+**Release:** Privacy and Retention Center
 
-v0.5.0 adds a private communication operating layer:
+v0.6.0 adds an auditable lifecycle layer:
 
 ```text
-Public intake
-→ protected inquiry
-→ quarantine and review
-→ communication draft
-→ human review and explicit send
-→ transport event history
-→ follow-up
+Private intake
+→ review and communication
+→ privacy state
+→ policy preview
+→ queue
+→ legal-hold and dependency review
+→ approval
+→ typed execution
+→ verification
+→ non-personal tombstone
 ```
 
 ## Public shortcodes
@@ -25,297 +28,346 @@ Public intake
 [sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst"]
 ```
 
-## Communications workspace
+## Privacy Center
 
 Open:
 
 ```text
-Engagement Intake → Communications
+Engagement Intake → Privacy Center
 ```
 
 Views:
 
-- All History
-- Drafts
-- Failed
-- Inbound
-- Follow-up Due
-- Notifications
-- Templates
-- Notification Policy
+- Overview
+- Privacy Requests
+- Consent Ledger
+- Legal Holds
+- Retention Queue
+- Policies
+- Operating Method
 
-Each inquiry has a private communication thread containing:
+## Safety model
 
-- version-locked drafts
-- reviewed send preview
-- outbound email
-- inbound email records
-- Teams message and meeting records
-- phone, video, and in-person records
-- internal notes
-- delivery and change events
-- follow-up state
-- unread inbound count
-- do-not-email control
-- transport attempts and failures
-
-## Delivery truthfulness
-
-The plugin records:
+The release enforces:
 
 ```text
-accepted = WordPress mail transport accepted the message
-failed   = WordPress mail transport returned failure
+preview is not queue
+queue is not approval
+approval is not execution
+execution is not assumed verification
 ```
 
-It does not claim:
+The daily cron only queues candidates.
+
+Approval is mandatory.
+
+Irreversible execution requires:
 
 ```text
-delivered
-in inbox
-opened
-read
-clicked
+EXECUTE <action-id>
 ```
 
-Those states require a separately configured mail provider and verified webhook integration, neither of which is bundled in v0.5.0.
+Private-document execution verifies physical absence before marking the action complete.
 
-## Human-controlled send sequence
+## Privacy requests
+
+Cases support:
+
+- access/export
+- erasure
+- restriction
+- correction
+- consent withdrawal
+- objection
+- portability
+- other privacy requests
+
+Each case records:
+
+- requester
+- request type
+- source
+- identity-verification state
+- received date
+- due date
+- assigned owner
+- request summary
+- resolution
+- completion state
+
+Completing or denying a case requires a resolution summary.
+
+## Consent and authorization ledger
+
+The append-oriented ledger records:
+
+- privacy notice acknowledgment
+- inquiry processing
+- calendar invitation
+- participant contact authorization
+- communication permission
+- private document processing
+- other authorization
+
+Actions include:
+
+- granted
+- renewed
+- withdrawn
+- corrected
+- expired
+- not applicable
+
+Evidence includes:
+
+- notice or consent version
+- recorded processing basis
+- source
+- evidence note
+- subject email SHA-256
+- occurrence time
+- internal actor
+
+Withdrawing a recorded authorization restricts the inquiry until reviewed.
+
+## Legal holds
+
+A hold can cover:
 
 ```text
-compose
-→ save draft
-→ review recipient, subject, body, privacy classification, and suppression
-→ check explicit send confirmation
-→ send
-→ record accepted or failed transport event
+entire inquiry and related records
+specific private document
 ```
 
-Saving a draft never sends it.
+A hold requires:
 
-Accepted, received, recorded, canceled, and suppressed communication records are immutable through normal editing.
+- reason
+- authority
+- placement actor and time
+- review date
 
-## Plain text and no attachments
+Release requires an explicit reason.
 
-All plugin email is plain text.
+Any active related hold blocks inquiry erasure. A document hold also blocks its file deletion and related inquiry lifecycle actions.
 
-The communication layer never accepts an attachment argument and never copies quarantined documents into email.
+## Versioned retention policies
 
-Private documents remain available only through the authenticated document workflow.
-
-## Automated notifications
-
-All automated policies default to `false`:
+Default policy families:
 
 ```text
-sender_acknowledgment_enabled
-internal_new_inquiry_enabled
-review_due_reminders_enabled
-follow_up_reminders_enabled
-escalation_notifications_enabled
+unaccepted_inquiry
+withdrawn_inquiry
+closed_inquiry
+accepted_inquiry
+private_attachment
+communication_content
 ```
 
-Automation cannot be enabled with an invalid:
+A policy version records:
 
-- sender name
-- sender email
-- reply-to email
+- key and immutable version
+- name
+- target type
+- inquiry status scope
+- retention days
+- anchor field
+- action
+- recorded basis
+- description
+- system/custom origin
+- author and timestamps
 
-Enabled reminders run through an hourly WordPress cron event with:
+Creating a version archives the prior active version. Existing queued actions keep their original policy key and version.
 
-- a 30-minute cron lock
-- configurable batch limit
-- stable deduplication keys
-- immutable records and events
-- normal mail failure history
-- no document attachments
+## Queue behavior
 
-## Default notification templates
-
-- sender acknowledgment
-- internal new inquiry
-- internal review due
-- internal follow-up due
-- internal escalation
-
-Sender-facing operational templates include:
-
-- general response
-- request more information
-- Teams fit-call invitation
-- Teams confirmation
-- paid consultation invitation
-- referral
-- decline
-
-Templates are versioned. A new save archives the previous active version instead of rewriting history.
-
-## Template variables
-
-Only allowlisted variables are rendered, including:
+A deterministic candidate includes:
 
 ```text
-{contact_name}
-{first_name}
-{reference}
-{organization}
-{subject}
-{inquiry_type}
-{service_interest}
-{review_stage}
-{fit_decision}
-{recommended_next_step}
-{teams_duration}
-{teams_meeting_url}
-{scheduled_start}
-{scheduled_timezone}
-{site_name}
-{site_url}
-{sender_name}
-{reply_email}
-{reviewer_name}
-{review_due}
-{next_follow_up}
+inquiry
+target type and ID
+policy key and version
+action
+due date
+deduplication key
+hold state
+minimal snapshot
 ```
 
-Unknown variables are rejected. Templates do not execute PHP, shortcodes, JavaScript, or arbitrary expressions.
-
-## Communication state
-
-Inquiry-level fields:
-
-```text
-communication_status
-next_follow_up_at
-last_communication_at
-last_outbound_at
-last_inbound_at
-last_notification_at
-communication_count
-unread_inbound_count
-do_not_email
-do_not_email_reason
-communication_version
-```
+The queue prevents duplicate actions with a unique deduplication key.
 
 States:
 
 ```text
-open
-waiting_on_sender
-waiting_on_internal
-follow_up_due
-paused
-closed
+queued
+blocked_hold
+blocked_dependency
+approved
+executing
+executed
+failed
+canceled
+skipped
 ```
 
-## Draft concurrency
+## Execution behavior
 
-Each draft has `row_version`.
+### Private document
 
-When two sessions edit the same draft, the first successful save increments the version. The stale second save is rejected.
+```text
+approved action
+→ recheck every related hold
+→ delete from protected storage
+→ verify physical absence
+→ mark attachment tombstone
+→ record SHA-256, size, actor, and verification
+```
 
-## Mail send locking
+### Communication content
 
-A short-lived option lock prevents the same communication from being sent twice concurrently.
+```text
+approved action
+→ redact subject and body
+→ redact parties, CC, provider IDs, errors, hashes, dedupe data, and metadata
+→ redact related delivery-event context
+→ retain categorical channel, direction, status, type, and timestamps
+```
 
-A stale lock can be reclaimed after five minutes.
+### Inquiry personal data
 
-## Inbound and external interaction logging
+```text
+approved action
+→ confirm no active related hold
+→ confirm no undeleted private document
+→ transaction
+→ redact communications and events
+→ redact review narratives and snapshots
+→ redact consent evidence and email hashes
+→ redact privacy-request identifiers and narratives
+→ redact released-hold narratives and authorities
+→ redact retention snapshots and failure narratives
+→ redact inquiry contact, project, scheduling, and link data
+→ mark privacy state erased
+→ preserve reference and non-personal tombstone
+→ commit
+```
 
-v0.5.0 does not ingest email or Teams messages automatically.
+### Archive only
 
-Authorized users can record:
+Accepted engagement records default to archive review rather than automatic erasure.
 
-- inbound email
-- outbound email completed elsewhere
-- Teams message
-- Teams meeting
-- phone
-- video
-- in-person
-- internal note
-- other interaction
+## WordPress privacy tools
 
-An inbound record can be marked as needing a response, which sets the thread to `waiting_on_internal`.
+The exporter includes:
 
-## Email suppression
+- inquiry lifecycle state
+- review history
+- communications and transport events
+- private document metadata
+- consent events
+- legal holds
+- retention actions
+- privacy requests
 
-`do_not_email` blocks email to the inquiry contact address.
+The eraser does not delete synchronously.
 
-A reason is required. The send attempt becomes `suppressed` and remains in history.
+It:
 
-Internal notifications to other authorized recipients are not blocked by sender suppression.
+1. creates or reuses an open erasure request
+2. marks the inquiry erasure requested
+3. queues each active private document
+4. queues the inquiry erasure dependency
+5. records an audit event
+6. reports that data remains pending reviewed execution
 
-## Private communication export
+## Processing restrictions
 
-Authorized users can export communication history as CSV.
+Sender-facing email is suppressed when the inquiry is:
 
-The export includes message content and is therefore private. Spreadsheet formula-leading characters are neutralized.
+```text
+restricted
+erasure_requested
+erased
+```
 
-## Privacy
+Internal case-management and preservation records remain available to authorized users.
 
-WordPress privacy export includes:
+## Fixed safety controls
 
-- inquiry communication state
-- communication records
-- delivery and change events
-- sender and recipient information
-- message content
-- templates used
-- attempts and error states
+These cannot be disabled in v0.6.0:
 
-Privacy erasure removes:
+```text
+daily cron is queue-only
+approval before execution is required
+non-personal tombstones are retained
+```
 
-- communication subjects and bodies
-- sender and recipient names and emails
-- CC recipients
-- provider message IDs
-- transport error messages
-- message hashes
-- deduplication keys
-- event context
-- suppression rationale
-- review narratives
-- scheduling personal data
-- physical uploaded documents
+Optional:
 
-Categorical event type, status, channel, timestamps, and internal actor IDs may remain for accountability.
+```text
+require approver to differ from proposer
+```
 
-## Microsoft Teams boundary
+## Data inventory
 
-Microsoft Teams is the only live meeting platform represented in the public workflow.
+The private inventory counts:
 
-v0.5.0 can:
+- inquiries
+- attachments
+- reviews
+- communications
+- communication events
+- templates
+- privacy requests
+- consent events
+- legal holds
+- retention policies
+- retention actions
+- audit events
+- active private document bytes
 
-- store Teams preferences
-- store approved Teams meeting links and times
-- create Teams message and meeting history records
-- use Teams information in reviewed templates
+Authorized users can export a private JSON inventory containing aggregate counts, active policies, lifecycle settings, metrics, and the last queue run.
 
-It cannot:
+## Migration from v0.5.0
 
-- authenticate with Microsoft Graph
-- send Teams messages
-- create meetings
-- read Teams replies
-- synchronize calendars
+New tables:
 
-## Review packet
+```text
+{prefix}sc_ei_privacy_requests
+{prefix}sc_ei_consent_events
+{prefix}sc_ei_legal_holds
+{prefix}sc_ei_retention_policies
+{prefix}sc_ei_retention_actions
+```
 
-The private review packet now includes communication history in addition to inquiry, review, attachment metadata, and audit history.
+New inquiry fields:
 
-Physical documents remain excluded.
+```text
+privacy_status
+retention_policy_key
+retention_until
+legal_hold_count
+privacy_restriction_reason
+last_privacy_review_at
+last_privacy_review_by
+personal_data_erased_at
+privacy_version
+```
 
-## Existing safety layers retained
+Migration is non-destructive. It does not queue or execute existing records merely because the plugin was upgraded.
 
-- human administrative review
-- no automated fit score
-- no automatic inquiry status inference
-- secure document quarantine
-- scanner readiness and retries
-- atomic protected storage
-- SHA-256 verification
-- retention controls
-- privacy export and erasure
-- Microsoft Teams-only meeting boundary
+## Legal boundary
+
+This plugin provides technical controls and evidence.
+
+It does not determine:
+
+- applicable jurisdiction
+- legal basis
+- mandatory retention period
+- preservation obligations
+- identity-verification sufficiency
+- whether an erasure exception applies
+- whether a legal hold should be placed or released
+
+Obtain appropriate legal and professional review for production policies.

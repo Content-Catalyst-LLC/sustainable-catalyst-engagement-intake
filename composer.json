@@ -1,6 +1,6 @@
 {
   "name": "content-catalyst-llc/sustainable-catalyst-engagement-intake",
-  "description": "Private consulting and contact intake with reviewed communications, opt-in notifications, human administrative review, secure quarantine, and Microsoft Teams readiness.",
+  "description": "Private consulting and contact intake with a Privacy and Retention Center, reviewed communications, human administrative review, secure quarantine, and Microsoft Teams readiness.",
   "type": "wordpress-plugin",
   "license": "GPL-2.0-or-later",
   "require": {
@@ -8,6 +8,6 @@
   },
   "scripts": {
     "lint": "find sustainable-catalyst-engagement-intake -name '*.php' -print0 | xargs -0 -n1 php -l",
-    "test": "php tests/smoke.php && php tests/validator-fixtures.php && php tests/storage-fixtures.php && php tests/upload-environment-fixtures.php && php tests/scanner-fixtures.php && php tests/quarantine-operations.php && php tests/review-schema-fixtures.php && php tests/review-operations.php && php tests/communication-schema-fixtures.php && php tests/communication-operations.php && php tests/schema-mapping.php"
+    "test": "php tests/smoke.php && php tests/validator-fixtures.php && php tests/storage-fixtures.php && php tests/upload-environment-fixtures.php && php tests/scanner-fixtures.php && php tests/quarantine-operations.php && php tests/review-schema-fixtures.php && php tests/review-operations.php && php tests/communication-schema-fixtures.php && php tests/communication-operations.php && php tests/privacy-schema-fixtures.php && php tests/privacy-operations.php && php tests/schema-mapping.php"
   }
 }

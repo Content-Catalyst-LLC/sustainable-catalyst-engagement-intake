@@ -7,27 +7,33 @@ $scanner_readiness = SC_EI_Scanner_Operations::readiness( $settings );
 ?>
 <div class="wrap sc-ei-admin">
 	<h1><?php esc_html_e( 'Engagement Intake Settings', 'sustainable-catalyst-engagement-intake' ); ?></h1>
-	<p><?php esc_html_e( 'v0.5.0 adds opt-in sender and internal notifications, reviewed plain-text email sends, delivery-event history, inbound and Teams interaction logging, follow-up controls, email suppression, and versioned communication templates.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+	<p><?php esc_html_e( 'v0.6.0 adds a centralized Privacy and Retention Center with versioned policies, consent evidence, privacy request cases, legal holds, queue-only retention scans, approval controls, verified execution, and tombstone preservation.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 
 	<form method="post" action="options.php">
 		<?php settings_fields( 'sc_ei_settings_group' ); ?>
 
 		<section class="sc-ei-admin__card sc-ei-admin__settings-card">
-			<h2><?php esc_html_e( 'Retention defaults', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<h2><?php esc_html_e( 'Privacy and retention lifecycle defaults', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<p><?php esc_html_e( 'These values seed and guide policy versions. Daily cron is permanently queue-only in v0.6.0; it cannot physically delete files or erase inquiry data.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<table class="form-table" role="presentation">
-				<tr>
-					<th scope="row"><label for="sc-ei-unaccepted-days"><?php esc_html_e( 'Unaccepted inquiries', 'sustainable-catalyst-engagement-intake' ); ?></label></th>
-					<td><input id="sc-ei-unaccepted-days" type="number" min="30" max="3650" name="sc_ei_settings[default_unaccepted_retention_days]" value="<?php echo esc_attr( $settings['default_unaccepted_retention_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="sc-ei-withdrawn-days"><?php esc_html_e( 'Withdrawn inquiries', 'sustainable-catalyst-engagement-intake' ); ?></label></th>
-					<td><input id="sc-ei-withdrawn-days" type="number" min="1" max="365" name="sc_ei_settings[withdrawn_retention_days]" value="<?php echo esc_attr( $settings['withdrawn_retention_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="sc-ei-draft-days"><?php esc_html_e( 'Abandoned drafts', 'sustainable-catalyst-engagement-intake' ); ?></label></th>
-					<td><input id="sc-ei-draft-days" type="number" min="1" max="365" name="sc_ei_settings[abandoned_draft_days]" value="<?php echo esc_attr( $settings['abandoned_draft_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></td>
-				</tr>
+				<tr><th scope="row"><label for="sc-ei-unaccepted-days"><?php esc_html_e( 'Unaccepted inquiries', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-unaccepted-days" type="number" min="30" max="3650" name="sc_ei_settings[default_unaccepted_retention_days]" value="<?php echo esc_attr( $settings['default_unaccepted_retention_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+				<tr><th scope="row"><label for="sc-ei-withdrawn-days"><?php esc_html_e( 'Withdrawn inquiries', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-withdrawn-days" type="number" min="1" max="3650" name="sc_ei_settings[withdrawn_retention_days]" value="<?php echo esc_attr( $settings['withdrawn_retention_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+				<tr><th scope="row"><label for="sc-ei-closed-days"><?php esc_html_e( 'Closed, referred, or not-a-fit inquiries', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-closed-days" type="number" min="30" max="3650" name="sc_ei_settings[closed_retention_days]" value="<?php echo esc_attr( $settings['closed_retention_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+				<tr><th scope="row"><label for="sc-ei-accepted-days"><?php esc_html_e( 'Accepted engagement records', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-accepted-days" type="number" min="365" max="36500" name="sc_ei_settings[accepted_retention_days]" value="<?php echo esc_attr( $settings['accepted_retention_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?><p class="description"><?php esc_html_e( 'The seeded accepted-engagement policy archives by default rather than erasing.', 'sustainable-catalyst-engagement-intake' ); ?></p></td></tr>
+				<tr><th scope="row"><label for="sc-ei-communication-days"><?php esc_html_e( 'Communication content', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-communication-days" type="number" min="30" max="36500" name="sc_ei_settings[communication_retention_days]" value="<?php echo esc_attr( $settings['communication_retention_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+				<tr><th scope="row"><label for="sc-ei-attachment-retention-top"><?php esc_html_e( 'Private documents', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-attachment-retention-top" type="number" min="7" max="3650" name="sc_ei_settings[attachment_retention_days]" value="<?php echo esc_attr( $settings['attachment_retention_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+				<tr><th scope="row"><label for="sc-ei-privacy-request-days"><?php esc_html_e( 'Privacy request target', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-privacy-request-days" type="number" min="1" max="365" name="sc_ei_settings[privacy_request_due_days]" value="<?php echo esc_attr( $settings['privacy_request_due_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?><p class="description"><?php esc_html_e( 'Operational target only; review the deadline that actually applies.', 'sustainable-catalyst-engagement-intake' ); ?></p></td></tr>
+				<tr><th scope="row"><label for="sc-ei-hold-review-days"><?php esc_html_e( 'Legal hold review interval', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-hold-review-days" type="number" min="1" max="3650" name="sc_ei_settings[legal_hold_review_days]" value="<?php echo esc_attr( $settings['legal_hold_review_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+				<tr><th scope="row"><label for="sc-ei-retention-queue-limit"><?php esc_html_e( 'Candidate queue batch', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-retention-queue-limit" type="number" min="1" max="1000" name="sc_ei_settings[retention_queue_batch_limit]" value="<?php echo esc_attr( $settings['retention_queue_batch_limit'] ); ?>"> <?php esc_html_e( 'candidates per scan', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
+				<tr><th scope="row"><label for="sc-ei-retention-execution-limit"><?php esc_html_e( 'Execution batch ceiling', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-retention-execution-limit" type="number" min="1" max="50" name="sc_ei_settings[retention_execution_batch_limit]" value="<?php echo esc_attr( $settings['retention_execution_batch_limit'] ); ?>"> <?php esc_html_e( 'actions', 'sustainable-catalyst-engagement-intake' ); ?><p class="description"><?php esc_html_e( 'v0.6.0 interface executes one typed-confirmation action at a time; this ceiling is reserved for future guarded batch execution.', 'sustainable-catalyst-engagement-intake' ); ?></p></td></tr>
+				<tr><th scope="row"><?php esc_html_e( 'Approval safeguards', 'sustainable-catalyst-engagement-intake' ); ?></th><td>
+					<strong><?php esc_html_e( 'Approval before execution is permanently required in v0.6.0.', 'sustainable-catalyst-engagement-intake' ); ?></strong><br>
+					<label class="sc-ei-settings-check"><input type="checkbox" name="sc_ei_settings[require_distinct_retention_approver]" value="1" <?php checked( $settings['require_distinct_retention_approver'], 1 ); ?>> <?php esc_html_e( 'Require approval by an authorized person other than the action proposer', 'sustainable-catalyst-engagement-intake' ); ?></label>
+				</td></tr>
+				<tr><th scope="row"><?php esc_html_e( 'Fixed safety controls', 'sustainable-catalyst-engagement-intake' ); ?></th><td><strong><?php esc_html_e( 'Queue-only cron: enabled', 'sustainable-catalyst-engagement-intake' ); ?></strong><br><strong><?php esc_html_e( 'Non-personal tombstones: retained', 'sustainable-catalyst-engagement-intake' ); ?></strong><p class="description"><?php esc_html_e( 'These controls cannot be disabled in v0.6.0.', 'sustainable-catalyst-engagement-intake' ); ?></p></td></tr>
+				<tr><th scope="row"><label for="sc-ei-draft-days"><?php esc_html_e( 'Abandoned drafts', 'sustainable-catalyst-engagement-intake' ); ?></label></th><td><input id="sc-ei-draft-days" type="number" min="1" max="365" name="sc_ei_settings[abandoned_draft_days]" value="<?php echo esc_attr( $settings['abandoned_draft_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></td></tr>
 			</table>
+			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-privacy' ) ); ?>"><?php esc_html_e( 'Open Privacy and Retention Center', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
 		</section>
 
 		<section class="sc-ei-admin__card sc-ei-admin__settings-card">
@@ -118,7 +124,7 @@ $scanner_readiness = SC_EI_Scanner_Operations::readiness( $settings );
 				</tr>
 				<tr>
 					<th scope="row"><label for="sc-ei-attachment-retention"><?php esc_html_e( 'Default attachment retention', 'sustainable-catalyst-engagement-intake' ); ?></label></th>
-					<td><input id="sc-ei-attachment-retention" type="number" min="7" max="3650" name="sc_ei_settings[attachment_retention_days]" value="<?php echo esc_attr( $settings['attachment_retention_days'] ); ?>"> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></td>
+					<td><strong><?php echo esc_html( $settings['attachment_retention_days'] ); ?> <?php esc_html_e( 'days', 'sustainable-catalyst-engagement-intake' ); ?></strong><p class="description"><?php esc_html_e( 'Configured in Privacy and retention lifecycle defaults above.', 'sustainable-catalyst-engagement-intake' ); ?></p></td>
 				</tr>
 				<tr>
 					<th scope="row"><label for="sc-ei-private-storage"><?php esc_html_e( 'Private storage path', 'sustainable-catalyst-engagement-intake' ); ?></label></th>
@@ -172,7 +178,7 @@ $scanner_readiness = SC_EI_Scanner_Operations::readiness( $settings );
 
 		<section class="sc-ei-admin__card sc-ei-admin__settings-card">
 			<h2><?php esc_html_e( 'Microsoft Teams scheduling readiness', 'sustainable-catalyst-engagement-intake' ); ?></h2>
-			<p><?php esc_html_e( 'Microsoft Teams is the only supported live meeting platform. v0.5.0 stores preferences and approved meeting records; Microsoft Graph event creation is not enabled yet.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<p><?php esc_html_e( 'Microsoft Teams is the only supported live meeting platform. v0.6.0 stores preferences and approved meeting records; Microsoft Graph event creation is not enabled yet.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row"><label for="sc-ei-teams-organizer"><?php esc_html_e( 'Teams organizer email', 'sustainable-catalyst-engagement-intake' ); ?></label></th>

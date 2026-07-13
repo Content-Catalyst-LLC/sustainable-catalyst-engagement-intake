@@ -110,6 +110,23 @@ final class SC_EI_REST {
 		if ( current_user_can( 'sc_intake_view_communications' ) ) {
 			$record['communications'] = SC_EI_Communication_Repository::for_inquiry( absint( $request['id'] ), 500, true );
 		}
+		if ( current_user_can( 'sc_intake_view_privacy_center' ) ) {
+			$record['privacy'] = array(
+				'consent_events'   => SC_EI_Privacy_Repository::consent_events( array( 'inquiry_id' => absint( $request['id'] ), 'limit' => 500 ) ),
+				'legal_holds'      => array_values(
+					array_filter(
+						SC_EI_Privacy_Repository::holds( array( 'search' => (string) $record['reference'], 'limit' => 500 ) ),
+						static fn( array $hold ): bool => absint( $hold['inquiry_id'] ) === absint( $request['id'] )
+					)
+				),
+				'retention_actions'=> array_values(
+					array_filter(
+						SC_EI_Privacy_Repository::retention_actions( array( 'search' => (string) $record['reference'], 'limit' => 500 ) ),
+						static fn( array $action ): bool => absint( $action['inquiry_id'] ) === absint( $request['id'] )
+					)
+				),
+			);
+		}
 
 		return new WP_REST_Response( $record );
 	}

@@ -37,6 +37,23 @@ final class SC_EI_Mailer {
 		}
 
 		$is_sender_email = strtolower( (string) $communication['recipient_email'] ) === strtolower( (string) $inquiry['contact_email'] );
+		if ( $is_sender_email && in_array( (string) ( $inquiry['privacy_status'] ?? 'active' ), array( 'restricted', 'erasure_requested', 'erased' ), true ) ) {
+			SC_EI_Communication_Repository::transition(
+				$communication_id,
+				'suppressed',
+				$actor_user_id,
+				array(
+					'error_code'    => 'privacy_processing_restricted',
+					'error_message' => sanitize_textarea_field( (string) ( $inquiry['privacy_restriction_reason'] ?: 'Privacy lifecycle state blocks sender-facing email.' ) ),
+				),
+				'send_suppressed',
+				array(
+					'reason'         => 'privacy_processing_restricted',
+					'privacy_status' => sanitize_key( (string) $inquiry['privacy_status'] ),
+				)
+			);
+			return new WP_Error( 'privacy_processing_restricted', __( 'Sender-facing email is blocked by this inquiry’s privacy lifecycle state.', 'sustainable-catalyst-engagement-intake' ) );
+		}
 		if ( $is_sender_email && ! empty( $inquiry['do_not_email'] ) ) {
 			SC_EI_Communication_Repository::transition(
 				$communication_id,

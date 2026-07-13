@@ -230,3 +230,30 @@ For higher-risk intake:
 - privacy erasure redacts message bodies, parties, transport IDs, errors, hashes, dedupe keys, and event context
 - internal and sender notification recipients are sanitized and limited
 - no mailbox, Microsoft Graph, Zoom, or Google Meet integration is implied
+
+
+## v0.6.0 privacy and retention controls
+
+- daily retention automation is queue-only
+- WordPress personal-data erasure is queue-only
+- approval before execution is mandatory
+- proposal and approval can be separated
+- execution requires a typed action-specific phrase
+- legal holds are checked at queue, approval, and execution
+- any related active hold blocks inquiry erasure
+- private documents must be deleted before inquiry erasure
+- protected-file deletion verifies physical absence
+- attachment database tombstones are preserved
+- inquiry erasure uses a database transaction
+- communication event context is redacted with message content
+- consent evidence and subject hashes are redacted
+- privacy-request identifiers and narratives are redacted
+- released-hold narratives and authorities are redacted
+- lifecycle snapshots and failure narratives are redacted
+- ordinary privacy-state editing cannot set erased
+- sender-facing email is blocked for restricted, erasure-requested, and erased inquiries
+- lifecycle exports require a dedicated capability and nonce
+- policy changes create versions instead of overwriting history
+- retention actions use unique deduplication keys
+- failed actions remain visible and auditable
+- non-personal tombstones cannot be disabled in v0.6.0

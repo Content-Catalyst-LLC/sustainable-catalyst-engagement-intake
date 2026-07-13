@@ -1,143 +1,177 @@
 === Sustainable Catalyst Engagement Intake ===
 Contributors: content-catalyst
-Tags: contact, consulting, communications, notifications, administrative review, secure upload, quarantine, microsoft teams, privacy
+Tags: contact, consulting, privacy, retention, legal hold, consent, communications, administrative review, secure upload, quarantine, microsoft teams
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.5.0
+Stable tag: 0.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Private consulting and contact intake with reviewed communications, opt-in notifications, human administrative review, secure document quarantine, Microsoft Teams readiness, privacy tools, and audit history.
+Private consulting and contact intake with a Privacy and Retention Center, reviewed communications, human administrative review, secure document quarantine, Microsoft Teams readiness, and auditable lifecycle controls.
 
 == Description ==
 
-Version 0.5.0 adds Notifications and Communication History to the existing dual intake, protected document quarantine, scanner readiness, and Administrative Review Workspace.
+Version 0.6.0 adds a centralized Privacy and Retention Center to the existing dual intake, secure document quarantine, scanner operations, Administrative Review Workspace, and Communication History.
 
 Recommended shortcodes:
 
 * Consulting page: `[sc_engagement_inquiry mode="compact" source="consulting-page" entry_cta="discuss-an-engagement" title="Discuss an Engagement"]`
 * Contact page: `[sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst"]`
 
-Communication capabilities:
+Privacy and retention capabilities:
 
-* Cross-inquiry communication history
-* Inquiry-specific private timeline
-* Version-locked email drafts
-* Separate reviewed send action
-* Plain-text WordPress email transport
-* Honest accepted, failed, suppressed, received, recorded, draft, and canceled states
-* Immutable delivery and change events
-* Retry for failed messages
-* Manual inbound email logging
-* Manual Microsoft Teams message and meeting logging
-* Phone, video, in-person, and other interaction logging
-* Follow-up dates and due queues
-* Communication thread state
-* Unread inbound counts
-* Sender email suppression with required reason
-* Versioned plain-text templates
-* Template variable allowlist
-* Private CSV communication export
-* Communication history in private review packets
-* WordPress privacy export and erasure
-* Notification transport and cron diagnostics
+* Private data inventory
+* Privacy-request case management
+* Identity-verification state
+* Request deadlines and assignment
+* Consent and authorization ledger
+* Notice and consent version evidence
+* Consent withdrawal and processing restriction
+* Inquiry-level privacy state
+* Legal and operational holds
+* Hold review dates and release history
+* Versioned retention policies
+* Deterministic retention previews
+* Queue-only daily retention cron
+* Human approval before execution
+* Optional separation between proposer and approver
+* Typed confirmation for irreversible execution
+* Physical document deletion verification
+* Communication-content redaction
+* Transactional inquiry erasure
+* Dependency blocking when private documents remain
+* Non-personal tombstone preservation
+* Private inventory export
+* Privacy lifecycle diagnostics
+* Privacy context in review packets and authenticated REST responses
 
-Automated notification policies are disabled by default:
+The daily retention event never physically deletes a document and never erases inquiry data. It only creates candidates in the private retention queue.
 
-* Sender acknowledgment
-* Internal new-inquiry alert
-* Assigned-reviewer due reminder
-* Internal follow-up reminder
-* Internal escalation alert
+Every lifecycle action must be approved before it can execute. Execution is a separate capability-protected operation and requires an action-specific typed phrase.
 
-Enabling automation requires a valid sender name, sender email, and reply-to email.
+The WordPress personal-data eraser is also queue-only. It creates a tracked privacy request and retention actions instead of silently deleting data.
 
-The plugin uses `wp_mail()` as the transport boundary. A successful result means WordPress accepted the email for its configured transport. It does not prove delivery, inbox placement, opening, or reading.
-
-No email attachments are supported. Private documents remain in protected storage and are never copied into notification emails.
-
-Microsoft Teams remains the only live meeting platform represented in the intake workflow. v0.5.0 records Teams communications and approved meeting information, but does not create meetings through Microsoft Graph.
+The Privacy and Retention Center is an operational governance tool. It does not determine which laws apply, replace legal advice, or guarantee that a configured period satisfies legal, contractual, insurance, tax, employment, litigation, or professional obligations.
 
 == Installation ==
 
 1. Back up the WordPress database and protected storage directory.
-2. Upload and activate v0.5.0.
+2. Upload and activate v0.6.0.
 3. Open Engagement Intake → Diagnostics.
-4. Confirm database version 0.5.0.
-5. Confirm communication, communication-event, and template tables.
-6. Open Engagement Intake → Settings.
-7. Configure an authorized sender and reply-to address.
-8. Leave automated policies disabled until the mail transport test succeeds.
-9. Open Engagement Intake → Communications → Notification Policy.
-10. Send the plain-text transport test.
-11. Confirm receipt separately; the plugin cannot prove delivery.
-12. Test draft save, edit, reviewed send, failure, retry, cancellation, inbound logging, suppression, and follow-up.
-13. Enable only the notification policies needed.
+4. Confirm database version 0.6.0 and privacy schema 1.0.0.
+5. Confirm privacy-request, consent-event, legal-hold, retention-policy, and retention-action tables.
+6. Open Engagement Intake → Privacy Center.
+7. Review the private data inventory.
+8. Review every active retention policy and period.
+9. Confirm the daily retention event is shown as queue-only.
+10. Test privacy-request creation and assignment.
+11. Test consent-event recording.
+12. Place and release a test legal hold.
+13. Generate a retention preview.
+14. Queue candidates and confirm that no data is deleted.
+15. Approve and execute test actions only in staging.
+16. Verify private document physical deletion and tombstone preservation.
+17. Test WordPress privacy export and queue-only eraser behavior.
+18. Review sender suppression for restricted inquiries.
+19. Enable distinct proposer/approver separation when staffing permits.
 
-== Upgrade from 0.4.0 ==
+== Upgrade from 0.5.0 ==
 
-The upgrade preserves inquiry, review, quarantine, storage, scanner, Teams, conversion, retention, privacy, and audit data.
+The upgrade preserves inquiries, attachments, reviews, communication history, templates, audit records, scanner state, protected storage, and Teams scheduling information.
 
 It adds:
 
-* Current communication state fields to inquiries
-* Communications table
-* Immutable communication event table
-* Versioned communication templates table
-* Default templates
-* Hourly notification reminder cron
-* Communication and notification capabilities
-* Communication privacy export and erasure
-* Communication diagnostics
+* Privacy lifecycle state fields to inquiries
+* Privacy requests table
+* Consent events table
+* Legal holds table
+* Versioned retention policies table
+* Retention actions table
+* Default policy versions
+* Privacy and retention capabilities
+* Privacy Center administration
+* Queue-only WordPress privacy eraser
+* Consent evidence capture on new submissions
+* Privacy-state sender-email suppression
+* Privacy lifecycle diagnostics
 
-All automated policies remain disabled after migration. No historical message is fabricated and no email is sent merely because the plugin was upgraded.
+Migration does not:
+
+* enable automatic deletion
+* execute a retention action
+* erase an existing inquiry
+* delete an existing private document
+* create a legal conclusion
+* send an email
+* connect Microsoft Graph
+* ingest a mailbox
 
 == Frequently Asked Questions ==
 
-= Does “accepted” mean the email was delivered? =
+= Will the daily retention cron delete files? =
 
-No. It means the configured WordPress mail transport accepted the message. Delivery and reading are not independently confirmed.
+No. It only queues candidates for human review.
 
-= Are automatic messages enabled after upgrade? =
+= Can an administrator mark an inquiry erased without running the erasure workflow? =
 
-No. Every automated policy defaults to disabled.
+No. The erased state is reserved for verified execution by the retention engine.
 
-= Can saving a draft send it? =
+= What blocks an inquiry erasure? =
 
-No. Saving and sending are separate actions. Manual sending requires an explicit confirmation checkbox.
+Any active related legal hold and any undeleted private document.
 
-= Can the plugin attach uploaded documents to email? =
+= Is approval optional? =
 
-No. Email attachments are deliberately unsupported.
+No. Approval before execution is permanently required in v0.6.0.
 
-= Can it receive email automatically? =
+= Can one person both propose and approve an action? =
 
-No. Inbound email is recorded manually in v0.5.0. A future secure sender portal may provide a controlled reply channel.
+By default, yes. Administrators can require a different authorized approver.
 
-= Can it send Teams messages or create Teams meetings? =
+= What does verified document deletion mean? =
 
-No. Teams messages, calls, and meetings can be recorded in history. Microsoft Graph integration is not enabled.
+The protected file is deleted, its physical absence is checked, and a non-personal database tombstone is recorded.
 
-= Can a failed message be retried? =
+= What remains after inquiry erasure? =
 
-Yes. The failed record retains attempts and error details and can be retried by an authorized user.
+A limited operational tombstone can retain the inquiry reference, categorical workflow states, policy/action states, timestamps, internal actor IDs, and audit evidence. Personal narratives, contact information, scheduling details, document files, communication content, consent evidence, request identifiers, and related lifecycle narratives are redacted.
 
-= How are duplicate reminders prevented? =
+= Does the WordPress privacy eraser delete immediately? =
 
-Automated notifications use unique deduplication keys. Due and follow-up reminders are limited to one matching record per inquiry, day, and recipient.
+No. It creates a privacy request case and queues legal-hold-aware actions for review, approval, and verified execution.
 
-= What happens when do-not-email is enabled? =
+= Is the plugin legal advice? =
 
-Sender-facing email is suppressed until an authorized user deliberately clears the control. A reason is required.
+No. Retention periods and workflows require review for the organization and obligations that actually apply.
 
-= Are templates editable in place? =
+= Are automated notifications changed? =
 
-No. Saving a template creates a new version and archives the previous active version.
+No. The v0.5.0 notification policies remain opt-in and default to disabled.
+
+= Does v0.6.0 create Teams meetings? =
+
+No. Teams remains the only live meeting platform represented, but Microsoft Graph is not connected.
 
 == Changelog ==
 
+= 0.6.0 =
+* Added the Privacy and Retention Center.
+* Added private data inventory and export.
+* Added privacy-request cases, assignments, deadlines, identity state, and resolutions.
+* Added consent and authorization ledger with version and evidence.
+* Added legal holds, review dates, release reasons, and queue blocking.
+* Added versioned retention policies.
+* Added queue-only retention previews and daily candidate generation.
+* Added mandatory approval and typed execution.
+* Added verified private-document deletion.
+* Added transactional inquiry and communication erasure.
+* Added dependency blocking and non-personal tombstones.
+* Added queue-only WordPress privacy eraser behavior.
+* Added privacy lifecycle state to inquiry, review, communication, REST, packet, settings, and diagnostics surfaces.
+* Repaired an inherited v0.5.0 settings sanitization defect.
+
 = 0.5.0 =
-* Added reviewed plain-text communications, notification controls, communication history, immutable transport events, inbound and Teams interaction logging, follow-up and suppression controls, versioned templates, private exports, privacy integration, and diagnostics.
+* Added Notifications and Communication History.
 
 = 0.4.0 =
 * Added the human-controlled Administrative Review Workspace.

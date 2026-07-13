@@ -61,6 +61,12 @@ final class SC_EI_Inquiry_Repository {
 			'normal'
 		);
 
+		$privacy_settings = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Privacy_Schema::default_settings() );
+		$initial_retention_until = gmdate(
+			'Y-m-d H:i:s',
+			time() + max( 30, absint( $privacy_settings['default_unaccepted_retention_days'] ?? 365 ) ) * DAY_IN_SECONDS
+		);
+
 		$data = array(
 			'public_id'               => wp_generate_uuid4(),
 			'reference'               => self::generate_reference(),
@@ -144,6 +150,15 @@ final class SC_EI_Inquiry_Repository {
 			'do_not_email'            => 0,
 			'do_not_email_reason'     => '',
 			'communication_version'   => 0,
+			'privacy_status'          => 'active',
+			'retention_policy_key'    => 'unaccepted_inquiry',
+			'retention_until'         => $initial_retention_until,
+			'legal_hold_count'        => 0,
+			'privacy_restriction_reason' => '',
+			'last_privacy_review_at'  => null,
+			'last_privacy_review_by'  => null,
+			'personal_data_erased_at' => null,
+			'privacy_version'         => 0,
 			'created_at'              => $now,
 			'updated_at'              => $now,
 			'closed_at'               => null,
@@ -161,6 +176,9 @@ final class SC_EI_Inquiry_Repository {
 			'unread_inbound_count',
 			'do_not_email',
 			'communication_version',
+			'legal_hold_count',
+			'last_privacy_review_by',
+			'privacy_version',
 		);
 		$formats = array_map(
 			static fn( string $key ): string => in_array( $key, $integer_fields, true ) ? '%d' : '%s',
@@ -193,6 +211,9 @@ final class SC_EI_Inquiry_Repository {
 				'review_priority'          => $initial_priority,
 				'review_due_at'            => $data['review_due_at'],
 				'communication_status'      => 'open',
+				'privacy_status'            => 'active',
+				'retention_policy_key'      => 'unaccepted_inquiry',
+				'retention_until'           => $initial_retention_until,
 			),
 			$id
 		);
@@ -282,7 +303,7 @@ final class SC_EI_Inquiry_Repository {
 			$params[] = $like;
 		}
 
-		$allowed_orderby = array( 'created_at', 'updated_at', 'status', 'scheduling_status', 'form_variant', 'source_page', 'conversion_route', 'contact_name', 'organization', 'reference', 'review_stage', 'review_priority', 'review_due_at', 'fit_decision', 'risk_level', 'last_reviewed_at', 'communication_status', 'next_follow_up_at', 'last_communication_at' );
+		$allowed_orderby = array( 'created_at', 'updated_at', 'status', 'scheduling_status', 'form_variant', 'source_page', 'conversion_route', 'contact_name', 'organization', 'reference', 'review_stage', 'review_priority', 'review_due_at', 'fit_decision', 'risk_level', 'last_reviewed_at', 'communication_status', 'next_follow_up_at', 'last_communication_at', 'privacy_status', 'retention_until', 'legal_hold_count' );
 		$orderby         = in_array( $args['orderby'], $allowed_orderby, true ) ? $args['orderby'] : 'created_at';
 		$order           = 'ASC' === strtoupper( $args['order'] ) ? 'ASC' : 'DESC';
 		$per_page        = max( 1, min( 100, absint( $args['per_page'] ) ) );
@@ -328,17 +349,36 @@ final class SC_EI_Inquiry_Repository {
 		}
 
 		$now       = current_time( 'mysql', true );
-		$closed_at = in_array( $new_status, array( 'closed', 'not_a_fit', 'withdrawn' ), true ) ? $now : null;
+		$closed_at = in_array( $new_status, array( 'closed', 'not_a_fit', 'referred', 'withdrawn' ), true ) ? $now : null;
+		$privacy_settings = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Privacy_Schema::default_settings() );
+
+		if ( 'withdrawn' === $new_status ) {
+			$policy_key = 'withdrawn_inquiry';
+			$retention_days = absint( $privacy_settings['withdrawn_retention_days'] ?? 30 );
+		} elseif ( in_array( $new_status, array( 'closed', 'not_a_fit', 'referred' ), true ) ) {
+			$policy_key = 'closed_inquiry';
+			$retention_days = absint( $privacy_settings['closed_retention_days'] ?? 365 );
+		} elseif ( 'accepted' === $new_status ) {
+			$policy_key = 'accepted_inquiry';
+			$retention_days = absint( $privacy_settings['accepted_retention_days'] ?? 2555 );
+		} else {
+			$policy_key = 'unaccepted_inquiry';
+			$retention_days = absint( $privacy_settings['default_unaccepted_retention_days'] ?? 365 );
+		}
+		$retention_until = gmdate( 'Y-m-d H:i:s', time() + max( 1, $retention_days ) * DAY_IN_SECONDS );
 
 		$updated = $wpdb->update(
 			SC_EI_Database::table( 'inquiries' ),
 			array(
-				'status'     => $new_status,
-				'updated_at' => $now,
-				'closed_at'  => $closed_at,
+				'status'               => $new_status,
+				'updated_at'           => $now,
+				'closed_at'            => $closed_at,
+				'retention_policy_key' => $policy_key,
+				'retention_until'      => $retention_until,
+				'privacy_version'      => absint( $current['privacy_version'] ?? 0 ) + 1,
 			),
 			array( 'id' => $id ),
-			array( '%s', '%s', '%s' ),
+			array( '%s', '%s', '%s', '%s', '%s', '%d' ),
 			array( '%d' )
 		);
 
@@ -351,7 +391,9 @@ final class SC_EI_Inquiry_Repository {
 			$note ? $note : 'Inquiry status changed.',
 			array(
 				'old_status' => $current['status'],
-				'new_status' => $new_status,
+				'new_status'       => $new_status,
+				'retention_policy' => $policy_key,
+				'retention_until'  => $retention_until,
 			),
 			$id
 		);

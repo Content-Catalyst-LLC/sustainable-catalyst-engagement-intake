@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'communications', 'communication_events', 'communication_templates', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -32,6 +32,11 @@ final class SC_EI_Database {
 		$communications = self::table( 'communications' );
 		$communication_events = self::table( 'communication_events' );
 		$communication_templates = self::table( 'communication_templates' );
+		$privacy_requests = self::table( 'privacy_requests' );
+		$consent_events = self::table( 'consent_events' );
+		$legal_holds = self::table( 'legal_holds' );
+		$retention_policies = self::table( 'retention_policies' );
+		$retention_actions = self::table( 'retention_actions' );
 		$audit_log      = self::table( 'audit_log' );
 
 		$sql_inquiries = "CREATE TABLE {$inquiries} (
@@ -118,6 +123,15 @@ final class SC_EI_Database {
 			do_not_email tinyint(1) unsigned NOT NULL DEFAULT 0,
 			do_not_email_reason text NULL,
 			communication_version int(10) unsigned NOT NULL DEFAULT 0,
+			privacy_status varchar(30) NOT NULL DEFAULT 'active',
+			retention_policy_key varchar(80) NOT NULL DEFAULT 'unaccepted_inquiry',
+			retention_until datetime NULL,
+			legal_hold_count int(10) unsigned NOT NULL DEFAULT 0,
+			privacy_restriction_reason text NULL,
+			last_privacy_review_at datetime NULL,
+			last_privacy_review_by bigint(20) unsigned NULL,
+			personal_data_erased_at datetime NULL,
+			privacy_version int(10) unsigned NOT NULL DEFAULT 0,
 			created_at datetime NOT NULL,
 			updated_at datetime NOT NULL,
 			closed_at datetime NULL,
@@ -147,6 +161,11 @@ final class SC_EI_Database {
 			KEY next_follow_up_at (next_follow_up_at),
 			KEY last_communication_at (last_communication_at),
 			KEY do_not_email (do_not_email),
+			KEY privacy_status (privacy_status),
+			KEY retention_policy_key (retention_policy_key),
+			KEY retention_until (retention_until),
+			KEY legal_hold_count (legal_hold_count),
+			KEY last_privacy_review_by (last_privacy_review_by),
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
@@ -354,6 +373,162 @@ final class SC_EI_Database {
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
+
+		$sql_privacy_requests = "CREATE TABLE {$privacy_requests} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NULL,
+			requester_name varchar(191) NOT NULL DEFAULT '',
+			requester_email varchar(191) NOT NULL DEFAULT '',
+			request_type varchar(40) NOT NULL DEFAULT 'access',
+			status varchar(30) NOT NULL DEFAULT 'received',
+			identity_status varchar(30) NOT NULL DEFAULT 'unverified',
+			source varchar(40) NOT NULL DEFAULT 'admin',
+			received_at datetime NOT NULL,
+			due_at datetime NULL,
+			assigned_user_id bigint(20) unsigned NULL,
+			request_summary longtext NULL,
+			resolution_summary longtext NULL,
+			evidence_json longtext NULL,
+			completed_at datetime NULL,
+			created_by bigint(20) unsigned NULL,
+			updated_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY inquiry_id (inquiry_id),
+			KEY requester_email (requester_email),
+			KEY request_type (request_type),
+			KEY status (status),
+			KEY identity_status (identity_status),
+			KEY due_at (due_at),
+			KEY assigned_user_id (assigned_user_id),
+			KEY received_at (received_at)
+		) {$charset_collate};";
+
+		$sql_consent_events = "CREATE TABLE {$consent_events} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			consent_type varchar(60) NOT NULL DEFAULT 'privacy_notice',
+			action varchar(30) NOT NULL DEFAULT 'granted',
+			consent_version varchar(80) NOT NULL DEFAULT '',
+			lawful_basis varchar(60) NOT NULL DEFAULT 'request_processing',
+			source varchar(40) NOT NULL DEFAULT 'public_form',
+			evidence_text text NULL,
+			subject_email_hash char(64) NOT NULL DEFAULT '',
+			actor_user_id bigint(20) unsigned NULL,
+			occurred_at datetime NOT NULL,
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY inquiry_id (inquiry_id),
+			KEY consent_type (consent_type),
+			KEY action (action),
+			KEY consent_version (consent_version),
+			KEY lawful_basis (lawful_basis),
+			KEY actor_user_id (actor_user_id),
+			KEY occurred_at (occurred_at)
+		) {$charset_collate};";
+
+		$sql_legal_holds = "CREATE TABLE {$legal_holds} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NULL,
+			attachment_id bigint(20) unsigned NULL,
+			scope varchar(30) NOT NULL DEFAULT 'inquiry',
+			status varchar(20) NOT NULL DEFAULT 'active',
+			reason longtext NULL,
+			authority varchar(191) NOT NULL DEFAULT '',
+			placed_by bigint(20) unsigned NULL,
+			placed_at datetime NOT NULL,
+			review_at datetime NULL,
+			released_by bigint(20) unsigned NULL,
+			released_at datetime NULL,
+			release_reason longtext NULL,
+			metadata_json longtext NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY inquiry_id (inquiry_id),
+			KEY attachment_id (attachment_id),
+			KEY scope (scope),
+			KEY status (status),
+			KEY placed_by (placed_by),
+			KEY review_at (review_at),
+			KEY placed_at (placed_at)
+		) {$charset_collate};";
+
+		$sql_retention_policies = "CREATE TABLE {$retention_policies} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			policy_key varchar(80) NOT NULL,
+			version int(10) unsigned NOT NULL DEFAULT 1,
+			name varchar(191) NOT NULL DEFAULT '',
+			target_type varchar(30) NOT NULL DEFAULT 'inquiry',
+			status_scope longtext NULL,
+			retention_days int(10) unsigned NOT NULL DEFAULT 365,
+			anchor_field varchar(60) NOT NULL DEFAULT 'created_at',
+			action_type varchar(40) NOT NULL DEFAULT 'redact_inquiry',
+			status varchar(20) NOT NULL DEFAULT 'active',
+			legal_basis varchar(120) NOT NULL DEFAULT '',
+			description longtext NULL,
+			is_system tinyint(1) unsigned NOT NULL DEFAULT 0,
+			created_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY policy_version (policy_key, version),
+			KEY policy_key (policy_key),
+			KEY target_type (target_type),
+			KEY action_type (action_type),
+			KEY status (status),
+			KEY created_by (created_by)
+		) {$charset_collate};";
+
+		$sql_retention_actions = "CREATE TABLE {$retention_actions} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NULL,
+			target_type varchar(30) NOT NULL DEFAULT 'attachment',
+			target_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			policy_key varchar(80) NOT NULL DEFAULT '',
+			policy_version int(10) unsigned NOT NULL DEFAULT 0,
+			action_type varchar(40) NOT NULL DEFAULT 'delete_attachment',
+			status varchar(30) NOT NULL DEFAULT 'queued',
+			reason longtext NULL,
+			due_at datetime NULL,
+			dedupe_key varchar(191) NOT NULL DEFAULT '',
+			proposed_by bigint(20) unsigned NULL,
+			proposed_at datetime NOT NULL,
+			approved_by bigint(20) unsigned NULL,
+			approved_at datetime NULL,
+			executed_by bigint(20) unsigned NULL,
+			executed_at datetime NULL,
+			verified_at datetime NULL,
+			failure_code varchar(120) NOT NULL DEFAULT '',
+			failure_message longtext NULL,
+			snapshot_json longtext NULL,
+			action_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY dedupe_key (dedupe_key),
+			KEY inquiry_id (inquiry_id),
+			KEY target_type (target_type),
+			KEY target_id (target_id),
+			KEY policy_key (policy_key),
+			KEY action_type (action_type),
+			KEY status (status),
+			KEY due_at (due_at),
+			KEY proposed_by (proposed_by),
+			KEY approved_by (approved_by),
+			KEY executed_by (executed_by),
+			KEY proposed_at (proposed_at)
+		) {$charset_collate};";
+
 		$sql_audit = "CREATE TABLE {$audit_log} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			inquiry_id bigint(20) unsigned NULL,
@@ -377,10 +552,16 @@ final class SC_EI_Database {
 		dbDelta( $sql_communications );
 		dbDelta( $sql_communication_events );
 		dbDelta( $sql_communication_templates );
+		dbDelta( $sql_privacy_requests );
+		dbDelta( $sql_consent_events );
+		dbDelta( $sql_legal_holds );
+		dbDelta( $sql_retention_policies );
+		dbDelta( $sql_retention_actions );
 		dbDelta( $sql_audit );
 
 		self::backfill_review_defaults();
 		self::backfill_communication_defaults();
+		self::backfill_privacy_defaults();
 		update_option( 'sc_ei_db_version', SC_EI_DB_VERSION, false );
 	}
 
@@ -427,6 +608,30 @@ final class SC_EI_Database {
 		);
 	}
 
+	private static function backfill_privacy_defaults(): void {
+		global $wpdb;
+
+		$table = self::table( 'inquiries' );
+		$settings = wp_parse_args(
+			get_option( 'sc_ei_settings', array() ),
+			SC_EI_Privacy_Schema::default_settings()
+		);
+		$days = max( 30, min( 3650, absint( $settings['default_unaccepted_retention_days'] ?? 365 ) ) );
+
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table}
+				SET privacy_status = 'active',
+					retention_policy_key = 'unaccepted_inquiry',
+					retention_until = DATE_ADD(created_at, INTERVAL %d DAY)
+				WHERE (privacy_status IS NULL OR privacy_status = '')
+					OR retention_policy_key IS NULL
+					OR retention_policy_key = ''", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$days
+			)
+		);
+	}
+
 	public static function maybe_upgrade(): void {
 		$current = (string) get_option( 'sc_ei_db_version', '' );
 		if ( version_compare( $current, SC_EI_DB_VERSION, '<' ) ) {
@@ -438,7 +643,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'communications', 'communication_events', 'communication_templates', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -499,6 +704,15 @@ final class SC_EI_Database {
 			'do_not_email',
 			'do_not_email_reason',
 			'communication_version',
+			'privacy_status',
+			'retention_policy_key',
+			'retention_until',
+			'legal_hold_count',
+			'privacy_restriction_reason',
+			'last_privacy_review_at',
+			'last_privacy_review_by',
+			'personal_data_erased_at',
+			'privacy_version',
 		);
 
 		$result = array();
@@ -588,6 +802,51 @@ final class SC_EI_Database {
 		return $result;
 	}
 
+	public static function privacy_columns_exist(): array {
+		global $wpdb;
+
+		$tables = array(
+			'privacy_requests' => array(
+				'public_id', 'inquiry_id', 'requester_name', 'requester_email', 'request_type',
+				'status', 'identity_status', 'source', 'received_at', 'due_at', 'assigned_user_id',
+				'request_summary', 'resolution_summary', 'evidence_json', 'completed_at',
+				'created_by', 'updated_by', 'created_at', 'updated_at',
+			),
+			'consent_events' => array(
+				'public_id', 'inquiry_id', 'consent_type', 'action', 'consent_version',
+				'lawful_basis', 'source', 'evidence_text', 'subject_email_hash',
+				'actor_user_id', 'occurred_at', 'created_at',
+			),
+			'legal_holds' => array(
+				'public_id', 'inquiry_id', 'attachment_id', 'scope', 'status', 'reason',
+				'authority', 'placed_by', 'placed_at', 'review_at', 'released_by',
+				'released_at', 'release_reason', 'metadata_json', 'created_at', 'updated_at',
+			),
+			'retention_policies' => array(
+				'policy_key', 'version', 'name', 'target_type', 'status_scope',
+				'retention_days', 'anchor_field', 'action_type', 'status', 'legal_basis',
+				'description', 'is_system', 'created_by', 'created_at', 'updated_at',
+			),
+			'retention_actions' => array(
+				'public_id', 'inquiry_id', 'target_type', 'target_id', 'policy_key',
+				'policy_version', 'action_type', 'status', 'reason', 'due_at', 'dedupe_key',
+				'proposed_by', 'proposed_at', 'approved_by', 'approved_at', 'executed_by',
+				'executed_at', 'verified_at', 'failure_code', 'failure_message',
+				'snapshot_json', 'action_version', 'created_at', 'updated_at',
+			),
+		);
+
+		$result = array();
+		foreach ( $tables as $table_name => $columns ) {
+			$table = self::table( $table_name );
+			foreach ( $columns as $column ) {
+				$found = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$result[ $table_name . '.' . $column ] = ( $found === $column );
+			}
+		}
+		return $result;
+	}
+
 	public static function attachment_columns_exist(): array {
 		global $wpdb;
 
@@ -632,7 +891,7 @@ final class SC_EI_Database {
 	public static function drop_all(): void {
 		global $wpdb;
 
-		foreach ( array( 'audit_log', 'communication_events', 'communications', 'communication_templates', 'reviews', 'attachments', 'inquiries' ) as $name ) {
+		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'communication_events', 'communications', 'communication_templates', 'reviews', 'attachments', 'inquiries' ) as $name ) {
 			$table = self::table( $name );
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}

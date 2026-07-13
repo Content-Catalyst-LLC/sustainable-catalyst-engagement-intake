@@ -34,6 +34,7 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'review'            => __( 'Administrative Review', 'sustainable-catalyst-engagement-intake' ),
 			'review_due'        => __( 'Review Due', 'sustainable-catalyst-engagement-intake' ),
 			'communication'     => __( 'Communication', 'sustainable-catalyst-engagement-intake' ),
+			'privacy'           => __( 'Privacy / Retention', 'sustainable-catalyst-engagement-intake' ),
 			'documents'         => __( 'Documents', 'sustainable-catalyst-engagement-intake' ),
 			'status'            => __( 'Inquiry Status', 'sustainable-catalyst-engagement-intake' ),
 			'scheduling_status' => __( 'Teams Status', 'sustainable-catalyst-engagement-intake' ),
@@ -50,6 +51,7 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'review'            => array( 'review_stage', false ),
 			'review_due'        => array( 'review_due_at', false ),
 			'communication'     => array( 'last_communication_at', false ),
+			'privacy'           => array( 'retention_until', false ),
 			'status'            => array( 'status', false ),
 			'scheduling_status' => array( 'scheduling_status', false ),
 			'created_at'        => array( 'created_at', true ),
@@ -115,6 +117,19 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 					absint( $item['unread_inbound_count'] )
 				);
 
+			case 'privacy':
+				$due = ! empty( $item['retention_until'] ) && strtotime( $item['retention_until'] . ' UTC' ) <= time();
+				$attention = in_array( $item['privacy_status'], array( 'restricted', 'erasure_requested' ), true ) || absint( $item['legal_hold_count'] ) > 0;
+				return sprintf(
+					'<span class="sc-ei-privacy-state sc-ei-privacy-state--%1$s">%2$s</span><br><span class="%3$s">%4$s</span><br><span class="description">%5$s · %6$d hold(s)</span>',
+					esc_attr( $item['privacy_status'] ?: 'active' ),
+					esc_html( SC_EI_Privacy_Schema::label( SC_EI_Privacy_Schema::privacy_statuses(), $item['privacy_status'] ?: 'active' ) ),
+					( $due || $attention ) ? 'sc-ei-inline-warning' : 'description',
+					$item['retention_until'] ? esc_html( get_date_from_gmt( $item['retention_until'], 'M j, Y' ) ) : esc_html__( 'No retention date', 'sustainable-catalyst-engagement-intake' ),
+					esc_html( $item['retention_policy_key'] ?: __( 'No policy', 'sustainable-catalyst-engagement-intake' ) ),
+					absint( $item['legal_hold_count'] )
+				);
+
 			case 'documents':
 				$count = SC_EI_Attachment_Repository::count_for_inquiry( absint( $item['id'] ) );
 				return $count
@@ -158,6 +173,7 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'view'   => sprintf( '<a href="%s">%s</a>', esc_url( $url ), esc_html__( 'View', 'sustainable-catalyst-engagement-intake' ) ),
 			'review' => sprintf( '<a href="%s">%s</a>', esc_url( SC_EI_Review_Admin::detail_url( absint( $item['id'] ) ) ), esc_html__( 'Review', 'sustainable-catalyst-engagement-intake' ) ),
 			'communications' => sprintf( '<a href="%s">%s</a>', esc_url( SC_EI_Communication_Admin::thread_url( absint( $item['id'] ) ) ), esc_html__( 'Communications', 'sustainable-catalyst-engagement-intake' ) ),
+			'privacy' => sprintf( '<a href="%s">%s</a>', esc_url( SC_EI_Privacy_Admin::url( 'overview', array( 'inquiry' => absint( $item['id'] ) ) ) ), esc_html__( 'Privacy Center', 'sustainable-catalyst-engagement-intake' ) ),
 		);
 
 		return sprintf(

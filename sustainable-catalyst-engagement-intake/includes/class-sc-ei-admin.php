@@ -70,6 +70,7 @@ final class SC_EI_Admin {
 
 		SC_EI_Review_Admin::submenu();
 		SC_EI_Communication_Admin::submenu();
+		SC_EI_Privacy_Admin::submenu();
 
 		$quarantine_hook = add_submenu_page(
 			'sc-engagement-intake',
@@ -151,11 +152,81 @@ final class SC_EI_Admin {
 	}
 
 	public static function default_settings(): array {
-		$sender_name  = sanitize_text_field( (string) ( $value['communication_sender_name'] ?? get_bloginfo( 'name' ) ) );
-		$sender_email = sanitize_email( (string) ( $value['communication_sender_email'] ?? get_option( 'admin_email' ) ) );
-		$reply_email  = sanitize_email( (string) ( $value['communication_reply_to_email'] ?? $sender_email ) );
-		$internal_recipients = implode( ', ', SC_EI_Communication_Schema::sanitize_emails( $value['notification_internal_recipients'] ?? '', 10 ) );
-		$escalation_recipients = implode( ', ', SC_EI_Communication_Schema::sanitize_emails( $value['notification_escalation_recipients'] ?? '', 10 ) );
+		return array_merge(
+			array(
+				'delete_data_on_uninstall'           => 0,
+				'abandoned_draft_days'               => 30,
+				'minimum_completion_seconds'         => 3,
+				'submissions_per_hour'               => 5,
+				'teams_organizer_email'              => '',
+				'default_teams_duration'             => 20,
+				'upload_max_files'                   => 5,
+				'upload_max_file_mb'                 => 20,
+				'allowed_upload_extensions'          => array( 'pdf', 'docx', 'xlsx', 'csv', 'txt', 'png', 'jpg', 'jpeg' ),
+				'require_external_scanner'           => 0,
+				'scanner_test_freshness_hours'       => 24,
+				'scanner_bulk_retry_limit'           => 25,
+				'private_storage_path'               => '',
+				'default_review_due_days'            => 3,
+				'high_priority_review_due_days'      => 1,
+				'low_priority_review_due_days'       => 7,
+				'urgent_review_due_hours'            => 4,
+				'stale_review_days'                  => 7,
+				'review_bulk_limit'                  => 50,
+				'reviewer_self_assignment'           => 1,
+				'restrict_review_to_assignee'        => 1,
+				'require_review_rationale'           => 1,
+				'require_completion_checklist'       => 1,
+				'communication_sender_name'          => wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
+				'communication_sender_email'         => sanitize_email( get_option( 'admin_email' ) ),
+				'communication_reply_to_email'       => sanitize_email( get_option( 'admin_email' ) ),
+				'notification_internal_recipients'   => '',
+				'notification_escalation_recipients' => '',
+				'sender_acknowledgment_enabled'      => 0,
+				'internal_new_inquiry_enabled'       => 0,
+				'review_due_reminders_enabled'       => 0,
+				'follow_up_reminders_enabled'        => 0,
+				'escalation_notifications_enabled'   => 0,
+				'review_reminder_lead_hours'         => 24,
+				'notification_batch_limit'           => 25,
+			),
+			SC_EI_Privacy_Schema::default_settings()
+		);
+	}
+
+	public static function sanitize_settings( $value ): array {
+		$value   = is_array( $value ) ? $value : array();
+		$current = wp_parse_args( get_option( 'sc_ei_settings', array() ), self::default_settings() );
+
+		$freshness_hours = max( 1, min( 168, absint( $value['scanner_test_freshness_hours'] ?? $current['scanner_test_freshness_hours'] ) ) );
+		$bulk_limit      = max( 1, min( 50, absint( $value['scanner_bulk_retry_limit'] ?? $current['scanner_bulk_retry_limit'] ) ) );
+		$requested_clean = empty( $value['require_external_scanner'] ) ? 0 : 1;
+		$provisional = array_merge(
+			$current,
+			array(
+				'scanner_test_freshness_hours' => $freshness_hours,
+				'scanner_bulk_retry_limit'     => $bulk_limit,
+			)
+		);
+		if (
+			$requested_clean
+			&& empty( $current['require_external_scanner'] )
+			&& ! SC_EI_Scanner_Operations::can_enable_required_mode( $provisional )
+		) {
+			$requested_clean = 0;
+			add_settings_error(
+				'sc_ei_settings',
+				'scanner_readiness_required',
+				__( 'Clean-required scanner mode was not enabled. Run a scanner readiness test and obtain a recent clean result first.', 'sustainable-catalyst-engagement-intake' ),
+				'error'
+			);
+		}
+
+		$sender_name  = sanitize_text_field( (string) ( $value['communication_sender_name'] ?? $current['communication_sender_name'] ) );
+		$sender_email = sanitize_email( (string) ( $value['communication_sender_email'] ?? $current['communication_sender_email'] ) );
+		$reply_email  = sanitize_email( (string) ( $value['communication_reply_to_email'] ?? $current['communication_reply_to_email'] ) );
+		$internal_recipients = implode( ', ', SC_EI_Communication_Schema::sanitize_emails( $value['notification_internal_recipients'] ?? $current['notification_internal_recipients'], 10 ) );
+		$escalation_recipients = implode( ', ', SC_EI_Communication_Schema::sanitize_emails( $value['notification_escalation_recipients'] ?? $current['notification_escalation_recipients'], 10 ) );
 
 		$sender_ready = '' !== $sender_name && is_email( $sender_email ) && is_email( $reply_email );
 		$sender_ack_enabled = empty( $value['sender_acknowledgment_enabled'] ) ? 0 : 1;
@@ -163,7 +234,6 @@ final class SC_EI_Admin {
 		$review_reminders_enabled = empty( $value['review_due_reminders_enabled'] ) ? 0 : 1;
 		$follow_up_reminders_enabled = empty( $value['follow_up_reminders_enabled'] ) ? 0 : 1;
 		$escalation_enabled = empty( $value['escalation_notifications_enabled'] ) ? 0 : 1;
-
 		if ( ! $sender_ready && ( $sender_ack_enabled || $internal_new_enabled || $review_reminders_enabled || $follow_up_reminders_enabled || $escalation_enabled ) ) {
 			$sender_ack_enabled = 0;
 			$internal_new_enabled = 0;
@@ -179,116 +249,55 @@ final class SC_EI_Admin {
 		}
 
 		return array(
-			'delete_data_on_uninstall'         => 0,
-			'default_unaccepted_retention_days'=> 365,
-			'withdrawn_retention_days'         => 30,
-			'abandoned_draft_days'              => 30,
-			'minimum_completion_seconds'        => 3,
-			'submissions_per_hour'              => 5,
-			'teams_organizer_email'              => '',
-			'default_teams_duration'              => 20,
-			'upload_max_files'                    => 5,
-			'upload_max_file_mb'                  => 20,
-			'allowed_upload_extensions'           => array( 'pdf', 'docx', 'xlsx', 'csv', 'txt', 'png', 'jpg', 'jpeg' ),
-			'attachment_retention_days'           => 180,
-			'require_external_scanner'            => 0,
-			'scanner_test_freshness_hours'        => 24,
-			'scanner_bulk_retry_limit'            => 25,
-			'private_storage_path'                => '',
-			'default_review_due_days'             => 3,
-			'high_priority_review_due_days'       => 1,
-			'low_priority_review_due_days'        => 7,
-			'urgent_review_due_hours'             => 4,
-			'stale_review_days'                    => 7,
-			'review_bulk_limit'                    => 50,
-			'reviewer_self_assignment'             => 1,
-			'restrict_review_to_assignee'          => 1,
-			'require_review_rationale'             => 1,
-			'require_completion_checklist'         => 1,
-			'communication_sender_name'             => wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
-			'communication_sender_email'            => sanitize_email( get_option( 'admin_email' ) ),
-			'communication_reply_to_email'          => sanitize_email( get_option( 'admin_email' ) ),
-			'notification_internal_recipients'      => '',
-			'notification_escalation_recipients'    => '',
-			'sender_acknowledgment_enabled'         => 0,
-			'internal_new_inquiry_enabled'          => 0,
-			'review_due_reminders_enabled'          => 0,
-			'follow_up_reminders_enabled'           => 0,
-			'escalation_notifications_enabled'      => 0,
-			'review_reminder_lead_hours'            => 24,
-			'notification_batch_limit'              => 25,
-		);
-	}
-
-	public static function sanitize_settings( $value ): array {
-		$value   = is_array( $value ) ? $value : array();
-		$current = wp_parse_args( get_option( 'sc_ei_settings', array() ), self::default_settings() );
-
-		$freshness_hours = max( 1, min( 168, absint( $value['scanner_test_freshness_hours'] ?? 24 ) ) );
-		$bulk_limit      = max( 1, min( 50, absint( $value['scanner_bulk_retry_limit'] ?? 25 ) ) );
-		$requested_clean = empty( $value['require_external_scanner'] ) ? 0 : 1;
-
-		$provisional = array_merge(
-			$current,
-			array(
-				'scanner_test_freshness_hours' => $freshness_hours,
-				'scanner_bulk_retry_limit'     => $bulk_limit,
-			)
-		);
-
-		if (
-			$requested_clean
-			&& empty( $current['require_external_scanner'] )
-			&& ! SC_EI_Scanner_Operations::can_enable_required_mode( $provisional )
-		) {
-			$requested_clean = 0;
-			add_settings_error(
-				'sc_ei_settings',
-				'scanner_readiness_required',
-				__( 'Clean-required scanner mode was not enabled. Run a scanner readiness test and obtain a recent clean result first.', 'sustainable-catalyst-engagement-intake' ),
-				'error'
-			);
-		}
-
-		return array(
-			'delete_data_on_uninstall'          => empty( $value['delete_data_on_uninstall'] ) ? 0 : 1,
-			'default_unaccepted_retention_days' => max( 30, min( 3650, absint( $value['default_unaccepted_retention_days'] ?? 365 ) ) ),
-			'withdrawn_retention_days'          => max( 1, min( 365, absint( $value['withdrawn_retention_days'] ?? 30 ) ) ),
-			'abandoned_draft_days'              => max( 1, min( 365, absint( $value['abandoned_draft_days'] ?? 30 ) ) ),
-			'minimum_completion_seconds'        => max( 1, min( 30, absint( $value['minimum_completion_seconds'] ?? 3 ) ) ),
-			'submissions_per_hour'              => max( 1, min( 20, absint( $value['submissions_per_hour'] ?? 5 ) ) ),
-			'teams_organizer_email'             => sanitize_email( $value['teams_organizer_email'] ?? '' ),
-			'default_teams_duration'            => in_array( absint( $value['default_teams_duration'] ?? 20 ), array( 20, 30, 45, 60, 90 ), true ) ? absint( $value['default_teams_duration'] ?? 20 ) : 20,
-			'upload_max_files'                  => max( 1, min( 10, absint( $value['upload_max_files'] ?? 5 ) ) ),
-			'upload_max_file_mb'                => max( 1, min( 100, absint( $value['upload_max_file_mb'] ?? 20 ) ) ),
-			'allowed_upload_extensions'         => self::sanitize_upload_extensions( $value['allowed_upload_extensions'] ?? array() ),
-			'attachment_retention_days'         => max( 7, min( 3650, absint( $value['attachment_retention_days'] ?? 180 ) ) ),
-			'require_external_scanner'          => $requested_clean,
-			'scanner_test_freshness_hours'      => $freshness_hours,
-			'scanner_bulk_retry_limit'          => $bulk_limit,
-			'private_storage_path'              => self::sanitize_private_storage_path( (string) ( $value['private_storage_path'] ?? '' ) ),
-			'default_review_due_days'           => max( 1, min( 30, absint( $value['default_review_due_days'] ?? 3 ) ) ),
-			'high_priority_review_due_days'     => max( 1, min( 14, absint( $value['high_priority_review_due_days'] ?? 1 ) ) ),
-			'low_priority_review_due_days'      => max( 1, min( 60, absint( $value['low_priority_review_due_days'] ?? 7 ) ) ),
-			'urgent_review_due_hours'           => max( 1, min( 72, absint( $value['urgent_review_due_hours'] ?? 4 ) ) ),
-			'stale_review_days'                  => max( 1, min( 90, absint( $value['stale_review_days'] ?? 7 ) ) ),
-			'review_bulk_limit'                  => max( 1, min( 50, absint( $value['review_bulk_limit'] ?? 50 ) ) ),
+			'delete_data_on_uninstall'           => empty( $value['delete_data_on_uninstall'] ) ? 0 : 1,
+			'default_unaccepted_retention_days'  => max( 30, min( 3650, absint( $value['default_unaccepted_retention_days'] ?? $current['default_unaccepted_retention_days'] ) ) ),
+			'withdrawn_retention_days'           => max( 1, min( 3650, absint( $value['withdrawn_retention_days'] ?? $current['withdrawn_retention_days'] ) ) ),
+			'closed_retention_days'              => max( 30, min( 3650, absint( $value['closed_retention_days'] ?? $current['closed_retention_days'] ) ) ),
+			'accepted_retention_days'            => max( 365, min( 36500, absint( $value['accepted_retention_days'] ?? $current['accepted_retention_days'] ) ) ),
+			'communication_retention_days'       => max( 30, min( 36500, absint( $value['communication_retention_days'] ?? $current['communication_retention_days'] ) ) ),
+			'attachment_retention_days'          => max( 7, min( 3650, absint( $value['attachment_retention_days'] ?? $current['attachment_retention_days'] ) ) ),
+			'privacy_request_due_days'           => max( 1, min( 365, absint( $value['privacy_request_due_days'] ?? $current['privacy_request_due_days'] ) ) ),
+			'retention_queue_batch_limit'        => max( 1, min( 1000, absint( $value['retention_queue_batch_limit'] ?? $current['retention_queue_batch_limit'] ) ) ),
+			'retention_execution_batch_limit'    => max( 1, min( 50, absint( $value['retention_execution_batch_limit'] ?? $current['retention_execution_batch_limit'] ) ) ),
+			'require_retention_approval'         => 1,
+			'require_distinct_retention_approver'=> empty( $value['require_distinct_retention_approver'] ) ? 0 : 1,
+			'retention_cron_queue_only'          => 1,
+			'retain_tombstones'                  => 1,
+			'legal_hold_review_days'             => max( 1, min( 3650, absint( $value['legal_hold_review_days'] ?? $current['legal_hold_review_days'] ) ) ),
+			'abandoned_draft_days'               => max( 1, min( 365, absint( $value['abandoned_draft_days'] ?? $current['abandoned_draft_days'] ) ) ),
+			'minimum_completion_seconds'         => max( 1, min( 30, absint( $value['minimum_completion_seconds'] ?? $current['minimum_completion_seconds'] ) ) ),
+			'submissions_per_hour'               => max( 1, min( 20, absint( $value['submissions_per_hour'] ?? $current['submissions_per_hour'] ) ) ),
+			'teams_organizer_email'              => sanitize_email( $value['teams_organizer_email'] ?? $current['teams_organizer_email'] ),
+			'default_teams_duration'             => in_array( absint( $value['default_teams_duration'] ?? $current['default_teams_duration'] ), array( 20, 30, 45, 60, 90 ), true ) ? absint( $value['default_teams_duration'] ?? $current['default_teams_duration'] ) : 20,
+			'upload_max_files'                   => max( 1, min( 10, absint( $value['upload_max_files'] ?? $current['upload_max_files'] ) ) ),
+			'upload_max_file_mb'                 => max( 1, min( 100, absint( $value['upload_max_file_mb'] ?? $current['upload_max_file_mb'] ) ) ),
+			'allowed_upload_extensions'          => self::sanitize_upload_extensions( $value['allowed_upload_extensions'] ?? $current['allowed_upload_extensions'] ),
+			'require_external_scanner'           => $requested_clean,
+			'scanner_test_freshness_hours'       => $freshness_hours,
+			'scanner_bulk_retry_limit'           => $bulk_limit,
+			'private_storage_path'               => self::sanitize_private_storage_path( (string) ( $value['private_storage_path'] ?? $current['private_storage_path'] ) ),
+			'default_review_due_days'            => max( 1, min( 30, absint( $value['default_review_due_days'] ?? $current['default_review_due_days'] ) ) ),
+			'high_priority_review_due_days'      => max( 1, min( 14, absint( $value['high_priority_review_due_days'] ?? $current['high_priority_review_due_days'] ) ) ),
+			'low_priority_review_due_days'       => max( 1, min( 60, absint( $value['low_priority_review_due_days'] ?? $current['low_priority_review_due_days'] ) ) ),
+			'urgent_review_due_hours'            => max( 1, min( 72, absint( $value['urgent_review_due_hours'] ?? $current['urgent_review_due_hours'] ) ) ),
+			'stale_review_days'                  => max( 1, min( 90, absint( $value['stale_review_days'] ?? $current['stale_review_days'] ) ) ),
+			'review_bulk_limit'                  => max( 1, min( 50, absint( $value['review_bulk_limit'] ?? $current['review_bulk_limit'] ) ) ),
 			'reviewer_self_assignment'           => empty( $value['reviewer_self_assignment'] ) ? 0 : 1,
 			'restrict_review_to_assignee'        => empty( $value['restrict_review_to_assignee'] ) ? 0 : 1,
 			'require_review_rationale'           => empty( $value['require_review_rationale'] ) ? 0 : 1,
 			'require_completion_checklist'       => empty( $value['require_completion_checklist'] ) ? 0 : 1,
-			'communication_sender_name'           => $sender_name,
-			'communication_sender_email'          => $sender_email,
-			'communication_reply_to_email'        => $reply_email,
-			'notification_internal_recipients'    => $internal_recipients,
-			'notification_escalation_recipients'  => $escalation_recipients,
-			'sender_acknowledgment_enabled'       => $sender_ack_enabled,
-			'internal_new_inquiry_enabled'        => $internal_new_enabled,
-			'review_due_reminders_enabled'        => $review_reminders_enabled,
-			'follow_up_reminders_enabled'         => $follow_up_reminders_enabled,
-			'escalation_notifications_enabled'    => $escalation_enabled,
-			'review_reminder_lead_hours'          => max( 0, min( 168, absint( $value['review_reminder_lead_hours'] ?? 24 ) ) ),
-			'notification_batch_limit'            => max( 1, min( 100, absint( $value['notification_batch_limit'] ?? 25 ) ) ),
+			'communication_sender_name'          => $sender_name,
+			'communication_sender_email'         => $sender_email,
+			'communication_reply_to_email'       => $reply_email,
+			'notification_internal_recipients'   => $internal_recipients,
+			'notification_escalation_recipients' => $escalation_recipients,
+			'sender_acknowledgment_enabled'      => $sender_ack_enabled,
+			'internal_new_inquiry_enabled'       => $internal_new_enabled,
+			'review_due_reminders_enabled'       => $review_reminders_enabled,
+			'follow_up_reminders_enabled'        => $follow_up_reminders_enabled,
+			'escalation_notifications_enabled'   => $escalation_enabled,
+			'review_reminder_lead_hours'         => max( 0, min( 168, absint( $value['review_reminder_lead_hours'] ?? $current['review_reminder_lead_hours'] ) ) ),
+			'notification_batch_limit'           => max( 1, min( 100, absint( $value['notification_batch_limit'] ?? $current['notification_batch_limit'] ) ) ),
 		);
 	}
 
@@ -331,13 +340,15 @@ final class SC_EI_Admin {
 		array_unshift(
 			$links,
 			sprintf(
-				'<a href="%1$s">%2$s</a> · <a href="%3$s">%4$s</a> · <a href="%5$s">%6$s</a> · <a href="%7$s">%8$s</a>',
+				'<a href="%1$s">%2$s</a> · <a href="%3$s">%4$s</a> · <a href="%5$s">%6$s</a> · <a href="%7$s">%8$s</a> · <a href="%9$s">%10$s</a>',
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake' ) ),
 				esc_html__( 'Inquiries', 'sustainable-catalyst-engagement-intake' ),
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-review' ) ),
 				esc_html__( 'Review Workspace', 'sustainable-catalyst-engagement-intake' ),
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-communications' ) ),
 				esc_html__( 'Communications', 'sustainable-catalyst-engagement-intake' ),
+				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-privacy' ) ),
+				esc_html__( 'Privacy Center', 'sustainable-catalyst-engagement-intake' ),
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-quarantine' ) ),
 				esc_html__( 'Quarantine', 'sustainable-catalyst-engagement-intake' )
 			)
@@ -585,38 +596,31 @@ final class SC_EI_Admin {
 	}
 
 	public static function handle_retention_preview(): void {
-		if ( ! current_user_can( 'sc_intake_manage_file_retention' ) ) {
-			wp_die( esc_html__( 'You do not have permission to preview attachment cleanup.', 'sustainable-catalyst-engagement-intake' ), '', array( 'response' => 403 ) );
+		if ( ! current_user_can( 'sc_intake_manage_retention_policies' ) ) {
+			wp_die( esc_html__( 'You do not have permission to preview retention candidates.', 'sustainable-catalyst-engagement-intake' ), '', array( 'response' => 403 ) );
 		}
 
 		check_admin_referer( 'sc_ei_preview_retention_cleanup' );
-		update_option( 'sc_ei_last_retention_preview', SC_EI_Retention::preview( 250 ), false );
+		$preview = SC_EI_Retention::preview( 250 );
+		update_option( 'sc_ei_last_retention_preview', $preview, false );
+		update_option( 'sc_ei_last_privacy_retention_preview', $preview, false );
 		self::redirect_to_diagnostics( 'retention_preview_ready' );
 	}
 
 	public static function handle_retention_cleanup(): void {
-		if ( ! current_user_can( 'sc_intake_delete' ) ) {
-			wp_die( esc_html__( 'You do not have permission to delete expired private attachments.', 'sustainable-catalyst-engagement-intake' ), '', array( 'response' => 403 ) );
+		if ( ! current_user_can( 'sc_intake_manage_retention_policies' ) ) {
+			wp_die( esc_html__( 'You do not have permission to queue retention candidates.', 'sustainable-catalyst-engagement-intake' ), '', array( 'response' => 403 ) );
 		}
 
 		check_admin_referer( 'sc_ei_run_retention_cleanup' );
-		$confirmation = isset( $_POST['cleanup_confirmation'] ) ? sanitize_text_field( wp_unslash( $_POST['cleanup_confirmation'] ) ) : '';
+		$confirmation = isset( $_POST['cleanup_confirmation'] ) ? strtoupper( trim( sanitize_text_field( wp_unslash( $_POST['cleanup_confirmation'] ) ) ) ) : '';
 
-		if ( 'DELETE EXPIRED' !== $confirmation ) {
+		if ( 'QUEUE CANDIDATES' !== $confirmation ) {
 			self::redirect_to_diagnostics( 'retention_confirmation_failed' );
 		}
 
-		$deleted = SC_EI_Retention::cleanup( 250 );
-		SC_EI_Audit_Log::record(
-			'manual_retention_cleanup_completed',
-			'Authorized administrator ran the expired-attachment cleanup manually.',
-			array( 'deleted_count' => $deleted ),
-			null,
-			null,
-			get_current_user_id()
-		);
-
-		self::redirect_to_diagnostics( 'retention_cleanup_completed' );
+		SC_EI_Retention_Engine::queue_candidates( 250, get_current_user_id(), 'legacy_diagnostics' );
+		self::redirect_to_diagnostics( 'retention_queue_completed' );
 	}
 
 	public static function handle_scanner_readiness_test(): void {

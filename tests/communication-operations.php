@@ -19,6 +19,7 @@ $overview   = file_get_contents( $plugin . '/admin/views/communications.php' );
 $thread     = file_get_contents( $plugin . '/admin/views/communication-thread.php' );
 $settings   = file_get_contents( $plugin . '/includes/class-sc-ei-admin.php' );
 $privacy    = file_get_contents( $plugin . '/includes/class-sc-ei-privacy.php' );
+$engine     = file_get_contents( $plugin . '/includes/class-sc-ei-retention-engine.php' );
 $diagnostics= file_get_contents( $plugin . '/includes/class-sc-ei-diagnostics.php' );
 $rest       = file_get_contents( $plugin . '/includes/class-sc-ei-rest.php' );
 $javascript = file_get_contents( $plugin . '/assets/js/admin.js' );
@@ -51,7 +52,8 @@ $checks = array(
 	'no Zoom or Google Meet channel'         => strpos( $schema, "'zoom'") === false && strpos( $schema, "'google_meet'") === false,
 	'versioned template transaction'        => strpos( $templates, 'START TRANSACTION') !== false && strpos( $templates, 'template_version') !== false,
 	'template variable allowlist'           => strpos( $templates, 'unknown_variables') !== false,
-	'automations default off'               => substr_count( $settings, "'sender_acknowledgment_enabled'         => 0") === 1 && strpos( $settings, "'review_due_reminders_enabled'          => 0") !== false,
+	'automations default off'               => preg_match( "/'sender_acknowledgment_enabled'\s*=>\s*0/", $settings ) === 1
+		&& preg_match( "/'review_due_reminders_enabled'\s*=>\s*0/", $settings ) === 1,
 	'automation sender readiness gate'      => strpos( $settings, 'communication_sender_required') !== false,
 	'notification cron lock'                => strpos( $service, 'sc_ei_notification_cron_lock') !== false,
 	'notification cron scheduled'           => strpos( $service, 'wp_schedule_event') !== false,
@@ -64,7 +66,9 @@ $checks = array(
 	'CSV formula neutralization'            => strpos( $admin, "/^[=+\\-@]/") !== false,
 	'CSV explicit escape'                   => strpos( $admin, "fputcsv(") !== false && strpos( $admin, "\n\t\t\t''\n") !== false,
 	'privacy communication export'          => strpos( $privacy, 'Engagement Intake Communications') !== false,
-	'privacy communication erasure'         => strpos( $privacy, "SET subject = %s") !== false && strpos( $privacy, "context_json = %s") !== false,
+	'privacy communication erasure'         => strpos( $engine, "SET subject = %s") !== false
+		&& strpos( $engine, "context_json = %s") !== false
+		&& strpos( $privacy, 'queue-only eraser bridge') !== false,
 	'diagnostics communication readiness'   => strpos( $diagnostics, 'communication_columns') !== false && strpos( $diagnostics, 'automation_enabled') !== false,
 	'REST capability boundary'              => strpos( $rest, "current_user_can( 'sc_intake_view_communications' )") !== false,
 	'granular communication capabilities'   => strpos( $capabilities, 'sc_intake_send_communications') !== false && strpos( $capabilities, 'sc_intake_manage_notifications') !== false,
@@ -83,4 +87,4 @@ if ( $failed ) {
 foreach ( $checks as $label => $passed ) {
 	echo 'PASS: ' . $label . PHP_EOL;
 }
-echo "Engagement Intake v0.5.0 communication operation checks passed.\n";
+echo "Engagement Intake v0.6.0 communication operation checks passed.\n";

@@ -15,6 +15,7 @@ $workspace  = file_get_contents( $plugin . '/admin/views/review-workspace.php' )
 $detail     = file_get_contents( $plugin . '/admin/views/review-detail.php' );
 $settings   = file_get_contents( $plugin . '/admin/views/settings.php' );
 $privacy    = file_get_contents( $plugin . '/includes/class-sc-ei-privacy.php' );
+$retention_engine = file_get_contents( $plugin . '/includes/class-sc-ei-retention-engine.php' );
 $javascript = file_get_contents( $plugin . '/assets/js/admin.js' );
 
 $checks = array(
@@ -58,7 +59,8 @@ $checks = array(
 	'checklist progress JavaScript'        => strpos( $javascript, 'updateProgress') !== false,
 	'review settings'                      => strpos( $settings, 'default_review_due_days') !== false && strpos( $settings, 'require_completion_checklist') !== false,
 	'privacy review export'                => strpos( $privacy, 'Engagement Intake Administrative Reviews') !== false,
-	'privacy review narrative erasure'     => strpos( $privacy, "SET summary = ''") !== false,
+	'privacy review narrative erasure'     => strpos( $retention_engine, "SET summary = ''") !== false
+		&& strpos( $privacy, 'queue-only eraser bridge') !== false,
 );
 
 $failed = array_keys( array_filter( $checks, static fn( bool $passed ): bool => ! $passed ) );
@@ -71,4 +73,4 @@ foreach ( $checks as $label => $passed ) {
 	echo 'PASS: ' . $label . PHP_EOL;
 }
 
-echo "Engagement Intake v0.5.0 administrative review operation checks passed.\n";
+echo "Engagement Intake v0.6.0 administrative review operation checks passed.\n";

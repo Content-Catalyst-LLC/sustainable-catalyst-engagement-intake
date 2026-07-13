@@ -21,16 +21,18 @@ final class SC_EI_Activator {
 		SC_EI_Retention::schedule();
 		SC_EI_Notification_Service::schedule();
 		SC_EI_Template_Repository::seed_defaults();
+		SC_EI_Retention_Policy_Repository::seed_defaults();
 
 		if ( false === get_option( 'sc_ei_settings', false ) ) {
 			add_option( 'sc_ei_settings', SC_EI_Admin::default_settings(), '', false );
 		}
 
 		update_option( 'sc_ei_version', SC_EI_VERSION, false );
+		update_option( 'sc_ei_privacy_schema_version', SC_EI_PRIVACY_SCHEMA_VERSION, false );
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Engagement Intake v0.5.0 activated with opt-in notifications, plain-text sender messages, communication history, versioned templates, inbound and external interaction logging, follow-up controls, mail transport events, administrative review, quarantine operations, and reliable protected storage.',
+			'Engagement Intake v0.6.0 activated with a Privacy and Retention Center, versioned lifecycle policies, consent evidence, privacy request cases, legal holds, queue-only retention scans, approved verified execution, reviewed communications, administrative review, quarantine operations, and reliable protected storage.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}

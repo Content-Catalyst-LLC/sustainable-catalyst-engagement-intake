@@ -36,9 +36,9 @@ Completed. Human assignment, review queues, due-date and aging visibility, manua
 
 Current release. Reviewed plain-text messages, immutable transport events, inbound and Teams interaction logging, follow-up and suppression controls, versioned templates, default-off notification policies, cron reminders, private exports, privacy integration, and communication diagnostics.
 
-## v0.6.0 — Privacy, Consent, Retention, and Deletion
+## v0.6.0 — Privacy and Retention Center
 
-Planned. Legal holds, communication retention classes, verified deletion queues, withdrawal handling, consent history, retention exceptions, and consolidated lifecycle controls.
+Current release. Private data inventory, privacy-request cases, consent history, processing restrictions, legal holds, versioned policies, queue-only candidate scans, mandatory approval, typed execution, verified deletion and redaction, WordPress privacy bridging, and non-personal tombstones.
 
 ## v0.7.0 — Fit Assessment and Human-Controlled Routing
 

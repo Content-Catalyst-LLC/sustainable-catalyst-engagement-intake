@@ -205,4 +205,37 @@
     syncSuppression();
   }
 
+  const holdScope = document.querySelector("[data-sc-ei-hold-scope]");
+  if (holdScope) {
+    const attachmentField = document.querySelector("[data-sc-ei-attachment-hold-field]");
+    const attachmentInput = attachmentField?.querySelector("input[name='attachment_id']");
+    const syncHoldScope = () => {
+      const needsAttachment = holdScope.value === "attachment";
+      if (attachmentField) attachmentField.hidden = !needsAttachment;
+      if (attachmentInput) {
+        attachmentInput.required = needsAttachment;
+        if (!needsAttachment) attachmentInput.value = "";
+      }
+    };
+    holdScope.addEventListener("change", syncHoldScope);
+    syncHoldScope();
+  }
+
+  document.querySelectorAll(".sc-ei-execute-form").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      const input = form.querySelector("input[name='confirm_execute']");
+      const actionId = form.querySelector("input[name='action_id']")?.value || "";
+      const expected = `EXECUTE ${actionId}`;
+      if (!input || input.value.trim().toUpperCase() !== expected) {
+        event.preventDefault();
+        window.alert(`Type ${expected} exactly before executing this irreversible action.`);
+        input?.focus();
+        return;
+      }
+      if (!window.confirm("Execute this approved privacy or retention action now? This may irreversibly erase personal data or delete a private file.")) {
+        event.preventDefault();
+      }
+    });
+  });
+
 })();

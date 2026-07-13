@@ -263,3 +263,42 @@ The compound unique key is:
 ```text
 template_key + version
 ```
+
+
+## v0.6.0 inquiry privacy state
+
+```text
+privacy_status
+retention_policy_key
+retention_until
+legal_hold_count
+privacy_restriction_reason
+last_privacy_review_at
+last_privacy_review_by
+personal_data_erased_at
+privacy_version
+```
+
+## Privacy requests
+
+Tracks request type, identity state, source, deadlines, assignment, summaries, resolution, and completion.
+
+## Consent events
+
+Append-oriented evidence for notice and authorization actions.
+
+## Legal holds
+
+Tracks active or released preservation controls for an inquiry or a specific private document.
+
+## Retention policies
+
+Immutable versions identified by:
+
+```text
+policy_key + version
+```
+
+## Retention actions
+
+Tracks proposal, due date, policy version, hold/dependency state, approval, execution, verification, failures, and tombstone snapshots.

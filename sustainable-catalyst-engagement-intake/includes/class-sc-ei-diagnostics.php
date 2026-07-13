@@ -15,6 +15,7 @@ final class SC_EI_Diagnostics {
 		$attachment_columns = SC_EI_Database::attachment_columns_exist();
 		$review_columns     = SC_EI_Database::review_columns_exist();
 		$communication_columns = SC_EI_Database::communication_columns_exist();
+		$privacy_columns       = SC_EI_Database::privacy_columns_exist();
 		$admin              = get_role( 'administrator' );
 		$settings           = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
@@ -28,13 +29,16 @@ final class SC_EI_Diagnostics {
 		$environment   = SC_EI_Upload_Environment::limits();
 		$effective     = SC_EI_Upload_Environment::effective_limits( $settings );
 		$reconciliation= SC_EI_Storage_Reconciler::latest();
-		$retention_preview = get_option( 'sc_ei_last_retention_preview', array() );
+		$retention_preview = get_option( 'sc_ei_last_privacy_retention_preview', get_option( 'sc_ei_last_retention_preview', array() ) );
 		$retention_run     = SC_EI_Retention::latest_run();
 		$probe             = SC_EI_Storage::latest_probe();
 		$database_totals   = SC_EI_Attachment_Repository::storage_totals();
 		$review_metrics    = SC_EI_Review_Repository::metrics( get_current_user_id() );
 		$communication_metrics = SC_EI_Communication_Repository::metrics();
 		$communication_templates = SC_EI_Template_Repository::active_templates();
+		$privacy_metrics = SC_EI_Privacy_Repository::metrics();
+		$privacy_inventory = SC_EI_Privacy_Repository::data_inventory();
+		$retention_policies = SC_EI_Retention_Policy_Repository::active();
 
 		$notification_policies = array(
 			'sender_acknowledgment' => ! empty( $settings['sender_acknowledgment_enabled'] ),
@@ -69,6 +73,28 @@ final class SC_EI_Diagnostics {
 			'communication_templates' => array(
 				'active_count' => count( $communication_templates ),
 				'keys'         => array_keys( $communication_templates ),
+			),
+			'privacy_columns'        => $privacy_columns,
+			'privacy_schema_version' => SC_EI_PRIVACY_SCHEMA_VERSION,
+			'privacy_metrics'        => $privacy_metrics,
+			'privacy_inventory'      => $privacy_inventory,
+			'retention_policies'     => array(
+				'active_count' => count( $retention_policies ),
+				'keys'         => array_keys( $retention_policies ),
+			),
+			'privacy_lifecycle' => array(
+				'queue_only_cron'       => true,
+				'tombstones_retained'   => true,
+				'approval_required'     => ! empty( $settings['require_retention_approval'] ),
+				'distinct_approver'     => ! empty( $settings['require_distinct_retention_approver'] ),
+				'cron_scheduled'        => (bool) wp_next_scheduled( SC_EI_Retention::CRON_HOOK ),
+				'next_cron_utc'         => wp_next_scheduled( SC_EI_Retention::CRON_HOOK )
+					? gmdate( 'Y-m-d H:i:s', (int) wp_next_scheduled( SC_EI_Retention::CRON_HOOK ) )
+					: '',
+				'last_queue_run'        => $retention_run,
+				'request_due_days'      => absint( $settings['privacy_request_due_days'] ?? 30 ),
+				'queue_batch_limit'     => absint( $settings['retention_queue_batch_limit'] ?? 100 ),
+				'execution_batch_limit' => absint( $settings['retention_execution_batch_limit'] ?? 25 ),
 			),
 			'notifications' => array(
 				'policies'                    => $notification_policies,
@@ -168,6 +194,10 @@ final class SC_EI_Diagnostics {
 		$attachments_ok = ! in_array( false, $results['attachment_columns'], true );
 		$reviews_ok     = ! in_array( false, $results['review_columns'], true );
 		$communications_ok = ! in_array( false, $results['communication_columns'], true );
+		$privacy_ok      = ! in_array( false, $results['privacy_columns'], true )
+			&& ! empty( $results['retention_policies']['active_count'] )
+			&& ! empty( $results['privacy_lifecycle']['queue_only_cron'] )
+			&& ! empty( $results['privacy_lifecycle']['tombstones_retained'] );
 		$caps_ok        = ! in_array( false, $results['capabilities'], true );
 
 		$storage_ok = ! empty( $results['storage']['exists'] )
@@ -227,7 +257,7 @@ final class SC_EI_Diagnostics {
 				&& ! empty( $results['communication_templates']['active_count'] );
 		}
 
-		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
+		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $privacy_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
 			? 'healthy'
 			: 'attention';
 	}

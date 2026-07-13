@@ -182,3 +182,35 @@ v0.5.0 uses WordPress `wp_mail()` and records only transport acceptance or failu
 It does not read a mailbox, consume bounce webhooks, prove delivery, or create Microsoft Teams meetings.
 
 Teams, phone, and in-person interactions are manually recorded in the same private timeline.
+
+
+## v0.6.0 privacy lifecycle architecture
+
+```text
+Private record
+→ privacy state
+→ policy version
+→ deterministic candidate
+→ deduplicated action
+→ legal-hold and dependency check
+→ approval
+→ typed execution
+→ verification
+→ tombstone and audit
+```
+
+Five tables separate case, evidence, preservation, policy, and execution state:
+
+```text
+privacy_requests
+consent_events
+legal_holds
+retention_policies
+retention_actions
+```
+
+The daily retention compatibility hook is queue-only.
+
+The WordPress eraser is also a bridge into reviewed lifecycle actions rather than a direct destructive path.
+
+Execution remains inside the retention engine and rechecks legal holds immediately before mutation.

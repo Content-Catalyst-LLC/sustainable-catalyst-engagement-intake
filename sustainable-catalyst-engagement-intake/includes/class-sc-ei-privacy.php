@@ -1,6 +1,6 @@
 <?php
 /**
- * WordPress privacy exporter and eraser.
+ * WordPress privacy exporter and queue-only eraser bridge.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -33,23 +33,24 @@ final class SC_EI_Privacy {
 	public static function export_by_email( string $email_address, int $page = 1 ): array {
 		global $wpdb;
 
-		$table   = SC_EI_Database::table( 'inquiries' );
-		$results = $wpdb->get_results(
+		$email = sanitize_email( $email_address );
+		$inquiry_table = SC_EI_Database::table( 'inquiries' );
+		$inquiries = (array) $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE contact_email = %s ORDER BY created_at ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				sanitize_email( $email_address )
+				"SELECT * FROM {$inquiry_table} WHERE contact_email = %s ORDER BY created_at ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$email
 			),
 			ARRAY_A
 		);
 
 		$data = array();
-		foreach ( $results as $row ) {
-			$inquiry_id = absint( $row['id'] );
+		foreach ( $inquiries as $inquiry ) {
+			$inquiry_id = absint( $inquiry['id'] );
 			$data[] = array(
 				'group_id'    => 'sc-engagement-intake',
 				'group_label' => __( 'Engagement Intake', 'sustainable-catalyst-engagement-intake' ),
 				'item_id'     => 'sc-ei-' . $inquiry_id,
-				'data'        => self::export_fields( $row, self::inquiry_export_fields() ),
+				'data'        => self::export_fields( $inquiry, self::inquiry_export_fields() ),
 			);
 
 			foreach ( SC_EI_Review_Repository::history( $inquiry_id, 500 ) as $review ) {
@@ -133,15 +134,15 @@ final class SC_EI_Privacy {
 						'data'        => self::export_fields(
 							$event,
 							array(
-								'event_type'          => 'Communication event',
-								'from_status'          => 'Previous status',
-								'to_status'            => 'New status',
-								'provider'             => 'Provider',
-								'provider_message_id'  => 'Provider message ID',
-								'error_code'           => 'Error code',
-								'error_message'        => 'Error message',
-								'context_json'         => 'Event context',
-								'created_at'           => 'Event recorded at',
+								'event_type'         => 'Communication event',
+								'from_status'         => 'Previous status',
+								'to_status'           => 'New status',
+								'provider'            => 'Provider',
+								'provider_message_id' => 'Provider message ID',
+								'error_code'          => 'Error code',
+								'error_message'       => 'Error message',
+								'context_json'        => 'Event context',
+								'created_at'          => 'Event recorded at',
 							)
 						),
 					);
@@ -156,353 +157,422 @@ final class SC_EI_Privacy {
 					'data'        => self::export_fields(
 						$attachment,
 						array(
-							'original_name'             => 'Original document name',
-							'mime_type'                 => 'Document MIME type',
-							'extension'                 => 'Document extension',
-							'size_bytes'                => 'Document size in bytes',
-							'document_category'         => 'Document category',
-							'document_notes'            => 'Document notes',
-							'confidentiality'           => 'Confidentiality classification',
-							'quarantine_status'         => 'Quarantine status',
-							'validation_status'         => 'Validation status',
-							'scan_status'               => 'Malware scan status',
-							'scanner_provider'          => 'Scanner provider',
-							'scan_message'              => 'Scanner message',
-							'scan_attempts'             => 'Scanner attempts',
-							'last_scanned_at'           => 'Last scanned at',
-							'storage_status'            => 'Storage status',
-							'integrity_status'          => 'Integrity status',
-							'last_verified_at'          => 'Last verified at',
-							'last_verification_source'  => 'Verification source',
-							'retention_until'           => 'Retention until',
-							'uploaded_at'               => 'Uploaded at',
-							'deleted_at'                => 'Deleted at',
+							'original_name'            => 'Original document name',
+							'mime_type'                => 'Document MIME type',
+							'extension'                => 'Document extension',
+							'size_bytes'               => 'Document size in bytes',
+							'document_category'        => 'Document category',
+							'document_notes'           => 'Document notes',
+							'confidentiality'          => 'Confidentiality classification',
+							'quarantine_status'        => 'Quarantine status',
+							'validation_status'        => 'Validation status',
+							'scan_status'              => 'Malware scan status',
+							'scanner_provider'         => 'Scanner provider',
+							'scan_message'             => 'Scanner message',
+							'scan_attempts'            => 'Scanner attempts',
+							'last_scanned_at'          => 'Last scanned at',
+							'storage_status'           => 'Storage status',
+							'integrity_status'         => 'Integrity status',
+							'last_verified_at'         => 'Last verified at',
+							'last_verification_source' => 'Verification source',
+							'retention_until'          => 'Retention until',
+							'uploaded_at'              => 'Uploaded at',
+							'deleted_at'               => 'Deleted at',
+						)
+					),
+				);
+			}
+
+			foreach ( SC_EI_Privacy_Repository::consent_events( array( 'inquiry_id' => $inquiry_id, 'limit' => 1000 ) ) as $consent ) {
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-consent',
+					'group_label' => __( 'Engagement Intake Consent and Authorization Events', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-consent-' . $consent['id'],
+					'data'        => self::export_fields(
+						$consent,
+						array(
+							'consent_type'       => 'Consent or authorization type',
+							'action'             => 'Action',
+							'consent_version'    => 'Notice or consent version',
+							'lawful_basis'       => 'Recorded processing basis',
+							'source'             => 'Source',
+							'evidence_text'      => 'Evidence note',
+							'subject_email_hash' => 'Subject email SHA-256',
+							'occurred_at'        => 'Occurred at',
+							'created_at'         => 'Recorded at',
+						)
+					),
+				);
+			}
+
+			foreach ( SC_EI_Privacy_Repository::holds( array( 'search' => (string) $inquiry['reference'], 'limit' => 500 ) ) as $hold ) {
+				if ( absint( $hold['inquiry_id'] ) !== $inquiry_id ) {
+					continue;
+				}
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-holds',
+					'group_label' => __( 'Engagement Intake Legal Holds', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-hold-' . $hold['id'],
+					'data'        => self::export_fields(
+						$hold,
+						array(
+							'scope'          => 'Hold scope',
+							'status'         => 'Hold status',
+							'reason'         => 'Hold reason',
+							'authority'      => 'Hold authority',
+							'placed_at'      => 'Placed at',
+							'review_at'      => 'Review at',
+							'released_at'    => 'Released at',
+							'release_reason' => 'Release reason',
+						)
+					),
+				);
+			}
+
+			foreach ( SC_EI_Privacy_Repository::retention_actions( array( 'search' => (string) $inquiry['reference'], 'limit' => 1000 ) ) as $action ) {
+				if ( absint( $action['inquiry_id'] ) !== $inquiry_id ) {
+					continue;
+				}
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-retention-actions',
+					'group_label' => __( 'Engagement Intake Retention Actions', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-retention-action-' . $action['id'],
+					'data'        => self::export_fields(
+						$action,
+						array(
+							'target_type'    => 'Target type',
+							'target_id'      => 'Target ID',
+							'policy_key'     => 'Policy key',
+							'policy_version' => 'Policy version',
+							'action_type'    => 'Action type',
+							'status'         => 'Action status',
+							'reason'         => 'Reason',
+							'due_at'         => 'Due at',
+							'proposed_at'    => 'Proposed at',
+							'approved_at'    => 'Approved at',
+							'executed_at'    => 'Executed at',
+							'verified_at'    => 'Verified at',
+							'failure_code'   => 'Failure code',
+							'failure_message'=> 'Failure message',
 						)
 					),
 				);
 			}
 		}
 
-		return array(
-			'data' => $data,
-			'done' => true,
+		$request_table = SC_EI_Database::table( 'privacy_requests' );
+		$requests = (array) $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$request_table} WHERE requester_email = %s ORDER BY received_at ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$email
+			),
+			ARRAY_A
 		);
+		foreach ( $requests as $request ) {
+			$data[] = array(
+				'group_id'    => 'sc-engagement-intake-privacy-requests',
+				'group_label' => __( 'Engagement Intake Privacy Requests', 'sustainable-catalyst-engagement-intake' ),
+				'item_id'     => 'sc-ei-privacy-request-' . $request['id'],
+				'data'        => self::export_fields(
+					$request,
+					array(
+						'requester_name'     => 'Requester name',
+						'requester_email'    => 'Requester email',
+						'request_type'       => 'Request type',
+						'status'             => 'Request status',
+						'identity_status'    => 'Identity verification status',
+						'source'             => 'Source',
+						'received_at'        => 'Received at',
+						'due_at'             => 'Due at',
+						'request_summary'    => 'Request summary',
+						'resolution_summary' => 'Resolution summary',
+						'completed_at'       => 'Completed at',
+						'created_at'         => 'Created at',
+						'updated_at'         => 'Updated at',
+					)
+				),
+			);
+		}
+
+		return array( 'data' => $data, 'done' => true );
 	}
 
+	/**
+	 * WordPress eraser bridge.
+	 *
+	 * v0.6.0 does not erase synchronously. It creates a tracked case and queues
+	 * legal-hold-aware lifecycle actions for human approval and verified execution.
+	 */
 	public static function erase_by_email( string $email_address, int $page = 1 ): array {
 		global $wpdb;
 
+		$email = sanitize_email( $email_address );
+		if ( ! is_email( $email ) ) {
+			return array(
+				'items_removed'  => false,
+				'items_retained' => true,
+				'messages'       => array( __( 'A valid email address is required.', 'sustainable-catalyst-engagement-intake' ) ),
+				'done'           => true,
+			);
+		}
+
 		$table = SC_EI_Database::table( 'inquiries' );
-		$rows  = $wpdb->get_results(
+		$rows = (array) $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, reference FROM {$table} WHERE contact_email = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				sanitize_email( $email_address )
+				"SELECT * FROM {$table} WHERE contact_email = %s ORDER BY created_at ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$email
 			),
 			ARRAY_A
 		);
 
-		$removed  = false;
-		$retained = false;
-		$messages = array();
+		if ( ! $rows ) {
+			return array(
+				'items_removed'  => false,
+				'items_retained' => false,
+				'messages'       => array(),
+				'done'           => true,
+			);
+		}
 
-		foreach ( $rows as $row ) {
-			$inquiry_id = absint( $row['id'] );
-			$now        = current_time( 'mysql', true );
+		$queued = 0;
+		$blocked = 0;
+		$existing = 0;
+		$request_ids = array();
 
-			foreach ( SC_EI_Attachment_Repository::for_inquiry( $inquiry_id, true ) as $attachment ) {
-				$file_deleted = ! empty( $attachment['deleted_at'] )
-					|| SC_EI_Storage::delete_file( (string) $attachment['relative_path'] );
-
-				if ( ! $file_deleted ) {
-					$retained   = true;
-					$messages[] = __( 'At least one private document could not be deleted from protected storage and requires administrative review.', 'sustainable-catalyst-engagement-intake' );
-					continue;
-				}
-
-				$attachment_data = array(
-					'original_name'             => '[erased]',
-					'document_notes'            => '',
-					'metadata_json'             => '{}',
-					'quarantine_status'         => 'deleted',
-					'storage_status'            => 'deleted',
-					'integrity_status'          => 'deleted',
-					'last_verified_at'          => $now,
-					'last_verified_by'          => 0,
-					'last_verification_source'  => 'privacy_erasure',
-					'last_verification_message' => 'Physical file deleted or confirmed absent during privacy erasure.',
-					'deleted_by'                 => 0,
-					'deleted_at'                 => $attachment['deleted_at'] ?: $now,
-				);
-				$attachment_updated = $wpdb->update(
-					SC_EI_Database::table( 'attachments' ),
-					$attachment_data,
-					array( 'id' => absint( $attachment['id'] ) ),
-					self::formats_for( $attachment_data, array( 'last_verified_by', 'deleted_by' ) ),
-					array( '%d' )
-				);
-
-				if ( false === $attachment_updated ) {
-					$retained = true;
-				} else {
-					$removed = true;
-					SC_EI_Audit_Log::record(
-						'attachment_personal_data_erased',
-						'Private document deleted and identifying attachment metadata erased through WordPress privacy tools.',
-						array(),
-						$inquiry_id,
-						absint( $attachment['id'] ),
-						0
-					);
-				}
+		foreach ( $rows as $inquiry ) {
+			$inquiry_id = absint( $inquiry['id'] );
+			$request_id = self::ensure_erasure_request( $inquiry, $email );
+			if ( $request_id ) {
+				$request_ids[] = $request_id;
 			}
 
-			$review_rows_updated = $wpdb->query(
-				$wpdb->prepare(
-					"UPDATE " . SC_EI_Database::table( 'reviews' ) . "
-					SET summary = '',
-						rationale = '',
-						information_gaps = '',
-						conflict_notes = '',
-						escalation_reason = '',
-						snapshot_json = %s
-					WHERE inquiry_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-					wp_json_encode(
-						array(
-							'personal_data_erased'  => true,
-							'review_schema_version' => SC_EI_REVIEW_SCHEMA_VERSION,
-						)
+			SC_EI_Privacy_Repository::set_inquiry_privacy_state(
+				$inquiry_id,
+				'erasure_requested',
+				'WordPress privacy eraser request queued for reviewed execution.',
+				0
+			);
+
+			foreach ( SC_EI_Attachment_Repository::for_inquiry( $inquiry_id, false ) as $attachment ) {
+				$result = SC_EI_Privacy_Repository::queue_action(
+					array(
+						'inquiry_id'     => $inquiry_id,
+						'target_type'    => 'attachment',
+						'target_id'      => absint( $attachment['id'] ),
+						'policy_key'     => 'privacy_erasure_request',
+						'policy_version' => 1,
+						'action_type'    => 'delete_attachment',
+						'due_at'         => current_time( 'mysql', true ),
+						'dedupe_key'     => 'privacy-erasure:attachment:' . absint( $attachment['id'] ),
+						'reason'         => 'Queued from the WordPress personal-data eraser. Human approval and physical absence verification are required.',
+						'snapshot'       => array(
+							'reference'      => $inquiry['reference'],
+							'attachment_id'  => absint( $attachment['id'] ),
+							'original_name'  => $attachment['original_name'],
+							'sha256'         => $attachment['sha256'],
+							'size_bytes'     => absint( $attachment['size_bytes'] ),
+							'privacy_request'=> $request_id,
+						),
 					),
-					$inquiry_id
-				)
-			);
-			if ( false === $review_rows_updated ) {
-				$retained   = true;
-				$messages[] = __( 'Administrative review narratives could not be erased and require administrator attention.', 'sustainable-catalyst-engagement-intake' );
-			} elseif ( $review_rows_updated > 0 ) {
-				$removed = true;
-			}
-
-			$communication_rows_updated = $wpdb->query(
-				$wpdb->prepare(
-					"UPDATE " . SC_EI_Database::table( 'communications' ) . "
-					SET subject = %s,
-						body_text = %s,
-						sender_name = '',
-						sender_email = '',
-						recipient_name = '',
-						recipient_email = '',
-						cc_json = '[]',
-						provider_message_id = '',
-						error_message = '',
-						message_hash = '',
-						dedupe_key = NULL,
-						metadata_json = %s,
-						updated_at = %s
-					WHERE inquiry_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-					'[Personal data erased]',
-					'[Communication content erased through WordPress privacy tools.]',
-					wp_json_encode(
-						array(
-							'personal_data_erased'           => true,
-							'communication_schema_version'   => SC_EI_COMMUNICATION_SCHEMA_VERSION,
-						)
-					),
-					$now,
-					$inquiry_id
-				)
-			);
-			if ( false === $communication_rows_updated ) {
-				$retained   = true;
-				$messages[] = __( 'Communication content could not be erased and requires administrator attention.', 'sustainable-catalyst-engagement-intake' );
-			} elseif ( $communication_rows_updated > 0 ) {
-				$removed = true;
-			}
-
-			$communication_event_rows_updated = $wpdb->query(
-				$wpdb->prepare(
-					"UPDATE " . SC_EI_Database::table( 'communication_events' ) . "
-					SET provider_message_id = '',
-						error_message = '',
-						context_json = %s
-					WHERE inquiry_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-					wp_json_encode(
-						array(
-							'personal_data_erased'         => true,
-							'communication_schema_version' => SC_EI_COMMUNICATION_SCHEMA_VERSION,
-						)
-					),
-					$inquiry_id
-				)
-			);
-			if ( false === $communication_event_rows_updated ) {
-				$retained   = true;
-				$messages[] = __( 'Communication event context could not be erased and requires administrator attention.', 'sustainable-catalyst-engagement-intake' );
-			} elseif ( $communication_event_rows_updated > 0 ) {
-				$removed = true;
-			}
-
-			$anonymous_email = 'deleted+' . $inquiry_id . '@example.invalid';
-			$inquiry_data = array(
-				'contact_name'         => '',
-				'contact_email'        => $anonymous_email,
-				'organization'         => '',
-				'role_title'           => '',
-				'subject'              => '[Personal data erased]',
-				'teams_email'          => '',
-				'phone_number'         => '',
-				'timezone'             => '',
-				'city'                 => '',
-				'country'              => '',
-				'preferred_weekdays'   => '[]',
-				'preferred_time_windows'=> '',
-				'participant_emails'   => '[]',
-				'accessibility_needs'  => '',
-				'scheduling_notes'     => '',
-				'teams_meeting_url'    => '',
-				'scheduled_start_utc'  => null,
-				'scheduled_end_utc'    => null,
-				'scheduled_timezone'   => '',
-				'calendar_event_id'    => '',
-				'message'              => '[Personal data erased through WordPress privacy tools.]',
-				'project_summary'      => '',
-				'desired_outcome'      => '',
-				'relevant_links'       => '[]',
-				'metadata_json'        => '{}',
-				'review_summary'       => '',
-				'decision_rationale'   => '',
-				'information_gaps'     => '',
-				'conflict_notes'       => '',
-				'escalation_reason'    => '',
-				'do_not_email_reason'  => '',
-				'updated_at'           => $now,
-			);
-
-			$updated = $wpdb->update(
-				$table,
-				$inquiry_data,
-				array( 'id' => $inquiry_id ),
-				self::formats_for( $inquiry_data ),
-				array( '%d' )
-			);
-
-			if ( false !== $updated ) {
-				$removed = true;
-				SC_EI_Audit_Log::record(
-					'personal_data_erased',
-					'Personal data, communication content, and review narratives erased through WordPress privacy tools.',
-					array( 'reference' => $row['reference'] ),
-					$inquiry_id,
-					null,
 					0
 				);
-			} else {
-				$retained = true;
+				self::count_queue_result( $result, $queued, $blocked, $existing );
 			}
+
+			$result = SC_EI_Privacy_Repository::queue_action(
+				array(
+					'inquiry_id'     => $inquiry_id,
+					'target_type'    => 'inquiry',
+					'target_id'      => $inquiry_id,
+					'policy_key'     => 'privacy_erasure_request',
+					'policy_version' => 1,
+					'action_type'    => 'redact_inquiry',
+					'due_at'         => current_time( 'mysql', true ),
+					'dedupe_key'     => 'privacy-erasure:inquiry:' . $inquiry_id,
+					'reason'         => 'Queued from the WordPress personal-data eraser. Private documents must be deleted and verified before inquiry redaction can execute.',
+					'snapshot'       => array(
+						'reference'       => $inquiry['reference'],
+						'privacy_request' => $request_id,
+						'email_hash'      => hash( 'sha256', strtolower( $email ) ),
+					),
+				),
+				0
+			);
+			self::count_queue_result( $result, $queued, $blocked, $existing );
+
+			SC_EI_Audit_Log::record(
+				'wordpress_privacy_request_queued',
+				'WordPress privacy eraser request was converted into reviewed lifecycle actions. No immediate erasure occurred.',
+				array(
+					'privacy_request_id' => $request_id,
+					'email_hash'         => hash( 'sha256', strtolower( $email ) ),
+				),
+				$inquiry_id,
+				null,
+				0
+			);
 		}
 
 		return array(
-			'items_removed'  => $removed,
-			'items_retained' => $retained,
-			'messages'       => array_values( array_unique( $messages ) ),
+			'items_removed'  => false,
+			'items_retained' => true,
+			'messages'       => array(
+				sprintf(
+					__( 'The erasure request was queued in the Privacy and Retention Center: %1$d new action(s), %2$d existing action(s), and %3$d hold-blocked action(s). No data was silently deleted. An authorized reviewer must verify identity, resolve holds, approve each action, and execute it.', 'sustainable-catalyst-engagement-intake' ),
+					$queued,
+					$existing,
+					$blocked
+				),
+			),
 			'done'           => true,
 		);
+	}
+
+	private static function ensure_erasure_request( array $inquiry, string $email ): int {
+		global $wpdb;
+
+		$table = SC_EI_Database::table( 'privacy_requests' );
+		$existing = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM {$table}
+				WHERE inquiry_id = %d
+					AND requester_email = %s
+					AND request_type = 'erasure'
+					AND status NOT IN ('completed','denied','withdrawn')
+				ORDER BY id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				absint( $inquiry['id'] ),
+				$email
+			)
+		);
+		if ( $existing ) {
+			return $existing;
+		}
+
+		$request = SC_EI_Privacy_Repository::create_request(
+			array(
+				'inquiry_id'      => absint( $inquiry['id'] ),
+				'requester_name'   => (string) $inquiry['contact_name'],
+				'requester_email'  => $email,
+				'request_type'     => 'erasure',
+				'status'           => 'received',
+				'identity_status'  => 'unverified',
+				'source'           => 'wordpress_privacy',
+				'request_summary'  => 'Personal-data erasure requested through the WordPress privacy tools. Identity verification, legal-hold review, approval, and verified execution are pending.',
+			),
+			0
+		);
+		return is_wp_error( $request ) ? 0 : absint( $request['id'] );
+	}
+
+	private static function count_queue_result( $result, int &$queued, int &$blocked, int &$existing ): void {
+		if ( is_wp_error( $result ) ) {
+			return;
+		}
+		if ( 'blocked_hold' === $result['status'] ) {
+			$blocked++;
+			return;
+		}
+		if ( strtotime( $result['created_at'] . ' UTC' ) < time() - 5 ) {
+			$existing++;
+		} else {
+			$queued++;
+		}
 	}
 
 	private static function export_fields( array $row, array $fields ): array {
 		$data = array();
 		foreach ( $fields as $key => $label ) {
-			if ( isset( $row[ $key ] ) && '' !== (string) $row[ $key ] ) {
-				$data[] = array(
-					'name'  => $label,
-					'value' => (string) $row[ $key ],
-				);
+			if ( array_key_exists( $key, $row ) && '' !== (string) $row[ $key ] ) {
+				$data[] = array( 'name' => $label, 'value' => (string) $row[ $key ] );
 			}
 		}
 		return $data;
 	}
 
-	private static function formats_for( array $data, array $integer_fields = array() ): array {
-		return array_map(
-			static fn( string $key ): string => in_array( $key, $integer_fields, true ) ? '%d' : '%s',
-			array_keys( $data )
-		);
-	}
-
 	private static function inquiry_export_fields(): array {
 		return array(
-			'reference'                => 'Inquiry reference',
-			'inquiry_type'             => 'Inquiry type',
-			'status'                   => 'Status',
-			'form_variant'             => 'Intake experience',
-			'source_page'              => 'Source page',
-			'entry_cta'                => 'Entry CTA',
-			'conversion_route'         => 'Conversion route',
-			'contact_name'             => 'Name',
-			'contact_email'            => 'Email',
-			'organization'             => 'Organization',
-			'role_title'               => 'Role',
-			'subject'                  => 'Subject',
-			'message'                  => 'Message',
-			'project_summary'          => 'Project summary',
-			'desired_outcome'          => 'Desired outcome',
-			'service_interest'         => 'Service interest',
-			'budget_range'             => 'Budget range',
-			'desired_start_date'       => 'Desired start date',
-			'deadline_date'            => 'Deadline',
-			'preferred_contact_method' => 'Preferred contact method',
-			'teams_email'              => 'Microsoft Teams email',
-			'phone_number'             => 'Phone number',
-			'timezone'                 => 'Time zone',
-			'city'                     => 'City',
-			'country'                  => 'Country',
-			'meeting_request'          => 'Microsoft Teams meeting request',
-			'preferred_weekdays'       => 'Preferred weekdays',
-			'preferred_time_windows'   => 'Preferred time windows',
-			'preferred_duration'       => 'Preferred duration',
-			'participant_count'        => 'Participant count',
-			'participant_emails'       => 'Participant emails',
-			'accessibility_needs'      => 'Accessibility needs',
-			'calendar_invite_consent'  => 'Calendar invitation consent',
-			'scheduling_notes'         => 'Scheduling notes',
-			'scheduling_status'        => 'Scheduling status',
-			'teams_meeting_url'        => 'Microsoft Teams meeting URL',
-			'scheduled_start_utc'      => 'Scheduled start UTC',
-			'scheduled_end_utc'        => 'Scheduled end UTC',
-			'scheduled_timezone'       => 'Scheduled timezone',
-			'assigned_user_id'         => 'Assigned reviewer user ID',
-			'review_stage'             => 'Administrative review stage',
-			'review_priority'          => 'Review priority',
-			'review_due_at'            => 'Review due at',
-			'fit_decision'             => 'Fit decision',
-			'fit_confidence'           => 'Fit confidence',
-			'risk_level'               => 'Risk level',
-			'evidence_readiness'       => 'Evidence readiness',
-			'scope_clarity'            => 'Scope clarity',
-			'recommended_next_step'    => 'Recommended next step',
-			'review_summary'           => 'Review summary',
-			'decision_rationale'       => 'Decision rationale',
-			'information_gaps'         => 'Information gaps',
-			'conflict_notes'           => 'Conflict and independence notes',
-			'escalation_status'        => 'Escalation status',
-			'escalation_reason'        => 'Escalation reason',
-			'review_started_at'        => 'Review started at',
-			'last_reviewed_at'         => 'Last reviewed at',
-			'decision_at'              => 'Decision recorded at',
-			'review_completed_at'      => 'Review completed at',
-			'review_version'           => 'Review version',
-			'communication_status'     => 'Communication state',
-			'next_follow_up_at'        => 'Next follow-up at',
-			'last_communication_at'    => 'Last communication at',
-			'last_outbound_at'         => 'Last outbound at',
-			'last_inbound_at'          => 'Last inbound at',
-			'last_notification_at'     => 'Last notification at',
-			'communication_count'      => 'Communication count',
-			'unread_inbound_count'     => 'Unread inbound count',
-			'do_not_email'             => 'Email suppression enabled',
-			'do_not_email_reason'      => 'Email suppression reason',
-			'communication_version'    => 'Communication state version',
-			'created_at'               => 'Submitted at',
-			'updated_at'               => 'Last updated',
+			'reference'                 => 'Inquiry reference',
+			'inquiry_type'              => 'Inquiry type',
+			'status'                    => 'Status',
+			'form_variant'              => 'Intake experience',
+			'source_page'               => 'Source page',
+			'entry_cta'                 => 'Entry CTA',
+			'conversion_route'          => 'Conversion route',
+			'contact_name'              => 'Name',
+			'contact_email'             => 'Email',
+			'organization'              => 'Organization',
+			'role_title'                => 'Role',
+			'subject'                   => 'Subject',
+			'message'                   => 'Message',
+			'project_summary'           => 'Project summary',
+			'desired_outcome'           => 'Desired outcome',
+			'service_interest'          => 'Service interest',
+			'budget_range'              => 'Budget range',
+			'desired_start_date'        => 'Desired start date',
+			'deadline_date'             => 'Deadline',
+			'preferred_contact_method'  => 'Preferred contact method',
+			'teams_email'               => 'Microsoft Teams email',
+			'phone_number'              => 'Phone number',
+			'timezone'                  => 'Time zone',
+			'city'                      => 'City',
+			'country'                   => 'Country',
+			'meeting_request'           => 'Microsoft Teams meeting request',
+			'preferred_weekdays'        => 'Preferred weekdays',
+			'preferred_time_windows'    => 'Preferred time windows',
+			'preferred_duration'        => 'Preferred duration',
+			'participant_count'         => 'Participant count',
+			'participant_emails'        => 'Participant emails',
+			'accessibility_needs'       => 'Accessibility needs',
+			'calendar_invite_consent'   => 'Calendar invitation consent',
+			'scheduling_notes'          => 'Scheduling notes',
+			'scheduling_status'         => 'Scheduling status',
+			'teams_meeting_url'         => 'Microsoft Teams meeting URL',
+			'scheduled_start_utc'       => 'Scheduled start UTC',
+			'scheduled_end_utc'         => 'Scheduled end UTC',
+			'scheduled_timezone'        => 'Scheduled timezone',
+			'assigned_user_id'          => 'Assigned reviewer user ID',
+			'review_stage'              => 'Administrative review stage',
+			'review_priority'           => 'Review priority',
+			'review_due_at'             => 'Review due at',
+			'fit_decision'              => 'Fit decision',
+			'fit_confidence'            => 'Fit confidence',
+			'risk_level'                => 'Risk level',
+			'evidence_readiness'        => 'Evidence readiness',
+			'scope_clarity'             => 'Scope clarity',
+			'recommended_next_step'     => 'Recommended next step',
+			'review_summary'            => 'Review summary',
+			'decision_rationale'        => 'Decision rationale',
+			'information_gaps'          => 'Information gaps',
+			'conflict_notes'            => 'Conflict and independence notes',
+			'escalation_status'         => 'Escalation status',
+			'escalation_reason'         => 'Escalation reason',
+			'review_started_at'         => 'Review started at',
+			'last_reviewed_at'          => 'Last reviewed at',
+			'decision_at'               => 'Decision recorded at',
+			'review_completed_at'       => 'Review completed at',
+			'review_version'            => 'Review version',
+			'communication_status'      => 'Communication state',
+			'next_follow_up_at'         => 'Next follow-up at',
+			'last_communication_at'     => 'Last communication at',
+			'last_outbound_at'          => 'Last outbound at',
+			'last_inbound_at'           => 'Last inbound at',
+			'last_notification_at'      => 'Last notification at',
+			'communication_count'       => 'Communication count',
+			'unread_inbound_count'      => 'Unread inbound count',
+			'do_not_email'              => 'Email suppression enabled',
+			'do_not_email_reason'       => 'Email suppression reason',
+			'communication_version'     => 'Communication state version',
+			'privacy_status'            => 'Privacy lifecycle state',
+			'retention_policy_key'      => 'Retention policy key',
+			'retention_until'           => 'Retention due date',
+			'legal_hold_count'          => 'Active legal hold count',
+			'privacy_restriction_reason'=> 'Privacy restriction reason',
+			'last_privacy_review_at'    => 'Last privacy review at',
+			'last_privacy_review_by'    => 'Last privacy reviewer user ID',
+			'personal_data_erased_at'   => 'Personal data erased at',
+			'privacy_version'           => 'Privacy state version',
+			'created_at'                => 'Submitted at',
+			'updated_at'                => 'Last updated',
 		);
 	}
 }

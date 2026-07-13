@@ -31,9 +31,12 @@ if ( $delete ) {
 	delete_option( 'sc_ei_last_storage_reconciliation' );
 	delete_option( 'sc_ei_last_retention_preview' );
 	delete_option( 'sc_ei_last_retention_run' );
+	delete_option( 'sc_ei_last_privacy_retention_preview' );
+	delete_option( 'sc_ei_last_retention_queue_run' );
 	delete_option( 'sc_ei_scanner_readiness' );
 	delete_option( 'sc_ei_last_notification_reminder_run' );
 	delete_option( 'sc_ei_notification_cron_lock' );
+	delete_option( 'sc_ei_privacy_schema_version' );
 	delete_transient( 'sc_ei_retention_cleanup_lock' );
 	delete_transient( 'sc_ei_request_lock_cleanup_throttle' );
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Attachment retention cleanup.
+ * Queue-only retention scheduling compatibility layer.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -31,79 +31,33 @@ final class SC_EI_Retention {
 	}
 
 	public static function preview( int $limit = 100 ): array {
-		$items = SC_EI_Attachment_Repository::expired( $limit );
-		return array(
-			'generated_at_utc' => current_time( 'mysql', true ),
-			'count'            => count( $items ),
-			'total_bytes'      => array_sum( array_map( static fn( array $item ): int => absint( $item['size_bytes'] ?? 0 ), $items ) ),
-			'items'            => array_map(
-				static fn( array $item ): array => array(
-					'id'              => absint( $item['id'] ),
-					'inquiry_id'      => absint( $item['inquiry_id'] ),
-					'original_name'   => sanitize_file_name( (string) $item['original_name'] ),
-					'size_bytes'      => absint( $item['size_bytes'] ),
-					'retention_until' => sanitize_text_field( (string) $item['retention_until'] ),
-					'file_exists'     => (bool) ( SC_EI_Storage::absolute_path( (string) $item['relative_path'] ) && is_file( SC_EI_Storage::absolute_path( (string) $item['relative_path'] ) ) ),
-				),
-				array_slice( $items, 0, 100 )
-			),
-		);
+		return SC_EI_Retention_Engine::preview( $limit );
 	}
 
 	public static function latest_run(): array {
-		$run = get_option( 'sc_ei_last_retention_run', array() );
+		$run = get_option( 'sc_ei_last_retention_queue_run', array() );
 		return is_array( $run ) ? $run : array();
 	}
 
+	/**
+	 * Legacy method name retained for compatibility.
+	 *
+	 * v0.6.0 never deletes here. It queues candidate actions for human review.
+	 */
 	public static function cleanup( int $limit = 100 ): int {
 		if ( get_transient( 'sc_ei_retention_cleanup_lock' ) ) {
 			return 0;
 		}
 		set_transient( 'sc_ei_retention_cleanup_lock', 1, 15 * MINUTE_IN_SECONDS );
 
-		$count  = 0;
-		$failed = 0;
-		$bytes  = 0;
-
 		try {
-			foreach ( SC_EI_Attachment_Repository::expired( $limit ) as $attachment ) {
-				$deleted = SC_EI_Storage::delete_file( (string) $attachment['relative_path'] );
-				if ( ! $deleted ) {
-					SC_EI_Audit_Log::record(
-						'attachment_retention_delete_failed',
-						'Expired attachment could not be deleted from protected storage.',
-						array( 'retention_until' => $attachment['retention_until'] ),
-						(int) $attachment['inquiry_id'],
-						(int) $attachment['id'],
-						0
-					);
-					$failed++;
-					continue;
-				}
-
-				if ( SC_EI_Attachment_Repository::mark_deleted(
-					(int) $attachment['id'],
-					0,
-					'Private attachment deleted automatically after its retention date.',
-					'deleted'
-				) ) {
-					$count++;
-					$bytes += absint( $attachment['size_bytes'] ?? 0 );
-				} else {
-					$failed++;
-				}
-			}
-
-			$report = array(
-				'completed_at_utc' => current_time( 'mysql', true ),
-				'deleted_count'    => $count,
-				'deleted_bytes'    => $bytes,
-				'failed_count'     => $failed,
-				'limit'            => $limit,
+			$settings = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Privacy_Schema::default_settings() );
+			$limit = min(
+				max( 1, absint( $limit ) ),
+				max( 1, min( 1000, absint( $settings['retention_queue_batch_limit'] ?? 100 ) ) )
 			);
-			update_option( 'sc_ei_last_retention_run', $report, false );
-
-			return $count;
+			$report = SC_EI_Retention_Engine::queue_candidates( $limit, 0, 'daily_cron' );
+			return absint( $report['queued_count'] ?? 0 );
 		} finally {
 			delete_transient( 'sc_ei_retention_cleanup_lock' );
 		}
