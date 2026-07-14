@@ -3,7 +3,7 @@
  * Plugin Name: Sustainable Catalyst Contact and Engagement Platform
  * Plugin URI:  https://sustainablecatalyst.com/
  * Description: Unified contact and engagement platform with governed public intake, secure sender collaboration, human review and fit assessment, Teams scheduling, proposals, engagement handoff, analytics, reliability, privacy, and signed Workflow Core integration.
- * Version:     1.0.1
+ * Version:     1.0.2
  * Author:      Content Catalyst LLC
  * Author URI:  https://sustainablecatalyst.com/
  * Text Domain: sustainable-catalyst-engagement-intake
@@ -18,9 +18,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SC_EI_VERSION', '1.0.1' );
+define( 'SC_EI_VERSION', '1.0.2' );
 define( 'SC_EI_DB_VERSION', '1.0.0' );
-define( 'SC_EI_VALIDATOR_VERSION', '1.0.1' );
+define( 'SC_EI_VALIDATOR_VERSION', '1.0.2' );
 define( 'SC_EI_REVIEW_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_COMMUNICATION_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_PRIVACY_SCHEMA_VERSION', '1.0.0' );
@@ -32,7 +32,7 @@ define( 'SC_EI_ENGAGEMENT_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_ANALYTICS_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_HARDENING_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_WORKFLOW_CORE_SCHEMA_VERSION', '1.0.0' );
-define( 'SC_EI_PLATFORM_SCHEMA_VERSION', '1.0.0' );
+define( 'SC_EI_PLATFORM_SCHEMA_VERSION', '1.0.1' );
 define( 'SC_EI_FILE', __FILE__ );
 define( 'SC_EI_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SC_EI_URL', plugin_dir_url( __FILE__ ) );
@@ -92,6 +92,7 @@ require_once SC_EI_DIR . 'includes/class-sc-ei-workflow-core-contract.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-workflow-core-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-workflow-core-service.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-platform-schema.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-platform-validation.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-platform-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-platform-public.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-diagnostics.php';

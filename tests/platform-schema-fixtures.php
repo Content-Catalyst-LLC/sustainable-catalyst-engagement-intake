@@ -12,8 +12,8 @@ $activator=file_get_contents($plugin.'/includes/class-sc-ei-activator.php');
 $boot=file_get_contents($plugin.'/includes/class-sc-ei-plugin.php');
 $uninstall=file_get_contents($plugin.'/uninstall.php');
 $checks=array(
- 'v1.0.1 stable markers'=>strpos($main,'Plugin Name: Sustainable Catalyst Contact and Engagement Platform')!==false&&strpos($main,'Version:     1.0.1')!==false&&strpos($main,"SC_EI_DB_VERSION', '1.0.0'")!==false&&strpos($main,"SC_EI_PLATFORM_SCHEMA_VERSION', '1.0.0'")!==false,
- 'platform components loaded'=>strpos($main,'class-sc-ei-platform-schema.php')!==false&&strpos($main,'class-sc-ei-platform-repository.php')!==false&&strpos($main,'class-sc-ei-platform-public.php')!==false&&strpos($main,'class-sc-ei-platform-admin.php')!==false,
+ 'v1.0.2 stable markers'=>strpos($main,'Plugin Name: Sustainable Catalyst Contact and Engagement Platform')!==false&&strpos($main,'Version:     1.0.2')!==false&&strpos($main,"SC_EI_DB_VERSION', '1.0.0'")!==false&&strpos($main,"SC_EI_PLATFORM_SCHEMA_VERSION', '1.0.1'")!==false,
+ 'platform components loaded'=>strpos($main,'class-sc-ei-platform-schema.php')!==false&&strpos($main,'class-sc-ei-platform-repository.php')!==false&&strpos($main,'class-sc-ei-platform-validation.php')!==false&&strpos($main,'class-sc-ei-platform-public.php')!==false&&strpos($main,'class-sc-ei-platform-admin.php')!==false,
  'readiness snapshot table'=>strpos($db,'$sql_platform_snapshots')!==false&&strpos($db,'readiness_score int')!==false&&strpos($db,'content_hash char(64)')!==false,
  'migration journal table'=>strpos($db,'$sql_platform_migrations')!==false&&strpos($db,'UNIQUE KEY migration_key')!==false&&strpos($db,'schema_hash char(64)')!==false,
  'platform tables installed'=>strpos($db,'dbDelta( $sql_platform_snapshots )')!==false&&strpos($db,'dbDelta( $sql_platform_migrations )')!==false,
@@ -26,6 +26,6 @@ $checks=array(
  'platform scheduling'=>strpos($repo,"public const SNAPSHOT_HOOK = 'sc_ei_platform_readiness_snapshot'")!==false&&strpos($activator,'SC_EI_Platform_Repository::schedule()')!==false&&strpos($activator,'SC_EI_Platform_Repository::unschedule()')!==false,
  'platform upgrade runtime'=>strpos($boot,'SC_EI_Platform_Repository::maybe_upgrade()')!==false&&strpos($boot,'SC_EI_Platform_Public::register()')!==false,
  'least privilege capabilities'=>strpos($caps,"'sc_intake_view_platform'")!==false&&strpos($caps,"'sc_intake_manage_platform'")!==false&&strpos($caps,"'sc_intake_snapshot_platform'")!==false&&strpos($caps,"'sc_intake_export_platform'")!==false&&strpos($caps,"'sc_intake_launch_platform'")!==false,
- 'uninstall cleanup'=>strpos($uninstall,"sc_ei_platform_readiness_snapshot")!==false&&strpos($uninstall,"sc_ei_platform_schema_version")!==false&&strpos($uninstall,"sc_ei_platform_launch_record")!==false,
+ 'uninstall cleanup'=>strpos($uninstall,"sc_ei_platform_readiness_snapshot")!==false&&strpos($uninstall,"sc_ei_platform_schema_version")!==false&&strpos($uninstall,"sc_ei_platform_launch_record")!==false&&strpos($uninstall,"sc_ei_platform_live_validation")!==false&&strpos($uninstall,"sc_ei_platform_backup_attestation")!==false,
 );
-$failed=array_keys(array_filter($checks,fn($v)=>!$v));if($failed){fwrite(STDERR,'Platform schema checks failed: '.implode(', ',$failed).PHP_EOL);exit(1);}foreach($checks as $k=>$v)echo 'PASS: '.$k.PHP_EOL;echo "Unified Contact and Engagement Platform v1.0.0 schema fixtures passed.\n";
+$failed=array_keys(array_filter($checks,fn($v)=>!$v));if($failed){fwrite(STDERR,'Platform schema checks failed: '.implode(', ',$failed).PHP_EOL);exit(1);}foreach($checks as $k=>$v)echo 'PASS: '.$k.PHP_EOL;echo "Sustainable Catalyst Contact and Engagement Platform v1.0.2 schema fixtures passed.\n";

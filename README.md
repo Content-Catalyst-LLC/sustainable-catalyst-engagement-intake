@@ -1,9 +1,9 @@
-# Sustainable Catalyst Engagement Intake
+# Sustainable Catalyst Contact and Engagement Platform
 
-**Version:** 1.0.1  
-**Release:** Production Validation and Migration Reliability Patch
+**Version:** 1.0.2  
+**Release:** Production Readiness and Live Validation
 
-v1.0.1 repairs the stable platform diagnostics runtime path, preserves the v1.0.0 database and schema contract, and adds regression coverage for cross-class constant visibility. The underlying Workflow Core and governed contact-to-engagement architecture remain unchanged.
+v1.0.2 turns the production gate into a runtime-backed launch process. It adds guided repair actions, verified page and shortcode contracts, cron callback evidence, rendered accessibility evidence, an administrator-run live validation suite, recent backup attestation, and a stricter 100% production requirement. The database remains at 1.0.0; the platform evidence schema advances to 1.0.1.
 
 ## Core model
 
@@ -218,16 +218,15 @@ No REST command endpoint is included.
 
 ## Upgrade checklist
 
-1. Back up database and protected storage.
-2. Upgrade to v0.12.0.
-3. Clear all caches.
-4. Confirm DB 0.12.0.
-5. Confirm Workflow Core schema 1.0.0.
-6. Confirm four new tables.
-7. Confirm role capabilities.
-8. Confirm sync and outbox cron hooks.
-9. Run `SYNC WORKFLOW CORE`.
-10. Review consistency warnings.
-11. Register target adapters in staging.
-12. Prepare, dispatch, acknowledge, and export one handoff.
-13. Test privacy erasure and rollback behavior.
+1. Back up the WordPress database and protected document storage.
+2. Install v1.0.2 over the existing plugin.
+3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
+4. Open **Contact & Engagement → Platform Overview**.
+5. Use the guided repair center until configuration and runtime checks pass.
+6. Confirm the Contact page contains `[sc_contact_engagement_platform]`.
+7. Confirm the Sender Portal page contains `[sc_sender_portal]`.
+8. Configure support email and a published Privacy Policy URL.
+9. Run **Live Validation** with a monitored email recipient and confirm inbox delivery manually.
+10. Back up the database and protected storage, then record the backup attestation.
+11. Require 100%, zero failures, zero warnings, fresh validation evidence, and fresh backup evidence before recording Production.
+12. Keep human review, fit, proposal, contract, scheduling, and engagement decisions manual.

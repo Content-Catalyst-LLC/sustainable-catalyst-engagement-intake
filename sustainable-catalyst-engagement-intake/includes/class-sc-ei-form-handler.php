@@ -457,6 +457,40 @@ final class SC_EI_Form_Handler {
 		}
 	}
 
+	/**
+	 * Run a side-effect-bounded validation of duplicate and request-lock controls.
+	 *
+	 * Temporary options/transients are removed before returning.
+	 */
+	public static function validation_duplicate_controls(): array {
+		$email      = 'platform-validation+' . wp_generate_uuid4() . '@example.invalid';
+		$subject    = '[TEST] Duplicate control validation';
+		$message    = 'Temporary duplicate-control validation payload.';
+		$duplicate  = self::duplicate_key( $email, $subject, $message );
+		$request_id = wp_generate_uuid4();
+
+		delete_transient( $duplicate );
+		$initially_clear = false === get_transient( $duplicate );
+		set_transient( $duplicate, 1, MINUTE_IN_SECONDS );
+		$duplicate_detected = (bool) get_transient( $duplicate );
+		delete_transient( $duplicate );
+		$duplicate_cleaned = false === get_transient( $duplicate );
+
+		$first_lock  = self::acquire_request_lock( $request_id );
+		$second_lock = ! self::acquire_request_lock( $request_id );
+		self::release_request_lock( $request_id );
+		$lock_cleaned = false === get_option( self::request_lock_key( $request_id ), false );
+
+		return array(
+			'passed'             => $initially_clear && $duplicate_detected && $duplicate_cleaned && $first_lock && $second_lock && $lock_cleaned,
+			'duplicate_detected' => $duplicate_detected,
+			'duplicate_cleaned'  => $duplicate_cleaned,
+			'first_lock'         => $first_lock,
+			'second_lock_denied' => $second_lock,
+			'lock_cleaned'       => $lock_cleaned,
+		);
+	}
+
 	private static function acquire_request_lock( string $request_id ): bool {
 		$key      = self::request_lock_key( $request_id );
 		$acquired = add_option( $key, time(), '', false );

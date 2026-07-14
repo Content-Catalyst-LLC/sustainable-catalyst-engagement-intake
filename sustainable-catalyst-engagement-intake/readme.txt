@@ -3,7 +3,7 @@ Contributors: content-catalyst
 Tags: contact, engagement, workflow, sender portal, microsoft teams, proposals, analytics, privacy, accessibility
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,7 +11,7 @@ A governed contact-to-engagement platform with adaptive intake, secure sender co
 
 == Description ==
 
-Version 1.0.1 is the production validation and migration reliability patch for the first stable Unified Contact and Engagement Platform release.
+Version 1.0.2 is the Production Readiness and Live Validation release. It replaces assumption-based readiness checks with runtime evidence, guided repairs, a controlled live validation suite, recent backup attestation, and a strict 100% production gate.
 
 It connects:
 
@@ -44,21 +44,21 @@ Existing shortcodes remain supported:
 * [sc_engagement_inquiry]
 * [sc_sender_portal]
 
-== Stable 1.0 platform layer ==
+== Production readiness and live validation ==
 
-The new Platform Overview provides:
+Platform Overview now provides:
 
-* Product-wide operational status
-* Launch readiness and production gate
-* Database and schema integrity
-* Idempotent v1.0 migration journal
-* Immutable readiness snapshots with SHA-256 hashes
-* Public entry and sender portal configuration checks
-* Reliability, privacy, storage, HTTPS, cron, analytics, engagement, and Workflow Core health
-* Registered internal adapter visibility
-* Human-controlled setup, pilot, production, and maintenance states
+* Runtime-backed version, database, migration, storage, HTTPS, incident, and Workflow Core checks
+* Published local Contact and Sender Portal page verification with required shortcodes
+* Scheduled job and registered callback verification
+* Initialized internal-adapter registry evidence
+* Rendered accessibility evidence
+* Guided repair actions for bounded operational issues
+* Administrator-only live validation with temporary inquiry, portal, file, duplicate-control, mail, and cleanup checks
+* Recent database and protected-storage backup attestation
+* A production gate requiring 100%, zero failures, zero warnings, fresh successful validation, and fresh backup evidence
 
-Production status can be recorded only by an authorized typed action after all required readiness checks pass.
+WordPress mail acceptance does not prove inbox delivery; administrators must confirm the live-validation message manually.
 
 == Human-control boundary ==
 
@@ -80,21 +80,25 @@ The platform does not automatically:
 == Installation ==
 
 1. Back up the WordPress database and protected storage.
-2. Upgrade the existing plugin or install v1.0.1.
+2. Upgrade the existing plugin or install v1.0.2.
 3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
-4. Open Contact & Engagement → Diagnostics.
-5. Confirm plugin version 1.0.1 and database version 1.0.0.
-6. Confirm Platform schema 1.0.0 and all inherited schema versions.
-7. Confirm the platform snapshot and migration tables.
-8. Open Contact & Engagement → Platform Overview.
-9. Verify the v1.0 migration journal.
-10. Configure the public entry, sender portal, privacy, and support URLs.
-11. Run a readiness snapshot.
-12. Test the unified public shortcode and every existing intake route in staging.
-13. Test sender portal, review, scheduling, proposal, engagement, privacy, analytics, reliability, and Workflow Core paths.
-14. Move from Setup to Pilot, then to Production only after the required checks pass.
+4. Open Contact & Engagement → Platform Overview.
+5. Complete guided repairs and configure published Contact, Sender Portal, and Privacy pages.
+6. Run Live Validation with a monitored email recipient.
+7. Confirm the validation message reached the recipient.
+8. Complete and attest database and protected-storage backups.
+9. Require 100%, zero failures, and zero warnings.
+10. Record Pilot and complete controlled public tests before recording Production.
 
 == Changelog ==
+
+= 1.0.2 =
+* Added guided production-readiness repairs and runtime evidence.
+* Verified published page/shortcode contracts and cron callbacks.
+* Added administrator-only live validation for inquiry, duplicate controls, portal tokens, protected files, mail acceptance, and cleanup.
+* Added recent backup attestation.
+* Made Production require 100%, zero failures, zero warnings, fresh successful validation, and fresh backup evidence.
+* Preserved database version 1.0.0 and advanced the platform evidence schema to 1.0.1.
 
 = 1.0.1 =
 * Fixed a fatal error on Platform Overview and Diagnostics caused by cross-class access to a private watchdog hook constant.

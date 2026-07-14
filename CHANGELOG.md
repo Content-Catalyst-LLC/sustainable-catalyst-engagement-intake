@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.2 — Production Readiness and Live Validation
+
+- Replaced configured-URL assumptions with published local page and shortcode verification.
+- Added runtime validation for required cron schedules and their registered callbacks.
+- Replaced hard-coded adapter and accessibility passes with initialized adapter-registry and rendered-interface evidence.
+- Added guided repair actions for version state, database checks, migrations, protected storage, and scheduled jobs.
+- Added an administrator-only live validation suite covering inquiry persistence, status transition, duplicate and request-lock controls, sender portal token verification, protected file integrity and deletion, mail transport acceptance, and cleanup.
+- Added recent database and protected-storage backup attestation as a production requirement.
+- Made Production require 100% readiness, zero required failures, zero warnings, fresh successful live validation, and fresh backup evidence.
+- Added a nondestructive v1.0.2 migration journal entry and automatic schedule repair during upgrade.
+- Preserved database version 1.0.0 and advanced the platform evidence schema to 1.0.1.
+
 ## 1.0.1 — Production Validation and Migration Reliability Patch
 
 - Fixed the Platform Overview and Diagnostics fatal error caused by direct access to the private hardening watchdog hook constant.

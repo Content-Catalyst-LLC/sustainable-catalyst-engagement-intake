@@ -11,17 +11,20 @@ final class SC_EI_Platform_Repository {
 
 	public const SNAPSHOT_HOOK = 'sc_ei_platform_readiness_snapshot';
 	public const MIGRATION_KEY = 'v1_0_0_unified_contact_engagement_platform';
+	public const PATCH_MIGRATION_KEY = 'v1_0_2_production_readiness_live_validation';
 
 	public static function maybe_upgrade(): void {
 		$stored_version = (string) get_option( 'sc_ei_version', '' );
 		$stored_schema = (string) get_option( 'sc_ei_platform_schema_version', '' );
-		if ( version_compare( $stored_version, SC_EI_VERSION, '<' ) || SC_EI_PLATFORM_SCHEMA_VERSION !== $stored_schema ) {
+		$upgrade_required = version_compare( $stored_version, SC_EI_VERSION, '<' ) || SC_EI_PLATFORM_SCHEMA_VERSION !== $stored_schema;
+		if ( $upgrade_required ) {
 			update_option( 'sc_ei_version_previous', $stored_version, false );
 			update_option( 'sc_ei_version', SC_EI_VERSION, false );
 			update_option( 'sc_ei_platform_schema_version', SC_EI_PLATFORM_SCHEMA_VERSION, false );
 			self::run_migrations( $stored_version );
 		}
-		self::schedule();
+		self::record_patch_migration( $stored_version );
+		self::schedule_all();
 	}
 
 	public static function register(): void {
@@ -132,6 +135,62 @@ final class SC_EI_Platform_Repository {
 		return $ok ? $result : new WP_Error( 'platform_schema_incomplete', __( 'The unified platform migration requires attention in Diagnostics.', 'sustainable-catalyst-engagement-intake' ), $result );
 	}
 
+
+	public static function record_patch_migration( string $from_version = '' ) {
+		global $wpdb;
+		$table = SC_EI_Database::table( 'platform_migrations' );
+		$existing = $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE migration_key = %s LIMIT 1", self::PATCH_MIGRATION_KEY ),
+			ARRAY_A
+		);
+		if ( $existing && 'completed' === (string) $existing['status'] && SC_EI_VERSION === (string) $existing['to_version'] ) {
+			return $existing;
+		}
+		$now = current_time( 'mysql', true );
+		$data = array(
+			'public_id'     => $existing['public_id'] ?? wp_generate_uuid4(),
+			'migration_key' => self::PATCH_MIGRATION_KEY,
+			'from_version'  => sanitize_text_field( $from_version ),
+			'to_version'    => SC_EI_VERSION,
+			'status'        => 'completed',
+			'schema_hash'   => self::schema_hash(),
+			'context_json'  => wp_json_encode(
+				array(
+					'release'                  => 'Production Readiness and Live Validation',
+					'option_backed_evidence'   => true,
+					'database_schema_changed'  => false,
+					'no_destructive_migration' => true,
+				),
+				JSON_UNESCAPED_SLASHES
+			),
+			'started_at'    => $existing['started_at'] ?? $now,
+			'completed_at'  => $now,
+			'error_code'    => '',
+			'error_message' => '',
+			'created_at'    => $existing['created_at'] ?? $now,
+			'updated_at'    => $now,
+		);
+		if ( $existing ) {
+			$ok = $wpdb->update( $table, $data, array( 'id' => absint( $existing['id'] ) ), self::formats( $data, array() ), array( '%d' ) );
+			$id = absint( $existing['id'] );
+		} else {
+			$ok = $wpdb->insert( $table, $data, self::formats( $data, array() ) );
+			$id = (int) $wpdb->insert_id;
+		}
+		if ( false === $ok ) {
+			return new WP_Error( 'platform_patch_migration_journal_failed', __( 'The v1.0.2 release journal could not be recorded.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		SC_EI_Audit_Log::record(
+			'platform_patch_upgrade_recorded',
+			'Production readiness and live-validation release upgrade recorded without a destructive database migration.',
+			array( 'migration_key' => self::PATCH_MIGRATION_KEY, 'from_version' => $from_version, 'to_version' => SC_EI_VERSION ),
+			null,
+			null,
+			get_current_user_id()
+		);
+		return self::find_migration( $id );
+	}
+
 	public static function readiness(): array {
 		$settings = self::settings();
 		$storage = SC_EI_Storage::storage_health();
@@ -144,71 +203,66 @@ final class SC_EI_Platform_Repository {
 		$engagement_url = self::effective_url( 'platform_engagement_page_url', '' );
 		$privacy_url = self::effective_url( 'platform_privacy_page_url', '' );
 		$entry_pages = self::discover_entry_pages();
-		$required_crons = array(
-			'portal_cleanup'      => wp_next_scheduled( 'sc_ei_portal_cleanup' ),
-			'workflow_cleanup'    => wp_next_scheduled( 'sc_ei_workflow_cleanup' ),
-			'retention'           => wp_next_scheduled( SC_EI_Retention::CRON_HOOK ),
-			'notifications'       => wp_next_scheduled( SC_EI_Notification_Service::CRON_HOOK ),
-			'graph_catchup'       => wp_next_scheduled( 'sc_ei_graph_catchup' ),
-			'analytics'           => wp_next_scheduled( SC_EI_Analytics_Repository::DAILY_HOOK ),
-			'hardening'           => wp_next_scheduled( SC_EI_Hardening_Repository::watchdog_hook() ),
-			'workflow_core_sync'  => wp_next_scheduled( SC_EI_Workflow_Core_Repository::SYNC_HOOK ),
-			'workflow_core_outbox'=> wp_next_scheduled( SC_EI_Workflow_Core_Repository::OUTBOX_HOOK ),
-			'platform_snapshot'   => wp_next_scheduled( self::SNAPSHOT_HOOK ),
-		);
+		$page_evidence = self::page_contract_evidence();
+		$cron_evidence = self::cron_evidence();
+		$accessibility = self::accessibility_evidence();
+		$targets = SC_EI_Workflow_Core_Service::registered_targets();
+		$expected_targets = SC_EI_Workflow_Core_Schema::handoff_targets();
+		$registry_ok = is_array( $targets ) && array_keys( $targets ) === array_keys( $expected_targets );
+		$registered_count = count( array_filter( $targets, static fn( array $target ): bool => ! empty( $target['registered'] ) ) );
+		$live_validation = SC_EI_Platform_Validation::latest();
+		$backup_attestation = SC_EI_Platform_Validation::backup_attestation();
 
 		$checks = array();
-		$checks[] = self::check( 'platform_version', 'platform', __( 'Stable platform version', 'sustainable-catalyst-engagement-intake' ), version_compare( SC_EI_VERSION, '1.0.0', '>=' ) && SC_EI_VERSION === (string) get_option( 'sc_ei_version', '' ), true, SC_EI_VERSION );
-		$checks[] = self::check( 'database_version', 'data', __( 'Database version', 'sustainable-catalyst-engagement-intake' ), SC_EI_DB_VERSION === (string) get_option( 'sc_ei_db_version', '' ), true, (string) get_option( 'sc_ei_db_version', '' ) );
-		$checks[] = self::check( 'database_tables', 'data', __( 'Required database tables', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ), true, sprintf( '%d/%d', count( array_filter( $tables ) ), count( $tables ) ) );
-		$checks[] = self::check( 'platform_columns', 'data', __( 'Platform governance schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $platform_columns, true ), true, sprintf( '%d/%d', count( array_filter( $platform_columns ) ), count( $platform_columns ) ) );
-		$checks[] = self::check( 'migration_journal', 'data', __( 'v1.0 migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed(), true, self::MIGRATION_KEY );
-		$storage_ok = ! empty( $storage['exists'] ) && ! empty( $storage['writable'] ) && ! empty( $storage['marker'] ) && ! empty( $storage['protection_files'] );
-		$checks[] = self::check( 'protected_storage', 'security', __( 'Protected document storage', 'sustainable-catalyst-engagement-intake' ), $storage_ok, ! empty( $settings['platform_require_protected_storage'] ), $storage['path'] ?? '' );
+		$checks[] = self::check( 'platform_version', 'platform', __( 'Installed platform version state', 'sustainable-catalyst-engagement-intake' ), SC_EI_VERSION === (string) get_option( 'sc_ei_version', '' ), true, SC_EI_VERSION . ' / ' . (string) get_option( 'sc_ei_version', '' ), 'refresh_version' );
+		$checks[] = self::check( 'database_version', 'data', __( 'Database version', 'sustainable-catalyst-engagement-intake' ), SC_EI_DB_VERSION === (string) get_option( 'sc_ei_db_version', '' ), true, (string) get_option( 'sc_ei_db_version', '' ), 'repair_database' );
+		$checks[] = self::check( 'database_tables', 'data', __( 'Required database tables', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ), true, sprintf( '%d/%d', count( array_filter( $tables ) ), count( $tables ) ), 'repair_database' );
+		$checks[] = self::check( 'platform_columns', 'data', __( 'Platform governance schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $platform_columns, true ), true, sprintf( '%d/%d', count( array_filter( $platform_columns ) ), count( $platform_columns ) ), 'repair_database' );
+		$checks[] = self::check( 'migration_journal', 'data', __( 'v1.0 base migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::MIGRATION_KEY ), true, self::MIGRATION_KEY, 'verify_migration' );
+		$checks[] = self::check( 'patch_migration_journal', 'data', __( 'v1.0.2 upgrade journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::PATCH_MIGRATION_KEY ), true, self::PATCH_MIGRATION_KEY, 'verify_patch_migration' );
+		$storage_ok = ! empty( $storage['exists'] ) && ! empty( $storage['writable'] ) && ! empty( $storage['marker'] ) && ! empty( $storage['protection_files'] ) && empty( $storage['base_is_symlink'] );
+		$checks[] = self::check( 'protected_storage', 'security', __( 'Protected document storage', 'sustainable-catalyst-engagement-intake' ), $storage_ok, ! empty( $settings['platform_require_protected_storage'] ), (string) ( $storage['path'] ?? '' ), 'repair_storage' );
 		$https_ok = is_ssl() || SC_EI_Portal_Schema::secure_transport_available();
-		$checks[] = self::check( 'https', 'security', __( 'HTTPS and secure portal transport', 'sustainable-catalyst-engagement-intake' ), $https_ok, ! empty( $settings['platform_require_https'] ), $https_ok ? 'available' : 'unavailable' );
-		$checks[] = self::check( 'critical_health', 'operations', __( 'Open critical reliability events', 'sustainable-catalyst-engagement-intake' ), 0 === absint( $hardening['open_critical'] ?? 0 ), true, (string) absint( $hardening['open_critical'] ?? 0 ) );
-		$checks[] = self::check( 'public_writes', 'operations', __( 'Public writes incident state', 'sustainable-catalyst-engagement-intake' ), ! SC_EI_Hardening_Repository::public_writes_paused(), true, SC_EI_Hardening_Repository::public_writes_paused() ? 'paused' : 'open' );
-		$checks[] = self::check( 'cron_schedules', 'operations', __( 'Required scheduled jobs', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, array_map( 'boolval', $required_crons ), true ), true, sprintf( '%d/%d', count( array_filter( $required_crons ) ), count( $required_crons ) ) );
-		$entry_ready = (bool) $contact_url || (bool) $engagement_url || ! empty( $entry_pages['unified'] ) || ! empty( $entry_pages['contact_hub'] ) || ! empty( $entry_pages['engagement'] );
-		$checks[] = self::check( 'public_entry', 'public_entry', __( 'Published public contact or engagement entry', 'sustainable-catalyst-engagement-intake' ), $entry_ready, ! empty( $settings['platform_require_public_entry'] ), $entry_ready ? 'configured' : 'not detected' );
-		$checks[] = self::check( 'portal_url', 'portal', __( 'Secure sender portal URL', 'sustainable-catalyst-engagement-intake' ), '' !== $portal_url || ! empty( $entry_pages['portal'] ), ! empty( $settings['platform_require_portal_url'] ), $portal_url ?: ( $entry_pages['portal'][0]['url'] ?? 'not configured' ) );
-		$checks[] = self::check( 'support_email', 'operations', __( 'Platform support email', 'sustainable-catalyst-engagement-intake' ), is_email( (string) $settings['platform_support_email'] ), true, (string) $settings['platform_support_email'] );
-		$checks[] = self::check( 'workflow_core', 'integrations', __( 'Workflow Core consistency', 'sustainable-catalyst-engagement-intake' ), 0 === absint( $core['blocked_cases'] ?? 0 ), false, sprintf( '%d blocked, %d warning', absint( $core['blocked_cases'] ?? 0 ), absint( $core['warning_cases'] ?? 0 ) ) );
-		$checks[] = self::check( 'adapter_registry', 'integrations', __( 'Registered internal adapters', 'sustainable-catalyst-engagement-intake' ), true, false, sprintf( '%d registered', count( array_filter( SC_EI_Workflow_Core_Service::registered_targets(), static fn( array $target ): bool => ! empty( $target['registered'] ) ) ) ) );
-		$checks[] = self::check( 'privacy_url', 'security', __( 'Public privacy guidance URL', 'sustainable-catalyst-engagement-intake' ), '' !== $privacy_url, false, $privacy_url ?: 'not configured' );
-		$checks[] = self::check( 'accessibility_controls', 'accessibility', __( 'Accessible interface controls', 'sustainable-catalyst-engagement-intake' ), true, true, 'skip links, live regions, focus, reduced motion, forced colors' );
+		$checks[] = self::check( 'https', 'security', __( 'HTTPS and secure portal transport', 'sustainable-catalyst-engagement-intake' ), $https_ok, ! empty( $settings['platform_require_https'] ), $https_ok ? 'available' : 'unavailable', 'review_https' );
+		$checks[] = self::check( 'critical_health', 'operations', __( 'Open critical reliability events', 'sustainable-catalyst-engagement-intake' ), 0 === absint( $hardening['open_critical'] ?? 0 ), true, (string) absint( $hardening['open_critical'] ?? 0 ), 'review_reliability' );
+		$checks[] = self::check( 'public_writes', 'operations', __( 'Public writes incident state', 'sustainable-catalyst-engagement-intake' ), ! SC_EI_Hardening_Repository::public_writes_paused(), true, SC_EI_Hardening_Repository::public_writes_paused() ? 'paused' : 'open', 'review_reliability' );
+		$checks[] = self::check( 'cron_schedules', 'operations', __( 'Required scheduled jobs and callbacks', 'sustainable-catalyst-engagement-intake' ), ! empty( $cron_evidence['passed'] ), true, (string) $cron_evidence['detail'], 'repair_crons' );
+		$checks[] = self::check( 'public_entry', 'public_entry', __( 'Published public contact or engagement entry', 'sustainable-catalyst-engagement-intake' ), ! empty( $page_evidence['public_entry']['passed'] ), ! empty( $settings['platform_require_public_entry'] ), (string) $page_evidence['public_entry']['detail'], 'configure_pages' );
+		$checks[] = self::check( 'portal_url', 'portal', __( 'Published secure sender portal page', 'sustainable-catalyst-engagement-intake' ), ! empty( $page_evidence['portal']['passed'] ), ! empty( $settings['platform_require_portal_url'] ), (string) $page_evidence['portal']['detail'], 'configure_pages' );
+		$checks[] = self::check( 'support_email', 'operations', __( 'Platform support email', 'sustainable-catalyst-engagement-intake' ), is_email( (string) $settings['platform_support_email'] ), true, (string) $settings['platform_support_email'], 'configure_settings' );
+		$checks[] = self::check( 'workflow_core', 'integrations', __( 'Workflow Core consistency', 'sustainable-catalyst-engagement-intake' ), 0 === absint( $core['blocked_cases'] ?? 0 ), false, sprintf( '%d blocked, %d warning', absint( $core['blocked_cases'] ?? 0 ), absint( $core['warning_cases'] ?? 0 ) ), 'review_workflow_core' );
+		$checks[] = self::check( 'adapter_registry', 'integrations', __( 'Internal adapter registry initialization', 'sustainable-catalyst-engagement-intake' ), $registry_ok, true, sprintf( '%d optional adapter(s) registered across %d known target(s)', $registered_count, count( $targets ) ), 'review_workflow_core' );
+		$checks[] = self::check( 'privacy_url', 'security', __( 'Published privacy guidance page', 'sustainable-catalyst-engagement-intake' ), ! empty( $page_evidence['privacy']['passed'] ), false, (string) $page_evidence['privacy']['detail'], 'configure_pages' );
+		$checks[] = self::check( 'accessibility_controls', 'accessibility', __( 'Rendered accessibility controls', 'sustainable-catalyst-engagement-intake' ), ! empty( $accessibility['passed'] ), true, (string) $accessibility['detail'], 'review_accessibility' );
+		$checks[] = self::check( 'live_validation', 'operations', __( 'Recent successful live validation', 'sustainable-catalyst-engagement-intake' ), SC_EI_Platform_Validation::successful_and_fresh(), true, ! empty( $live_validation['completed_at'] ) ? sprintf( '%s · %d%%', $live_validation['completed_at'], absint( $live_validation['score'] ?? 0 ) ) : 'not run', 'run_live_validation' );
+		$checks[] = self::check( 'backup_attestation', 'security', __( 'Recent database and protected-storage backup attestation', 'sustainable-catalyst-engagement-intake' ), SC_EI_Platform_Validation::backups_fresh(), true, ! empty( $backup_attestation['attested_at'] ) ? (string) $backup_attestation['attested_at'] : 'not attested', 'attest_backups' );
 
 		$required_failures = array_values( array_filter( $checks, static fn( array $check ): bool => ! empty( $check['required'] ) && 'fail' === $check['status'] ) );
 		$warnings = array_values( array_filter( $checks, static fn( array $check ): bool => 'warn' === $check['status'] ) );
-		$weighted = array_filter( $checks, static fn( array $check ): bool => 'info' !== $check['status'] );
-		$earned = 0;
-		foreach ( $weighted as $check ) {
-			$earned += 'pass' === $check['status'] ? 1 : ( 'warn' === $check['status'] ? 0.5 : 0 );
-		}
-		$score = $weighted ? (int) round( 100 * $earned / count( $weighted ) ) : 0;
+		$passed_count = count( array_filter( $checks, static fn( array $check ): bool => 'pass' === $check['status'] ) );
+		$score = $checks ? (int) round( 100 * $passed_count / count( $checks ) ) : 0;
+		$ready_for_production = 100 === $score && empty( $required_failures ) && empty( $warnings );
 
 		return array(
-			'schema'             => 'sc-unified-contact-engagement-platform-readiness/1.0',
-			'generated_at'       => current_time( 'mysql', true ),
-			'plugin_version'     => SC_EI_VERSION,
-			'database_version'   => (string) get_option( 'sc_ei_db_version', '' ),
-			'platform_schema'    => SC_EI_PLATFORM_SCHEMA_VERSION,
-			'launch_state'       => SC_EI_Platform_Schema::sanitize_launch_state( (string) $settings['platform_launch_state'] ),
-			'score'              => $score,
-			'ready_for_production'=> empty( $required_failures ),
-			'required_failures'  => $required_failures,
-			'warnings'           => $warnings,
-			'checks'             => $checks,
-			'entry_pages'        => $entry_pages,
-			'urls'               => array(
-				'contact'    => $contact_url,
-				'engagement' => $engagement_url,
-				'portal'     => $portal_url,
-				'privacy'    => $privacy_url,
-			),
-			'cron'               => array_map( static fn( $timestamp ) => $timestamp ? gmdate( 'Y-m-d H:i:s', (int) $timestamp ) : null, $required_crons ),
-			'boundaries'         => self::boundaries(),
+			'schema'               => 'sc-unified-contact-engagement-platform-readiness/1.1',
+			'generated_at'         => current_time( 'mysql', true ),
+			'plugin_version'       => SC_EI_VERSION,
+			'database_version'     => (string) get_option( 'sc_ei_db_version', '' ),
+			'platform_schema'      => SC_EI_PLATFORM_SCHEMA_VERSION,
+			'launch_state'         => SC_EI_Platform_Schema::sanitize_launch_state( (string) $settings['platform_launch_state'] ),
+			'score'                => $score,
+			'ready_for_production' => $ready_for_production,
+			'required_failures'    => $required_failures,
+			'warnings'             => $warnings,
+			'production_blockers'  => array_values( array_merge( $required_failures, $warnings ) ),
+			'checks'               => $checks,
+			'entry_pages'          => $entry_pages,
+			'page_evidence'        => $page_evidence,
+			'urls'                 => array( 'contact' => $contact_url, 'engagement' => $engagement_url, 'portal' => $portal_url, 'privacy' => $privacy_url ),
+			'cron'                 => $cron_evidence,
+			'live_validation'      => $live_validation,
+			'backup_attestation'   => $backup_attestation,
+			'boundaries'           => self::boundaries(),
 		);
 	}
 
@@ -438,7 +492,174 @@ final class SC_EI_Platform_Repository {
 		return $result;
 	}
 
-	private static function check( string $key, string $group, string $label, bool $passed, bool $required, string $detail ): array {
+
+	public static function schedule_all(): void {
+		SC_EI_Retention::schedule();
+		SC_EI_Notification_Service::schedule();
+		SC_EI_Portal_Repository::schedule();
+		SC_EI_Workflow_Repository::schedule();
+		SC_EI_Graph_Repository::schedule();
+		SC_EI_Analytics_Repository::schedule();
+		SC_EI_Hardening_Repository::schedule();
+		SC_EI_Workflow_Core_Repository::schedule();
+		self::schedule();
+	}
+
+	public static function repair( string $repair_key, int $actor_user_id ) {
+		$repair_key = sanitize_key( $repair_key );
+		switch ( $repair_key ) {
+			case 'refresh_version':
+				update_option( 'sc_ei_version', SC_EI_VERSION, false );
+				update_option( 'sc_ei_platform_schema_version', SC_EI_PLATFORM_SCHEMA_VERSION, false );
+				$result = true;
+				break;
+			case 'repair_database':
+				SC_EI_Database::maybe_upgrade();
+				$result = ! in_array( false, SC_EI_Database::tables_exist(), true ) && ! in_array( false, SC_EI_Database::platform_columns_exist(), true );
+				break;
+			case 'verify_migration':
+				$result = self::run_migrations( (string) get_option( 'sc_ei_version_previous', '' ) );
+				break;
+			case 'verify_patch_migration':
+				$result = self::record_patch_migration( (string) get_option( 'sc_ei_version_previous', '' ) );
+				break;
+			case 'repair_storage':
+				$result = SC_EI_Storage::repair();
+				if ( empty( $result['ok'] ) ) {
+					$result = new WP_Error( 'platform_storage_repair_failed', __( 'Protected storage repair did not pass its runtime probe.', 'sustainable-catalyst-engagement-intake' ), $result );
+				}
+				break;
+			case 'repair_crons':
+				self::schedule_all();
+				$result = self::cron_evidence();
+				if ( empty( $result['passed'] ) ) {
+					$result = new WP_Error( 'platform_cron_repair_incomplete', __( 'One or more required scheduled jobs or callbacks remain unavailable.', 'sustainable-catalyst-engagement-intake' ), $result );
+				}
+				break;
+			default:
+				return new WP_Error( 'platform_repair_not_supported', __( 'This readiness item requires configuration or manual review rather than an automatic repair.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		SC_EI_Audit_Log::record( 'platform_readiness_repair_run', 'Authorized staff ran a bounded readiness repair action.', array( 'repair_key' => $repair_key, 'success' => ! is_wp_error( $result ) ), null, null, $actor_user_id );
+		return $result;
+	}
+
+	public static function cron_evidence(): array {
+		$jobs = array(
+			'portal_cleanup'       => array( 'hook' => 'sc_ei_portal_cleanup', 'callback' => array( 'SC_EI_Portal_Repository', 'handle_cleanup' ) ),
+			'workflow_cleanup'     => array( 'hook' => 'sc_ei_workflow_cleanup', 'callback' => array( 'SC_EI_Workflow_Repository', 'handle_cleanup' ) ),
+			'retention'            => array( 'hook' => SC_EI_Retention::CRON_HOOK, 'callback' => array( 'SC_EI_Retention', 'cleanup' ) ),
+			'notifications'        => array( 'hook' => SC_EI_Notification_Service::CRON_HOOK, 'callback' => array( 'SC_EI_Notification_Service', 'run_reminders' ) ),
+			'graph_catchup'        => array( 'hook' => 'sc_ei_graph_catchup', 'callback' => array( 'SC_EI_Graph_Repository', 'handle_catchup' ) ),
+			'analytics'            => array( 'hook' => SC_EI_Analytics_Repository::DAILY_HOOK, 'callback' => array( 'SC_EI_Analytics_Repository', 'daily_snapshot' ) ),
+			'hardening'            => array( 'hook' => SC_EI_Hardening_Repository::watchdog_hook(), 'callback' => array( 'SC_EI_Hardening_Repository', 'watchdog' ) ),
+			'workflow_core_sync'   => array( 'hook' => SC_EI_Workflow_Core_Repository::SYNC_HOOK, 'callback' => array( 'SC_EI_Workflow_Core_Repository', 'scheduled_sync' ) ),
+			'workflow_core_outbox' => array( 'hook' => SC_EI_Workflow_Core_Repository::OUTBOX_HOOK, 'callback' => array( 'SC_EI_Workflow_Core_Repository', 'scheduled_outbox' ) ),
+			'platform_snapshot'    => array( 'hook' => self::SNAPSHOT_HOOK, 'callback' => array( __CLASS__, 'daily_snapshot' ) ),
+		);
+		$missing = array();
+		$evidence = array();
+		foreach ( $jobs as $key => $job ) {
+			$timestamp = wp_next_scheduled( $job['hook'] );
+			$callback_registered = false !== has_action( $job['hook'], $job['callback'] );
+			$evidence[ $key ] = array(
+				'hook'                => $job['hook'],
+				'next_run_utc'        => $timestamp ? gmdate( 'Y-m-d H:i:s', (int) $timestamp ) : '',
+				'scheduled'           => (bool) $timestamp,
+				'callback_registered' => $callback_registered,
+			);
+			if ( ! $timestamp || ! $callback_registered ) {
+				$missing[] = $key . ( ! $timestamp ? ':schedule' : '' ) . ( ! $callback_registered ? ':callback' : '' );
+			}
+		}
+		return array(
+			'passed' => empty( $missing ),
+			'detail' => empty( $missing ) ? sprintf( '%d/%d scheduled with callbacks', count( $jobs ), count( $jobs ) ) : 'Missing ' . implode( ', ', $missing ),
+			'jobs'   => $evidence,
+		);
+	}
+
+	public static function page_contract_evidence(): array {
+		$settings = self::settings();
+		$discovered = self::discover_entry_pages();
+		$public = self::page_evidence_for(
+			array_filter( array( (string) ( $settings['platform_contact_page_url'] ?? '' ), (string) ( $settings['platform_engagement_page_url'] ?? '' ) ) ),
+			array( 'sc_contact_engagement_platform', 'sc_contact_hub', 'sc_engagement_inquiry' ),
+			array_merge( $discovered['unified'] ?? array(), $discovered['contact_hub'] ?? array(), $discovered['engagement'] ?? array() ),
+			true
+		);
+		$portal = self::page_evidence_for(
+			array_filter( array( self::effective_url( 'platform_portal_page_url', 'portal_page_url' ) ) ),
+			array( 'sc_sender_portal' ),
+			$discovered['portal'] ?? array(),
+			true
+		);
+		$privacy = self::page_evidence_for(
+			array_filter( array( (string) ( $settings['platform_privacy_page_url'] ?? '' ) ) ),
+			array(),
+			array(),
+			false
+		);
+		return array(
+			'public_entry' => $public,
+			'portal'       => $portal,
+			'privacy'      => $privacy,
+			'summary'      => sprintf( 'public entry %s; portal %s; privacy %s', $public['passed'] ? 'pass' : 'fail', $portal['passed'] ? 'pass' : 'fail', $privacy['passed'] ? 'pass' : 'fail' ),
+		);
+	}
+
+	public static function accessibility_evidence(): array {
+		if ( ! shortcode_exists( 'sc_contact_engagement_platform' ) || ! shortcode_exists( 'sc_sender_portal' ) ) {
+			return array( 'passed' => false, 'detail' => 'Required public shortcodes are not registered.' );
+		}
+		$html = SC_EI_Platform_Public::shortcode( array( 'show_form' => 'no', 'show_portal' => 'no', 'show_privacy' => 'no' ) );
+		$required = array( 'aria-labelledby=', 'aria-label=', 'role="note"', '<h2' );
+		$missing = array_values( array_filter( $required, static fn( string $needle ): bool => false === strpos( $html, $needle ) ) );
+		return array(
+			'passed' => empty( $missing ),
+			'detail' => empty( $missing ) ? 'Rendered platform shell includes heading relationships, route label, and workflow note.' : 'Missing rendered markers: ' . implode( ', ', $missing ),
+		);
+	}
+
+	private static function page_evidence_for( array $configured_urls, array $shortcodes, array $discovered, bool $shortcode_required ): array {
+		$candidates = array();
+		foreach ( $configured_urls as $url ) {
+			$url = esc_url_raw( (string) $url );
+			if ( $url ) {
+				$candidates[] = array( 'url' => $url, 'source' => 'configured' );
+			}
+		}
+		foreach ( $discovered as $page ) {
+			if ( ! empty( $page['url'] ) ) {
+				$candidates[] = array( 'url' => (string) $page['url'], 'source' => 'discovered', 'id' => absint( $page['id'] ?? 0 ) );
+			}
+		}
+		$seen = array();
+		foreach ( $candidates as $candidate ) {
+			$url = $candidate['url'];
+			if ( isset( $seen[ $url ] ) ) {
+				continue;
+			}
+			$seen[ $url ] = true;
+			$post_id = ! empty( $candidate['id'] ) ? absint( $candidate['id'] ) : url_to_postid( $url );
+			$post = $post_id ? get_post( $post_id ) : null;
+			if ( ! $post || 'publish' !== (string) $post->post_status || ! in_array( (string) $post->post_type, array( 'page', 'post' ), true ) ) {
+				continue;
+			}
+			$has_contract = ! $shortcode_required;
+			foreach ( $shortcodes as $shortcode ) {
+				if ( has_shortcode( (string) $post->post_content, $shortcode ) ) {
+					$has_contract = true;
+					break;
+				}
+			}
+			if ( $has_contract ) {
+				return array( 'passed' => true, 'detail' => sprintf( '%s (#%d, %s)', get_the_title( $post_id ), $post_id, $candidate['source'] ), 'url' => get_permalink( $post_id ) ?: $url, 'post_id' => $post_id );
+			}
+		}
+		return array( 'passed' => false, 'detail' => $shortcode_required ? 'No published local page with the required shortcode was found.' : 'No published local page was found for the configured URL.', 'url' => '', 'post_id' => 0 );
+	}
+
+	private static function check( string $key, string $group, string $label, bool $passed, bool $required, string $detail, string $repair = '' ): array {
 		return array(
 			'key'      => sanitize_key( $key ),
 			'group'    => sanitize_key( $group ),
@@ -446,7 +667,30 @@ final class SC_EI_Platform_Repository {
 			'status'   => $passed ? 'pass' : ( $required ? 'fail' : 'warn' ),
 			'required' => $required,
 			'detail'   => mb_substr( sanitize_text_field( $detail ), 0, 1000 ),
+			'repair'   => sanitize_key( $repair ),
+			'repair_label' => self::repair_label( $repair ),
 		);
+	}
+
+
+	private static function repair_label( string $repair ): string {
+		$labels = array(
+			'refresh_version'       => __( 'Refresh version state', 'sustainable-catalyst-engagement-intake' ),
+			'repair_database'       => __( 'Repair database contract', 'sustainable-catalyst-engagement-intake' ),
+			'verify_migration'      => __( 'Verify base migration', 'sustainable-catalyst-engagement-intake' ),
+			'verify_patch_migration'=> __( 'Record v1.0.2 upgrade', 'sustainable-catalyst-engagement-intake' ),
+			'repair_storage'        => __( 'Repair and probe storage', 'sustainable-catalyst-engagement-intake' ),
+			'repair_crons'          => __( 'Repair scheduled jobs', 'sustainable-catalyst-engagement-intake' ),
+			'configure_pages'       => __( 'Configure public pages', 'sustainable-catalyst-engagement-intake' ),
+			'configure_settings'    => __( 'Configure platform settings', 'sustainable-catalyst-engagement-intake' ),
+			'review_https'          => __( 'Review HTTPS configuration', 'sustainable-catalyst-engagement-intake' ),
+			'review_reliability'    => __( 'Open Reliability', 'sustainable-catalyst-engagement-intake' ),
+			'review_workflow_core'  => __( 'Open Workflow Core', 'sustainable-catalyst-engagement-intake' ),
+			'review_accessibility'  => __( 'Review rendered interface', 'sustainable-catalyst-engagement-intake' ),
+			'run_live_validation'   => __( 'Run live validation', 'sustainable-catalyst-engagement-intake' ),
+			'attest_backups'        => __( 'Record backup evidence', 'sustainable-catalyst-engagement-intake' ),
+		);
+		return $labels[ $repair ] ?? '';
 	}
 
 	private static function effective_url( string $platform_key, string $legacy_key ): string {
@@ -458,10 +702,10 @@ final class SC_EI_Platform_Repository {
 		return $url;
 	}
 
-	private static function migration_completed(): bool {
+	private static function migration_completed( string $migration_key ): bool {
 		global $wpdb;
 		$status = $wpdb->get_var(
-			$wpdb->prepare( 'SELECT status FROM ' . SC_EI_Database::table( 'platform_migrations' ) . ' WHERE migration_key = %s LIMIT 1', self::MIGRATION_KEY )
+			$wpdb->prepare( 'SELECT status FROM ' . SC_EI_Database::table( 'platform_migrations' ) . ' WHERE migration_key = %s LIMIT 1', $migration_key )
 		);
 		return 'completed' === $status;
 	}

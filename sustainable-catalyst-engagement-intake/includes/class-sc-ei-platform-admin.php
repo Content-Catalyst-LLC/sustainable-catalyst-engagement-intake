@@ -15,6 +15,9 @@ final class SC_EI_Platform_Admin {
 		add_action( 'admin_post_sc_ei_platform_save_settings', array( __CLASS__, 'handle_save_settings' ) );
 		add_action( 'admin_post_sc_ei_platform_export', array( __CLASS__, 'handle_export' ) );
 		add_action( 'admin_post_sc_ei_platform_verify_migration', array( __CLASS__, 'handle_verify_migration' ) );
+		add_action( 'admin_post_sc_ei_platform_repair', array( __CLASS__, 'handle_repair' ) );
+		add_action( 'admin_post_sc_ei_platform_live_validation', array( __CLASS__, 'handle_live_validation' ) );
+		add_action( 'admin_post_sc_ei_platform_backup_attestation', array( __CLASS__, 'handle_backup_attestation' ) );
 	}
 
 	public static function page(): void {
@@ -111,6 +114,38 @@ final class SC_EI_Platform_Admin {
 		self::require_confirmation( 'VERIFY PLATFORM MIGRATION', $_POST['platform_confirmation'] ?? '', 'platform_migration_confirmation_failed' );
 		$result = SC_EI_Platform_Repository::run_migrations( (string) get_option( 'sc_ei_version_previous', '0.12.0' ) );
 		self::redirect( is_wp_error( $result ) ? $result->get_error_code() : 'platform_migration_verified' );
+	}
+
+
+	public static function handle_repair(): void {
+		self::require_cap( 'sc_intake_manage_platform' );
+		$repair_key = sanitize_key( wp_unslash( $_POST['platform_repair_key'] ?? '' ) );
+		check_admin_referer( 'sc_ei_platform_repair_' . $repair_key );
+		$result = SC_EI_Platform_Repository::repair( $repair_key, get_current_user_id() );
+		self::redirect( is_wp_error( $result ) ? $result->get_error_code() : 'platform_repair_completed' );
+	}
+
+	public static function handle_live_validation(): void {
+		self::require_cap( 'sc_intake_manage_platform' );
+		check_admin_referer( 'sc_ei_platform_live_validation' );
+		self::require_confirmation( 'RUN LIVE VALIDATION', $_POST['platform_confirmation'] ?? '', 'platform_live_validation_confirmation_failed' );
+		$result = SC_EI_Platform_Validation::run(
+			(string) wp_unslash( $_POST['platform_test_email'] ?? '' ),
+			get_current_user_id()
+		);
+		self::redirect( ! empty( $result['passed'] ) ? 'platform_live_validation_passed' : 'platform_live_validation_failed' );
+	}
+
+	public static function handle_backup_attestation(): void {
+		self::require_cap( 'sc_intake_manage_platform' );
+		check_admin_referer( 'sc_ei_platform_backup_attestation' );
+		self::require_confirmation( 'ATTEST PLATFORM BACKUPS', $_POST['platform_confirmation'] ?? '', 'platform_backup_confirmation_failed' );
+		$result = SC_EI_Platform_Validation::attest_backups(
+			(string) wp_unslash( $_POST['database_backup_reference'] ?? '' ),
+			(string) wp_unslash( $_POST['storage_backup_reference'] ?? '' ),
+			get_current_user_id()
+		);
+		self::redirect( is_wp_error( $result ) ? $result->get_error_code() : 'platform_backups_attested' );
 	}
 
 	private static function require_cap( string $capability ): void {

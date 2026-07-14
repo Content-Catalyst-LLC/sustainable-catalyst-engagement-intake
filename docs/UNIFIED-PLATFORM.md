@@ -1,25 +1,24 @@
-# Unified Contact and Engagement Platform
+# Sustainable Catalyst Contact and Engagement Platform
 
 ## Purpose
 
-Version 1.0.0 provides one governed operating layer above the complete contact-to-engagement workflow. It unifies navigation, readiness, migration provenance, status, launch governance, and public entry routing without replacing the authoritative repositories built through v0.12.0.
+Version 1.0.2 provides a governed operating and launch layer above the complete contact-to-engagement workflow. It unifies navigation, readiness, migration provenance, live validation, backup evidence, status, launch governance, and public entry routing without replacing authoritative business repositories or human decisions.
 
 ## Product surfaces
 
 ### Public
 
 - Unified contact and engagement entry
-- General contact
-- Engagement inquiry
+- General contact and Advisory inquiry routes
 - Secure sender portal
 - Privacy guidance
 - Accessibility and process guidance
 
 ### Private administration
 
-- Platform Overview
-- Inquiries
-- Administrative Review
+- Platform Overview and guided repair center
+- Live Validation and backup evidence
+- Inquiries and Administrative Review
 - Human-Controlled Fit Assessment
 - Communications
 - Privacy and Retention
@@ -27,10 +26,7 @@ Version 1.0.0 provides one governed operating layer above the complete contact-t
 - Teams and Proposals
 - Microsoft Graph reliability
 - Engagement Handoff
-- Analytics
-- Reliability
-- Workflow Core
-- Diagnostics and Settings
+- Analytics, Reliability, Workflow Core, Diagnostics, and Settings
 
 ## Unified public shortcode
 
@@ -38,43 +34,77 @@ Version 1.0.0 provides one governed operating layer above the complete contact-t
 [sc_contact_engagement_platform]
 ```
 
-The shortcode composes the existing `SC_EI_Public::contact_hub()` implementation. All submission validation, rate limiting, consent provenance, storage, attribution, notification, privacy, and audit behavior therefore remains centralized.
+The shortcode composes the existing centralized public intake implementation. Submission validation, duplicate prevention, rate limiting, consent provenance, storage, attribution, notification, privacy, and audit behavior remain in one pipeline.
 
-Recommended example:
+Existing shortcodes remain supported:
 
 ```text
-[sc_contact_engagement_platform
-  title="Contact Sustainable Catalyst"
-  intro="Choose the path that best matches your request."
-  source="contact-page"
-  entry_cta="unified-contact-engagement"
-  show_form="yes"
-  show_portal="yes"
-  show_privacy="yes"]
+[sc_contact_hub]
+[sc_contact_form]
+[sc_engagement_inquiry]
+[sc_sender_portal]
 ```
 
-## Platform readiness
+## Runtime-backed readiness
 
-Required checks cover:
+The production score uses actual runtime evidence for:
 
-- plugin and database version
-- all expected database tables and platform columns
-- completed v1.0 migration journal
-- protected storage readiness
-- HTTPS
-- required scheduled jobs
-- critical reliability events
-- incident public-write state
-- configured public entry page
-- configured secure sender portal URL
-- configured support email
+- installed plugin and database versions
+- expected database tables and platform columns
+- completed v1.0 and v1.0.2 migration journals
+- protected-storage posture
+- HTTPS and secure portal transport
+- critical reliability events and incident write state
+- required scheduled hooks and registered callbacks
+- published local Contact/Engagement page containing a supported intake shortcode
+- published local Sender Portal page containing `[sc_sender_portal]`
+- valid support email
 - Workflow Core consistency
-- required internal adapter state when configured
-- accessibility implementation controls
+- initialized internal-adapter registry
+- published privacy guidance page
+- rendered accessibility contract
+- recent successful live validation
+- recent database and protected-storage backup attestation
 
-Warnings can include privacy URL configuration and non-required adapter availability.
+Configured URLs alone do not pass page checks. They must resolve to published local WordPress content with the required shortcode.
 
-## Launch states
+## Guided repair center
+
+Authorized administrators can run bounded repairs for:
+
+- stored plugin and platform schema version state
+- database contract
+- base and patch migration journals
+- protected storage
+- scheduled jobs
+
+Configuration, privacy, HTTPS, reliability, Workflow Core, and accessibility findings remain manual review items.
+
+## Live validation
+
+The administrator-only suite uses temporary, clearly marked artifacts and validates:
+
+- version and database contract
+- public page and shortcode contracts
+- cron schedules and callbacks
+- rendered accessibility markers
+- duplicate fingerprint and concurrent request lock
+- protected-storage probe and exposure posture
+- inquiry creation and status transition
+- sender portal invitation issue and token verification
+- private file store, SHA-256 integrity verification, and deletion
+- WordPress mail transport acceptance
+- cleanup of temporary records, tokens, files, audit rows, and scheduled inquiry work
+
+A passing mail check means WordPress accepted the message. It does not prove inbox delivery; the administrator must confirm receipt manually.
+
+## Backup evidence
+
+Production requires a recent human attestation that both the WordPress database and protected document storage have current recoverable backups. The attestation records references, user, plugin version, and UTC time in the audit trail. It does not claim to inspect a host backup system that WordPress cannot access.
+
+## Production gate
+
+Launch states remain:
 
 ```text
 setup
@@ -83,56 +113,33 @@ production
 maintenance
 ```
 
-Only a user with `sc_intake_launch_platform` can change launch state. Production is blocked while a required readiness check fails. No background process can change launch state.
+Production requires all of the following:
 
-## Readiness snapshots
+- readiness score exactly 100%
+- zero required failures
+- zero warnings
+- successful live validation for the installed plugin version within seven days
+- database and protected-storage backup attestation within seven days
+- authorized typed human launch action
 
-Each snapshot stores:
-
-- launch state
-- readiness score
-- required failure count
-- warning count
-- complete readiness payload
-- SHA-256 content hash
-- source and generating user
-- generation time
-
-Snapshots are append-only operational records and are pruned only through the configured retention lifecycle.
+No background process can change launch state.
 
 ## Migration journal
 
-The v1.0 migration key is:
+Base migration key:
 
 ```text
 v1_0_0_unified_contact_engagement_platform
 ```
 
-The migration is non-destructive and idempotent. It records:
+v1.0.2 patch migration key:
 
-- previous version
-- target version
-- schema-version map
-- schema SHA-256
-- started and completed times
-- success or failure state
-- bounded error metadata
+```text
+v1_0_2_production_readiness_live_validation
+```
 
-It does not rename the plugin directory, reset existing schemas, rewrite inquiry records, or discard historical data.
-
-## Stable compatibility contract
-
-Version 1.0.0 retains:
-
-- plugin folder `sustainable-catalyst-engagement-intake`
-- text domain `sustainable-catalyst-engagement-intake`
-- database table naming
-- public shortcodes
-- sender portal links and tokens
-- historical audit and privacy records
-- Graph credential vault and operation records
-- existing Workflow Core handoff contract `sc-engagement-workflow-handoff/1.0`
+Both migrations are non-destructive and idempotent. v1.0.2 preserves database version 1.0.0 and advances only the platform evidence schema to 1.0.1.
 
 ## Boundaries
 
-The unified platform reports and coordinates workflow. It does not automate business decisions, contracts, signatures, payments, engagement activation, external project provisioning, arbitrary webhooks, or unverified inbound commands.
+The platform reports, validates, and coordinates workflow. It does not automatically accept or reject inquiries, decide fit, publish proposals, create or attest contracts, schedule meetings, activate engagements, provision external projects, send arbitrary webhooks, collect payment, or execute unverified inbound commands.

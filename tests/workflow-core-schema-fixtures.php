@@ -7,7 +7,7 @@ $caps = file_get_contents( $plugin . '/includes/class-sc-ei-capabilities.php' );
 $activator = file_get_contents( $plugin . '/includes/class-sc-ei-activator.php' );
 $uninstall = file_get_contents( $plugin . '/uninstall.php' );
 $checks = array(
-	'v1.0.1 plugin markers' => false !== strpos( $main, 'Version:     1.0.1' )
+	'v1.0.2 plugin markers' => false !== strpos( $main, 'Version:     1.0.2' )
 		&& false !== strpos( $main, "SC_EI_DB_VERSION', '1.0.0'" )
 		&& false !== strpos( $main, "SC_EI_WORKFLOW_CORE_SCHEMA_VERSION', '1.0.0'" ),
 	'core components loaded' => false !== strpos( $main, 'class-sc-ei-workflow-core-schema.php' )
