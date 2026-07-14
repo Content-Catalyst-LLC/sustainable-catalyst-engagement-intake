@@ -39,7 +39,7 @@ $is_error = $message && ! isset( $messages[ $message ] );
 			<h1><?php esc_html_e( 'Workflow Core', 'sustainable-catalyst-engagement-intake' ); ?></h1>
 			<p><?php esc_html_e( 'Reconcile authoritative intake records into one canonical case projection and move signed, versioned handoffs through registered internal WordPress adapters.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 		</div>
-		<div class="sc-ei-admin__version">v0.12.0</div>
+		<div class="sc-ei-admin__version">v1.0.0</div>
 	</header>
 
 	<?php if ( $message ) : ?>
@@ -161,7 +161,7 @@ $is_error = $message && ! isset( $messages[ $message ] );
 					<h2><?php esc_html_e( 'Canonical Projection', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 					<dl class="sc-ei-admin__details">
 						<dt><?php esc_html_e( 'Case public ID', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><code><?php echo esc_html( $selected['public_id'] ); ?></code></dd>
-						<dt><?php esc_html_e( 'Authoritative inquiry', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><a href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-view&inquiry=' . absint( $selected['inquiry_id'] ) ) ); ?>"><?php echo esc_html( $selected['reference'] ); ?></a></dd>
+						<dt><?php esc_html_e( 'Authoritative inquiry', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><a href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-inquiries&action=view&inquiry=' . absint( $selected['inquiry_id'] ) ) ); ?>"><?php echo esc_html( $selected['reference'] ); ?></a></dd>
 						<dt><?php esc_html_e( 'Stage', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( SC_EI_Workflow_Core_Schema::label( SC_EI_Workflow_Core_Schema::stages(), $selected['current_stage'] ) ); ?></dd>
 						<dt><?php esc_html_e( 'State', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( SC_EI_Workflow_Core_Schema::label( SC_EI_Workflow_Core_Schema::states(), $selected['current_state'] ) ); ?></dd>
 						<dt><?php esc_html_e( 'Terminal state', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $selected['terminal_state'] ?: '—' ); ?></dd>

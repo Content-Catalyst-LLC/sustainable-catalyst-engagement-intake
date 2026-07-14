@@ -2686,7 +2686,7 @@
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; } }
 @media (forced-colors: active) { .sc-ei-fit-state, .sc-ei-portal-status, .button, button { border:1px solid ButtonText; } .sc-ei-check--ok, .sc-ei-check--bad { color:CanvasText !important; } }
 
-/* v0.12.0 Workflow Core Integration */
+/* v1.0.0 Unified Contact and Engagement Platform */
 .sc-ei-workflow-core-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.72fr) minmax(300px, .68fr);
@@ -2833,4 +2833,78 @@
     display: grid;
     grid-template-columns: 1fr;
   }
+}
+
+/* v1.0.0 Unified Contact and Engagement Platform */
+.sc-ei-platform-admin__header {
+	background: linear-gradient(135deg, #16080d 0%, #35101d 58%, #5b172d 100%);
+	color: #fff;
+	border: 1px solid #6d2038;
+	border-radius: 16px;
+	padding: 28px;
+}
+.sc-ei-platform-admin__header h1,
+.sc-ei-platform-admin__header p { color: inherit; }
+.sc-ei-platform-admin__release {
+	display: grid;
+	gap: 6px;
+	min-width: 140px;
+	padding: 14px 16px;
+	border: 1px solid rgba(255,255,255,.28);
+	border-radius: 12px;
+	background: rgba(0,0,0,.22);
+	text-align: right;
+}
+.sc-ei-platform-admin__release span { font-size: 22px; font-weight: 800; }
+.sc-ei-platform-admin__release strong { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.sc-ei-platform-score {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0,1fr));
+	gap: 12px;
+	margin: 18px 0;
+}
+.sc-ei-platform-score > div {
+	display: grid;
+	gap: 5px;
+	padding: 18px;
+	background: #fff;
+	border: 1px solid #d7d7dc;
+	border-radius: 12px;
+}
+.sc-ei-platform-score strong { font-size: 26px; line-height: 1; color: #681d36; }
+.sc-ei-platform-score span { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+.sc-ei-platform-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 2fr) minmax(280px, .85fr);
+	gap: 18px;
+	align-items: start;
+}
+.sc-ei-platform-layout main,
+.sc-ei-platform-layout aside { display: grid; gap: 18px; }
+.sc-ei-platform-checks { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.sc-ei-platform-checks > section { border: 1px solid #d9d9df; border-radius: 12px; padding: 14px; background: #fafafa; }
+.sc-ei-platform-checks h3 { margin-top: 0; }
+.sc-ei-platform-check { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px solid #e5e5e9; }
+.sc-ei-platform-check:first-of-type { border-top: 0; }
+.sc-ei-platform-check > span { font-size: 14px; margin-top: 2px; }
+.sc-ei-platform-check div { display: grid; gap: 3px; }
+.sc-ei-platform-check small { color: #555b65; }
+.sc-ei-platform-check--pass > span { color: #19733c; }
+.sc-ei-platform-check--warn > span { color: #9a6300; }
+.sc-ei-platform-check--fail > span { color: #a61b1b; }
+.sc-ei-platform-modules { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.sc-ei-platform-modules a { display: grid; gap: 6px; padding: 16px; border: 1px solid #d7d7dc; border-radius: 12px; background: #fff; text-decoration: none; }
+.sc-ei-platform-modules a:hover,
+.sc-ei-platform-modules a:focus-visible { border-color: #681d36; box-shadow: 0 0 0 2px rgba(104,29,54,.12); }
+.sc-ei-platform-modules strong { color: #681d36; }
+.sc-ei-platform-modules span { color: #40444c; }
+@media (max-width: 980px) {
+	.sc-ei-platform-layout { grid-template-columns: 1fr; }
+	.sc-ei-platform-score { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 640px) {
+	.sc-ei-platform-score,
+	.sc-ei-platform-checks,
+	.sc-ei-platform-modules { grid-template-columns: 1fr; }
+	.sc-ei-platform-admin__header { padding: 20px; }
 }

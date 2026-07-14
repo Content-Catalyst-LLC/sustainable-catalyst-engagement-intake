@@ -121,4 +121,4 @@ if ( ! isset(
 }
 pass_privacy_schema( 'requests, consent, holds, and action-state taxonomies present' );
 
-echo "Engagement Intake v0.12.0 privacy schema fixtures passed.\n";
+echo "Engagement Intake v1.0.0 privacy schema fixtures passed.\n";

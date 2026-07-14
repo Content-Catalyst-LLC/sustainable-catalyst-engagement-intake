@@ -22,6 +22,7 @@ final class SC_EI_Diagnostics {
 		$engagement_columns    = SC_EI_Database::engagement_columns_exist();
 		$hardening_columns     = SC_EI_Database::hardening_columns_exist();
 		$workflow_core_columns = SC_EI_Database::workflow_core_columns_exist();
+		$platform_columns      = SC_EI_Database::platform_columns_exist();
 		$admin              = get_role( 'administrator' );
 		$settings           = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
@@ -60,6 +61,7 @@ final class SC_EI_Diagnostics {
 		$workflow_core_targets = SC_EI_Workflow_Core_Service::registered_targets();
 		$workflow_core_last_sync = get_option( 'sc_ei_workflow_core_last_sync', array() );
 		$workflow_core_last_outbox = get_option( 'sc_ei_workflow_core_last_outbox', array() );
+		$platform_summary = SC_EI_Platform_Repository::platform_summary();
 
 		$notification_policies = array(
 			'sender_acknowledgment' => ! empty( $settings['sender_acknowledgment_enabled'] ),
@@ -170,6 +172,14 @@ final class SC_EI_Diagnostics {
 				'portal_sender_safe'         => ! empty( $settings['engagement_sender_portal_enabled'] ),
 				'workbench_export'           => ! empty( $settings['engagement_allow_workbench_export'] ),
 				'decision_studio_export'     => ! empty( $settings['engagement_allow_decision_studio_export'] ),
+			),
+			'platform_schema_version' => SC_EI_PLATFORM_SCHEMA_VERSION,
+			'platform_columns'        => $platform_columns,
+			'platform'                => array(
+				'readiness' => $platform_summary['readiness'],
+				'migrations'=> $platform_summary['migrations'],
+				'snapshots' => $platform_summary['snapshots'],
+				'boundaries'=> SC_EI_Platform_Repository::boundaries(),
 			),
 			'workflow_core_schema_version' => SC_EI_WORKFLOW_CORE_SCHEMA_VERSION,
 			'workflow_core_columns'        => $workflow_core_columns,

@@ -372,3 +372,9 @@ authoritative repositories
 
 The core is a projection and integration layer, not a replacement domain model.
 
+
+## v1.0 unified platform layer
+
+Version 1.0.0 adds a governance layer above the existing authoritative repositories. `SC_EI_Platform_Repository` aggregates readiness and product status, stores hashed snapshots, and records an idempotent migration journal. It does not become an authoritative inquiry, proposal, contract, or engagement repository.
+
+The unified public shortcode composes the existing contact hub. The Platform Overview is an administrative projection. Workflow Core remains the cross-plugin integration boundary.

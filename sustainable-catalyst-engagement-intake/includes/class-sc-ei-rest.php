@@ -58,6 +58,16 @@ final class SC_EI_REST {
 
 		register_rest_route(
 			'sc-engagement-intake/v1',
+			'/platform/status',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'platform_status' ),
+				'permission_callback' => static fn(): bool => current_user_can( 'sc_intake_view_platform' ),
+			)
+		);
+
+		register_rest_route(
+			'sc-engagement-intake/v1',
 			'/workflow-core/cases',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -178,6 +188,27 @@ final class SC_EI_REST {
 		return new WP_REST_Response( $record );
 	}
 
+	public static function platform_status(): WP_REST_Response {
+		$readiness = SC_EI_Platform_Repository::readiness();
+		return new WP_REST_Response(
+			array(
+				'schema'       => 'sc-unified-contact-engagement-platform-status/1.0',
+				'generated_at' => current_time( 'mysql', true ),
+				'version'      => SC_EI_VERSION,
+				'launch_state' => $readiness['launch_state'],
+				'readiness'    => array(
+					'score'                => $readiness['score'],
+					'ready_for_production' => $readiness['ready_for_production'],
+					'required_failures'    => count( $readiness['required_failures'] ),
+					'warnings'             => count( $readiness['warnings'] ),
+				),
+				'schemas'      => SC_EI_Platform_Repository::schema_versions(),
+				'boundaries'   => SC_EI_Platform_Repository::boundaries(),
+				'read_only'    => true,
+			)
+		);
+	}
+
 	public static function workflow_core_cases( WP_REST_Request $request ): WP_REST_Response {
 		$cases = SC_EI_Workflow_Core_Repository::query_cases(
 			array(
@@ -209,7 +240,13 @@ final class SC_EI_REST {
 				'schema'      => 'sc-engagement-workflow-core-case/1.0',
 				'generated_at'=> current_time( 'mysql', true ),
 				'case'        => $case,
-				'commands'    => SC_EI_Workflow_Core_Repository::commands( absint( $case['id'] ), 250 ),
+				'commands'    => array_map(
+					static function ( array $command ): array {
+						unset( $command['payload_json'], $command['result_json'], $command['reason'], $command['error_message'] );
+						return $command;
+					},
+					SC_EI_Workflow_Core_Repository::commands( absint( $case['id'] ), 250 )
+				),
 				'handoffs'    => array_map(
 					static fn( array $handoff ): array => SC_EI_Workflow_Core_Contract::public_metadata( $handoff ),
 					SC_EI_Workflow_Core_Repository::handoffs( absint( $case['id'] ), 250 )

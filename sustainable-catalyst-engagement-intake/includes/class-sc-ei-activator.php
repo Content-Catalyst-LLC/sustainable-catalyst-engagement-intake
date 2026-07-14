@@ -12,9 +12,10 @@ final class SC_EI_Activator {
 	public static function activate(): void {
 		if ( version_compare( PHP_VERSION, '8.1', '<' ) ) {
 			deactivate_plugins( SC_EI_BASENAME );
-			wp_die( esc_html__( 'Sustainable Catalyst Engagement Intake requires PHP 8.1 or newer.', 'sustainable-catalyst-engagement-intake' ) );
+			wp_die( esc_html__( 'Sustainable Catalyst Contact and Engagement Platform requires PHP 8.1 or newer.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 
+		$previous_version = (string) get_option( 'sc_ei_version', '' );
 		SC_EI_Database::install();
 		SC_EI_Capabilities::install();
 		SC_EI_Storage::ensure();
@@ -40,13 +41,17 @@ final class SC_EI_Activator {
 		update_option( 'sc_ei_analytics_schema_version', SC_EI_ANALYTICS_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_hardening_schema_version', SC_EI_HARDENING_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_workflow_core_schema_version', SC_EI_WORKFLOW_CORE_SCHEMA_VERSION, false );
+		update_option( 'sc_ei_platform_schema_version', SC_EI_PLATFORM_SCHEMA_VERSION, false );
+		update_option( 'sc_ei_version_previous', $previous_version, false );
+		SC_EI_Platform_Repository::run_migrations( $previous_version );
 		SC_EI_Analytics_Repository::schedule();
 		SC_EI_Hardening_Repository::schedule();
 		SC_EI_Workflow_Core_Repository::schedule();
+		SC_EI_Platform_Repository::schedule();
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Engagement Intake v0.12.0 activated with a canonical Workflow Core, audit-driven case projections, idempotent human commands, signed versioned cross-plugin handoffs, durable internal-adapter outbox delivery, and all prior reliability, analytics, engagement, Graph, portal, privacy, review, quarantine, and storage controls.',
+			'Unified Contact and Engagement Platform v1.0.0 activated with a governed platform overview, readiness snapshots, migration journal, unified public entry point, stable module navigation, and all established inquiry, review, fit, portal, Teams, proposal, engagement, analytics, reliability, privacy, quarantine, and Workflow Core controls.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}
@@ -60,5 +65,6 @@ final class SC_EI_Activator {
 		SC_EI_Analytics_Repository::unschedule();
 		SC_EI_Hardening_Repository::unschedule();
 		SC_EI_Workflow_Core_Repository::unschedule();
+		SC_EI_Platform_Repository::unschedule();
 	}
 }

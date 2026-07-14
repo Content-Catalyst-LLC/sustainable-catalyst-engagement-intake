@@ -507,7 +507,7 @@ $effective       = $diagnostics['effective_limits'];
 			<h2><?php esc_html_e( 'Database Migrations', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<h3><?php esc_html_e( 'Tables', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['tables'] as $name => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $name ); ?></li><?php endforeach; ?></ul>
-			<h3><?php esc_html_e( 'v0.12.0 inquiry, attachment, review, fit assessment, sender portal, Teams scheduling, Microsoft Graph reliability, proposal, engagement handoff, analytics, hardening, Workflow Core, communication, and privacy fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<h3><?php esc_html_e( 'v1.0.0 inquiry, attachment, review, fit assessment, sender portal, Teams scheduling, Microsoft Graph reliability, proposal, engagement handoff, analytics, hardening, Workflow Core, communication, and privacy fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['attachment_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
 			<h3><?php esc_html_e( 'Sender portal tables and fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks sc-ei-checks--columns"><?php foreach ( $diagnostics['portal_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>

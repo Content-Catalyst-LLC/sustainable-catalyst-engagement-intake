@@ -73,4 +73,4 @@ foreach ( $checks as $label => $passed ) {
 	echo 'PASS: ' . $label . PHP_EOL;
 }
 
-echo "Engagement Intake v0.12.0 administrative review operation checks passed.\n";
+echo "Engagement Intake v1.0.0 administrative review operation checks passed.\n";

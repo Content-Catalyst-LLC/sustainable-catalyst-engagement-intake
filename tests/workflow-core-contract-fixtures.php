@@ -59,4 +59,4 @@ fixture_assert(
 );
 $changed = SC_EI_Workflow_Core_Contract::seal_payload( array_merge( $payload_a, array( 'new' => true ) ), 'workbench' );
 fixture_assert( $changed['content_hash'] !== $sealed_a['content_hash'], 'payload changes produce a new content hash' );
-echo "Engagement Intake v0.12.0 Workflow Core contract fixtures passed.\n";
+echo "Engagement Intake v1.0.0 Workflow Core contract fixtures passed.\n";

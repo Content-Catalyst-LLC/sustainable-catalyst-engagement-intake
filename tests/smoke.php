@@ -28,8 +28,8 @@ $required = array(
 $failures = array();
 foreach ( $required as $file ) if ( ! is_file( $file ) ) $failures[] = 'Missing: ' . $file;
 foreach ( array(
-	'Version:     0.12.0' => $main,
-	"SC_EI_DB_VERSION', '0.12.0'" => $main,
+	'Version:     1.0.0' => $main,
+	"SC_EI_DB_VERSION', '1.0.0'" => $main,
 	"SC_EI_PORTAL_SCHEMA_VERSION', '1.3.0'" => $main,
 	"SC_EI_ENGAGEMENT_SCHEMA_VERSION', '1.0.0'" => $main,
 	"SC_EI_HARDENING_SCHEMA_VERSION', '1.0.0'" => $main,
@@ -62,4 +62,4 @@ foreach ( array(
 if ( false !== strpos( $engagement, 'wp_mail(' ) || false !== strpos( $engagement, 'wp_remote_' ) ) $failures[] = 'Engagement repository contains direct delivery or external API calls.';
 if ( false !== strpos( $core, 'wp_mail(' ) || false !== strpos( $core, 'wp_remote_' ) ) $failures[] = 'Workflow Core repository contains direct email or external HTTP delivery.';
 if ( $failures ) { fwrite( STDERR, implode( PHP_EOL, $failures ) . PHP_EOL ); exit( 1 ); }
-echo "Engagement Intake v0.12.0 smoke checks passed.\n";
+echo "Engagement Intake v1.0.0 smoke checks passed.\n";

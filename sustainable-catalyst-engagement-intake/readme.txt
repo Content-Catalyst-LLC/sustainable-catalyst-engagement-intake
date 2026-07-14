@@ -1,94 +1,122 @@
-=== Sustainable Catalyst Engagement Intake ===
+=== Sustainable Catalyst Contact and Engagement Platform ===
 Contributors: content-catalyst
-Tags: workflow, intake, integrations, sender portal, microsoft graph, analytics, privacy, security
+Tags: contact, engagement, workflow, sender portal, microsoft teams, proposals, analytics, privacy, accessibility
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.12.0
+Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Private engagement intake with a canonical workflow projection, idempotent human commands, signed cross-plugin handoffs, durable internal-adapter delivery, reliability, privacy, and protected document intake.
+A governed contact-to-engagement platform with adaptive intake, secure sender collaboration, human review, Teams scheduling, proposals, engagement handoff, analytics, reliability, privacy, and signed internal integrations.
 
 == Description ==
 
-Version 0.12.0 adds Workflow Core Integration to the complete Sustainable Catalyst inquiry-to-engagement platform.
+Version 1.0.0 is the first stable Unified Contact and Engagement Platform release.
 
-The Workflow Core derives one canonical case projection from the authoritative inquiry, review, fit, meeting, proposal, privacy, and engagement records. It does not replace or rewrite those records.
+It connects:
 
-Highlights:
+* Adaptive general contact and engagement inquiry experiences
+* Protected document intake and quarantine
+* Administrative review and human-controlled fit assessment
+* Secure sender portal, authentication recovery, messages, and uploads
+* Human-approved Microsoft Teams scheduling and optional Microsoft Graph calendar creation
+* Versioned proposals and external-contract recording
+* Controlled proposal-to-engagement handoff and onboarding readiness
+* Inquiry analytics and operational intelligence
+* Reliability, accessibility, abuse protection, and incident controls
+* Canonical Workflow Core projections and signed cross-plugin handoffs
+* Platform-wide readiness, migration provenance, and launch governance
 
-* Canonical case stage and state projection
-* Projection version and SHA-256 fingerprint
-* Consistency blockers and warnings
-* Idempotent human command ledger
-* HMAC-signed, versioned handoff packages
-* Operational-minimum data classification by default
-* Capability-gated internal-private handoffs
-* Durable outbox with optimistic claims, bounded retries, and stale-claim recovery
-* Explicit internal WordPress adapter registry
-* Read-only Workflow Core REST resources
-* Audit-driven deferred synchronization
-* Privacy export and integrity-preserving erasure tombstones
-* Reliability, Diagnostics, review-packet, and uninstall integration
-* No arbitrary webhook URLs or direct external HTTP delivery
-* No inbound command execution
-* No automated inquiry, fit, proposal, contract, or engagement decisions
+The plugin folder, database prefixes, text domain, public URLs, and existing shortcodes remain compatible with the v0.x series.
 
-== Workflow Core boundary ==
+== Recommended public entry ==
 
-The core can synchronize state, prepare a signed handoff, dispatch to a registered internal adapter, and record an acknowledgment.
+Use the unified entry point on the primary Contact page:
 
-It cannot:
+[sc_contact_engagement_platform]
+
+It routes visitors to the appropriate existing intake experience and secure sender portal. It does not create a second submission pipeline.
+
+Existing shortcodes remain supported:
+
+* [sc_contact_hub]
+* [sc_contact_form]
+* [sc_engagement_inquiry]
+* [sc_sender_portal]
+
+== Stable 1.0 platform layer ==
+
+The new Platform Overview provides:
+
+* Product-wide operational status
+* Launch readiness and production gate
+* Database and schema integrity
+* Idempotent v1.0 migration journal
+* Immutable readiness snapshots with SHA-256 hashes
+* Public entry and sender portal configuration checks
+* Reliability, privacy, storage, HTTPS, cron, analytics, engagement, and Workflow Core health
+* Registered internal adapter visibility
+* Human-controlled setup, pilot, production, and maintenance states
+
+Production status can be recorded only by an authorized typed action after all required readiness checks pass.
+
+== Human-control boundary ==
+
+The platform does not automatically:
 
 * accept or reject an inquiry
-* finalize fit
+* decide fit
+* rank senders
 * publish a proposal
-* record a contract
+* create or attest a contract
 * activate an engagement
-* create an external project
-* invoice or collect payment
-* execute an unverified inbound command
+* create an invoice or collect payment
+* electronically sign an agreement
+* provision an external project
+* send arbitrary webhooks
+* execute unverified inbound commands
+* switch the platform to production
 
 == Installation ==
 
 1. Back up the WordPress database and protected storage.
-2. Upgrade to v0.12.0.
+2. Upgrade the existing plugin or install v1.0.0.
 3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
-4. Open Engagement Intake → Diagnostics.
-5. Confirm database version 0.12.0.
-6. Confirm Workflow Core schema 1.0.0.
-7. Confirm the four Workflow Core tables and columns.
-8. Confirm the Workflow Core sync and outbox schedules.
-9. Open Engagement Intake → Workflow Core.
-10. Run SYNC WORKFLOW CORE.
-11. Review blocked and warning cases.
-12. Register and stage-test any target plugin adapter.
-13. Prepare one operational-minimum handoff.
-14. Dispatch and verify acknowledgment.
-15. Test export, privacy erasure, recovery, and uninstall behavior.
+4. Open Contact & Engagement → Diagnostics.
+5. Confirm plugin and database version 1.0.0.
+6. Confirm Platform schema 1.0.0 and all inherited schema versions.
+7. Confirm the platform snapshot and migration tables.
+8. Open Contact & Engagement → Platform Overview.
+9. Verify the v1.0 migration journal.
+10. Configure the public entry, sender portal, privacy, and support URLs.
+11. Run a readiness snapshot.
+12. Test the unified public shortcode and every existing intake route in staging.
+13. Test sender portal, review, scheduling, proposal, engagement, privacy, analytics, reliability, and Workflow Core paths.
+14. Move from Setup to Pilot, then to Production only after the required checks pass.
 
 == Changelog ==
 
+= 1.0.0 =
+* Promoted Engagement Intake into the Unified Contact and Engagement Platform.
+* Added Platform Overview and unified administration navigation.
+* Added the [sc_contact_engagement_platform] public entry shortcode.
+* Added immutable platform-readiness snapshots.
+* Added an idempotent migration journal and schema provenance hash.
+* Added setup, pilot, production, and maintenance launch states.
+* Added a human-controlled production readiness gate.
+* Added product-wide status and aggregate operational reporting.
+* Added platform read-only REST status.
+* Added platform Diagnostics, Reliability, privacy inventory, cron, and uninstall integration.
+* Preserved every existing shortcode, table, record, URL route, schema, and human-control boundary.
+
 = 0.12.0 =
-* Added canonical Workflow Core case projections.
-* Added idempotent human command ledger.
-* Added signed and versioned cross-plugin handoffs.
-* Added operational-minimum and internal-private classifications.
-* Added durable internal-adapter outbox delivery.
-* Added bounded retries and stale-claim recovery.
-* Added registered internal adapter discovery.
-* Added read-only REST resources.
-* Added audit-driven deferred synchronization.
-* Added consistency blockers and human resolution records.
-* Added integrity-preserving privacy erasure tombstones.
-* Added review, privacy, reliability, Diagnostics, and uninstall integration.
-* Preserved every human-control boundary.
+* Added canonical Workflow Core projections, commands, signed handoffs, and durable internal-adapter delivery.
 
 = 0.11.0 =
-* Added Reliability, Accessibility, and Security Hardening.
+* Added reliability, accessibility, and security hardening.
 
 = 0.10.0 =
-* Added Inquiry Analytics and Operational Intelligence.
+* Added inquiry analytics and operational intelligence.
 
 = 0.9.2 =
-* Added Proposal and Engagement Handoff.
+* Added proposal and engagement handoff.

@@ -32,6 +32,7 @@ final class SC_EI_Plugin {
 		);
 
 		SC_EI_Database::maybe_upgrade();
+		SC_EI_Platform_Repository::maybe_upgrade();
 		SC_EI_Capabilities::install();
 		SC_EI_Upload_Environment::register();
 		SC_EI_Privacy::register();
@@ -47,6 +48,8 @@ final class SC_EI_Plugin {
 		SC_EI_Hardening_Repository::register();
 		SC_EI_Workflow_Core_Repository::register();
 		SC_EI_Workflow_Core_Service::register();
+		SC_EI_Platform_Repository::register();
+		SC_EI_Platform_Public::register();
 		SC_EI_Retention::register();
 		SC_EI_Mailer::register();
 		SC_EI_Notification_Service::register();
@@ -64,6 +67,7 @@ final class SC_EI_Plugin {
 			SC_EI_Analytics_Admin::register();
 			SC_EI_Hardening_Admin::register();
 			SC_EI_Workflow_Core_Admin::register();
+			SC_EI_Platform_Admin::register();
 		}
 
 		do_action( 'sc_ei_loaded', $this );

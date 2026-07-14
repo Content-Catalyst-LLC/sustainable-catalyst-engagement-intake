@@ -121,4 +121,4 @@ if (
 }
 pass_portal( 'privacy restrictions preserve recovery-adjacent privacy access without new processing' );
 
-echo "Engagement Intake v0.12.0 portal schema fixtures passed.\n";
+echo "Engagement Intake v1.0.0 portal schema fixtures passed.\n";

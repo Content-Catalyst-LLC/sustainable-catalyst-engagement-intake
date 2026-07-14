@@ -135,4 +135,4 @@ foreach ( array(
 }
 pass_workflow( 'scheduling, proposal, portal, and contract events are auditable' );
 
-echo "Engagement Intake v0.12.0 workflow schema fixtures passed.\n";
+echo "Engagement Intake v1.0.0 workflow schema fixtures passed.\n";

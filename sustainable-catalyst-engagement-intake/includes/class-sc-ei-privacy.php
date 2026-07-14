@@ -828,7 +828,7 @@ final class SC_EI_Privacy {
 	/**
 	 * WordPress eraser bridge.
 	 *
-	 * v0.12.0 retains the queue-only behavior introduced in v0.6.0 and does not erase synchronously. It creates a tracked case and queues
+	 * v1.0.0 retains the queue-only behavior introduced in v0.6.0 and does not erase synchronously. It creates a tracked case and queues
 	 * legal-hold-aware lifecycle actions for human approval and verified execution.
 	 */
 	public static function erase_by_email( string $email_address, int $page = 1 ): array {

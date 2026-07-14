@@ -447,3 +447,12 @@ For higher-risk intake:
 - no automatic acceptance, fit, proposal, contract, activation, or project creation
 - integrity-preserving privacy tombstones
 
+
+## v1.0 platform governance
+
+- Production launch state requires a dedicated capability, nonce, typed confirmation, and passing required readiness checks.
+- Readiness snapshots contain operational status and aggregate metrics; secrets and private content are not included.
+- Migration journal context is bounded and excludes credentials, tokens, message bodies, and uploaded-document contents.
+- Platform REST status is read-only and capability gated.
+- The unified shortcode reuses the existing form handler, durable rate limits, consent provenance, validation, and storage controls.
+- No arbitrary external delivery or unverified inbound command surface was added.

@@ -26,6 +26,7 @@ wp_clear_scheduled_hook( 'sc_ei_analytics_daily_snapshot' );
 wp_clear_scheduled_hook( 'sc_ei_workflow_core_sync' );
 wp_clear_scheduled_hook( 'sc_ei_workflow_core_outbox' );
 wp_clear_scheduled_hook( 'sc_ei_workflow_core_sync_inquiry' );
+wp_clear_scheduled_hook( 'sc_ei_platform_readiness_snapshot' );
 SC_EI_Capabilities::uninstall();
 
 if ( $delete ) {
@@ -51,6 +52,9 @@ if ( $delete ) {
 	delete_option( 'sc_ei_graph_schema_version' );
 	delete_option( 'sc_ei_hardening_schema_version' );
 	delete_option( 'sc_ei_workflow_core_schema_version' );
+	delete_option( 'sc_ei_platform_schema_version' );
+	delete_option( 'sc_ei_platform_launch_record' );
+	delete_option( 'sc_ei_version_previous' );
 	delete_option( 'sc_ei_workflow_core_last_sync' );
 	delete_option( 'sc_ei_workflow_core_last_outbox' );
 	delete_option( 'sc_ei_last_hardening_watchdog' );

@@ -52,7 +52,7 @@ $scheduled_end_input   = SC_EI_Teams::format_utc_for_input( $inquiry['scheduled_
 ?>
 <div class="wrap sc-ei-admin">
 	<p class="sc-ei-admin__breadcrumb">
-		<a href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake' ) ); ?>">← <?php esc_html_e( 'Back to inquiries', 'sustainable-catalyst-engagement-intake' ); ?></a>
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-inquiries' ) ); ?>">← <?php esc_html_e( 'Back to inquiries', 'sustainable-catalyst-engagement-intake' ); ?></a>
 		· <a href="<?php echo esc_url( SC_EI_Review_Admin::detail_url( absint( $inquiry['id'] ) ) ); ?>"><?php esc_html_e( 'Open Administrative Review', 'sustainable-catalyst-engagement-intake' ); ?></a>
 		· <a href="<?php echo esc_url( SC_EI_Communication_Admin::thread_url( absint( $inquiry['id'] ) ) ); ?>"><?php esc_html_e( 'Open Communications', 'sustainable-catalyst-engagement-intake' ); ?></a>
 		· <a href="<?php echo esc_url( SC_EI_Privacy_Admin::url( 'overview', array( 'inquiry' => absint( $inquiry['id'] ) ) ) ); ?>"><?php esc_html_e( 'Open Privacy Center', 'sustainable-catalyst-engagement-intake' ); ?></a>

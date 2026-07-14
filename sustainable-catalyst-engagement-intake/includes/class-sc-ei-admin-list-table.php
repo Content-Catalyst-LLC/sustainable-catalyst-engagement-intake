@@ -201,7 +201,7 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 	public function column_reference( $item ): string {
 		$url = add_query_arg(
 			array(
-				'page'    => 'sc-engagement-intake',
+				'page'    => 'sc-engagement-intake-inquiries',
 				'action'  => 'view',
 				'inquiry' => absint( $item['id'] ),
 			),

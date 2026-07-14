@@ -36,17 +36,34 @@ final class SC_EI_Admin {
 
 	public static function menu(): void {
 		$hook = add_menu_page(
-			__( 'Engagement Intake', 'sustainable-catalyst-engagement-intake' ),
-			__( 'Engagement Intake', 'sustainable-catalyst-engagement-intake' ),
-			'sc_intake_view',
+			__( 'Unified Contact and Engagement Platform', 'sustainable-catalyst-engagement-intake' ),
+			__( 'Contact & Engagement', 'sustainable-catalyst-engagement-intake' ),
+			'sc_intake_view_platform',
 			'sc-engagement-intake',
-			array( __CLASS__, 'inquiries_page' ),
-			'dashicons-id-alt',
+			array( 'SC_EI_Platform_Admin', 'page' ),
+			'dashicons-networking',
 			27
 		);
 
+		add_submenu_page(
+			'sc-engagement-intake',
+			__( 'Platform Overview', 'sustainable-catalyst-engagement-intake' ),
+			__( 'Platform Overview', 'sustainable-catalyst-engagement-intake' ),
+			'sc_intake_view_platform',
+			'sc-engagement-intake',
+			array( 'SC_EI_Platform_Admin', 'page' )
+		);
+
+		$inquiries_hook = add_submenu_page(
+			'sc-engagement-intake',
+			__( 'Inquiries', 'sustainable-catalyst-engagement-intake' ),
+			__( 'Inquiries', 'sustainable-catalyst-engagement-intake' ),
+			'sc_intake_view',
+			'sc-engagement-intake-inquiries',
+			array( __CLASS__, 'inquiries_page' )
+		);
 		add_action(
-			"load-{$hook}",
+			"load-{$inquiries_hook}",
 			static function(): void {
 				add_screen_option(
 					'per_page',
@@ -59,24 +76,15 @@ final class SC_EI_Admin {
 			}
 		);
 
-		add_submenu_page(
-			'sc-engagement-intake',
-			__( 'Inquiries', 'sustainable-catalyst-engagement-intake' ),
-			__( 'Inquiries', 'sustainable-catalyst-engagement-intake' ),
-			'sc_intake_view',
-			'sc-engagement-intake',
-			array( __CLASS__, 'inquiries_page' )
-		);
-
 		SC_EI_Review_Admin::submenu();
 		SC_EI_Fit_Admin::submenu();
 		SC_EI_Portal_Admin::submenu();
 		SC_EI_Workflow_Admin::submenu();
 		SC_EI_Graph_Admin::submenu();
 		SC_EI_Engagement_Admin::submenu();
+		SC_EI_Workflow_Core_Admin::submenu();
 		SC_EI_Analytics_Admin::submenu();
 		SC_EI_Hardening_Admin::submenu();
-		SC_EI_Workflow_Core_Admin::submenu();
 		SC_EI_Communication_Admin::submenu();
 		SC_EI_Privacy_Admin::submenu();
 
@@ -206,7 +214,8 @@ final class SC_EI_Admin {
 			SC_EI_Engagement_Schema::default_settings(),
 			SC_EI_Analytics_Schema::default_settings(),
 			SC_EI_Hardening_Schema::default_settings(),
-			SC_EI_Workflow_Core_Schema::default_settings()
+			SC_EI_Workflow_Core_Schema::default_settings(),
+			SC_EI_Platform_Schema::default_settings()
 		);
 	}
 
@@ -405,6 +414,31 @@ final class SC_EI_Admin {
 			'workflow_core_no_auto_activation'             => 1,
 			'workflow_core_no_auto_external_delivery'      => 1,
 			'workflow_core_no_unverified_inbound_commands' => 1,
+			'platform_enabled'                         => array_key_exists( 'platform_enabled', $value ) ? ( empty( $value['platform_enabled'] ) ? 0 : 1 ) : absint( $current['platform_enabled'] ),
+			'platform_launch_state'                    => SC_EI_Platform_Schema::sanitize_launch_state( (string) ( $value['platform_launch_state'] ?? $current['platform_launch_state'] ) ),
+			'platform_display_name'                    => sanitize_text_field( (string) ( $value['platform_display_name'] ?? $current['platform_display_name'] ) ),
+			'platform_support_email'                   => sanitize_email( (string) ( $value['platform_support_email'] ?? $current['platform_support_email'] ) ),
+			'platform_contact_page_url'                => esc_url_raw( (string) ( $value['platform_contact_page_url'] ?? $current['platform_contact_page_url'] ) ),
+			'platform_engagement_page_url'             => esc_url_raw( (string) ( $value['platform_engagement_page_url'] ?? $current['platform_engagement_page_url'] ) ),
+			'platform_portal_page_url'                 => esc_url_raw( (string) ( $value['platform_portal_page_url'] ?? $current['platform_portal_page_url'] ) ),
+			'platform_privacy_page_url'                => esc_url_raw( (string) ( $value['platform_privacy_page_url'] ?? $current['platform_privacy_page_url'] ) ),
+			'platform_readiness_snapshot_daily'        => array_key_exists( 'platform_readiness_snapshot_daily', $value ) ? ( empty( $value['platform_readiness_snapshot_daily'] ) ? 0 : 1 ) : absint( $current['platform_readiness_snapshot_daily'] ),
+			'platform_snapshot_retention_days'         => max( 30, min( 3650, absint( $value['platform_snapshot_retention_days'] ?? $current['platform_snapshot_retention_days'] ) ) ),
+			'platform_require_https'                   => 1,
+			'platform_require_protected_storage'       => 1,
+			'platform_require_schema_integrity'        => 1,
+			'platform_require_public_entry'            => 1,
+			'platform_require_portal_url'               => 1,
+			'platform_require_typed_launch'             => 1,
+			'platform_no_auto_launch'                   => 1,
+			'platform_no_auto_acceptance'               => 1,
+			'platform_no_auto_fit_decision'             => 1,
+			'platform_no_auto_proposal'                 => 1,
+			'platform_no_auto_contract'                 => 1,
+			'platform_no_auto_activation'               => 1,
+			'platform_no_auto_project_provisioning'     => 1,
+			'platform_no_auto_payment'                  => 1,
+			'platform_no_unverified_external_commands' => 1,
 			'delete_data_on_uninstall'           => empty( $value['delete_data_on_uninstall'] ) ? 0 : 1,
 			'default_unaccepted_retention_days'  => max( 30, min( 3650, absint( $value['default_unaccepted_retention_days'] ?? $current['default_unaccepted_retention_days'] ) ) ),
 			'withdrawn_retention_days'           => max( 1, min( 3650, absint( $value['withdrawn_retention_days'] ?? $current['withdrawn_retention_days'] ) ) ),
@@ -496,19 +530,17 @@ final class SC_EI_Admin {
 		array_unshift(
 			$links,
 			sprintf(
-				'<a href="%1$s">%2$s</a> · <a href="%3$s">%4$s</a> · <a href="%5$s">%6$s</a> · <a href="%7$s">%8$s</a> · <a href="%9$s">%10$s</a> · <a href="%11$s">%12$s</a>',
+				'<a href="%1$s">%2$s</a> · <a href="%3$s">%4$s</a> · <a href="%5$s">%6$s</a> · <a href="%7$s">%8$s</a> · <a href="%9$s">%10$s</a>',
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake' ) ),
+				esc_html__( 'Platform', 'sustainable-catalyst-engagement-intake' ),
+				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-inquiries' ) ),
 				esc_html__( 'Inquiries', 'sustainable-catalyst-engagement-intake' ),
 				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-review' ) ),
-				esc_html__( 'Review Workspace', 'sustainable-catalyst-engagement-intake' ),
-				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-communications' ) ),
-				esc_html__( 'Communications', 'sustainable-catalyst-engagement-intake' ),
-				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-fit' ) ),
-				esc_html__( 'Fit Assessment', 'sustainable-catalyst-engagement-intake' ),
-				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-privacy' ) ),
-				esc_html__( 'Privacy Center', 'sustainable-catalyst-engagement-intake' ),
-				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-quarantine' ) ),
-				esc_html__( 'Quarantine', 'sustainable-catalyst-engagement-intake' )
+				esc_html__( 'Review', 'sustainable-catalyst-engagement-intake' ),
+				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-workflow-core' ) ),
+				esc_html__( 'Workflow Core', 'sustainable-catalyst-engagement-intake' ),
+				esc_url( admin_url( 'admin.php?page=sc-engagement-intake-diagnostics' ) ),
+				esc_html__( 'Diagnostics', 'sustainable-catalyst-engagement-intake' )
 			)
 		);
 		return $links;

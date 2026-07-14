@@ -65,3 +65,11 @@ Recommended values:
 `entry_cta` records the button or section that opened the form.
 
 Both values are private and are not shown in a public archive.
+
+## Unified v1.0 entry
+
+```text
+[sc_contact_engagement_platform]
+```
+
+This is the recommended primary Contact-page entry. It composes the existing adaptive contact hub and provides secure portal and privacy routes. Existing shortcodes remain supported.

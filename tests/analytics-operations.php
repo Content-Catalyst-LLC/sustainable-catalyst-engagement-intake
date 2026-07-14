@@ -16,4 +16,4 @@ $checks=array(
  'dashboard disclosure' => strpos($view,'No names, emails, message bodies, document contents, sender scores')!==false,
  'least privilege capabilities' => strpos($caps,'sc_intake_view_analytics')!==false && strpos($caps,'sc_intake_manage_analytics')!==false && strpos($caps,'sc_intake_export_analytics')!==false,
 );
-$failed=array_keys(array_filter($checks,fn($v)=>!$v)); if($failed){fwrite(STDERR,'Analytics operation checks failed: '.implode(', ',$failed).PHP_EOL);exit(1);} foreach($checks as $k=>$v) echo 'PASS: '.$k.PHP_EOL; echo "Engagement Intake v0.12.0 analytics operations passed.\n";
+$failed=array_keys(array_filter($checks,fn($v)=>!$v)); if($failed){fwrite(STDERR,'Analytics operation checks failed: '.implode(', ',$failed).PHP_EOL);exit(1);} foreach($checks as $k=>$v) echo 'PASS: '.$k.PHP_EOL; echo "Engagement Intake v1.0.0 analytics operations passed.\n";

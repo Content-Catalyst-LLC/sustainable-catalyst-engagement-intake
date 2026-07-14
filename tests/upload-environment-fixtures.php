@@ -134,4 +134,4 @@ foreach ( array( 'Cache-Control', 'CDN-Cache-Control', 'Cloudflare-CDN-Cache-Con
 }
 pass_environment( 'browser, CDN, Cloudflare, and surrogate no-store headers present' );
 
-echo "Engagement Intake v0.12.0 upload-environment fixtures passed.\n";
+echo "Engagement Intake v1.0.0 upload-environment fixtures passed.\n";
