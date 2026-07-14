@@ -22,7 +22,7 @@ $success = array(
 
 	<div class="sc-ei-portal-admin-boundary">
 		<strong><?php esc_html_e( 'Security boundary', 'sustainable-catalyst-engagement-intake' ); ?></strong>
-		<span><?php esc_html_e( 'Raw invitation and session credentials are never stored. v1.0.0 retains atomic authentication, recovery, Teams, proposals, Graph synchronization, engagement visibility, incident-safe read-only access, durable abuse controls, and accessibility hardening while adding canonical Workflow Core synchronization.', 'sustainable-catalyst-engagement-intake' ); ?></span>
+		<span><?php esc_html_e( 'Raw invitation and session credentials are never stored. v1.0.1 retains atomic authentication, recovery, Teams, proposals, Graph synchronization, engagement visibility, incident-safe read-only access, durable abuse controls, and accessibility hardening while adding canonical Workflow Core synchronization.', 'sustainable-catalyst-engagement-intake' ); ?></span>
 	</div>
 
 	<div class="sc-ei-fit-metrics sc-ei-portal-metrics">
@@ -131,7 +131,7 @@ $success = array(
 					<label><input type="checkbox" name="portal_settings[portal_allow_withdrawal_requests]" value="1" <?php checked( $settings['portal_allow_withdrawal_requests'], 1 ); ?>> <?php esc_html_e( 'Withdrawal requests', 'sustainable-catalyst-engagement-intake' ); ?></label>
 				</fieldset>
 				<fieldset class="sc-ei-portal-admin-form__wide"><legend><?php esc_html_e( 'Default invitation permissions', 'sustainable-catalyst-engagement-intake' ); ?></legend><div class="sc-ei-portal-permission-grid"><?php foreach ( SC_EI_Portal_Schema::permissions() as $key => $label ) : ?><label><input type="checkbox" name="portal_settings[portal_default_permissions][]" value="<?php echo esc_attr( $key ); ?>" <?php checked( in_array( $key, $settings['portal_default_permissions'], true ) ); ?>> <?php echo esc_html( $label ); ?></label><?php endforeach; ?></div></fieldset>
-				<div class="sc-ei-diagnostic-warning sc-ei-portal-admin-form__wide"><strong><?php esc_html_e( 'Fixed protections:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Email challenge, terms acceptance, HttpOnly cookies, SameSite Strict, no-store, noindex, hashed fingerprints, no WordPress accounts, and no automatic invitation email plus HTTPS, __Host cookie use, legacy-cookie migration, atomic activation, wrong-token lockout protection, generic recovery responses, and human-approved reissue cannot be disabled in v1.0.0.', 'sustainable-catalyst-engagement-intake' ); ?></div>
+				<div class="sc-ei-diagnostic-warning sc-ei-portal-admin-form__wide"><strong><?php esc_html_e( 'Fixed protections:', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Email challenge, terms acceptance, HttpOnly cookies, SameSite Strict, no-store, noindex, hashed fingerprints, no WordPress accounts, and no automatic invitation email plus HTTPS, __Host cookie use, legacy-cookie migration, atomic activation, wrong-token lockout protection, generic recovery responses, and human-approved reissue cannot be disabled in v1.0.1.', 'sustainable-catalyst-engagement-intake' ); ?></div>
 				<p class="sc-ei-portal-admin-form__wide"><button type="submit" class="button"><?php esc_html_e( 'Save Portal Settings', 'sustainable-catalyst-engagement-intake' ); ?></button></p>
 			</form>
 		</details>

@@ -1,9 +1,9 @@
 # Sustainable Catalyst Engagement Intake
 
-**Version:** 0.12.0  
-**Release:** Workflow Core Integration
+**Version:** 1.0.1  
+**Release:** Production Validation and Migration Reliability Patch
 
-v0.12.0 unifies the private inquiry-to-engagement workflow behind a canonical integration layer while preserving the existing authoritative domain records and every human decision boundary.
+v1.0.1 repairs the stable platform diagnostics runtime path, preserves the v1.0.0 database and schema contract, and adds regression coverage for cross-class constant visibility. The underlying Workflow Core and governed contact-to-engagement architecture remain unchanged.
 
 ## Core model
 

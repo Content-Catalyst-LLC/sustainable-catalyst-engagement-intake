@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1 — Production Validation and Migration Reliability Patch
+
+- Fixed the Platform Overview and Diagnostics fatal error caused by direct access to the private hardening watchdog hook constant.
+- Added `SC_EI_Hardening_Repository::watchdog_hook()` as the supported cross-component contract.
+- Made the stable platform readiness version check accept patch releases while still requiring the stored plugin version to match.
+- Added a repository-wide private/protected constant visibility regression test.
+- Corrected the release packaging script from v0.12.0 to v1.0.1.
+- Preserved database and schema versions at 1.0.0; no data migration is required.
+
 ## 0.12.0 — Workflow Core Integration
 
 - Added canonical case projections derived from authoritative workflow records.

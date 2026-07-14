@@ -23,10 +23,11 @@ $checks=array(
  'typed settings and migration controls'=>strpos($admin,"'SAVE PLATFORM SETTINGS'")!==false&&strpos($admin,"'VERIFY PLATFORM MIGRATION'")!==false,
  'read only platform REST'=>strpos($rest,"'/platform/status'")!==false&&strpos($rest,"'read_only'    => true")!==false&&strpos($rest,'WP_REST_Server::READABLE')!==false,
  'platform reliability integration'=>strpos($hardening,"\$checks['platform_columns']")!==false&&strpos($hardening,"\$checks['platform_snapshot']")!==false,
+ 'watchdog hook visibility contract'=>strpos($hardening,'private const WATCHDOG_HOOK')!==false&&strpos($hardening,'public static function watchdog_hook(): string')!==false&&strpos($repo,'SC_EI_Hardening_Repository::watchdog_hook()')!==false&&strpos($repo,'SC_EI_Hardening_Repository::WATCHDOG_HOOK')===false,
  'platform private inventory'=>strpos($privacy,"'platform_snapshots', 'platform_migrations'")!==false,
  'no automated business mutation'=>strpos($repo,'SC_EI_Inquiry_Repository::update_status')===false&&strpos($repo,'SC_EI_Fit_Repository::finalize')===false&&strpos($repo,'SC_EI_Workflow_Repository::publish')===false&&strpos($repo,'SC_EI_Engagement_Repository::activate')===false,
  'no arbitrary external delivery'=>strpos($repo,'wp_remote_post')===false&&strpos($repo,'wp_remote_request')===false&&strpos($repo,'wp_mail(')===false,
  'dashboard discloses boundaries'=>strpos($view,'Stable human-control boundary')!==false&&strpos($view,'Production status is recorded only through an authorized typed action')!==false,
  'default settings purity'=>preg_match('/public static function default_settings\(\): array \{(.*?)public static function sanitize_settings/s',file_get_contents($plugin.'/includes/class-sc-ei-admin.php'),$m)&&strpos($m[1],'$value')===false,
 );
-$failed=array_keys(array_filter($checks,fn($v)=>!$v));if($failed){fwrite(STDERR,'Platform operation checks failed: '.implode(', ',$failed).PHP_EOL);exit(1);}foreach($checks as $k=>$v)echo 'PASS: '.$k.PHP_EOL;echo "Unified Contact and Engagement Platform v1.0.0 operation checks passed.\n";
+$failed=array_keys(array_filter($checks,fn($v)=>!$v));if($failed){fwrite(STDERR,'Platform operation checks failed: '.implode(', ',$failed).PHP_EOL);exit(1);}foreach($checks as $k=>$v)echo 'PASS: '.$k.PHP_EOL;echo "Unified Contact and Engagement Platform v1.0.1 operation checks passed.\n";

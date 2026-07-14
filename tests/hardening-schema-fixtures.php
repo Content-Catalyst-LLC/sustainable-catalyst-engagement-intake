@@ -7,7 +7,7 @@ $caps=file_get_contents($plugin.'/includes/class-sc-ei-capabilities.php');
 $activator=file_get_contents($plugin.'/includes/class-sc-ei-activator.php');
 $uninstall=file_get_contents($plugin.'/uninstall.php');
 $checks=array(
- 'v1.0.0 markers'=>strpos($main,'Version:     1.0.0')!==false && strpos($main,"SC_EI_DB_VERSION', '1.0.0'")!==false && strpos($main,"SC_EI_HARDENING_SCHEMA_VERSION', '1.0.0'")!==false,
+ 'v1.0.1 plugin markers'=>strpos($main,'Version:     1.0.1')!==false && strpos($main,"SC_EI_DB_VERSION', '1.0.0'")!==false && strpos($main,"SC_EI_HARDENING_SCHEMA_VERSION', '1.0.0'")!==false,
  'hardening components loaded'=>strpos($main,'class-sc-ei-hardening-schema.php')!==false && strpos($main,'class-sc-ei-hardening-repository.php')!==false && strpos($main,'class-sc-ei-hardening-admin.php')!==false,
  'health event table'=>strpos($db,'$sql_health_events')!==false && strpos($db,'UNIQUE KEY fingerprint')!==false && strpos($db,'occurrences bigint(20)')!==false && strpos($db,'resolved_at datetime')!==false,
  'durable rate table'=>strpos($db,'$sql_rate_limits')!==false && strpos($db,'UNIQUE KEY scope_bucket_window')!==false && strpos($db,'blocked_until datetime')!==false,

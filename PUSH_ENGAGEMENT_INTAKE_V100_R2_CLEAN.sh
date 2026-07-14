@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-VERSION="1.0.0"
+VERSION="1.0.1"
 SLUG="sustainable-catalyst-engagement-intake"
 ARCHIVE="${SLUG}-v${VERSION}-repo-r2.zip"
 SCRIPT_NAME="PUSH_ENGAGEMENT_INTAKE_V100_R2_CLEAN.sh"
@@ -70,7 +70,7 @@ find "$REPO_DIR" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
 rsync -a "$SRC/" "$REPO_DIR/"
 cd "$REPO_DIR"
 
-echo "==> Validating v1.0.0 stable platform contract"
+echo "==> Validating v1.0.1 stable platform contract"
 MAIN="$SLUG/$SLUG.php"
 DB="$SLUG/includes/class-sc-ei-database.php"
 PLATFORM_SCHEMA="$SLUG/includes/class-sc-ei-platform-schema.php"
@@ -97,10 +97,10 @@ require_marker() {
 
 # Use explicit checks instead of Bash array slicing for macOS Bash 3.2 compatibility.
 require_marker "Plugin Name: Sustainable Catalyst Contact and Engagement Platform" "$MAIN" "plugin name"
-require_marker "Version:     1.0.0" "$MAIN" "plugin version"
+require_marker "Version:     1.0.1" "$MAIN" "plugin version"
 require_marker "SC_EI_DB_VERSION', '1.0.0'" "$MAIN" "database version"
 require_marker "SC_EI_PLATFORM_SCHEMA_VERSION', '1.0.0'" "$MAIN" "platform schema"
-require_marker "Stable tag: 1.0.0" "$README" "WordPress stable tag"
+require_marker "Stable tag: 1.0.1" "$README" "WordPress stable tag"
 
 for table in platform_snapshots platform_migrations; do
   grep -Fq "\$sql_${table}" "$DB" || { echo "Platform table declaration missing: $table" >&2; exit 1; }
@@ -169,7 +169,7 @@ git add -A
 if git diff --cached --quiet; then
   echo "No changes to commit."
 else
-  git commit -m "Build v1.0.0 Unified Contact and Engagement Platform"
+  git commit -m "Build v1.0.1 Production Validation and Migration Reliability Patch"
 fi
 
 if [[ "$SKIP_PUSH" == "1" ]]; then
@@ -178,4 +178,4 @@ else
   git push origin main
 fi
 
-echo "Unified Contact and Engagement Platform v1.0.0 push workflow completed."
+echo "Contact and Engagement Platform v1.0.1 push workflow completed."

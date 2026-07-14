@@ -34,6 +34,16 @@ final class SC_EI_Hardening_Repository {
 
 	public static function request_id(): string { return self::$request_id ?: wp_generate_uuid4(); }
 
+	/**
+	 * Return the scheduled hook used by the production-readiness watchdog.
+	 *
+	 * The underlying constant remains private so other components do not depend
+	 * on the repository's internal storage details.
+	 */
+	public static function watchdog_hook(): string {
+		return self::WATCHDOG_HOOK;
+	}
+
 	public static function schedule(): void {
 		if ( ! wp_next_scheduled( self::WATCHDOG_HOOK ) ) {
 			wp_schedule_event( time() + 5 * MINUTE_IN_SECONDS, 'hourly', self::WATCHDOG_HOOK );

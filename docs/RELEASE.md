@@ -1,10 +1,10 @@
-# Release Procedure — v1.0.0
+# Release Procedure — v1.0.1
 
 ## Release identity
 
 - Product: Sustainable Catalyst Contact and Engagement Platform
 - Plugin slug: `sustainable-catalyst-engagement-intake`
-- Version: `1.0.0`
+- Version: `1.0.1`
 - Database version: `1.0.0`
 - Platform schema: `1.0.0`
 
@@ -40,7 +40,7 @@
 
 1. Complete staging acceptance.
 2. Back up production database and protected storage.
-3. Install v1.0.0.
+3. Install v1.0.1.
 4. Clear all caches.
 5. Verify migration and readiness.
 6. Run one platform snapshot.

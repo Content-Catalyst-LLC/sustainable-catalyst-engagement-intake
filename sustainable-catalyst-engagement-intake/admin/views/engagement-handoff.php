@@ -36,7 +36,7 @@ $is_error = $message && ! isset( $messages[ $message ] );
 			<h1><?php esc_html_e( 'Proposal and Engagement Handoff', 'sustainable-catalyst-engagement-intake' ); ?></h1>
 			<p><?php esc_html_e( 'Preserve the contracted proposal as an immutable commercial snapshot, complete onboarding readiness, and activate the engagement through a separate human decision.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 		</div>
-		<div class="sc-ei-admin__version">v1.0.0</div>
+		<div class="sc-ei-admin__version">v1.0.1</div>
 	</header>
 
 	<?php if ( $message ) : ?>

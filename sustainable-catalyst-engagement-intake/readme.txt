@@ -3,7 +3,7 @@ Contributors: content-catalyst
 Tags: contact, engagement, workflow, sender portal, microsoft teams, proposals, analytics, privacy, accessibility
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,7 +11,7 @@ A governed contact-to-engagement platform with adaptive intake, secure sender co
 
 == Description ==
 
-Version 1.0.0 is the first stable Unified Contact and Engagement Platform release.
+Version 1.0.1 is the production validation and migration reliability patch for the first stable Unified Contact and Engagement Platform release.
 
 It connects:
 
@@ -80,10 +80,10 @@ The platform does not automatically:
 == Installation ==
 
 1. Back up the WordPress database and protected storage.
-2. Upgrade the existing plugin or install v1.0.0.
+2. Upgrade the existing plugin or install v1.0.1.
 3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
 4. Open Contact & Engagement → Diagnostics.
-5. Confirm plugin and database version 1.0.0.
+5. Confirm plugin version 1.0.1 and database version 1.0.0.
 6. Confirm Platform schema 1.0.0 and all inherited schema versions.
 7. Confirm the platform snapshot and migration tables.
 8. Open Contact & Engagement → Platform Overview.
@@ -95,6 +95,13 @@ The platform does not automatically:
 14. Move from Setup to Pilot, then to Production only after the required checks pass.
 
 == Changelog ==
+
+= 1.0.1 =
+* Fixed a fatal error on Platform Overview and Diagnostics caused by cross-class access to a private watchdog hook constant.
+* Added a typed watchdog hook accessor while preserving repository encapsulation.
+* Made the platform readiness version check compatible with stable patch releases.
+* Added a private/protected constant visibility regression test.
+* Corrected the installable ZIP packaging version.
 
 = 1.0.0 =
 * Promoted Engagement Intake into the Unified Contact and Engagement Platform.

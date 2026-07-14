@@ -27,7 +27,7 @@ $metrics = $summary['metrics'];
 			<h1><?php esc_html_e( 'Unified Contact and Engagement Platform', 'sustainable-catalyst-engagement-intake' ); ?></h1>
 			<p><?php esc_html_e( 'One governed operating layer for public contact, engagement intake, secure sender collaboration, review, fit, Teams scheduling, proposals, engagement handoff, analytics, reliability, privacy, and cross-plugin Workflow Core integration.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 		</div>
-		<div class="sc-ei-platform-admin__release"><span>v1.0.0</span><strong><?php echo esc_html( SC_EI_Platform_Schema::label( SC_EI_Platform_Schema::launch_states(), $readiness['launch_state'] ) ); ?></strong></div>
+		<div class="sc-ei-platform-admin__release"><span>v1.0.1</span><strong><?php echo esc_html( SC_EI_Platform_Schema::label( SC_EI_Platform_Schema::launch_states(), $readiness['launch_state'] ) ); ?></strong></div>
 	</header>
 
 	<?php if ( $message ) : ?><div class="notice <?php echo $is_error ? 'notice-error' : 'notice-success'; ?> is-dismissible"><p><?php echo esc_html( $messages[ $message ] ?? $errors[ $message ] ?? ucwords( str_replace( '_', ' ', $message ) ) ); ?></p></div><?php endif; ?>

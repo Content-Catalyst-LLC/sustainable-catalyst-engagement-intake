@@ -151,14 +151,14 @@ final class SC_EI_Platform_Repository {
 			'notifications'       => wp_next_scheduled( SC_EI_Notification_Service::CRON_HOOK ),
 			'graph_catchup'       => wp_next_scheduled( 'sc_ei_graph_catchup' ),
 			'analytics'           => wp_next_scheduled( SC_EI_Analytics_Repository::DAILY_HOOK ),
-			'hardening'           => wp_next_scheduled( SC_EI_Hardening_Repository::WATCHDOG_HOOK ),
+			'hardening'           => wp_next_scheduled( SC_EI_Hardening_Repository::watchdog_hook() ),
 			'workflow_core_sync'  => wp_next_scheduled( SC_EI_Workflow_Core_Repository::SYNC_HOOK ),
 			'workflow_core_outbox'=> wp_next_scheduled( SC_EI_Workflow_Core_Repository::OUTBOX_HOOK ),
 			'platform_snapshot'   => wp_next_scheduled( self::SNAPSHOT_HOOK ),
 		);
 
 		$checks = array();
-		$checks[] = self::check( 'platform_version', 'platform', __( 'Stable platform version', 'sustainable-catalyst-engagement-intake' ), '1.0.0' === SC_EI_VERSION && '1.0.0' === (string) get_option( 'sc_ei_version', '' ), true, SC_EI_VERSION );
+		$checks[] = self::check( 'platform_version', 'platform', __( 'Stable platform version', 'sustainable-catalyst-engagement-intake' ), version_compare( SC_EI_VERSION, '1.0.0', '>=' ) && SC_EI_VERSION === (string) get_option( 'sc_ei_version', '' ), true, SC_EI_VERSION );
 		$checks[] = self::check( 'database_version', 'data', __( 'Database version', 'sustainable-catalyst-engagement-intake' ), SC_EI_DB_VERSION === (string) get_option( 'sc_ei_db_version', '' ), true, (string) get_option( 'sc_ei_db_version', '' ) );
 		$checks[] = self::check( 'database_tables', 'data', __( 'Required database tables', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ), true, sprintf( '%d/%d', count( array_filter( $tables ) ), count( $tables ) ) );
 		$checks[] = self::check( 'platform_columns', 'data', __( 'Platform governance schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $platform_columns, true ), true, sprintf( '%d/%d', count( array_filter( $platform_columns ) ), count( $platform_columns ) ) );

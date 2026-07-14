@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</p>
 
 	<div class="sc-ei-admin__notice">
-		<strong><?php esc_html_e( 'v1.0.0 Unified Contact and Engagement Platform active', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+		<strong><?php esc_html_e( 'v1.0.1 Unified Contact and Engagement Platform active', 'sustainable-catalyst-engagement-intake' ); ?></strong>
 		<span><?php esc_html_e( 'Reviewed plain-text messages, opt-in notifications, communication timelines, follow-up and suppression controls, human review, quarantine operations, Teams readiness, and protected storage are active.', 'sustainable-catalyst-engagement-intake' ); ?></span>
 	</div>
 
