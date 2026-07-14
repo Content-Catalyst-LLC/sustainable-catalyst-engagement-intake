@@ -15,6 +15,7 @@ final class SC_EI_Notification_Service {
 		add_action( 'sc_ei_public_inquiry_created', array( __CLASS__, 'new_inquiry' ), 20, 2 );
 		add_action( 'sc_ei_review_saved', array( __CLASS__, 'review_saved' ), 20, 3 );
 		add_action( self::CRON_HOOK, array( __CLASS__, 'run_reminders' ) );
+		add_action( 'sc_ei_lifecycle_task_due', array( __CLASS__, 'lifecycle_task_due' ), 20, 2 );
 	}
 
 	public static function schedule(): void {
@@ -62,6 +63,41 @@ final class SC_EI_Notification_Service {
 					)
 				);
 			}
+		}
+	}
+
+	public static function lifecycle_task_due( array $task, ?array $inquiry ): void {
+		$settings = self::settings();
+		if ( empty( $settings['lifecycle_task_email_enabled'] ) || empty( $inquiry['id'] ) ) {
+			return;
+		}
+		$recipients = array();
+		if ( ! empty( $task['assigned_user_id'] ) ) {
+			$user = get_userdata( absint( $task['assigned_user_id'] ) );
+			if ( $user && is_email( $user->user_email ) ) {
+				$recipients[] = array( $user->display_name, $user->user_email );
+			}
+		}
+		if ( ! $recipients ) {
+			foreach ( self::internal_recipients( $settings ) as $email ) {
+				$recipients[] = array( __( 'Engagement Lifecycle Owner', 'sustainable-catalyst-engagement-intake' ), $email );
+			}
+		}
+		$day = gmdate( 'Y-m-d' );
+		foreach ( $recipients as $recipient ) {
+			self::create_and_send(
+				absint( $inquiry['id'] ),
+				'internal_lifecycle_task_due',
+				(string) $recipient[0],
+				(string) $recipient[1],
+				'lifecycle-task-' . absint( $task['id'] ?? 0 ) . '-' . $day . '-' . substr( hash( 'sha256', strtolower( (string) $recipient[1] ) ), 0, 16 ),
+				array(
+					'audience' => 'internal',
+					'trigger' => 'lifecycle_task_due',
+					'lifecycle_task' => sanitize_text_field( (string) ( $task['task_title'] ?? '' ) ),
+					'lifecycle_task_due' => sanitize_text_field( (string) ( $task['due_at'] ?? '' ) ),
+				)
+			);
 		}
 	}
 

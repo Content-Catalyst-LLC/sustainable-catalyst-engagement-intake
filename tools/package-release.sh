@@ -3,11 +3,11 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-VERSION="1.0.3"
+VERSION="1.1.0"
 SLUG="sustainable-catalyst-engagement-intake"
 REPO_ROOT="${SLUG}-v${VERSION}-repo"
 DIST="${ROOT}/dist"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v103-package.XXXXXX")"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v110-package.XXXXXX")"
 TEST_LOG="${WORK}/tests.log"
 
 cleanup() { rm -rf "$WORK"; }
@@ -32,6 +32,7 @@ if command -v node >/dev/null 2>&1; then
 fi
 
 bash -n "$0"
+bash -n PUSH_ENGAGEMENT_INTAKE_V110_CLEAN.sh
 python3 -m json.tool composer.json >/dev/null
 
 printf 'Scanning for common secret material...\n'
@@ -42,10 +43,11 @@ if grep -RInE --exclude-dir=.git --exclude-dir=dist --exclude='release-manifest.
 fi
 
 printf 'Generating release manifest...\n'
-python3 - "$ROOT" "$VERSION" <<'PY'
+python3 - "$ROOT" "$VERSION" "$TEST_LOG" <<'PY'
 import hashlib, json, pathlib, sys
 root = pathlib.Path(sys.argv[1])
 version = sys.argv[2]
+test_log = pathlib.Path(sys.argv[3])
 files = {}
 for path in sorted(root.rglob('*')):
     if not path.is_file():
@@ -57,26 +59,28 @@ for path in sorted(root.rglob('*')):
 manifest = {
     'name': 'Sustainable Catalyst Contact and Engagement Platform',
     'version': version,
-    'release': 'Pilot Findings and Public Launch Hardening',
+    'release': 'Advisory Operations and Engagement Lifecycle',
     'plugin_slug': 'sustainable-catalyst-engagement-intake',
     'text_domain': 'sustainable-catalyst-engagement-intake',
     'requires_wordpress': '6.5',
     'requires_php': '8.1',
-    'database_version': '1.0.0',
+    'database_version': '1.1.0',
     'schemas': {
         'review': '1.0.0', 'communication': '1.0.0', 'privacy': '1.0.0', 'fit': '1.0.0',
-        'portal': '1.3.0', 'workflow': '1.1.0', 'graph': '1.0.0', 'engagement': '1.0.0',
-        'analytics': '1.0.0', 'hardening': '1.0.0', 'workflow_core': '1.0.0', 'platform': '1.0.2'
+        'portal': '1.4.0', 'workflow': '1.1.0', 'graph': '1.0.0', 'engagement': '1.1.0',
+        'analytics': '1.0.0', 'hardening': '1.0.0', 'workflow_core': '1.0.0', 'platform': '1.1.0',
+        'lifecycle': '1.0.0'
     },
     'migration_keys': [
         'v1_0_0_unified_contact_engagement_platform',
         'v1_0_2_production_readiness_live_validation',
-        'v1_0_3_pilot_findings_public_launch_hardening'
+        'v1_0_3_pilot_findings_public_launch_hardening',
+        'v1_1_0_advisory_operations_engagement_lifecycle'
     ],
     'recommended_shortcode': '[sc_contact_engagement_platform]',
     'routed_entries': [
-        'general', 'advisory', 'ai-assurance', 'collaboration', 'media', 'technical',
-        'partnership', 'workshop', 'monthly-advisory'
+        'general', 'advisory', 'ai-assurance', 'evidence-systems', 'knowledge-architecture', 'technical-storytelling',
+        'responsible-ai', 'collaboration', 'media', 'technical', 'partnership', 'workshop', 'monthly-advisory'
     ],
     'legacy_shortcodes': ['[sc_contact_hub]', '[sc_contact_form]', '[sc_engagement_inquiry]', '[sc_sender_portal]'],
     'production_gate': {
@@ -98,8 +102,23 @@ manifest = {
         'clean upload acceptance and disguised executable rejection', 'protected storage probe',
         'inquiry persistence and status transition', 'sender portal token verification',
         'private file integrity and deletion', 'WordPress mail transport acceptance',
-        'temporary artifact cleanup'
+        'temporary artifact cleanup', 'lifecycle schema and migration contract',
+        'lifecycle cron callback and overdue-work gate', 'sender-safe lifecycle projection'
     ],
+    'lifecycle': {
+        'stages': ['new_inquiry', 'under_review', 'needs_information', 'qualified', 'meeting_requested',
+            'meeting_scheduled', 'proposal_preparation', 'proposal_sent', 'accepted',
+            'active_engagement', 'completed', 'declined', 'archived'],
+        'tables': ['lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks'],
+        'typed_human_transitions': True,
+        'automatic_acceptance': False,
+        'automatic_rejection': False,
+        'automatic_scheduling': False,
+        'automatic_proposal_publication': False,
+        'automatic_engagement_activation': False,
+        'internal_notes_sender_visible': False,
+        'task_email_default_enabled': False
+    },
     'pilot_checklist': [
         'general inquiry', 'advisory inquiry', 'AI Assurance inquiry', 'private upload',
         'administrative notification', 'sender acknowledgment', 'portal isolation',
@@ -116,7 +135,7 @@ manifest = {
         'php_files_including_tests_linted': sum(1 for base in [root/'sustainable-catalyst-engagement-intake', root/'tests'] for p in base.rglob('*.php')),
         'javascript_bundles_checked': sum(1 for p in (root/'sustainable-catalyst-engagement-intake').rglob('*.js')),
         'test_suites': sum(1 for p in (root/'tests').glob('*.php')),
-        'explicit_pass_assertions': 677,
+        'explicit_pass_assertions': sum(1 for line in test_log.read_text(encoding='utf-8').splitlines() if line.startswith('PASS:')),
         'secret_scan': True,
         'push_script_bash_syntax': True,
         'zip_crc_verified': True

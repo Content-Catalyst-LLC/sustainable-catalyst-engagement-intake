@@ -23,6 +23,7 @@ final class SC_EI_Diagnostics {
 		$hardening_columns     = SC_EI_Database::hardening_columns_exist();
 		$workflow_core_columns = SC_EI_Database::workflow_core_columns_exist();
 		$platform_columns      = SC_EI_Database::platform_columns_exist();
+		$lifecycle_columns     = SC_EI_Database::lifecycle_columns_exist();
 		$admin              = get_role( 'administrator' );
 		$settings           = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
@@ -55,6 +56,7 @@ final class SC_EI_Diagnostics {
 		$graph_health = SC_EI_Graph_Repository::last_health();
 		$graph_metrics = SC_EI_Graph_Repository::metrics();
 		$engagement_metrics = SC_EI_Engagement_Repository::metrics();
+		$lifecycle_metrics = SC_EI_Lifecycle_Repository::metrics();
 		$hardening_metrics = SC_EI_Hardening_Repository::metrics();
 		$hardening_watchdog = SC_EI_Hardening_Repository::last_watchdog();
 		$workflow_core_metrics = SC_EI_Workflow_Core_Repository::metrics();
@@ -172,6 +174,20 @@ final class SC_EI_Diagnostics {
 				'portal_sender_safe'         => ! empty( $settings['engagement_sender_portal_enabled'] ),
 				'workbench_export'           => ! empty( $settings['engagement_allow_workbench_export'] ),
 				'decision_studio_export'     => ! empty( $settings['engagement_allow_decision_studio_export'] ),
+			),
+			'lifecycle_schema_version'=> SC_EI_LIFECYCLE_SCHEMA_VERSION,
+			'lifecycle_columns'       => $lifecycle_columns,
+			'lifecycle_metrics'       => $lifecycle_metrics,
+			'lifecycle_controls'      => array(
+				'enabled' => ! empty( $settings['lifecycle_enabled'] ),
+				'reminder_scheduled' => (bool) wp_next_scheduled( SC_EI_Lifecycle_Repository::REMINDER_HOOK ),
+				'reminder_callback_registered' => false !== has_action( SC_EI_Lifecycle_Repository::REMINDER_HOOK, array( 'SC_EI_Lifecycle_Repository', 'process_due_tasks' ) ),
+				'private_internal_notes' => true,
+				'sender_safe_summary_only' => true,
+				'automatic_rejection' => false,
+				'automatic_commitment' => false,
+				'human_transition_reason' => ! empty( $settings['lifecycle_require_transition_reason'] ),
+				'owner_required_for_qualified' => ! empty( $settings['lifecycle_require_owner_for_qualified'] ),
 			),
 			'platform_schema_version' => SC_EI_PLATFORM_SCHEMA_VERSION,
 			'platform_columns'        => $platform_columns,

@@ -1,62 +1,67 @@
-# Release Procedure — v1.0.3
+# Release Procedure — v1.1.0
 
 ## Release identity
 
 - Product: Sustainable Catalyst Contact and Engagement Platform
+- Release: Advisory Operations and Engagement Lifecycle
 - Plugin slug: `sustainable-catalyst-engagement-intake`
-- Version: `1.0.3`
-- Database version: `1.0.0`
-- Platform evidence schema: `1.0.2`
-- Base migration: `v1_0_0_unified_contact_engagement_platform`
-- Readiness migration: `v1_0_2_production_readiness_live_validation`
-- Launch-hardening migration: `v1_0_3_pilot_findings_public_launch_hardening`
+- Plugin version: `1.1.0`
+- Database version: `1.1.0`
+- Lifecycle schema: `1.0.0`
+- Platform evidence schema: `1.1.0`
+- Portal schema: `1.4.0`
+- Engagement schema: `1.1.0`
+- Lifecycle migration: `v1_1_0_advisory_operations_engagement_lifecycle`
 
-All three migrations are nondestructive and idempotent. v1.0.3 does not alter the database schema.
+The v1.1.0 migration is nondestructive and idempotent.
 
-## Required release checks
+## Required repository checks
 
-- PHP syntax across plugin and test files
+- PHP syntax across plugin and tests
 - JavaScript syntax for public and admin bundles
-- all executable repository test suites
-- private/protected constant visibility scan
-- version, database, schema, and migration contract checks
-- route, draft-recovery, upload-probe, pilot, inbox, and operational-gate checks
-- secret scan
-- installable ZIP root and exclusions
-- repository ZIP root and release manifest
-- ZIP CRC verification
-- fresh extraction and complete retest
+- every executable repository test suite
+- database table and inquiry-column contracts
+- lifecycle-stage and allowed-transition contracts
+- typed human transition and optimistic-lock contracts
+- internal-note and Sender Portal isolation contracts
+- task-reminder idempotency and opt-in delivery contracts
+- Teams, proposal, and engagement linkage contracts
+- privacy export, erasure, retention, diagnostics, readiness, cron, and uninstall contracts
+- common-secret scan
+- installable and repository ZIP roots
+- release manifest and ZIP CRC verification
+- fresh-extraction full retest
 
 ## Staging acceptance
 
-- upgrade from v1.0.2 without record loss
-- v1.0.2 and v1.0.3 migration journals completed once
-- canonical routed URLs resolve through the published Contact page
-- route selection prepopulates the intended inquiry path without creating another endpoint
-- unsent text drafts restore in the same browser tab; files and consent state do not restore
-- live validation accepts the safe text fixture and rejects the disguised executable fixture
-- public Contact, Sender Portal, Privacy, cron, adapter, accessibility, and storage checks pass
-- WordPress accepts the validation message
-- the validation message is confirmed in an external inbox and the evidence is recorded
-- at least five controlled inquiries complete successfully
-- every pilot checklist item is attested
-- no failed communication, quarantine, portal-lockout, overdue-work, or critical-event blocker remains
-- database and protected-storage backups are current and attested
-- production remains unavailable below 100%, with any failure, warning, stale evidence, or operational blocker
+- upgrade from v1.0.3 without record loss
+- database version and lifecycle migration journal reach v1.1.0
+- existing inquiries receive valid lifecycle stages
+- a typed authorized transition records both lifecycle and audit events
+- invalid stage jumps and stale concurrent edits are rejected
+- internal notes never appear in Sender Portal output
+- approved public stage, summary, and next step appear correctly
+- task creation, completion, due handling, and idempotent reminders work
+- lifecycle task email remains disabled unless intentionally enabled
+- linked Teams offers, proposals, and engagements remain available
+- advisory routes preserve source and service attribution
+- privacy export and approved erasure include lifecycle records
+- overdue lifecycle tasks and next actions block Production
+- existing v1.0.3 live, inbox, pilot, backup, and operational controls remain effective
 
 ## Production promotion
 
 1. Complete staging acceptance.
 2. Back up the production database and protected storage.
-3. Install v1.0.3 and clear WordPress, object, PHP opcode, host, CDN, and browser caches.
-4. Complete guided repairs and verify the v1.0.3 migration journal.
-5. Test each routed public entry from the Contact, Advisory, and Sustainable AI Assurance surfaces.
+3. Install v1.1.0 and clear all caches.
+4. Complete database and lifecycle migration repairs.
+5. Inspect backfilled records and assign operational owners.
 6. Run Live Validation with a monitored recipient.
-7. Confirm external inbox receipt and record the delivery reference.
-8. Complete at least five controlled inquiries and every pilot checklist item.
-9. Resolve every operational blocker.
-10. Record current backup evidence.
+7. Confirm external inbox delivery and record current evidence.
+8. Repeat controlled pilot checks for the current release.
+9. Resolve all lifecycle and public-launch operational blockers.
+10. Record current database and protected-storage backup evidence.
 11. Require 100%, zero failures, and zero warnings.
-12. Record Production only through the typed human action after operational review.
+12. Promote only through the typed human Production action.
 
-A repository test pass does not replace this staging and production-host validation.
+Repository validation does not replace live WordPress-host validation.

@@ -1,36 +1,36 @@
-Sustainable Catalyst Contact and Engagement Platform v1.0.3 Shortcodes
-================================================================
+SUSTAINABLE CATALYST CONTACT PAGE
 
-Consulting page
-[sc_engagement_inquiry mode="compact" source="consulting-page" entry_cta="discuss-an-engagement" title="Discuss an Engagement"]
+Primary shortcode:
+[sc_contact_engagement_platform title="Contact and Engagement Platform"]
 
-Contact page
-[sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst"]
+Recommended canonical URL:
+/contact/
 
-Secure sender portal
+Advisory CTA:
+/contact/?engagement=advisory
+
+Sustainable AI Assurance CTA:
+/contact/?engagement=ai-assurance
+
+Evidence Systems Diagnostic CTA:
+/contact/?engagement=evidence-systems
+
+Knowledge Architecture CTA:
+/contact/?engagement=knowledge-architecture
+
+Technical Storytelling CTA:
+/contact/?engagement=technical-storytelling
+
+Responsible AI Workflows CTA:
+/contact/?engagement=responsible-ai
+
+Workshop or briefing CTA:
+/contact/?engagement=workshop
+
+Monthly advisory support CTA:
+/contact/?engagement=monthly-advisory
+
+Sender Portal page shortcode:
 [sc_sender_portal title="Secure Sender Portal"]
 
-Workflow Core notes
-- No new public shortcode is required.
-- Workflow Core is private and capability-gated.
-- Read-only resources are available through authenticated REST routes.
-- Target plugins register internal adapters programmatically.
-- No arbitrary webhook URL or inbound command endpoint is included.
-
-Unified v1.0 recommended Contact-page embed
-============================================
-
-[sc_contact_engagement_platform title="Contact Sustainable Catalyst" source="contact-page" entry_cta="unified-contact-engagement" show_form="yes" show_portal="yes" show_privacy="yes"]
-
-This composes the existing contact hub. It does not create a second submission endpoint.
-
-
-v1.0.3 routed calls to action
-============================================
-
-/contact/?engagement=advisory
-/contact/?engagement=ai-assurance
-/contact/?engagement=collaboration
-/contact/?engagement=media
-
-All routes return to the same Contact-page shortcode and submission pipeline.
+Keep one canonical inquiry system. Routed links preselect and attribute the service path; they do not create separate forms.

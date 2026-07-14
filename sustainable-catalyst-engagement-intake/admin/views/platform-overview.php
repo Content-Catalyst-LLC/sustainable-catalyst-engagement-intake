@@ -37,7 +37,7 @@ $is_error = $message && ! isset( $messages[ $message ] );
 $metrics = $summary['metrics'];
 $live_validation = is_array( $readiness['live_validation'] ?? null ) ? $readiness['live_validation'] : array();
 $backup_attestation = is_array( $readiness['backup_attestation'] ?? null ) ? $readiness['backup_attestation'] : array();
-$auto_repairs = array( 'refresh_version', 'repair_database', 'verify_migration', 'verify_patch_migration', 'verify_launch_migration', 'repair_storage', 'repair_crons' );
+$auto_repairs = array( 'refresh_version', 'repair_database', 'verify_migration', 'verify_patch_migration', 'verify_launch_migration', 'verify_lifecycle_migration', 'repair_storage', 'repair_crons' );
 ?>
 <div class="wrap sc-ei-admin sc-ei-platform-admin" id="sc-ei-primary-content">
 	<header class="sc-ei-admin__header sc-ei-platform-admin__header">
@@ -46,7 +46,7 @@ $auto_repairs = array( 'refresh_version', 'repair_database', 'verify_migration',
 			<h1><?php esc_html_e( 'Contact and Engagement Platform', 'sustainable-catalyst-engagement-intake' ); ?></h1>
 			<p><?php esc_html_e( 'Pilot findings, public-launch operations, routed public intake, secure sender collaboration, human review, Teams scheduling, engagement handoff, analytics, reliability, privacy, and Workflow Core integration.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 		</div>
-		<div class="sc-ei-platform-admin__release"><span>v1.0.3</span><strong><?php echo esc_html( SC_EI_Platform_Schema::label( SC_EI_Platform_Schema::launch_states(), $readiness['launch_state'] ) ); ?></strong></div>
+		<div class="sc-ei-platform-admin__release"><span>v<?php echo esc_html( SC_EI_VERSION ); ?></span><strong><?php echo esc_html( SC_EI_Platform_Schema::label( SC_EI_Platform_Schema::launch_states(), $readiness['launch_state'] ) ); ?></strong></div>
 	</header>
 
 	<?php if ( $message ) : ?>
@@ -91,6 +91,8 @@ $auto_repairs = array( 'refresh_version', 'repair_database', 'verify_migration',
 							<a class="button" href="#sc-ei-pilot-evidence"><?php echo esc_html( $check['repair_label'] ); ?></a>
 						<?php elseif ( 'review_operations' === $check['repair'] ) : ?>
 							<a class="button" href="#sc-ei-launch-operations"><?php echo esc_html( $check['repair_label'] ); ?></a>
+						<?php elseif ( 'review_lifecycle' === $check['repair'] ) : ?>
+							<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-lifecycle' ) ); ?>"><?php echo esc_html( $check['repair_label'] ); ?></a>
 						<?php elseif ( 'review_routed_entries' === $check['repair'] ) : ?>
 							<a class="button" href="#sc-ei-routed-entry-urls"><?php echo esc_html( $check['repair_label'] ); ?></a>
 						<?php elseif ( in_array( $check['repair'], array( 'configure_pages', 'configure_settings' ), true ) ) : ?>
@@ -116,6 +118,7 @@ $auto_repairs = array( 'refresh_version', 'repair_database', 'verify_migration',
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-portal' ) ); ?>"><strong><?php echo esc_html( number_format_i18n( $metrics['portal']['active'] ?? 0 ) ); ?></strong><span><?php esc_html_e( 'active portal access', 'sustainable-catalyst-engagement-intake' ); ?></span></a>
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-workflow' ) ); ?>"><strong><?php echo esc_html( number_format_i18n( $metrics['workflow']['proposal_open'] ?? 0 ) ); ?></strong><span><?php esc_html_e( 'published proposals', 'sustainable-catalyst-engagement-intake' ); ?></span></a>
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-engagements' ) ); ?>"><strong><?php echo esc_html( number_format_i18n( $metrics['engagement']['active'] ?? 0 ) ); ?></strong><span><?php esc_html_e( 'active engagements', 'sustainable-catalyst-engagement-intake' ); ?></span></a>
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-lifecycle' ) ); ?>"><strong><?php echo esc_html( number_format_i18n( $metrics['lifecycle']['overdue_tasks'] ?? 0 ) ); ?></strong><span><?php esc_html_e( 'overdue lifecycle tasks', 'sustainable-catalyst-engagement-intake' ); ?></span></a>
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-workflow-core' ) ); ?>"><strong><?php echo esc_html( number_format_i18n( $metrics['workflow_core']['blocked_cases'] ?? 0 ) ); ?></strong><span><?php esc_html_e( 'blocked core cases', 'sustainable-catalyst-engagement-intake' ); ?></span></a>
 	</div>
 

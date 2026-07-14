@@ -1,88 +1,33 @@
-# Public Shortcodes
+# Public Shortcodes and Routed Entries
 
-## Compact Consulting Intake
-
-```text
-[sc_engagement_inquiry
-  mode="compact"
-  source="consulting-page"
-  entry_cta="discuss-an-engagement"
-  title="Discuss an Engagement"
-  intro="Share the problem, desired outcome, budget range, and preferred next step."
-]
-```
-
-Use this on the Consulting page.
-
-## Advanced Contact Hub
-
-```text
-[sc_contact_hub
-  mode="advanced"
-  source="contact-page"
-  entry_cta="contact-hub"
-  title="Contact Sustainable Catalyst"
-  intro="Choose the inquiry path that best matches your question, project, collaboration, or engagement."
-]
-```
-
-Use this on the Contact page.
-
-## General Contact Form
-
-```text
-[sc_contact_form
-  mode="general"
-  source="contact-page"
-  entry_cta="general-contact-form"
-]
-```
-
-## Standard Engagement Form
-
-```text
-[sc_engagement_inquiry
-  mode="consulting"
-  source="contact-page"
-  entry_cta="standard-engagement-form"
-]
-```
-
-## Attribution attributes
-
-`source` records the originating page or site area.
-
-Recommended values:
-
-- consulting-page
-- contact-page
-- research-page
-- platform-page
-- lab-page
-- workbench-page
-- media-page
-
-`entry_cta` records the button or section that opened the form.
-
-Both values are private and are not shown in a public archive.
-
-## Unified v1.0 entry
+## Canonical Contact and Engagement entry
 
 ```text
 [sc_contact_engagement_platform]
 ```
 
-This is the recommended primary Contact-page entry. It composes the existing adaptive contact hub and provides secure portal and privacy routes. Existing shortcodes remain supported.
+Place this shortcode on the primary published Contact page. It composes the existing intake and Sender Portal entry points without creating a second submission pipeline.
 
-
-## v1.0.3 routed Contact-page entries
-
-Keep one published Contact page with `[sc_contact_engagement_platform]` and link specialized calls to action to it:
+## Existing supported shortcodes
 
 ```text
-/contact/?engagement=general
+[sc_contact_hub]
+[sc_contact_form]
+[sc_engagement_inquiry]
+[sc_sender_portal]
+```
+
+## Service-specific routed links
+
+Use the canonical Contact-page URL with an `engagement` query value:
+
+```text
 /contact/?engagement=advisory
 /contact/?engagement=ai-assurance
+/contact/?engagement=evidence-systems
+/contact/?engagement=knowledge-architecture
+/contact/?engagement=technical-storytelling
+/contact/?engagement=responsible-ai
 /contact/?engagement=collaboration
 /contact/?engagement=media
 /contact/?engagement=technical
@@ -91,4 +36,12 @@ Keep one published Contact page with `[sc_contact_engagement_platform]` and link
 /contact/?engagement=monthly-advisory
 ```
 
-These routes preselect and attribute the inquiry. They do not create separate submission endpoints.
+Routes preselect and attribute the inquiry path. They do not create separate forms, endpoints, records, or notification systems.
+
+## Sender Portal
+
+```text
+[sc_sender_portal title="Secure Sender Portal"]
+```
+
+The Sender Portal must be placed on its own published page and excluded from full-page caching. v1.1.0 can deliberately publish a safe lifecycle stage, summary, and next step. Internal notes, qualification context, assignments, tasks, scores, and transition reasons remain private.

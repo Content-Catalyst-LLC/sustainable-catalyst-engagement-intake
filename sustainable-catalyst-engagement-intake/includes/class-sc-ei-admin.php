@@ -81,6 +81,7 @@ final class SC_EI_Admin {
 		SC_EI_Portal_Admin::submenu();
 		SC_EI_Workflow_Admin::submenu();
 		SC_EI_Graph_Admin::submenu();
+		SC_EI_Lifecycle_Admin::submenu();
 		SC_EI_Engagement_Admin::submenu();
 		SC_EI_Workflow_Core_Admin::submenu();
 		SC_EI_Analytics_Admin::submenu();
@@ -212,6 +213,7 @@ final class SC_EI_Admin {
 			SC_EI_Workflow_Schema::default_settings(),
 			SC_EI_Graph_Credentials::defaults(),
 			SC_EI_Engagement_Schema::default_settings(),
+			SC_EI_Lifecycle_Schema::default_settings(),
 			SC_EI_Analytics_Schema::default_settings(),
 			SC_EI_Hardening_Schema::default_settings(),
 			SC_EI_Workflow_Core_Schema::default_settings(),
@@ -365,6 +367,16 @@ final class SC_EI_Admin {
 			'engagement_no_auto_invoice'             => 1,
 			'engagement_no_auto_payment'             => 1,
 			'engagement_no_auto_signature'           => 1,
+			'lifecycle_enabled'                     => array_key_exists( 'lifecycle_enabled', $value ) ? ( empty( $value['lifecycle_enabled'] ) ? 0 : 1 ) : absint( $current['lifecycle_enabled'] ),
+			'lifecycle_default_follow_up_days'      => max( 1, min( 90, absint( $value['lifecycle_default_follow_up_days'] ?? $current['lifecycle_default_follow_up_days'] ) ) ),
+			'lifecycle_task_reminders_enabled'      => array_key_exists( 'lifecycle_task_reminders_enabled', $value ) ? ( empty( $value['lifecycle_task_reminders_enabled'] ) ? 0 : 1 ) : absint( $current['lifecycle_task_reminders_enabled'] ),
+			'lifecycle_task_email_enabled'          => array_key_exists( 'lifecycle_task_email_enabled', $value ) ? ( empty( $value['lifecycle_task_email_enabled'] ) ? 0 : 1 ) : absint( $current['lifecycle_task_email_enabled'] ),
+			'lifecycle_task_batch_limit'            => max( 1, min( 250, absint( $value['lifecycle_task_batch_limit'] ?? $current['lifecycle_task_batch_limit'] ) ) ),
+			'lifecycle_require_transition_reason'   => 1,
+			'lifecycle_require_owner_for_qualified' => 1,
+			'lifecycle_sender_summary_enabled'      => array_key_exists( 'lifecycle_sender_summary_enabled', $value ) ? ( empty( $value['lifecycle_sender_summary_enabled'] ) ? 0 : 1 ) : absint( $current['lifecycle_sender_summary_enabled'] ),
+			'lifecycle_no_automatic_rejection'      => 1,
+			'lifecycle_no_automatic_commitment'     => 1,
 			'analytics_enabled'                     => array_key_exists( 'analytics_enabled', $value ) ? ( empty( $value['analytics_enabled'] ) ? 0 : 1 ) : absint( $current['analytics_enabled'] ),
 			'analytics_minimum_cohort'              => max( 2, min( 100, absint( $value['analytics_minimum_cohort'] ?? $current['analytics_minimum_cohort'] ) ) ),
 			'analytics_default_days'                => SC_EI_Analytics_Schema::sanitize_days( $value['analytics_default_days'] ?? $current['analytics_default_days'] ),

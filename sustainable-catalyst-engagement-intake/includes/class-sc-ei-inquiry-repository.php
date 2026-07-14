@@ -174,6 +174,25 @@ final class SC_EI_Inquiry_Repository {
 			'sender_withdrawal_requested_at' => null,
 			'sender_withdrawal_reason'=> '',
 			'portal_version'          => 0,
+			'lifecycle_stage'          => SC_EI_Lifecycle_Schema::map_legacy_status( $status ),
+			'lifecycle_owner_user_id'  => $initial_assignee ?: null,
+			'lifecycle_priority'       => $initial_priority,
+			'next_action'              => __( 'Review the new inquiry and determine the next human action.', 'sustainable-catalyst-engagement-intake' ),
+			'next_action_at'           => SC_EI_Review_Schema::default_due_at( $initial_priority ),
+			'qualification_status'     => 'not_started',
+			'qualification_score'      => null,
+			'qualification_json'       => wp_json_encode( array(), JSON_UNESCAPED_SLASHES ),
+			'decision_authority'       => 'unknown',
+			'funding_status'           => 'unknown',
+			'stakeholder_summary'      => '',
+			'systems_constraints'      => '',
+			'data_security_requirements'=> '',
+			'ai_assurance_applicable' => 'unknown',
+			'teams_readiness'         => 'not_assessed',
+			'sender_lifecycle_summary'=> __( 'Your inquiry has been received and is awaiting review.', 'sustainable-catalyst-engagement-intake' ),
+			'lifecycle_version'        => 0,
+			'lifecycle_updated_at'     => $now,
+			'lifecycle_updated_by'     => null,
 			'created_at'              => $now,
 			'updated_at'              => $now,
 			'closed_at'               => null,
@@ -200,6 +219,10 @@ final class SC_EI_Inquiry_Repository {
 			'portal_message_count',
 			'portal_document_count',
 			'portal_version',
+			'lifecycle_owner_user_id',
+			'qualification_score',
+			'lifecycle_version',
+			'lifecycle_updated_by',
 		);
 		$formats = array_map(
 			static fn( string $key ): string => in_array( $key, $integer_fields, true ) ? '%d' : '%s',
@@ -235,6 +258,9 @@ final class SC_EI_Inquiry_Repository {
 				'privacy_status'            => 'active',
 				'fit_assessment_status'     => 'not_started',
 				'portal_status'             => 'inactive',
+				'lifecycle_stage'           => SC_EI_Lifecycle_Schema::map_legacy_status( $status ),
+				'lifecycle_priority'        => $initial_priority,
+				'qualification_status'      => 'not_started',
 				'sender_withdrawal_status'  => 'none',
 				'retention_policy_key'      => 'unaccepted_inquiry',
 				'retention_until'           => $initial_retention_until,
@@ -279,6 +305,9 @@ final class SC_EI_Inquiry_Repository {
 			'form_variant'      => '',
 			'source_page'       => '',
 			'conversion_route'  => '',
+			'lifecycle_stage'   => '',
+			'lifecycle_owner_user_id' => 0,
+			'lifecycle_priority'=> '',
 			'search'            => '',
 			'page'              => 1,
 			'per_page'          => 20,
@@ -314,6 +343,18 @@ final class SC_EI_Inquiry_Repository {
 			$where[]  = 'conversion_route = %s';
 			$params[] = sanitize_key( $args['conversion_route'] );
 		}
+		if ( $args['lifecycle_stage'] && isset( SC_EI_Lifecycle_Schema::stages()[ sanitize_key( $args['lifecycle_stage'] ) ] ) ) {
+			$where[] = 'lifecycle_stage = %s';
+			$params[] = sanitize_key( $args['lifecycle_stage'] );
+		}
+		if ( ! empty( $args['lifecycle_owner_user_id'] ) ) {
+			$where[] = 'lifecycle_owner_user_id = %d';
+			$params[] = absint( $args['lifecycle_owner_user_id'] );
+		}
+		if ( $args['lifecycle_priority'] && isset( SC_EI_Lifecycle_Schema::priorities()[ sanitize_key( $args['lifecycle_priority'] ) ] ) ) {
+			$where[] = 'lifecycle_priority = %s';
+			$params[] = sanitize_key( $args['lifecycle_priority'] );
+		}
 		if ( $args['search'] ) {
 			$like     = '%' . $wpdb->esc_like( sanitize_text_field( $args['search'] ) ) . '%';
 			$where[]  = '(reference LIKE %s OR contact_name LIKE %s OR contact_email LIKE %s OR teams_email LIKE %s OR organization LIKE %s OR subject LIKE %s OR source_page LIKE %s OR conversion_route LIKE %s)';
@@ -327,7 +368,7 @@ final class SC_EI_Inquiry_Repository {
 			$params[] = $like;
 		}
 
-		$allowed_orderby = array( 'created_at', 'updated_at', 'status', 'scheduling_status', 'form_variant', 'source_page', 'conversion_route', 'contact_name', 'organization', 'reference', 'review_stage', 'review_priority', 'review_due_at', 'fit_decision', 'risk_level', 'last_reviewed_at', 'communication_status', 'next_follow_up_at', 'last_communication_at', 'privacy_status', 'retention_until', 'legal_hold_count', 'fit_assessment_status', 'fit_assessment_updated_at', 'fit_assessment_finalized_at', 'portal_status', 'portal_last_activity_at', 'portal_last_sender_message_at', 'sender_withdrawal_status' );
+		$allowed_orderby = array( 'created_at', 'updated_at', 'status', 'scheduling_status', 'form_variant', 'source_page', 'conversion_route', 'contact_name', 'organization', 'reference', 'review_stage', 'review_priority', 'review_due_at', 'fit_decision', 'risk_level', 'last_reviewed_at', 'communication_status', 'next_follow_up_at', 'last_communication_at', 'privacy_status', 'retention_until', 'legal_hold_count', 'fit_assessment_status', 'fit_assessment_updated_at', 'fit_assessment_finalized_at', 'portal_status', 'portal_last_activity_at', 'portal_last_sender_message_at', 'sender_withdrawal_status', 'lifecycle_stage', 'lifecycle_owner_user_id', 'lifecycle_priority', 'next_action_at', 'qualification_status', 'lifecycle_updated_at' );
 		$orderby         = in_array( $args['orderby'], $allowed_orderby, true ) ? $args['orderby'] : 'created_at';
 		$order           = 'ASC' === strtoupper( $args['order'] ) ? 'ASC' : 'DESC';
 		$per_page        = max( 1, min( 100, absint( $args['per_page'] ) ) );

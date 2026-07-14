@@ -16,6 +16,7 @@ final class SC_EI_Activator {
 		}
 
 		$previous_version = (string) get_option( 'sc_ei_version', '' );
+		$previous_lifecycle_schema = (string) get_option( 'sc_ei_lifecycle_schema_version', '' );
 		SC_EI_Database::install();
 		SC_EI_Capabilities::install();
 		SC_EI_Storage::ensure();
@@ -24,6 +25,7 @@ final class SC_EI_Activator {
 		SC_EI_Portal_Repository::schedule();
 		SC_EI_Workflow_Repository::schedule();
 		SC_EI_Graph_Repository::schedule();
+		SC_EI_Lifecycle_Repository::schedule();
 		SC_EI_Template_Repository::seed_defaults();
 		SC_EI_Retention_Policy_Repository::seed_defaults();
 
@@ -38,6 +40,8 @@ final class SC_EI_Activator {
 		update_option( 'sc_ei_workflow_schema_version', SC_EI_WORKFLOW_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_graph_schema_version', SC_EI_GRAPH_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_engagement_schema_version', SC_EI_ENGAGEMENT_SCHEMA_VERSION, false );
+		update_option( 'sc_ei_lifecycle_schema_version_previous', $previous_lifecycle_schema, false );
+		update_option( 'sc_ei_lifecycle_schema_version', SC_EI_LIFECYCLE_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_analytics_schema_version', SC_EI_ANALYTICS_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_hardening_schema_version', SC_EI_HARDENING_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_workflow_core_schema_version', SC_EI_WORKFLOW_CORE_SCHEMA_VERSION, false );
@@ -48,10 +52,12 @@ final class SC_EI_Activator {
 		SC_EI_Hardening_Repository::schedule();
 		SC_EI_Workflow_Core_Repository::schedule();
 		SC_EI_Platform_Repository::schedule();
+		SC_EI_Lifecycle_Repository::backfill_defaults();
+		SC_EI_Lifecycle_Repository::record_migration( $previous_lifecycle_schema );
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Unified Contact and Engagement Platform v1.0.0 activated with a governed platform overview, readiness snapshots, migration journal, unified public entry point, stable module navigation, and all established inquiry, review, fit, portal, Teams, proposal, engagement, analytics, reliability, privacy, quarantine, and Workflow Core controls.',
+			'Sustainable Catalyst Contact and Engagement Platform v1.1.0 activated with nondestructive advisory lifecycle migration, structured qualification, private internal notes, follow-up tasks, Teams-centered coordination, proposal and engagement linkage, sender-safe lifecycle summaries, and the established production gate.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}
@@ -62,6 +68,7 @@ final class SC_EI_Activator {
 		SC_EI_Portal_Repository::unschedule();
 		SC_EI_Workflow_Repository::unschedule();
 		SC_EI_Graph_Repository::unschedule();
+		SC_EI_Lifecycle_Repository::unschedule();
 		SC_EI_Analytics_Repository::unschedule();
 		SC_EI_Hardening_Repository::unschedule();
 		SC_EI_Workflow_Core_Repository::unschedule();

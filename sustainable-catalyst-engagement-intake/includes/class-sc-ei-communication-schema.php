@@ -46,6 +46,7 @@ final class SC_EI_Communication_Schema {
 			'internal_new_inquiry'      => __( 'Internal New Inquiry Alert', 'sustainable-catalyst-engagement-intake' ),
 			'internal_review_due'       => __( 'Internal Review Due Reminder', 'sustainable-catalyst-engagement-intake' ),
 			'internal_follow_up_due'    => __( 'Internal Follow-up Due Reminder', 'sustainable-catalyst-engagement-intake' ),
+			'internal_lifecycle_task_due'=> __( 'Internal Lifecycle Task Due Reminder', 'sustainable-catalyst-engagement-intake' ),
 			'internal_escalation'       => __( 'Internal Escalation Alert', 'sustainable-catalyst-engagement-intake' ),
 			'internal_note'             => __( 'Internal Note', 'sustainable-catalyst-engagement-intake' ),
 			'manual_interaction'        => __( 'Manually Recorded Interaction', 'sustainable-catalyst-engagement-intake' ),
@@ -108,6 +109,10 @@ final class SC_EI_Communication_Schema {
 			'{reviewer_name}'         => __( 'Assigned reviewer name', 'sustainable-catalyst-engagement-intake' ),
 			'{review_due}'            => __( 'Review due date', 'sustainable-catalyst-engagement-intake' ),
 			'{next_follow_up}'        => __( 'Next follow-up date', 'sustainable-catalyst-engagement-intake' ),
+			'{lifecycle_stage}'       => __( 'Advisory lifecycle stage', 'sustainable-catalyst-engagement-intake' ),
+			'{lifecycle_next_action}' => __( 'Published or internal lifecycle next action', 'sustainable-catalyst-engagement-intake' ),
+			'{lifecycle_task}'        => __( 'Lifecycle task title', 'sustainable-catalyst-engagement-intake' ),
+			'{lifecycle_task_due}'    => __( 'Lifecycle task due date', 'sustainable-catalyst-engagement-intake' ),
 		);
 	}
 
@@ -192,6 +197,55 @@ final class SC_EI_Communication_Schema {
 					'sustainable-catalyst-engagement-intake'
 				),
 				'is_system'          => 0,
+			),
+			'lifecycle_information_request' => array(
+				'name' => __( 'Lifecycle information request', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'request_information',
+				'subject' => __( 'Information needed for the next step — {reference}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "Hello {first_name},\n\nYour inquiry is currently at: {lifecycle_stage}. To continue, please provide the information described below.\n\n[Requested information]\n\nUse the Secure Sender Portal for private documents.\n\nRegards,\n{sender_name}\n{reply_email}", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 0,
+			),
+			'lifecycle_meeting_invitation' => array(
+				'name' => __( 'Lifecycle Teams meeting invitation', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'fit_call_invitation',
+				'subject' => __( 'Microsoft Teams conversation requested — {reference}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "Hello {first_name},\n\nA Microsoft Teams conversation is the recommended next step for {reference}.\n\n{lifecycle_next_action}\n\nNo meeting is confirmed until a human-approved date, time, timezone, and Teams link are provided.\n\nRegards,\n{sender_name}\n{reply_email}", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 0,
+			),
+			'lifecycle_proposal_sent' => array(
+				'name' => __( 'Lifecycle proposal notice', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'proposal_handoff',
+				'subject' => __( 'Proposal available — {reference}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "Hello {first_name},\n\nA proposal record is available for inquiry {reference}. Review the approved proposal notice and documents through the Secure Sender Portal.\n\nA portal response is not an electronic signature and does not authorize work by itself.\n\nRegards,\n{sender_name}\n{reply_email}", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 0,
+			),
+			'lifecycle_engagement_accepted' => array(
+				'name' => __( 'Lifecycle engagement accepted', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'engagement_update',
+				'subject' => __( 'Engagement next steps — {reference}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "Hello {first_name},\n\nThe inquiry has moved to the accepted stage.\n\nNext action: {lifecycle_next_action}\n\nScope, payment, contracting, and authorization remain governed by the separately approved engagement documents.\n\nRegards,\n{sender_name}\n{reply_email}", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 0,
+			),
+			'lifecycle_declined' => array(
+				'name' => __( 'Lifecycle declined', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'decline',
+				'subject' => __( 'Regarding inquiry {reference}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "Hello {first_name},\n\nAfter human review, Sustainable Catalyst will not advance this inquiry.\n\n[Optional concise explanation or referral.]\n\nRegards,\n{sender_name}\n{reply_email}", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 0,
+			),
+			'lifecycle_completed' => array(
+				'name' => __( 'Lifecycle engagement completed', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'engagement_update',
+				'subject' => __( 'Engagement completed — {reference}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "Hello {first_name},\n\nThe engagement associated with {reference} has been marked completed.\n\n[Completion summary and any approved follow-up path.]\n\nRegards,\n{sender_name}\n{reply_email}", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 0,
+			),
+			'internal_lifecycle_task_due' => array(
+				'name' => __( 'Internal lifecycle task due', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'internal_lifecycle_task_due',
+				'subject' => __( 'Lifecycle task due: {reference}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "A private advisory-lifecycle task is due.\n\nReference: {reference}\nStage: {lifecycle_stage}\nTask: {lifecycle_task}\nDue: {lifecycle_task_due}\nNext action: {lifecycle_next_action}\n\nOpen the Advisory Lifecycle workspace. This reminder does not contact the sender.", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 1,
 			),
 			'internal_new_inquiry' => array(
 				'name'               => __( 'Internal new inquiry alert', 'sustainable-catalyst-engagement-intake' ),

@@ -2973,3 +2973,72 @@
 }
 #sc-ei-pilot-evidence .sc-ei-check { margin: 8px 0; }
 #sc-ei-routed-entry-urls pre { overflow: auto; }
+
+/* v1.1.0 Advisory Operations and Engagement Lifecycle */
+.sc-ei-lifecycle-layout {
+	display: grid;
+	grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+	gap: 20px;
+	align-items: start;
+	margin-top: 18px;
+}
+.sc-ei-lifecycle-list {
+	position: sticky;
+	top: 46px;
+	max-height: calc(100vh - 80px);
+	overflow: auto;
+}
+.sc-ei-lifecycle-row {
+	display: grid;
+	gap: 5px;
+	padding: 12px;
+	margin: 0 0 8px;
+	border: 1px solid #d8dbe0;
+	border-radius: 9px;
+	background: #fff;
+	color: #1d2327;
+	text-decoration: none;
+}
+.sc-ei-lifecycle-row:hover,
+.sc-ei-lifecycle-row:focus,
+.sc-ei-lifecycle-row.is-selected {
+	border-color: #7a1730;
+	box-shadow: 0 0 0 1px #7a1730;
+}
+.sc-ei-lifecycle-row span,
+.sc-ei-lifecycle-row small { color: #50575e; }
+.sc-ei-lifecycle-workspace { display: grid; gap: 18px; min-width: 0; }
+.sc-ei-lifecycle-workspace .sc-ei-panel { margin: 0; }
+.sc-ei-panel__header {
+	display: flex;
+	justify-content: space-between;
+	gap: 16px;
+	align-items: flex-start;
+}
+.sc-ei-task-card {
+	display: grid;
+	grid-template-columns: minmax(0,1fr) repeat(3,minmax(120px,auto)) auto;
+	gap: 8px;
+	align-items: center;
+	padding: 12px;
+	margin-top: 10px;
+	border: 1px solid #d8dbe0;
+	border-radius: 9px;
+	background: #fafafa;
+}
+.sc-ei-task-card p { grid-column: 1 / -1; margin: 0; color: #50575e; }
+.sc-ei-lifecycle-workspace textarea,
+.sc-ei-lifecycle-workspace input[type="text"],
+.sc-ei-lifecycle-workspace input[type="datetime-local"],
+.sc-ei-lifecycle-workspace select { width: 100%; max-width: none; }
+@media (max-width: 1100px) {
+	.sc-ei-lifecycle-layout { grid-template-columns: 1fr; }
+	.sc-ei-lifecycle-list { position: static; max-height: none; }
+	.sc-ei-task-card { grid-template-columns: 1fr 1fr; }
+	.sc-ei-task-card p { grid-column: 1 / -1; }
+}
+@media (max-width: 782px) {
+	.sc-ei-panel__header { display: grid; }
+	.sc-ei-task-card { grid-template-columns: 1fr; }
+	.sc-ei-task-card p { grid-column: auto; }
+}

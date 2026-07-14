@@ -53,6 +53,32 @@ final class SC_EI_Privacy {
 				'data'        => self::export_fields( $inquiry, self::inquiry_export_fields() ),
 			);
 
+			$lifecycle = SC_EI_Lifecycle_Repository::export_for_inquiry( $inquiry_id );
+			foreach ( $lifecycle['events'] as $event ) {
+				$data[] = array(
+					'group_id' => 'sc-engagement-intake-lifecycle-events',
+					'group_label' => __( 'Engagement Lifecycle Events', 'sustainable-catalyst-engagement-intake' ),
+					'item_id' => 'sc-ei-lifecycle-event-' . $event['id'],
+					'data' => self::export_fields( $event, array( 'event_type' => 'Lifecycle event', 'from_stage' => 'Previous lifecycle stage', 'to_stage' => 'New lifecycle stage', 'payload_json' => 'Event context', 'occurred_at' => 'Occurred at' ) ),
+				);
+			}
+			foreach ( $lifecycle['notes'] as $note ) {
+				$data[] = array(
+					'group_id' => 'sc-engagement-intake-lifecycle-notes',
+					'group_label' => __( 'Engagement Lifecycle Internal Notes', 'sustainable-catalyst-engagement-intake' ),
+					'item_id' => 'sc-ei-lifecycle-note-' . $note['id'],
+					'data' => self::export_fields( $note, array( 'note_type' => 'Note type', 'note_body' => 'Internal note content', 'is_sensitive' => 'Sensitive marker', 'created_at' => 'Created at', 'updated_at' => 'Updated at' ) ),
+				);
+			}
+			foreach ( $lifecycle['tasks'] as $task ) {
+				$data[] = array(
+					'group_id' => 'sc-engagement-intake-lifecycle-tasks',
+					'group_label' => __( 'Engagement Lifecycle Tasks', 'sustainable-catalyst-engagement-intake' ),
+					'item_id' => 'sc-ei-lifecycle-task-' . $task['id'],
+					'data' => self::export_fields( $task, array( 'task_title' => 'Task title', 'task_details' => 'Task details', 'task_status' => 'Task status', 'priority' => 'Priority', 'due_at' => 'Due at', 'completed_at' => 'Completed at', 'completion_note' => 'Completion note', 'created_at' => 'Created at', 'updated_at' => 'Updated at' ) ),
+				);
+			}
+
 			foreach ( SC_EI_Review_Repository::history( $inquiry_id, 500 ) as $review ) {
 				$data[] = array(
 					'group_id'    => 'sc-engagement-intake-reviews',

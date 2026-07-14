@@ -3,7 +3,7 @@
  * Plugin Name: Sustainable Catalyst Contact and Engagement Platform
  * Plugin URI:  https://sustainablecatalyst.com/
  * Description: Unified contact and engagement platform with governed public intake, secure sender collaboration, human review and fit assessment, Teams scheduling, proposals, engagement handoff, analytics, reliability, privacy, and signed Workflow Core integration.
- * Version:     1.0.3
+ * Version:     1.1.0
  * Author:      Content Catalyst LLC
  * Author URI:  https://sustainablecatalyst.com/
  * Text Domain: sustainable-catalyst-engagement-intake
@@ -18,21 +18,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SC_EI_VERSION', '1.0.3' );
-define( 'SC_EI_DB_VERSION', '1.0.0' );
-define( 'SC_EI_VALIDATOR_VERSION', '1.0.3' );
+define( 'SC_EI_VERSION', '1.1.0' );
+define( 'SC_EI_DB_VERSION', '1.1.0' );
+define( 'SC_EI_VALIDATOR_VERSION', '1.1.0' );
 define( 'SC_EI_REVIEW_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_COMMUNICATION_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_PRIVACY_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_FIT_SCHEMA_VERSION', '1.0.0' );
-define( 'SC_EI_PORTAL_SCHEMA_VERSION', '1.3.0' );
+define( 'SC_EI_PORTAL_SCHEMA_VERSION', '1.4.0' );
 define( 'SC_EI_WORKFLOW_SCHEMA_VERSION', '1.1.0' );
 define( 'SC_EI_GRAPH_SCHEMA_VERSION', '1.0.0' );
-define( 'SC_EI_ENGAGEMENT_SCHEMA_VERSION', '1.0.0' );
+define( 'SC_EI_ENGAGEMENT_SCHEMA_VERSION', '1.1.0' );
 define( 'SC_EI_ANALYTICS_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_HARDENING_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_WORKFLOW_CORE_SCHEMA_VERSION', '1.0.0' );
-define( 'SC_EI_PLATFORM_SCHEMA_VERSION', '1.0.2' );
+define( 'SC_EI_PLATFORM_SCHEMA_VERSION', '1.1.0' );
+define( 'SC_EI_LIFECYCLE_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_FILE', __FILE__ );
 define( 'SC_EI_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SC_EI_URL', plugin_dir_url( __FILE__ ) );
@@ -67,7 +68,9 @@ require_once SC_EI_DIR . 'includes/class-sc-ei-graph-client.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-graph-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-workflow-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-engagement-schema.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-lifecycle-schema.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-engagement-repository.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-lifecycle-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-template-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-communication-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-privacy-repository.php';
@@ -110,6 +113,7 @@ require_once SC_EI_DIR . 'includes/class-sc-ei-portal-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-workflow-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-graph-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-engagement-admin.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-lifecycle-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-analytics-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-hardening-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-workflow-core-admin.php';

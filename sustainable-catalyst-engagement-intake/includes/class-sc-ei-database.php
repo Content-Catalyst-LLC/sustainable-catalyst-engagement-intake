@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -57,6 +57,9 @@ final class SC_EI_Database {
 		$platform_snapshots = self::table( 'platform_snapshots' );
 		$platform_migrations = self::table( 'platform_migrations' );
 		$communication_templates = self::table( 'communication_templates' );
+		$lifecycle_events = self::table( 'lifecycle_events' );
+		$lifecycle_notes = self::table( 'lifecycle_notes' );
+		$lifecycle_tasks = self::table( 'lifecycle_tasks' );
 		$privacy_requests = self::table( 'privacy_requests' );
 		$consent_events = self::table( 'consent_events' );
 		$legal_holds = self::table( 'legal_holds' );
@@ -172,6 +175,25 @@ final class SC_EI_Database {
 			sender_withdrawal_requested_at datetime NULL,
 			sender_withdrawal_reason longtext NULL,
 			portal_version int(10) unsigned NOT NULL DEFAULT 0,
+			lifecycle_stage varchar(60) NOT NULL DEFAULT 'new_inquiry',
+			lifecycle_owner_user_id bigint(20) unsigned NULL,
+			lifecycle_priority varchar(20) NOT NULL DEFAULT 'normal',
+			next_action varchar(255) NOT NULL DEFAULT '',
+			next_action_at datetime NULL,
+			qualification_status varchar(30) NOT NULL DEFAULT 'not_started',
+			qualification_score smallint(5) unsigned NOT NULL DEFAULT 0,
+			qualification_json longtext NULL,
+			decision_authority varchar(40) NOT NULL DEFAULT 'unknown',
+			funding_status varchar(40) NOT NULL DEFAULT 'unknown',
+			stakeholder_summary longtext NULL,
+			systems_constraints longtext NULL,
+			data_security_requirements longtext NULL,
+			ai_assurance_applicable varchar(20) NOT NULL DEFAULT 'not_assessed',
+			teams_readiness varchar(30) NOT NULL DEFAULT 'not_assessed',
+			sender_lifecycle_summary longtext NULL,
+			lifecycle_version int(10) unsigned NOT NULL DEFAULT 0,
+			lifecycle_updated_at datetime NULL,
+			lifecycle_updated_by bigint(20) unsigned NULL,
 			created_at datetime NOT NULL,
 			updated_at datetime NOT NULL,
 			closed_at datetime NULL,
@@ -215,6 +237,15 @@ final class SC_EI_Database {
 			KEY portal_last_activity_at (portal_last_activity_at),
 			KEY portal_last_sender_message_at (portal_last_sender_message_at),
 			KEY sender_withdrawal_status (sender_withdrawal_status),
+			KEY lifecycle_stage (lifecycle_stage),
+			KEY lifecycle_owner_user_id (lifecycle_owner_user_id),
+			KEY lifecycle_priority (lifecycle_priority),
+			KEY next_action_at (next_action_at),
+			KEY qualification_status (qualification_status),
+			KEY decision_authority (decision_authority),
+			KEY funding_status (funding_status),
+			KEY lifecycle_updated_at (lifecycle_updated_at),
+			KEY lifecycle_updated_by (lifecycle_updated_by),
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
@@ -1299,6 +1330,75 @@ final class SC_EI_Database {
 		) {$charset_collate};";
 
 
+
+		$sql_lifecycle_events = "CREATE TABLE {$lifecycle_events} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			event_type varchar(80) NOT NULL DEFAULT '',
+			from_stage varchar(60) NOT NULL DEFAULT '',
+			to_stage varchar(60) NOT NULL DEFAULT '',
+			actor_user_id bigint(20) unsigned NULL,
+			payload_json longtext NULL,
+			occurred_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY inquiry_id (inquiry_id),
+			KEY event_type (event_type),
+			KEY from_stage (from_stage),
+			KEY to_stage (to_stage),
+			KEY actor_user_id (actor_user_id),
+			KEY occurred_at (occurred_at)
+		) {$charset_collate};";
+
+		$sql_lifecycle_notes = "CREATE TABLE {$lifecycle_notes} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			note_type varchar(40) NOT NULL DEFAULT 'internal',
+			note_body longtext NULL,
+			is_sensitive tinyint(1) unsigned NOT NULL DEFAULT 0,
+			created_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY inquiry_id (inquiry_id),
+			KEY note_type (note_type),
+			KEY is_sensitive (is_sensitive),
+			KEY created_by (created_by),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql_lifecycle_tasks = "CREATE TABLE {$lifecycle_tasks} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			task_title varchar(255) NOT NULL DEFAULT '',
+			task_details longtext NULL,
+			task_status varchar(30) NOT NULL DEFAULT 'open',
+			priority varchar(20) NOT NULL DEFAULT 'normal',
+			due_at datetime NULL,
+			assigned_user_id bigint(20) unsigned NULL,
+			reminder_policy varchar(40) NOT NULL DEFAULT 'daily_when_due',
+			last_reminded_at datetime NULL,
+			completed_at datetime NULL,
+			completed_by bigint(20) unsigned NULL,
+			created_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY inquiry_id (inquiry_id),
+			KEY task_status (task_status),
+			KEY priority (priority),
+			KEY due_at (due_at),
+			KEY assigned_user_id (assigned_user_id),
+			KEY last_reminded_at (last_reminded_at),
+			KEY completed_at (completed_at),
+			KEY created_by (created_by)
+		) {$charset_collate};";
+
 		$sql_privacy_requests = "CREATE TABLE {$privacy_requests} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			public_id char(36) NOT NULL,
@@ -1502,6 +1602,9 @@ final class SC_EI_Database {
 		dbDelta( $sql_communications );
 		dbDelta( $sql_communication_events );
 		dbDelta( $sql_communication_templates );
+		dbDelta( $sql_lifecycle_events );
+		dbDelta( $sql_lifecycle_notes );
+		dbDelta( $sql_lifecycle_tasks );
 		dbDelta( $sql_privacy_requests );
 		dbDelta( $sql_consent_events );
 		dbDelta( $sql_legal_holds );
@@ -1514,6 +1617,7 @@ final class SC_EI_Database {
 		self::backfill_portal_defaults();
 		self::backfill_communication_defaults();
 		self::backfill_privacy_defaults();
+		self::backfill_lifecycle_defaults();
 		update_option( 'sc_ei_db_version', SC_EI_DB_VERSION, false );
 	}
 
@@ -1613,6 +1717,13 @@ final class SC_EI_Database {
 		);
 	}
 
+
+	private static function backfill_lifecycle_defaults(): void {
+		if ( class_exists( 'SC_EI_Lifecycle_Repository' ) ) {
+			SC_EI_Lifecycle_Repository::backfill_defaults();
+		}
+	}
+
 	public static function maybe_upgrade(): void {
 		$current = (string) get_option( 'sc_ei_db_version', '' );
 		if ( version_compare( $current, SC_EI_DB_VERSION, '<' ) ) {
@@ -1624,7 +1735,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -1709,6 +1820,25 @@ final class SC_EI_Database {
 			'sender_withdrawal_requested_at',
 			'sender_withdrawal_reason',
 			'portal_version',
+			'lifecycle_stage',
+			'lifecycle_owner_user_id',
+			'lifecycle_priority',
+			'next_action',
+			'next_action_at',
+			'qualification_status',
+			'qualification_score',
+			'qualification_json',
+			'decision_authority',
+			'funding_status',
+			'stakeholder_summary',
+			'systems_constraints',
+			'data_security_requirements',
+			'ai_assurance_applicable',
+			'teams_readiness',
+			'sender_lifecycle_summary',
+			'lifecycle_version',
+			'lifecycle_updated_at',
+			'lifecycle_updated_by',
 		);
 
 		$result = array();
@@ -1993,6 +2123,25 @@ final class SC_EI_Database {
 		return $result;
 	}
 
+
+
+	public static function lifecycle_columns_exist(): array {
+		global $wpdb;
+		$tables = array(
+			'lifecycle_events' => array( 'id', 'public_id', 'inquiry_id', 'event_type', 'from_stage', 'to_stage', 'actor_user_id', 'payload_json', 'occurred_at' ),
+			'lifecycle_notes' => array( 'id', 'public_id', 'inquiry_id', 'note_type', 'note_body', 'is_sensitive', 'created_by', 'created_at', 'updated_at' ),
+			'lifecycle_tasks' => array( 'id', 'public_id', 'inquiry_id', 'task_title', 'task_details', 'task_status', 'priority', 'due_at', 'assigned_user_id', 'reminder_policy', 'last_reminded_at', 'completed_at', 'completed_by', 'created_by', 'created_at', 'updated_at' ),
+		);
+		$result = array();
+		foreach ( $tables as $table_name => $columns ) {
+			$table = self::table( $table_name );
+			foreach ( $columns as $column ) {
+				$found = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$result[ $table_name . '.' . $column ] = ( $found === $column );
+			}
+		}
+		return $result;
+	}
 
 	public static function workflow_core_columns_exist(): array {
 		global $wpdb;

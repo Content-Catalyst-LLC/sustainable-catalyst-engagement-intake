@@ -17,9 +17,9 @@ $login_view = file_get_contents( $plugin . '/public/views/sender-portal-login.ph
 $portal_view= file_get_contents( $plugin . '/public/views/sender-portal.php' );
 
 $checks = array(
-	'v1.0.3 plugin and v1.0.0 DB markers' => strpos( $main, 'Version:     1.0.3' ) !== false
-		&& strpos( $main, "SC_EI_DB_VERSION', '1.0.0'" ) !== false,
-	'portal schema 1.3.0' => strpos( $main, "SC_EI_PORTAL_SCHEMA_VERSION', '1.3.0'" ) !== false,
+	'v1.1.0 plugin and database markers' => strpos( $main, 'Version:     1.1.0' ) !== false
+		&& strpos( $main, "SC_EI_DB_VERSION', '1.1.0'" ) !== false,
+	'portal schema 1.4.0' => strpos( $main, "SC_EI_PORTAL_SCHEMA_VERSION', '1.4.0'" ) !== false,
 	'four portal tables declared' => strpos( $db, '$sql_portal_access' ) !== false
 		&& strpos( $db, '$sql_portal_sessions' ) !== false
 		&& strpos( $db, '$sql_portal_events' ) !== false

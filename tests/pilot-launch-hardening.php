@@ -15,7 +15,7 @@ $js = file_get_contents( $plugin . '/assets/js/public.js' );
 $view = file_get_contents( $plugin . '/admin/views/platform-overview.php' );
 $uninstall = file_get_contents( $plugin . '/uninstall.php' );
 $checks = array(
-	'v1.0.3 identity and platform evidence schema' => false !== strpos( $main, 'Version:     1.0.3' ) && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '1.0.2'" ),
+	'v1.1.0 identity and platform evidence schema' => false !== strpos( $main, 'Version:     1.1.0' ) && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '1.1.0'" ),
 	'pilot operations loaded' => false !== strpos( $main, 'class-sc-ei-pilot-operations.php' ) && false !== strpos( $pilot, 'final class SC_EI_Pilot_Operations' ),
 	'routed public entries' => false !== strpos( $pilot, "'ai-assurance'" ) && false !== strpos( $pilot, "'advisory'" ) && false !== strpos( $public, 'current_route()' ) && false !== strpos( $form, "'default_service'" ),
 	'pilot evidence gate' => false !== strpos( $platform, "'pilot_launch_evidence'" ) && false !== strpos( $pilot, 'pilot_complete_and_fresh' ),

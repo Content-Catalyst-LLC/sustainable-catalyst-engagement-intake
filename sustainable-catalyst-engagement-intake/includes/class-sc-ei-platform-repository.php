@@ -236,6 +236,8 @@ final class SC_EI_Platform_Repository {
 		$storage = SC_EI_Storage::storage_health();
 		$tables = SC_EI_Database::tables_exist();
 		$platform_columns = SC_EI_Database::platform_columns_exist();
+		$lifecycle_columns = SC_EI_Database::lifecycle_columns_exist();
+		$lifecycle_metrics = SC_EI_Lifecycle_Repository::metrics();
 		$hardening = SC_EI_Hardening_Repository::metrics();
 		$core = SC_EI_Workflow_Core_Repository::metrics();
 		$portal_url = self::effective_url( 'platform_portal_page_url', 'portal_page_url' );
@@ -262,9 +264,11 @@ final class SC_EI_Platform_Repository {
 		$checks[] = self::check( 'database_version', 'data', __( 'Database version', 'sustainable-catalyst-engagement-intake' ), SC_EI_DB_VERSION === (string) get_option( 'sc_ei_db_version', '' ), true, (string) get_option( 'sc_ei_db_version', '' ), 'repair_database' );
 		$checks[] = self::check( 'database_tables', 'data', __( 'Required database tables', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ), true, sprintf( '%d/%d', count( array_filter( $tables ) ), count( $tables ) ), 'repair_database' );
 		$checks[] = self::check( 'platform_columns', 'data', __( 'Platform governance schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $platform_columns, true ), true, sprintf( '%d/%d', count( array_filter( $platform_columns ) ), count( $platform_columns ) ), 'repair_database' );
+		$checks[] = self::check( 'lifecycle_columns', 'data', __( 'Advisory lifecycle schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $lifecycle_columns, true ), true, sprintf( '%d/%d', count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ) ), 'repair_database' );
 		$checks[] = self::check( 'migration_journal', 'data', __( 'v1.0 base migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::MIGRATION_KEY ), true, self::MIGRATION_KEY, 'verify_migration' );
 		$checks[] = self::check( 'patch_migration_journal', 'data', __( 'v1.0.2 upgrade journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::PATCH_MIGRATION_KEY ), true, self::PATCH_MIGRATION_KEY, 'verify_patch_migration' );
 		$checks[] = self::check( 'launch_migration_journal', 'data', __( 'v1.0.3 launch-hardening journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::LAUNCH_MIGRATION_KEY ), true, self::LAUNCH_MIGRATION_KEY, 'verify_launch_migration' );
+		$checks[] = self::check( 'lifecycle_migration_journal', 'data', __( 'v1.1.0 advisory-lifecycle migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Lifecycle_Repository::MIGRATION_KEY ), true, SC_EI_Lifecycle_Repository::MIGRATION_KEY, 'verify_lifecycle_migration' );
 		$storage_ok = ! empty( $storage['exists'] ) && ! empty( $storage['writable'] ) && ! empty( $storage['marker'] ) && ! empty( $storage['protection_files'] ) && empty( $storage['base_is_symlink'] );
 		$checks[] = self::check( 'protected_storage', 'security', __( 'Protected document storage', 'sustainable-catalyst-engagement-intake' ), $storage_ok, ! empty( $settings['platform_require_protected_storage'] ), (string) ( $storage['path'] ?? '' ), 'repair_storage' );
 		$https_ok = is_ssl() || SC_EI_Portal_Schema::secure_transport_available();
@@ -284,6 +288,7 @@ final class SC_EI_Platform_Repository {
 		$checks[] = self::check( 'backup_attestation', 'security', __( 'Recent database and protected-storage backup attestation', 'sustainable-catalyst-engagement-intake' ), SC_EI_Platform_Validation::backups_fresh(), true, ! empty( $backup_attestation['attested_at'] ) ? (string) $backup_attestation['attested_at'] : 'not attested', 'attest_backups' );
 		$checks[] = self::check( 'external_mail_delivery', 'operations', __( 'Externally confirmed email delivery', 'sustainable-catalyst-engagement-intake' ), SC_EI_Pilot_Operations::external_mail_confirmed_and_fresh(), true, ! empty( $mail_evidence['confirmed_at'] ) ? sprintf( '%s · %s', (string) $mail_evidence['confirmed_at'], (string) $mail_evidence['reference'] ) : 'not confirmed', 'confirm_external_mail' );
 		$checks[] = self::check( 'pilot_launch_evidence', 'operations', __( 'Completed controlled pilot and launch checklist', 'sustainable-catalyst-engagement-intake' ), SC_EI_Pilot_Operations::pilot_complete_and_fresh(), true, ! empty( $pilot_evidence['recorded_at'] ) ? sprintf( '%s · %d controlled inquiries', (string) $pilot_evidence['recorded_at'], absint( $pilot_evidence['controlled_inquiry_count'] ?? 0 ) ) : 'not recorded', 'record_pilot_evidence' );
+		$checks[] = self::check( 'lifecycle_operations', 'operations', __( 'Advisory lifecycle operational queue', 'sustainable-catalyst-engagement-intake' ), 0 === absint( $lifecycle_metrics['overdue_tasks'] ?? 0 ) && 0 === absint( $lifecycle_metrics['next_actions_due'] ?? 0 ), true, sprintf( '%d overdue task(s); %d next action(s) due', absint( $lifecycle_metrics['overdue_tasks'] ?? 0 ), absint( $lifecycle_metrics['next_actions_due'] ?? 0 ) ), 'review_lifecycle' );
 		$checks[] = self::check( 'operational_attention', 'operations', __( 'No unresolved public-launch operational blockers', 'sustainable-catalyst-engagement-intake' ), ! empty( $operations['clear'] ), true, ! empty( $operations['blockers'] ) ? implode( '; ', (array) $operations['blockers'] ) : 'no failed communications, overdue follow-ups, quarantine or file-integrity issues, portal lockouts or failures, or critical events', 'review_operations' );
 
 		$required_failures = array_values( array_filter( $checks, static fn( array $check ): bool => ! empty( $check['required'] ) && 'fail' === $check['status'] ) );
@@ -293,7 +298,7 @@ final class SC_EI_Platform_Repository {
 		$ready_for_production = 100 === $score && empty( $required_failures ) && empty( $warnings );
 
 		return array(
-			'schema'               => 'sc-unified-contact-engagement-platform-readiness/1.2',
+			'schema'               => 'sc-unified-contact-engagement-platform-readiness/1.3',
 			'generated_at'         => current_time( 'mysql', true ),
 			'plugin_version'       => SC_EI_VERSION,
 			'database_version'     => (string) get_option( 'sc_ei_db_version', '' ),
@@ -314,6 +319,7 @@ final class SC_EI_Platform_Repository {
 			'pilot_evidence'        => $pilot_evidence,
 			'external_mail_evidence'=> $mail_evidence,
 			'operations'            => $operations,
+			'lifecycle_metrics'     => $lifecycle_metrics,
 			'route_evidence'        => $route_evidence,
 			'boundaries'           => self::boundaries(),
 		);
@@ -335,6 +341,7 @@ final class SC_EI_Platform_Repository {
 				'analytics'         => SC_EI_Analytics_Repository::dashboard( 30 ),
 				'reliability'       => SC_EI_Hardening_Repository::metrics(),
 				'workflow_core'     => SC_EI_Workflow_Core_Repository::metrics(),
+				'lifecycle'         => SC_EI_Lifecycle_Repository::metrics(),
 			),
 			'migrations' => self::migrations( 20 ),
 			'snapshots'  => self::snapshots( 20 ),
@@ -496,6 +503,7 @@ final class SC_EI_Platform_Repository {
 			'hardening'     => SC_EI_HARDENING_SCHEMA_VERSION,
 			'workflow_core' => SC_EI_WORKFLOW_CORE_SCHEMA_VERSION,
 			'platform'      => SC_EI_PLATFORM_SCHEMA_VERSION,
+			'lifecycle'     => SC_EI_LIFECYCLE_SCHEMA_VERSION,
 		);
 	}
 
@@ -556,6 +564,7 @@ final class SC_EI_Platform_Repository {
 		SC_EI_Analytics_Repository::schedule();
 		SC_EI_Hardening_Repository::schedule();
 		SC_EI_Workflow_Core_Repository::schedule();
+		SC_EI_Lifecycle_Repository::schedule();
 		self::schedule();
 	}
 
@@ -569,7 +578,7 @@ final class SC_EI_Platform_Repository {
 				break;
 			case 'repair_database':
 				SC_EI_Database::maybe_upgrade();
-				$result = ! in_array( false, SC_EI_Database::tables_exist(), true ) && ! in_array( false, SC_EI_Database::platform_columns_exist(), true );
+				$result = ! in_array( false, SC_EI_Database::tables_exist(), true ) && ! in_array( false, SC_EI_Database::platform_columns_exist(), true ) && ! in_array( false, SC_EI_Database::lifecycle_columns_exist(), true );
 				break;
 			case 'verify_migration':
 				$result = self::run_migrations( (string) get_option( 'sc_ei_version_previous', '' ) );
@@ -579,6 +588,10 @@ final class SC_EI_Platform_Repository {
 				break;
 			case 'verify_launch_migration':
 				$result = self::record_launch_migration( (string) get_option( 'sc_ei_version_previous', '' ) );
+				break;
+			case 'verify_lifecycle_migration':
+				SC_EI_Lifecycle_Repository::backfill_defaults();
+				$result = SC_EI_Lifecycle_Repository::record_migration( (string) get_option( 'sc_ei_lifecycle_schema_version_previous', '' ) );
 				break;
 			case 'repair_storage':
 				$result = SC_EI_Storage::repair();
@@ -612,6 +625,7 @@ final class SC_EI_Platform_Repository {
 			'workflow_core_sync'   => array( 'hook' => SC_EI_Workflow_Core_Repository::SYNC_HOOK, 'callback' => array( 'SC_EI_Workflow_Core_Repository', 'scheduled_sync' ) ),
 			'workflow_core_outbox' => array( 'hook' => SC_EI_Workflow_Core_Repository::OUTBOX_HOOK, 'callback' => array( 'SC_EI_Workflow_Core_Repository', 'scheduled_outbox' ) ),
 			'platform_snapshot'    => array( 'hook' => self::SNAPSHOT_HOOK, 'callback' => array( __CLASS__, 'daily_snapshot' ) ),
+			'lifecycle_reminders'   => array( 'hook' => SC_EI_Lifecycle_Repository::REMINDER_HOOK, 'callback' => array( 'SC_EI_Lifecycle_Repository', 'process_due_tasks' ) ),
 		);
 		$missing = array();
 		$evidence = array();
@@ -739,6 +753,8 @@ final class SC_EI_Platform_Repository {
 			'verify_launch_migration'=> __( 'Record v1.0.3 upgrade', 'sustainable-catalyst-engagement-intake' ),
 			'repair_storage'        => __( 'Repair and probe storage', 'sustainable-catalyst-engagement-intake' ),
 			'repair_crons'          => __( 'Repair scheduled jobs', 'sustainable-catalyst-engagement-intake' ),
+			'verify_lifecycle_migration' => __( 'Verify v1.1.0 lifecycle migration', 'sustainable-catalyst-engagement-intake' ),
+			'review_lifecycle'      => __( 'Open Advisory Lifecycle', 'sustainable-catalyst-engagement-intake' ),
 			'configure_pages'       => __( 'Configure public pages', 'sustainable-catalyst-engagement-intake' ),
 			'configure_settings'    => __( 'Configure platform settings', 'sustainable-catalyst-engagement-intake' ),
 			'review_https'          => __( 'Review HTTPS configuration', 'sustainable-catalyst-engagement-intake' ),

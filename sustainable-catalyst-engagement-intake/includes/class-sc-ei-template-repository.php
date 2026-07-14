@@ -237,6 +237,10 @@ final class SC_EI_Template_Repository {
 			'{reviewer_name}'         => $reviewer ? $reviewer->display_name : __( 'Unassigned', 'sustainable-catalyst-engagement-intake' ),
 			'{review_due}'            => ! empty( $inquiry['review_due_at'] ) ? get_date_from_gmt( $inquiry['review_due_at'], 'F j, Y g:i a' ) : __( 'No due date', 'sustainable-catalyst-engagement-intake' ),
 			'{next_follow_up}'        => ! empty( $inquiry['next_follow_up_at'] ) ? get_date_from_gmt( $inquiry['next_follow_up_at'], 'F j, Y g:i a' ) : __( 'No follow-up date', 'sustainable-catalyst-engagement-intake' ),
+			'{lifecycle_stage}'       => SC_EI_Lifecycle_Schema::public_stage_labels()[ SC_EI_Lifecycle_Schema::sanitize_stage( (string) ( $inquiry['lifecycle_stage'] ?? 'new_inquiry' ) ) ] ?? __( 'Under Review', 'sustainable-catalyst-engagement-intake' ),
+			'{lifecycle_next_action}' => (string) ( $inquiry['next_action'] ?? '' ),
+			'{lifecycle_task}'        => (string) ( $inquiry['_lifecycle_task'] ?? '' ),
+			'{lifecycle_task_due}'    => (string) ( $inquiry['_lifecycle_task_due'] ?? '' ),
 		);
 
 		$subject = strtr( (string) $template['subject_template'], $variables );

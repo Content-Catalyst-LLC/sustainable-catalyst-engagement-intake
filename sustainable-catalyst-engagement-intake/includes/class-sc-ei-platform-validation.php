@@ -85,7 +85,10 @@ final class SC_EI_Platform_Validation {
 		self::add( $checks, 'version_state', __( 'Installed version state', 'sustainable-catalyst-engagement-intake' ), SC_EI_VERSION === (string) get_option( 'sc_ei_version', '' ), SC_EI_VERSION . ' / ' . (string) get_option( 'sc_ei_version', '' ) );
 		$tables = SC_EI_Database::tables_exist();
 		$columns = SC_EI_Database::platform_columns_exist();
-		self::add( $checks, 'database_contract', __( 'Database tables and platform schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ), sprintf( '%d/%d tables; %d/%d columns', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ) ) );
+		$lifecycle_columns = SC_EI_Database::lifecycle_columns_exist();
+		self::add( $checks, 'database_contract', __( 'Database tables, platform schema, and lifecycle schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ) && ! in_array( false, $lifecycle_columns, true ), sprintf( '%d/%d tables; %d/%d platform columns; %d/%d lifecycle tables', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ), count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ) ) );
+		$lifecycle_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Lifecycle_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::add( $checks, 'lifecycle_migration', __( 'v1.1.0 advisory lifecycle migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $lifecycle_migration, (string) ( $lifecycle_migration ?: 'missing' ) );
 
 		$page_evidence = SC_EI_Platform_Repository::page_contract_evidence();
 		self::add( $checks, 'public_page_contracts', __( 'Published public-entry and portal page contracts', 'sustainable-catalyst-engagement-intake' ), ! empty( $page_evidence['public_entry']['passed'] ) && ! empty( $page_evidence['portal']['passed'] ), (string) ( $page_evidence['summary'] ?? '' ) );
@@ -123,7 +126,7 @@ final class SC_EI_Platform_Validation {
 					'inquiry_type'    => 'general',
 					'contact_name'    => 'Platform Validation',
 					'contact_email'   => $validation_email,
-					'subject'         => '[TEST] v1.0.3 live validation',
+					'subject'         => '[TEST] v1.1.0 live validation',
 					'message'         => 'Temporary administrator-generated validation record. Safe to remove.',
 					'form_variant'    => 'advanced',
 					'source_page'     => 'platform-validation',
@@ -134,9 +137,27 @@ final class SC_EI_Platform_Validation {
 				)
 			);
 			$created = $inquiry_id > 0 && null !== SC_EI_Inquiry_Repository::find( $inquiry_id );
-			$transitioned = $created && SC_EI_Inquiry_Repository::update_status( $inquiry_id, 'under_review', 'Platform live validation status transition.' );
+			$transition_result = $created ? SC_EI_Lifecycle_Repository::transition(
+				$inquiry_id,
+				'under_review',
+				$actor_user_id,
+				array(
+					'reason'      => 'Platform live validation lifecycle transition.',
+					'next_action' => 'Complete the temporary validation review.',
+				)
+			) : new WP_Error( 'platform_validation_inquiry_missing', 'Validation inquiry unavailable.' );
+			$transitioned = ! is_wp_error( $transition_result );
 			$fresh = $transitioned ? SC_EI_Inquiry_Repository::find( $inquiry_id ) : null;
-			self::add( $checks, 'inquiry_lifecycle', __( 'Inquiry persistence and status transition', 'sustainable-catalyst-engagement-intake' ), $created && $transitioned && 'under_review' === (string) ( $fresh['status'] ?? '' ), $created ? 'temporary inquiry created and transitioned' : 'temporary inquiry could not be created' );
+			$lifecycle_events = $transitioned ? SC_EI_Lifecycle_Repository::events( $inquiry_id, 20 ) : array();
+			$sender_snapshot = $transitioned ? SC_EI_Lifecycle_Repository::sender_snapshot( $inquiry_id ) : array();
+			$lifecycle_ok = $created
+				&& $transitioned
+				&& 'under_review' === (string) ( $fresh['status'] ?? '' )
+				&& 'under_review' === (string) ( $fresh['lifecycle_stage'] ?? '' )
+				&& ! empty( $lifecycle_events )
+				&& '' !== trim( (string) ( $sender_snapshot['label'] ?? '' ) )
+				&& 'Complete the temporary validation review.' === (string) ( $sender_snapshot['next_step'] ?? '' );
+			self::add( $checks, 'inquiry_lifecycle', __( 'Inquiry persistence, audited lifecycle transition, and sender-safe projection', 'sustainable-catalyst-engagement-intake' ), $lifecycle_ok, $lifecycle_ok ? 'temporary inquiry created, transitioned through the governed lifecycle, audited, and safely projected' : ( is_wp_error( $transition_result ) ? $transition_result->get_error_message() : 'temporary lifecycle validation failed' ) );
 
 			$portal_result = $created ? SC_EI_Portal_Repository::issue_invitation(
 				$inquiry_id,
@@ -184,6 +205,9 @@ final class SC_EI_Platform_Validation {
 			$cleanup_ok = wp_delete_file( $temp_path ) && $cleanup_ok;
 		}
 		if ( $inquiry_id ) {
+			$wpdb->delete( SC_EI_Database::table( 'lifecycle_tasks' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
+			$wpdb->delete( SC_EI_Database::table( 'lifecycle_notes' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
+			$wpdb->delete( SC_EI_Database::table( 'lifecycle_events' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
 			if ( $access_id ) {
 				$wpdb->delete( SC_EI_Database::table( 'portal_sessions' ), array( 'access_id' => $access_id ), array( '%d' ) );
 			}
@@ -198,7 +222,7 @@ final class SC_EI_Platform_Validation {
 
 		$failures = array_values( array_filter( $checks, static fn( array $check ): bool => 'pass' !== $check['status'] ) );
 		$result = array(
-			'schema'         => 'sc-contact-engagement-live-validation/1.1',
+			'schema'         => 'sc-contact-engagement-live-validation/1.2',
 			'plugin_version' => SC_EI_VERSION,
 			'passed'         => empty( $failures ),
 			'score'          => $checks ? (int) round( 100 * ( count( $checks ) - count( $failures ) ) / count( $checks ) ) : 0,

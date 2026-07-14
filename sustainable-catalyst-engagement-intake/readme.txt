@@ -1,33 +1,34 @@
 === Sustainable Catalyst Contact and Engagement Platform ===
 Contributors: content-catalyst
-Tags: contact, engagement, workflow, sender portal, microsoft teams, proposals, analytics, privacy, accessibility
+Tags: contact, advisory, engagement, lifecycle, sender portal, microsoft teams, proposals, privacy
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 1.0.3
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A governed contact-to-engagement platform with adaptive intake, secure sender collaboration, human review, Teams scheduling, proposals, engagement handoff, analytics, reliability, privacy, and signed internal integrations.
+A governed contact-to-engagement platform with adaptive intake, advisory lifecycle operations, secure sender collaboration, Teams coordination, proposals, privacy, reliability, and launch governance.
 
 == Description ==
 
-Version 1.0.3 is the Pilot Findings and Public Launch Hardening release. It adds routed public entry contracts, browser-tab draft recovery, runtime upload-attack rejection probes, external inbox evidence, controlled pilot evidence, operational blockers, and a stricter public-launch gate.
+Version 1.1.0 is the Advisory Operations and Engagement Lifecycle release. It preserves the v1.0.3 public-launch gate and adds thirteen audited lifecycle stages, structured qualification, internal-only notes, follow-up tasks, Teams/proposal/engagement linkage, sender-safe status publishing, service routes, communication templates, privacy integration, and operational metrics.
 
-It connects:
+The platform connects:
 
-* Adaptive general contact and engagement inquiry experiences
+* Adaptive general contact and service-specific engagement inquiry experiences
 * Protected document intake and quarantine
-* Administrative review and human-controlled fit assessment
-* Secure sender portal, authentication recovery, messages, and uploads
+* Human review, fit assessment, and structured advisory qualification
+* Governed lifecycle stages from inquiry through active engagement and completion
+* Private internal notes, ownership, priority, next actions, and assigned tasks
+* Secure Sender Portal status, messages, uploads, meetings, and proposal notices
 * Human-approved Microsoft Teams scheduling and optional Microsoft Graph calendar creation
-* Versioned proposals and external-contract recording
-* Controlled proposal-to-engagement handoff and onboarding readiness
-* Inquiry analytics and operational intelligence
-* Reliability, accessibility, abuse protection, and incident controls
-* Canonical Workflow Core projections and signed cross-plugin handoffs
-* Platform-wide readiness, migration provenance, and launch governance
+* Versioned proposals and controlled engagement handoff
+* Aggregate lifecycle, response, qualification, proposal, acceptance, and workload metrics
+* Reliability, accessibility, abuse protection, privacy, retention, and incident controls
+* Canonical Workflow Core projections and signed internal handoffs
+* Runtime readiness, live validation, pilot evidence, backups, and typed launch governance
 
-The plugin folder, database prefixes, text domain, public URLs, and existing shortcodes remain compatible with the v0.x series.
+The plugin slug, text domain, existing tables, public URLs, and existing shortcodes remain compatible.
 
 == Recommended public entry ==
 
@@ -35,7 +36,20 @@ Use the unified entry point on the primary Contact page:
 
 [sc_contact_engagement_platform]
 
-It routes visitors to the appropriate existing intake experience and secure sender portal. It does not create a second submission pipeline.
+Service-specific links can use the same Contact page:
+
+/contact/?engagement=advisory
+/contact/?engagement=ai-assurance
+/contact/?engagement=evidence-systems
+/contact/?engagement=knowledge-architecture
+/contact/?engagement=technical-storytelling
+/contact/?engagement=responsible-ai
+/contact/?engagement=collaboration
+/contact/?engagement=media
+/contact/?engagement=technical
+/contact/?engagement=partnership
+/contact/?engagement=workshop
+/contact/?engagement=monthly-advisory
 
 Existing shortcodes remain supported:
 
@@ -44,96 +58,83 @@ Existing shortcodes remain supported:
 * [sc_engagement_inquiry]
 * [sc_sender_portal]
 
-== Production readiness and live validation ==
+== Advisory lifecycle ==
 
-Platform Overview now provides:
+Contact & Engagement → Advisory Lifecycle provides:
 
-* Runtime-backed version, database, migration, storage, HTTPS, incident, and Workflow Core checks
-* Published local Contact and Sender Portal page verification with required shortcodes
-* Scheduled job and registered callback verification
-* Initialized internal-adapter registry evidence
-* Rendered accessibility evidence
-* Guided repair actions for bounded operational issues
-* Administrator-only live validation with temporary inquiry, portal, file, duplicate-control, mail, upload-rejection, routing, and cleanup checks
-* Canonical routed entry URLs through the published Contact page
-* Browser-tab draft recovery that excludes files, tokens, nonces, and consent state
-* External inbox delivery evidence recorded separately from WordPress transport acceptance
-* Controlled pilot evidence requiring at least five completed inquiries and a complete launch checklist
-* Operational blocker evidence for failed communications, quarantine, portal lockouts, overdue work, and critical events
-* Recent database and protected-storage backup attestation
-* A production gate requiring 100%, zero failures, zero warnings, and fresh validation, inbox, pilot, and backup evidence
+* New Inquiry, Under Review, Needs Information, Qualified, Meeting Requested, Meeting Scheduled, Proposal in Preparation, Proposal Sent, Accepted, Active Engagement, Completed, Declined, and Archived stages
+* Typed human transition confirmation and allowed-transition rules
+* Owner, priority, next action, due date, and qualification context
+* Internal notes and sensitive-note marking
+* Assigned tasks with idempotent reminders
+* Linked Teams meeting offers, proposals, and engagements
+* Deliberately published Sender Portal stage, summary, and next step
+* Lifecycle events, audit history, privacy export, approved erasure, and retention support
 
-WordPress mail acceptance does not prove inbox delivery. Administrators must confirm receipt separately and record the external evidence.
+The platform does not automatically accept, reject, qualify, schedule, publish, contract, or activate an engagement.
 
-== Human-control boundary ==
+== Production readiness ==
 
-The platform does not automatically:
+Production requires:
 
-* accept or reject an inquiry
-* decide fit
-* rank senders
-* publish a proposal
-* create or attest a contract
-* activate an engagement
-* create an invoice or collect payment
-* electronically sign an agreement
-* provision an external project
-* send arbitrary webhooks
-* execute unverified inbound commands
-* switch the platform to production
+* 100% readiness
+* zero required failures and zero warnings
+* current v1.1.0 database and migration evidence
+* recent successful live validation
+* externally confirmed inbox evidence
+* completed controlled-pilot evidence
+* current database and protected-storage backup evidence
+* no critical events, public-launch blockers, overdue lifecycle tasks, or overdue next actions
+* typed human promotion to Production
+
+Repository validation does not replace live WordPress-host testing.
 
 == Installation ==
 
 1. Back up the WordPress database and protected storage.
-2. Upgrade the existing plugin or install v1.0.3.
+2. Upgrade the existing plugin or install v1.1.0.
 3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
 4. Open Contact & Engagement → Platform Overview.
-5. Complete guided repairs and configure published Contact, Sender Portal, and Privacy pages.
-6. Run Live Validation with a monitored email recipient.
-7. Confirm the validation message reached the recipient and record external inbox evidence.
-8. Complete at least five controlled inquiries and every pilot checklist item.
-9. Resolve all operational blockers.
-10. Complete and attest database and protected-storage backups.
-11. Require 100%, zero failures, and zero warnings before the typed Production action.
+5. Complete the database and v1.1.0 lifecycle migration repairs if shown.
+6. Inspect backfilled inquiries in Contact & Engagement → Advisory Lifecycle.
+7. Run Live Validation with a monitored recipient.
+8. Confirm inbox delivery and repeat controlled pilot checks for v1.1.0.
+9. Resolve public-launch and lifecycle operational blockers.
+10. Record current database and protected-storage backup evidence.
+11. Require 100%, zero failures, and zero warnings before Production.
 
 == Changelog ==
 
+= 1.1.0 =
+* Added thirteen governed advisory lifecycle stages with allowed transitions.
+* Added typed, human-confirmed transitions, reasons, ownership requirements, optimistic locking, lifecycle events, and audit records.
+* Added nondestructive inquiry lifecycle fields and backfill from legacy statuses.
+* Added lifecycle event, internal-note, and follow-up-task tables.
+* Added structured qualification, ownership, priority, next actions, and sender-safe summaries.
+* Added an Advisory Lifecycle workspace linked to Teams offers, proposals, and engagement records.
+* Added sender-safe portal stage, summary, and next-step publishing while preserving internal-note and qualification isolation.
+* Added first-class routes for Advisory, Sustainable AI Assurance, Knowledge Architecture, Technical Storytelling, Responsible AI Workflows, collaboration, workshops, and monthly advisory support.
+* Added reviewable lifecycle communication templates and opt-in internal task reminders.
+* Added lifecycle metrics, privacy export, approved erasure, retention, diagnostics, readiness, cron, and uninstall integration.
+* Advanced database version to 1.1.0 and platform evidence schema to 1.1.0.
+
 = 1.0.3 =
-* Added canonical routed Contact-page entry URLs for Advisory, Sustainable AI Assurance, collaboration, media, technical, partnership, workshop, and monthly-advisory inquiries.
-* Added browser-tab draft recovery without persisting files, tokens, nonces, or consent state.
-* Added runtime acceptance of a safe text file and rejection of a disguised executable upload.
-* Added external inbox delivery evidence separately from WordPress mail-transport acceptance.
-* Added controlled pilot evidence requiring at least five completed inquiries and all launch checklist items.
-* Added an operational blocker dashboard and production checks for failed communications, quarantine, portal lockouts, overdue work, and critical events.
-* Added a nondestructive v1.0.3 migration journal and advanced the platform evidence schema to 1.0.2 while preserving database version 1.0.0.
+* Added canonical routed Contact-page entry URLs and browser-tab draft recovery.
+* Added runtime upload-attack rejection, external inbox evidence, controlled pilot evidence, and operational blockers.
+* Added a nondestructive v1.0.3 migration journal and advanced the platform evidence schema to 1.0.2.
 
 = 1.0.2 =
-* Added guided production-readiness repairs and runtime evidence.
-* Verified published page/shortcode contracts and cron callbacks.
-* Added administrator-only live validation for inquiry, duplicate controls, portal tokens, protected files, mail acceptance, and cleanup.
-* Added recent backup attestation.
-* Made Production require 100%, zero failures, zero warnings, fresh successful validation, and fresh backup evidence.
-* Preserved database version 1.0.0 and advanced the platform evidence schema to 1.0.1.
+* Added guided production-readiness repairs, runtime evidence, live validation, and backup attestation.
+* Made Production require 100%, zero failures, zero warnings, fresh validation, and fresh backup evidence.
 
 = 1.0.1 =
-* Fixed a fatal error on Platform Overview and Diagnostics caused by cross-class access to a private watchdog hook constant.
-* Added a typed watchdog hook accessor while preserving repository encapsulation.
-* Made the platform readiness version check compatible with stable patch releases.
-* Added a private/protected constant visibility regression test.
-* Corrected the installable ZIP packaging version.
+* Fixed the Platform Overview and Diagnostics fatal error caused by private watchdog-hook access.
+* Added a private/protected constant visibility regression test and corrected release packaging.
 
 = 1.0.0 =
 * Promoted Engagement Intake into the Unified Contact and Engagement Platform.
-* Added Platform Overview and unified administration navigation.
-* Added the [sc_contact_engagement_platform] public entry shortcode.
-* Added immutable platform-readiness snapshots.
-* Added an idempotent migration journal and schema provenance hash.
-* Added setup, pilot, production, and maintenance launch states.
-* Added a human-controlled production readiness gate.
-* Added product-wide status and aggregate operational reporting.
-* Added platform read-only REST status.
-* Added platform Diagnostics, Reliability, privacy inventory, cron, and uninstall integration.
-* Preserved every existing shortcode, table, record, URL route, schema, and human-control boundary.
+* Added Platform Overview, unified public entry, migration provenance, launch states, and human-controlled Production gating.
+* Preserved existing shortcodes, records, URLs, schemas, and human-control boundaries.
 
 = 0.12.0 =
 * Added canonical Workflow Core projections, commands, signed handoffs, and durable internal-adapter delivery.

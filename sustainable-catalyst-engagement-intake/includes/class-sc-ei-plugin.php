@@ -32,6 +32,7 @@ final class SC_EI_Plugin {
 		);
 
 		SC_EI_Database::maybe_upgrade();
+		SC_EI_Lifecycle_Repository::maybe_upgrade();
 		SC_EI_Platform_Repository::maybe_upgrade();
 		SC_EI_Capabilities::install();
 		SC_EI_Upload_Environment::register();
@@ -44,6 +45,7 @@ final class SC_EI_Plugin {
 		SC_EI_Portal_Repository::register();
 		SC_EI_Workflow_Repository::register();
 		SC_EI_Graph_Repository::register();
+		SC_EI_Lifecycle_Repository::register();
 		SC_EI_Analytics_Repository::register();
 		SC_EI_Hardening_Repository::register();
 		SC_EI_Workflow_Core_Repository::register();
@@ -64,6 +66,7 @@ final class SC_EI_Plugin {
 			SC_EI_Workflow_Admin::register();
 			SC_EI_Graph_Admin::register();
 			SC_EI_Engagement_Admin::register();
+			SC_EI_Lifecycle_Admin::register();
 			SC_EI_Analytics_Admin::register();
 			SC_EI_Hardening_Admin::register();
 			SC_EI_Workflow_Core_Admin::register();

@@ -13,8 +13,8 @@ $view   = file_get_contents( $plugin . '/admin/views/platform-overview.php' );
 $uninstall = file_get_contents( $plugin . '/uninstall.php' );
 
 $checks = array(
-	'v1.0.3 identity and evidence schema' => false !== strpos( $main, 'Version:     1.0.3' )
-		&& false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '1.0.2'" )
+	'v1.1.0 identity and evidence schema' => false !== strpos( $main, 'Version:     1.1.0' )
+		&& false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '1.1.0'" )
 		&& false !== strpos( $main, 'class-sc-ei-platform-validation.php' ),
 	'nondestructive patch migration' => false !== strpos( $repo, "PATCH_MIGRATION_KEY = 'v1_0_2_production_readiness_live_validation'" )
 		&& false !== strpos( $repo, 'record_patch_migration' )
@@ -41,7 +41,8 @@ $checks = array(
 		&& false !== strpos( $repo, "'repair_crons'" )
 		&& false !== strpos( $admin, 'admin_post_sc_ei_platform_repair' ),
 	'live validation lifecycle coverage' => false !== strpos( $valid, 'SC_EI_Inquiry_Repository::create' )
-		&& false !== strpos( $valid, 'SC_EI_Inquiry_Repository::update_status' )
+		&& false !== strpos( $valid, 'SC_EI_Lifecycle_Repository::transition' )
+		&& false !== strpos( $valid, 'SC_EI_Lifecycle_Repository::sender_snapshot' )
 		&& false !== strpos( $valid, 'SC_EI_Portal_Repository::issue_invitation' )
 		&& false !== strpos( $valid, 'SC_EI_Storage::store_uploaded_file_verified' )
 		&& false !== strpos( $valid, 'SC_EI_Notification_Service::test_notification' )
@@ -68,4 +69,4 @@ if ( $failed ) {
 foreach ( $checks as $name => $passed ) {
 	echo 'PASS: ' . $name . PHP_EOL;
 }
-echo "Sustainable Catalyst Contact and Engagement Platform v1.0.3 live-validation checks passed.\n";
+echo "Sustainable Catalyst Contact and Engagement Platform v1.1.0 live-validation checks passed.\n";

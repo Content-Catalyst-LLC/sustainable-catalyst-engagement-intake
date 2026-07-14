@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.1.0 — Advisory Operations and Engagement Lifecycle
+
+- Added thirteen governed lifecycle stages from new inquiry through completed, declined, or archived.
+- Added typed, human-confirmed transitions with allowed-transition rules, reasons, ownership requirements, optimistic locking, lifecycle events, and audit records.
+- Added nondestructive lifecycle fields to existing inquiries and backfilled existing records from legacy statuses.
+- Added dedicated lifecycle event, internal-note, and follow-up-task tables.
+- Added structured advisory qualification for organizational challenge, desired outcome, systems, constraints, timeline, stakeholders, decision authority, funding, privacy/security, AI Assurance applicability, Teams readiness, score, status, and rationale.
+- Added an Advisory Lifecycle administration workspace with ownership, priority, next actions, internal notes, tasks, Teams offers, proposals, engagements, and event history.
+- Added sender-safe lifecycle publishing while keeping internal notes, qualification reasoning, assignments, task details, and transition rationale private.
+- Added service-specific routes for Evidence Systems Diagnostic, Knowledge Architecture, Technical Storytelling, Responsible AI Workflows, Sustainable AI Assurance, collaboration, workshops, and monthly advisory support.
+- Added reviewable lifecycle communication templates and opt-in internal task reminders.
+- Added stage, source, service, response-time, qualification, proposal, acceptance, active-engagement, and overdue-work metrics.
+- Added lifecycle records to privacy export, approved erasure, retention, diagnostics, readiness, cron, uninstall, and operational-blocker handling.
+- Advanced the database version to 1.1.0, platform evidence schema to 1.1.0, Portal schema to 1.4.0, and Engagement schema to 1.1.0.
+- Preserved the v1.0.3 production gate and all human-controlled acceptance, proposal, contract, scheduling, and engagement-activation boundaries.
+
 ## 1.0.3 — Pilot Findings and Public Launch Hardening
 
 - Added canonical routed Contact-page entry URLs for Advisory, Sustainable AI Assurance, collaboration, media, technical, partnership, workshop, monthly advisory, and general inquiries.

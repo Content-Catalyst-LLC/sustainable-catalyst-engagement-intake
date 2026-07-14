@@ -518,6 +518,7 @@ final class SC_EI_Retention_Engine {
 			$workflow_result = SC_EI_Workflow_Repository::redact_for_privacy( $inquiry_id, $now );
 			$engagement_result = SC_EI_Engagement_Repository::redact_for_privacy( $inquiry_id, $now );
 			$workflow_core_result = SC_EI_Workflow_Core_Repository::redact_for_privacy( $inquiry_id, $now );
+			$lifecycle_result = SC_EI_Lifecycle_Repository::redact_for_privacy( $inquiry_id, $now );
 			if (
 				false === $communication_result
 				|| false === $event_result
@@ -531,6 +532,7 @@ final class SC_EI_Retention_Engine {
 				|| false === $workflow_result
 				|| false === $engagement_result
 				|| false === $workflow_core_result
+				|| false === $lifecycle_result
 			) {
 				throw new RuntimeException( 'Related communication, review, fit assessment, sender portal, scheduling, engagement, consent, request, hold, or lifecycle data could not be redacted.' );
 			}
@@ -580,9 +582,19 @@ final class SC_EI_Retention_Engine {
 				'personal_data_erased_at' => $now,
 				'privacy_version' => absint( $inquiry['privacy_version'] ) + 1,
 				'fit_assessment_status' => 'finalized' === (string) $inquiry['fit_assessment_status'] ? 'finalized' : 'not_started',
+				'next_action' => '',
+				'next_action_at' => null,
+				'qualification_json' => wp_json_encode( array( 'personal_data_erased' => true ) ),
+				'stakeholder_summary' => '',
+				'systems_constraints' => '',
+				'data_security_requirements' => '',
+				'sender_lifecycle_summary' => '',
+				'lifecycle_updated_at' => $now,
+				'lifecycle_updated_by' => $actor_user_id,
+				'lifecycle_version' => absint( $inquiry['lifecycle_version'] ?? 0 ) + 1,
 				'updated_at' => $now,
 			);
-			$integer = array( 'participant_count', 'preferred_duration', 'last_privacy_review_by', 'privacy_version' );
+			$integer = array( 'participant_count', 'preferred_duration', 'last_privacy_review_by', 'privacy_version', 'lifecycle_updated_by', 'lifecycle_version' );
 			$updated = $wpdb->update(
 				SC_EI_Database::table( 'inquiries' ),
 				$data,

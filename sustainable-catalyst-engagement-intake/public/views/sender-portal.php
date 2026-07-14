@@ -113,12 +113,17 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 						<dt><?php esc_html_e( 'Submitted', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( get_date_from_gmt( $inquiry['created_at'], 'M j, Y' ) ); ?></dd>
 						<dt><?php esc_html_e( 'Inquiry type', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( ucwords( str_replace( '_', ' ', $inquiry['inquiry_type'] ) ) ); ?></dd>
 						<dt><?php esc_html_e( 'Service interest', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $inquiry['service_interest'] ? ucwords( str_replace( '_', ' ', $inquiry['service_interest'] ) ) : __( 'Not specified', 'sustainable-catalyst-engagement-intake' ) ); ?></dd>
+						<dt><?php esc_html_e( 'Engagement stage', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $lifecycle_snapshot['label'] ?? __( 'Under Review', 'sustainable-catalyst-engagement-intake' ) ); ?></dd>
+						<?php if ( ! empty( $lifecycle_snapshot['next_step'] ) ) : ?><dt><?php esc_html_e( 'Published next step', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $lifecycle_snapshot['next_step'] ); ?></dd><?php endif; ?>
 						<dt><?php esc_html_e( 'Secure messages', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $messages ) ) ); ?></dd>
 						<dt><?php esc_html_e( 'Active private documents', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $attachments ) ) ); ?></dd>
 						<dt><?php esc_html_e( 'Meeting records', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $meeting_offers ) ) ); ?></dd>
 						<dt><?php esc_html_e( 'Proposal records', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $proposals ) ) ); ?></dd>
 						<dt><?php esc_html_e( 'Withdrawal state', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( SC_EI_Portal_Schema::label( SC_EI_Portal_Schema::withdrawal_statuses(), $inquiry['sender_withdrawal_status'] ) ); ?></dd>
 					</dl>
+					<?php if ( ! empty( $lifecycle_snapshot['summary'] ) ) : ?>
+						<div class="sc-ei-portal-notice sc-ei-portal-notice--info"><strong><?php esc_html_e( 'Current update', 'sustainable-catalyst-engagement-intake' ); ?></strong><br><?php echo nl2br( esc_html( $lifecycle_snapshot['summary'] ) ); ?></div>
+					<?php endif; ?>
 					<?php if ( $inquiry['project_summary'] ) : ?><h4><?php esc_html_e( 'Submitted project summary', 'sustainable-catalyst-engagement-intake' ); ?></h4><p><?php echo nl2br( esc_html( $inquiry['project_summary'] ) ); ?></p><?php endif; ?>
 				</section>
 

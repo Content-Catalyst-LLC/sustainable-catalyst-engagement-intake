@@ -1,235 +1,112 @@
 # Sustainable Catalyst Contact and Engagement Platform
 
-**Version:** 1.0.3  
-**Release:** Pilot Findings and Public Launch Hardening
+**Version:** 1.1.0  
+**Release:** Advisory Operations and Engagement Lifecycle
 
-v1.0.3 hardens the pilot-to-public-launch path. It adds canonical routed Contact-page entry URLs, browser-tab draft recovery, runtime disguised-executable rejection, externally confirmed email-delivery evidence, a controlled pilot checklist, and an operational blocker dashboard. Production remains a typed human action and now requires recent pilot, inbox, validation, and backup evidence. The database remains at 1.0.0; the platform evidence schema advances to 1.0.2.
+v1.1.0 extends the production-hardened intake platform into a governed advisory-operations workspace. It preserves the v1.0.3 public-launch gate while adding audited lifecycle stages, structured qualification, private internal notes, follow-up tasks, Microsoft Teams coordination context, proposal and engagement linkage, sender-safe status publishing, service-specific routing, communication templates, privacy handling, and operational metrics.
 
-## Core model
-
-```text
-authoritative inquiry, review, fit, meeting, proposal, privacy, and engagement records
-→ canonical case projection
-→ idempotent human command
-→ signed versioned handoff
-→ durable outbox
-→ registered internal WordPress adapter
-→ explicit acknowledgment
-```
-
-The core derives state. It does not replace the domain repositories.
-
-## Canonical cases
-
-New table:
+## Lifecycle model
 
 ```text
-{prefix}sc_ei_workflow_cases
+New Inquiry
+→ Under Review
+→ Needs Information / Qualified
+→ Meeting Requested / Meeting Scheduled
+→ Proposal in Preparation / Proposal Sent
+→ Accepted
+→ Active Engagement
+→ Completed / Declined / Archived
 ```
 
-Each case records:
+All stage changes are explicit administrator actions. They require authorization, a nonce, current-state validation, a typed confirmation, and—when configured—a reason and assigned owner. The platform does not automatically accept, reject, qualify, schedule, publish, contract, or activate an engagement.
 
-- inquiry and public case identifiers
-- canonical stage and state
-- terminal state
-- owner and priority
-- source update timestamp
-- projection version and SHA-256 hash
-- blocker and pending-work counts
-- last event and transition timestamps
-- stale-after threshold
-- consistency status and notes
-- optimistic row version
+## New v1.1.0 records
 
-Stages cover intake, review, fit, consultation, proposal, contracted, engagement handoff, active engagement, completed, and closed.
-
-## Idempotent commands
-
-New table:
+The nondestructive database upgrade adds:
 
 ```text
-{prefix}sc_ei_workflow_commands
+{prefix}sc_ei_lifecycle_events
+{prefix}sc_ei_lifecycle_notes
+{prefix}sc_ei_lifecycle_tasks
 ```
 
-A command key is derived from:
+Existing inquiries receive lifecycle fields and are backfilled from their current legacy status. Existing inquiry, review, portal, meeting, proposal, document, privacy, analytics, and engagement records remain intact.
+
+## Advisory Lifecycle workspace
 
 ```text
-command type
-+ case ID
-+ expected projection hash
-+ canonical payload hash
-```
-
-Repeating the same command returns the existing record rather than duplicating work. Commands use optimistic claims and record success or failure without mutating authoritative business decisions.
-
-Supported commands include synchronization, handoff preparation, outbox dispatch, acknowledgment, cancellation, and consistency review.
-
-## Signed handoff contract
-
-New table:
-
-```text
-{prefix}sc_ei_workflow_handoffs
-```
-
-Contract schema:
-
-```text
-sc-engagement-workflow-handoff/1.0
-```
-
-Every package receives:
-
-- canonical JSON ordering
-- SHA-256 content hash
-- HMAC-SHA-256 signature derived from WordPress salts
-- target binding
-- contract version
-- data classification
-- expiry timestamp
-- human preparer and audit record
-
-Default classification:
-
-```text
-operational_minimum
-```
-
-Private personal data is excluded by default. `internal_private` requires the dedicated private-export capability.
-
-## Durable outbox
-
-New table:
-
-```text
-{prefix}sc_ei_workflow_outbox
-```
-
-The outbox provides:
-
-- unique event keys
-- payload hashes
-- optimistic claims
-- attempt limits
-- bounded exponential retry
-- stale-claim recovery
-- dispatched and acknowledged states
-- redacted failure metadata
-
-Dispatch supports registered internal WordPress adapters only.
-
-There is no arbitrary URL field, no generic webhook posting, no direct `wp_remote_*` delivery, and no inbound command endpoint.
-
-## Adapter API
-
-A cooperating internal plugin registers a target callback:
-
-```php
-SC_EI_Workflow_Core_Service::register_adapter(
-    'workbench',
-    static function ( array $event, array $payload ): array {
-        // Validate and import into the target plugin.
-        return array( 'acknowledged' => true );
-    }
-);
-```
-
-Available target keys include:
-
-```text
-workbench
-decision_studio
-site_intelligence
-research_librarian
-platform_core
-generic_internal
-```
-
-Targets can be extended with `sc_ei_workflow_core_handoff_targets`.
-
-## Workflow Core workspace
-
-```text
-Engagement Intake → Workflow Core
+Contact & Engagement → Advisory Lifecycle
 ```
 
 The workspace provides:
 
-- canonical case filtering
-- consistency blockers and warnings
-- typed case synchronization
-- signed handoff preparation
-- adapter registration visibility
-- integrity verification
-- handoff export
-- dispatch and acknowledgment
-- handoff cancellation
-- command ledger
-- outbox history
-- runtime and schedule status
+- stage, owner, priority, next action, and due-date management
+- structured qualification and readiness context
+- internal-only notes, including sensitive-note marking
+- assigned follow-up tasks with idempotent due reminders
+- linked Microsoft Teams offers, proposals, and engagements
+- audited transition and activity history
+- sender-facing summary and next-step controls
+- stage, source, service, timing, qualification, proposal, and acceptance metrics
 
-## Human controls
+## Sender Portal boundary
 
-```text
-SYNC WORKFLOW CORE
-SYNC CASE <REFERENCE>
-HANDOFF <REFERENCE> <TARGET>
-DISPATCH OUTBOX
-ACK HANDOFF <HANDOFF-ID>
-CANCEL HANDOFF <HANDOFF-ID>
-RESOLVE CASE <REFERENCE>
-SAVE WORKFLOW CORE SETTINGS
-```
+Portal users can see only deliberately published information:
 
-Actions require capabilities, nonces, current-state checks, typed confirmation, and audit records.
+- a safe public stage label
+- an approved sender-facing summary
+- an approved next step
+- existing authorized meetings, proposals, documents, and messages
 
-## Fixed boundaries
+Internal notes, qualification rationale, assignments, task details, scores, decision-authority assessments, and transition reasons are not rendered in the Sender Portal.
 
-Workflow Core does not:
+## Advisory routes
 
-- accept or reject inquiries
-- rank senders
-- finalize fit assessments
-- publish proposals
-- create or attest contracts
-- activate engagements
-- create external projects
-- send arbitrary webhooks
-- expose public write APIs
-- execute inbound commands
-- invoice, sign, or collect payment
-
-## Privacy
-
-Workflow Core records are included in WordPress privacy export and the private data inventory.
-
-Approved erasure replaces personal command, handoff, and outbox payloads with integrity-preserving tombstones. Handoff hashes and signatures are recomputed for the replacement payload so the local ledger does not retain deliberately invalid integrity records.
-
-## REST
-
-Capability-gated read-only resources:
+The canonical Contact page supports routed entry links without creating separate submission systems:
 
 ```text
-GET /wp-json/sc-engagement-intake/v1/workflow-core/cases
-GET /wp-json/sc-engagement-intake/v1/workflow-core/cases/{id}
+/contact/?engagement=advisory
+/contact/?engagement=ai-assurance
+/contact/?engagement=evidence-systems
+/contact/?engagement=knowledge-architecture
+/contact/?engagement=technical-storytelling
+/contact/?engagement=responsible-ai
+/contact/?engagement=collaboration
+/contact/?engagement=media
+/contact/?engagement=technical
+/contact/?engagement=partnership
+/contact/?engagement=workshop
+/contact/?engagement=monthly-advisory
 ```
 
-No REST command endpoint is included.
+## Production gate
 
-## Upgrade checklist
+v1.1.0 retains and extends the launch gate. Production requires:
 
-1. Back up the WordPress database and protected document storage.
-2. Install v1.0.3 over the existing plugin.
-3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
+- 100% readiness
+- zero required failures and zero warnings
+- current v1.1.0 migration evidence
+- recent successful live validation
+- externally confirmed inbox delivery
+- completed controlled-pilot evidence
+- current database and protected-storage backup evidence
+- no critical events or operational blockers
+- no overdue lifecycle tasks or next actions
+- typed human promotion to Production
+
+Repository tests do not replace validation on the live WordPress host.
+
+## Upgrade
+
+1. Back up the database and protected storage.
+2. Install the v1.1.0 ZIP over the existing plugin.
+3. Clear WordPress, object, host, CDN, browser, and PHP opcode caches.
 4. Open **Contact & Engagement → Platform Overview**.
-5. Use the guided repair center until configuration and runtime checks pass.
-6. Confirm the Contact page contains `[sc_contact_engagement_platform]`.
-7. Confirm the Sender Portal page contains `[sc_sender_portal]`.
-8. Configure support email and a published Privacy Policy URL.
-9. Run **Live Validation** with a monitored email recipient.
-10. Confirm the message reached the external inbox and record the delivery reference.
-11. Complete at least five controlled inquiries and every pilot checklist item.
-12. Resolve all operational blockers, including failed communications, quarantine items, portal lockouts, overdue work, and critical events.
-13. Back up the database and protected storage, then record the backup attestation.
-14. Require 100%, zero failures, zero warnings, and fresh validation, inbox, pilot, and backup evidence before recording Production.
-15. Keep human review, fit, proposal, contract, scheduling, and engagement decisions manual.
+5. Complete database and v1.1.0 migration repairs if shown.
+6. Open **Contact & Engagement → Advisory Lifecycle** and inspect backfilled inquiries.
+7. Assign owners and resolve overdue next actions or tasks.
+8. Run Live Validation and repeat the controlled pilot where required.
+9. Record fresh backup, inbox, and pilot evidence for v1.1.0.
+10. Promote only after the gate returns 100%, zero failures, and zero warnings.
+
+See `docs/ADVISORY-LIFECYCLE.md`, `docs/MIGRATION-v1.1.0.md`, and `docs/RELEASE.md`.

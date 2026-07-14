@@ -2,25 +2,26 @@
 
 ## Purpose
 
-Version 1.0.3 hardens the pilot-to-public-launch layer above the governed contact-to-engagement workflow. It unifies runtime readiness, routed public entry, live validation, external mail evidence, pilot evidence, operational blockers, backup evidence, and launch governance without replacing authoritative repositories or human decisions.
+Version 1.1.0 extends the production-hardened public intake system into Advisory Operations and Engagement Lifecycle management. It keeps one authoritative inquiry pipeline while coordinating human review, qualification, ownership, Microsoft Teams meetings, proposals, engagement handoff, follow-up, privacy, reliability, and launch governance.
 
 ## Product surfaces
 
 ### Public
 
 - Unified Contact and Engagement entry
-- Canonical routed entry URLs for Advisory, Sustainable AI Assurance, collaboration, media, technical, partnership, workshop, monthly advisory, and general inquiries
+- Canonical routed service URLs through the Contact page
 - Browser-tab draft recovery for unsent text fields
 - Secure Sender Portal
+- Deliberately published lifecycle stage, summary, and next step
 - Privacy, accessibility, and process guidance
 
 ### Private administration
 
 - Platform Overview, guided repair center, and Public Launch Operations dashboard
-- Live Validation, external inbox evidence, pilot evidence, and backup evidence
+- Advisory Lifecycle workspace
 - Inquiries and Administrative Review
 - Human-Controlled Fit Assessment
-- Communications
+- Communications and templates
 - Privacy and Retention
 - Sender Portal administration and recovery
 - Teams and Proposals
@@ -34,7 +35,7 @@ Version 1.0.3 hardens the pilot-to-public-launch layer above the governed contac
 [sc_contact_engagement_platform]
 ```
 
-The shortcode composes the centralized intake implementation. Submission validation, duplicate prevention, rate limiting, consent provenance, storage, attribution, notifications, privacy, and audit behavior remain in one pipeline.
+The shortcode composes the centralized intake implementation. Submission validation, duplicate prevention, rate limiting, consent provenance, storage, attribution, notifications, privacy, audit, and lifecycle initialization remain in one pipeline.
 
 Existing shortcodes remain supported:
 
@@ -53,6 +54,10 @@ Use the configured Contact page as the canonical endpoint:
 /contact/?engagement=general
 /contact/?engagement=advisory
 /contact/?engagement=ai-assurance
+/contact/?engagement=evidence-systems
+/contact/?engagement=knowledge-architecture
+/contact/?engagement=technical-storytelling
+/contact/?engagement=responsible-ai
 /contact/?engagement=collaboration
 /contact/?engagement=media
 /contact/?engagement=technical
@@ -61,31 +66,35 @@ Use the configured Contact page as the canonical endpoint:
 /contact/?engagement=monthly-advisory
 ```
 
-The route controls preselection and attribution only. It does not create separate forms, records, or write endpoints.
+A route controls preselection and attribution only. It does not create separate forms, records, notifications, or write endpoints.
 
-## Draft recovery
+## Advisory lifecycle
 
-The public form keeps an unsent text-field draft in `sessionStorage` for up to eight hours. It intentionally excludes:
+The lifecycle layer adds thirteen governed stages, structured qualification, owner and priority, next actions, internal notes, assigned tasks, linked Teams offers, linked proposals, linked engagements, and an append-only event history.
 
-- file inputs
-- hidden fields
-- nonces and tokens
-- passwords
-- consent and acknowledgment state
+All stage transitions are authorized human actions. The platform enforces allowed transitions, typed confirmation, current-state checks, optimistic row versioning, and audit records. It does not automatically accept, reject, qualify, schedule, publish a proposal, attest a contract, or activate an engagement.
 
-Draft evidence remains limited to the current browser tab and is cleared after a successful submission.
+## Sender-safe projection
+
+The Sender Portal can display only:
+
+- a public lifecycle label
+- an approved sender-facing summary
+- an approved next step
+
+It does not render internal notes, sensitive flags, qualification rationale, scores, owners, tasks, decision authority, funding status, or transition reasons.
 
 ## Runtime-backed readiness
 
-The production score uses actual evidence for:
+The production score uses runtime evidence for:
 
-- installed plugin, database, and platform evidence-schema versions
-- expected database tables and platform columns
-- completed v1.0.0, v1.0.2, and v1.0.3 migration journals
+- installed plugin, database, platform, Portal, Engagement, and lifecycle schema versions
+- expected database tables, inquiry columns, and lifecycle support tables
+- completed v1.0.0, v1.0.2, v1.0.3, and v1.1.0 migration journals
 - protected-storage posture and upload rejection probe
 - HTTPS and secure portal transport
 - critical reliability events and incident write state
-- required scheduled hooks and registered callbacks
+- required scheduled hooks and registered callbacks, including lifecycle reminders
 - published Contact page containing a supported intake shortcode
 - published Sender Portal page containing `[sc_sender_portal]`
 - valid routed-entry contracts
@@ -93,24 +102,16 @@ The production score uses actual evidence for:
 - recent successful live validation
 - recent external inbox delivery evidence
 - completed controlled pilot evidence
-- absence of operational blockers
+- absence of public-launch and lifecycle operational blockers
 - recent database and protected-storage backup attestation
 
 Configured URLs alone do not pass page checks.
 
 ## Live validation
 
-The administrator-only suite validates temporary inquiry creation and transition, duplicate fingerprinting, request locks, Sender Portal tokens, protected file storage and deletion, route contracts, cron callbacks, accessibility markers, WordPress mail acceptance, safe upload acceptance, disguised-executable rejection, and cleanup.
+The administrator-only suite validates temporary inquiry creation, a real audited lifecycle transition, sender-safe lifecycle projection, duplicate fingerprinting, request locks, Sender Portal tokens, protected file storage and deletion, route contracts, cron callbacks, accessibility markers, WordPress mail acceptance, safe upload acceptance, disguised-executable rejection, lifecycle migration evidence, and cleanup.
 
 A passing mail-transport result does not prove inbox delivery. External delivery is recorded separately with recipient, reference, user, plugin version, and UTC timestamp.
-
-## Pilot evidence
-
-Production requires at least five controlled inquiries and completion of every checklist item covering general intake, Advisory, Sustainable AI Assurance, private upload, administrator notification, sender acknowledgment, and Sender Portal isolation/access.
-
-## Operational blockers
-
-The Public Launch Operations dashboard blocks Production while unresolved launch-risk queues exist, including failed communications, quarantine items, active portal lockouts, overdue work, or unresolved critical reliability events.
 
 ## Production gate
 
@@ -121,10 +122,10 @@ Production requires:
 - readiness score exactly 100%
 - zero required failures
 - zero warnings
-- successful live validation for v1.0.3 within the evidence window
+- successful live validation for v1.1.0 within the evidence window
 - externally confirmed inbox evidence within the evidence window
 - completed pilot evidence within the evidence window
-- no operational blockers
+- no public-launch or lifecycle operational blockers
 - database and protected-storage backup evidence within the evidence window
 - authorized typed human launch action
 
@@ -136,9 +137,10 @@ No background process can change launch state.
 v1_0_0_unified_contact_engagement_platform
 v1_0_2_production_readiness_live_validation
 v1_0_3_pilot_findings_public_launch_hardening
+v1_1_0_advisory_operations_engagement_lifecycle
 ```
 
-All migrations are nondestructive and idempotent. v1.0.3 preserves database version 1.0.0 and advances the platform evidence schema to 1.0.2.
+All migrations are nondestructive and idempotent. v1.1.0 advances the database to 1.1.0 and adds lifecycle fields plus event, note, and task tables while preserving existing records and legacy status compatibility.
 
 ## Boundaries
 

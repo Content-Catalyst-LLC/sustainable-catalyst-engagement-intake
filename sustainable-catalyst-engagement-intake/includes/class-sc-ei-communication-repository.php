@@ -254,7 +254,10 @@ final class SC_EI_Communication_Repository {
 			return new WP_Error( 'notification_context_missing', __( 'The notification context or template is unavailable.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 
-		$rendered = SC_EI_Template_Repository::render( $template, $inquiry, 0 );
+		$render_context = $inquiry;
+		$render_context['_lifecycle_task'] = sanitize_text_field( (string) ( $metadata['lifecycle_task'] ?? '' ) );
+		$render_context['_lifecycle_task_due'] = sanitize_text_field( (string) ( $metadata['lifecycle_task_due'] ?? '' ) );
+		$rendered = SC_EI_Template_Repository::render( $template, $render_context, 0 );
 		$settings = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 		$now = current_time( 'mysql', true );
 		$recipient_email = sanitize_email( $recipient_email );

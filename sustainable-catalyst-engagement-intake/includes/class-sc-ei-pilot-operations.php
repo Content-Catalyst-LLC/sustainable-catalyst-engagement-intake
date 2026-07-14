@@ -14,17 +14,14 @@ final class SC_EI_Pilot_Operations {
 	private const MAX_AGE_DAYS = 14;
 
 	public static function route_map(): array {
-		$defaults = array(
-			'general'          => array( 'type' => 'general', 'service' => '', 'label' => __( 'General inquiry', 'sustainable-catalyst-engagement-intake' ) ),
-			'advisory'         => array( 'type' => 'consulting', 'service' => 'strategic_consultation', 'label' => __( 'Advisory engagement', 'sustainable-catalyst-engagement-intake' ) ),
-			'ai-assurance'     => array( 'type' => 'consulting', 'service' => 'evidence_systems_diagnostic', 'label' => __( 'Sustainable AI Assurance', 'sustainable-catalyst-engagement-intake' ) ),
-			'collaboration'    => array( 'type' => 'research_collaboration', 'service' => 'research_collaboration', 'label' => __( 'Research collaboration', 'sustainable-catalyst-engagement-intake' ) ),
-			'media'            => array( 'type' => 'speaking_media', 'service' => 'speaking_media', 'label' => __( 'Media or speaking request', 'sustainable-catalyst-engagement-intake' ) ),
-			'technical'        => array( 'type' => 'platform_technical', 'service' => 'open_source_technical', 'label' => __( 'Technical platform inquiry', 'sustainable-catalyst-engagement-intake' ) ),
-			'partnership'      => array( 'type' => 'institutional_partnership', 'service' => 'institutional_partnership', 'label' => __( 'Institutional partnership', 'sustainable-catalyst-engagement-intake' ) ),
-			'workshop'         => array( 'type' => 'workshop_training', 'service' => 'training_workshop', 'label' => __( 'Workshop or training', 'sustainable-catalyst-engagement-intake' ) ),
-			'monthly-advisory' => array( 'type' => 'monthly_advisory', 'service' => 'monthly_advisory', 'label' => __( 'Monthly advisory', 'sustainable-catalyst-engagement-intake' ) ),
-		);
+		$defaults = array();
+		foreach ( SC_EI_Lifecycle_Schema::service_routes() as $key => $definition ) {
+			$defaults[ $key ] = array(
+				'type'    => sanitize_key( (string) ( $definition['inquiry_type'] ?? 'general' ) ),
+				'service' => sanitize_key( (string) ( $definition['service_interest'] ?? '' ) ),
+				'label'   => sanitize_text_field( (string) ( $definition['label'] ?? '' ) ),
+			);
+		}
 		$filtered = apply_filters( 'sc_ei_public_engagement_routes', $defaults );
 		if ( ! is_array( $filtered ) ) {
 			return $defaults;
@@ -49,6 +46,12 @@ final class SC_EI_Pilot_Operations {
 			'press' => 'media',
 			'institutional' => 'partnership',
 			'monthly_advisory' => 'monthly-advisory',
+			'evidence_systems' => 'evidence-systems',
+			'evidence_systems_diagnostic' => 'evidence-systems',
+			'knowledge_architecture' => 'knowledge-architecture',
+			'technical_storytelling' => 'technical-storytelling',
+			'responsible_ai' => 'responsible-ai',
+			'responsible_ai_workflows' => 'responsible-ai',
 		);
 		$key = $aliases[ $key ] ?? $key;
 		$routes = self::route_map();
@@ -196,6 +199,7 @@ final class SC_EI_Pilot_Operations {
 		$attachments = SC_EI_Attachment_Repository::operational_summary();
 		$portal = SC_EI_Portal_Repository::metrics();
 		$hardening = SC_EI_Hardening_Repository::metrics();
+		$lifecycle = SC_EI_Lifecycle_Repository::metrics();
 		$blockers = array();
 		if ( absint( $communications['failed'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d failed communication(s)', absint( $communications['failed'] ) );
 		if ( absint( $communications['follow_up_due'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d overdue follow-up(s)', absint( $communications['follow_up_due'] ) );
@@ -208,12 +212,15 @@ final class SC_EI_Pilot_Operations {
 		if ( absint( $portal['failed_today'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d portal failure event(s) today', absint( $portal['failed_today'] ) );
 		if ( absint( $portal['activation_rollbacks_today'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d portal activation rollback(s) today', absint( $portal['activation_rollbacks_today'] ) );
 		if ( absint( $hardening['open_critical'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d open critical reliability event(s)', absint( $hardening['open_critical'] ) );
+		if ( absint( $lifecycle['overdue_tasks'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d overdue lifecycle task(s)', absint( $lifecycle['overdue_tasks'] ) );
+		if ( absint( $lifecycle['next_actions_due'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d lifecycle next action(s) due', absint( $lifecycle['next_actions_due'] ) );
 		return array(
 			'inquiries' => $inquiry,
 			'communications' => $communications,
 			'attachments' => $attachments,
 			'portal' => $portal,
 			'hardening' => $hardening,
+			'lifecycle' => $lifecycle,
 			'blockers' => $blockers,
 			'clear' => empty( $blockers ),
 			'generated_at' => current_time( 'mysql', true ),
