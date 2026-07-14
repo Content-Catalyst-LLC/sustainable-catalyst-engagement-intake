@@ -74,6 +74,8 @@ final class SC_EI_Admin {
 		SC_EI_Workflow_Admin::submenu();
 		SC_EI_Graph_Admin::submenu();
 		SC_EI_Engagement_Admin::submenu();
+		SC_EI_Analytics_Admin::submenu();
+		SC_EI_Hardening_Admin::submenu();
 		SC_EI_Communication_Admin::submenu();
 		SC_EI_Privacy_Admin::submenu();
 
@@ -200,7 +202,9 @@ final class SC_EI_Admin {
 			SC_EI_Portal_Schema::default_settings(),
 			SC_EI_Workflow_Schema::default_settings(),
 			SC_EI_Graph_Credentials::defaults(),
-			SC_EI_Engagement_Schema::default_settings()
+			SC_EI_Engagement_Schema::default_settings(),
+			SC_EI_Analytics_Schema::default_settings(),
+			SC_EI_Hardening_Schema::default_settings()
 		);
 	}
 
@@ -350,6 +354,36 @@ final class SC_EI_Admin {
 			'engagement_no_auto_invoice'             => 1,
 			'engagement_no_auto_payment'             => 1,
 			'engagement_no_auto_signature'           => 1,
+			'analytics_enabled'                     => array_key_exists( 'analytics_enabled', $value ) ? ( empty( $value['analytics_enabled'] ) ? 0 : 1 ) : absint( $current['analytics_enabled'] ),
+			'analytics_minimum_cohort'              => max( 2, min( 100, absint( $value['analytics_minimum_cohort'] ?? $current['analytics_minimum_cohort'] ) ) ),
+			'analytics_default_days'                => SC_EI_Analytics_Schema::sanitize_days( $value['analytics_default_days'] ?? $current['analytics_default_days'] ),
+			'analytics_stale_inquiry_days'          => max( 1, min( 365, absint( $value['analytics_stale_inquiry_days'] ?? $current['analytics_stale_inquiry_days'] ) ) ),
+			'analytics_overdue_followup_hours'      => max( 1, min( 720, absint( $value['analytics_overdue_followup_hours'] ?? $current['analytics_overdue_followup_hours'] ) ) ),
+			'analytics_snapshot_retention_days'     => max( 30, min( 3650, absint( $value['analytics_snapshot_retention_days'] ?? $current['analytics_snapshot_retention_days'] ) ) ),
+			'analytics_daily_snapshots'             => array_key_exists( 'analytics_daily_snapshots', $value ) ? ( empty( $value['analytics_daily_snapshots'] ) ? 0 : 1 ) : absint( $current['analytics_daily_snapshots'] ),
+			'analytics_include_financial_totals'    => array_key_exists( 'analytics_include_financial_totals', $value ) ? ( empty( $value['analytics_include_financial_totals'] ) ? 0 : 1 ) : absint( $current['analytics_include_financial_totals'] ),
+			'analytics_no_automated_decisions'      => 1,
+			'analytics_no_sender_ranking'           => 1,
+			'analytics_no_personal_data'            => 1,
+			'hardening_enabled'                    => 1,
+			'hardening_public_writes_paused'       => array_key_exists( 'hardening_public_writes_paused', $value ) ? ( empty( $value['hardening_public_writes_paused'] ) ? 0 : 1 ) : absint( $current['hardening_public_writes_paused'] ),
+			'hardening_watchdog_enabled'           => array_key_exists( 'hardening_watchdog_enabled', $value ) ? ( empty( $value['hardening_watchdog_enabled'] ) ? 0 : 1 ) : absint( $current['hardening_watchdog_enabled'] ),
+			'hardening_watchdog_interval_minutes'  => 60,
+			'hardening_event_retention_days'       => max( 7, min( 365, absint( $value['hardening_event_retention_days'] ?? $current['hardening_event_retention_days'] ) ) ),
+			'hardening_resolved_retention_days'    => max( 1, min( 180, absint( $value['hardening_resolved_retention_days'] ?? $current['hardening_resolved_retention_days'] ) ) ),
+			'hardening_rate_limit_retention_days'  => max( 1, min( 30, absint( $value['hardening_rate_limit_retention_days'] ?? $current['hardening_rate_limit_retention_days'] ) ) ),
+			'hardening_intake_ip_limit_hour'       => max( 1, min( 100, absint( $value['hardening_intake_ip_limit_hour'] ?? $current['hardening_intake_ip_limit_hour'] ) ) ),
+			'hardening_intake_identity_limit_hour' => max( 1, min( 50, absint( $value['hardening_intake_identity_limit_hour'] ?? $current['hardening_intake_identity_limit_hour'] ) ) ),
+			'hardening_portal_edge_limit_15m'      => max( 5, min( 500, absint( $value['hardening_portal_edge_limit_15m'] ?? $current['hardening_portal_edge_limit_15m'] ) ) ),
+			'hardening_recovery_edge_limit_hour'   => max( 1, min( 100, absint( $value['hardening_recovery_edge_limit_hour'] ?? $current['hardening_recovery_edge_limit_hour'] ) ) ),
+			'hardening_fatal_capture_enabled'      => array_key_exists( 'hardening_fatal_capture_enabled', $value ) ? ( empty( $value['hardening_fatal_capture_enabled'] ) ? 0 : 1 ) : absint( $current['hardening_fatal_capture_enabled'] ),
+			'hardening_security_headers_enabled'   => array_key_exists( 'hardening_security_headers_enabled', $value ) ? ( empty( $value['hardening_security_headers_enabled'] ) ? 0 : 1 ) : absint( $current['hardening_security_headers_enabled'] ),
+			'hardening_csp_report_only_enabled'    => array_key_exists( 'hardening_csp_report_only_enabled', $value ) ? ( empty( $value['hardening_csp_report_only_enabled'] ) ? 0 : 1 ) : absint( $current['hardening_csp_report_only_enabled'] ),
+			'hardening_accessibility_helpers'      => array_key_exists( 'hardening_accessibility_helpers', $value ) ? ( empty( $value['hardening_accessibility_helpers'] ) ? 0 : 1 ) : absint( $current['hardening_accessibility_helpers'] ),
+			'hardening_export_request_id'          => 1,
+			'hardening_no_secret_context'          => 1,
+			'hardening_no_automatic_decisions'     => 1,
+			'hardening_no_automatic_deletion'      => 1,
 			'delete_data_on_uninstall'           => empty( $value['delete_data_on_uninstall'] ) ? 0 : 1,
 			'default_unaccepted_retention_days'  => max( 30, min( 3650, absint( $value['default_unaccepted_retention_days'] ?? $current['default_unaccepted_retention_days'] ) ) ),
 			'withdrawn_retention_days'           => max( 1, min( 3650, absint( $value['withdrawn_retention_days'] ?? $current['withdrawn_retention_days'] ) ) ),

@@ -1,10 +1,10 @@
-# Migration to v0.9.2
+# Migration to v0.10.0
 
 ## Versions
 
 ```text
-SC_EI_VERSION = 0.9.2
-SC_EI_DB_VERSION = 0.9.2
+SC_EI_VERSION = 0.10.0
+SC_EI_DB_VERSION = 0.10.0
 SC_EI_PORTAL_SCHEMA_VERSION = 1.3.0
 SC_EI_WORKFLOW_SCHEMA_VERSION = 1.1.0
 SC_EI_GRAPH_SCHEMA_VERSION = 1.0.0
@@ -52,7 +52,7 @@ sc_intake_export_engagements
 1. Back up database and protected storage.
 2. Upgrade from v0.9.1.
 3. Clear all caches.
-4. Confirm DB 0.9.2.
+4. Confirm DB 0.10.0.
 5. Confirm portal schema 1.3.0.
 6. Confirm engagement schema 1.0.0.
 7. Confirm all four new tables.

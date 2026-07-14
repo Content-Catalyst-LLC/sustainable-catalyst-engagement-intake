@@ -75,7 +75,7 @@ The handoff or engagement is closed with a reason. Historical records remain gov
 
 ## Integration handoff
 
-The private JSON package can support later Workbench or Decision Studio ingestion. v0.9.2 only prepares and exports data. It does not create projects, packets, accounts, repositories, invoices, or payments.
+The private JSON package can support later Workbench or Decision Studio ingestion. v0.10.0 only prepares and exports data. It does not create projects, packets, accounts, repositories, invoices, or payments.
 
 ## Incident handling
 

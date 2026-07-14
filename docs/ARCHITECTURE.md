@@ -322,7 +322,7 @@ Request payloads are encrypted separately from operation metadata.
 Graph state is linked to but remains distinct from local meeting workflow state.
 
 
-## v0.9.2 engagement handoff architecture
+## v0.10.0 engagement handoff architecture
 
 ```text
 contracted proposal
@@ -336,3 +336,26 @@ contracted proposal
 ```
 
 The commercial proposal and operational engagement remain separate records. Integration packages are export-only.
+
+
+## v0.11.0 hardening architecture
+
+```text
+SC_EI_Hardening_Schema
+→ fixed defaults and bounded settings
+
+SC_EI_Hardening_Repository
+→ request IDs
+→ durable rate limits
+→ deduplicated health events
+→ watchdog and pruning
+→ headers and accessibility helpers
+→ incident locks and pause state
+
+SC_EI_Hardening_Admin
+→ Reliability workspace
+→ typed human operations
+→ redacted export
+```
+
+The hardening layer observes technical state and gates public mutations. It does not alter fit, proposal, contract, engagement, or privacy decisions.

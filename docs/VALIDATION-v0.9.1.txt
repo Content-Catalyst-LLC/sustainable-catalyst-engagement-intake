@@ -55,7 +55,7 @@ Explicit PASS assertions: 469
 Installable ZIP entries: 86
 Repository ZIP entries: 151
 Installable ZIP SHA-256: 0e1718fc969f9923dd3bc70b21ab90924475475aaa6a09552b5932faa07ed783
-Repository ZIP SHA-256: f6f5f7bd1c8a817b10ba66e36cb9313c03b8a99d3ea3222a5fb2233ac43c47da
+Repository ZIP SHA-256: fbb63eb617f263cdd0d58bdee9ccacbfc69f5799f6cc304c39693e95b81c68a7
 Push script SHA-256: 3e349e45acf393e68e1d5e9f33280c002d26a283597f2aebcbc3c93af6ade9a5
 
 Graph schema coverage:

@@ -423,7 +423,7 @@ Operation payloads are authenticated-encrypted.
 Exports remove payload envelopes and expose only a boolean encrypted-payload marker.
 
 
-## v0.9.2 engagement data model
+## v0.10.0 engagement data model
 
 New tables:
 
@@ -435,3 +435,14 @@ engagement_events
 ```
 
 `engagements.proposal_id` is unique. Snapshots preserve the source proposal version and independent SHA-256 handoff hash. Requirements use optimistic row versions. Events are append-only except privacy redaction of personal context.
+
+
+## v0.11.0 hardening data
+
+### health_events
+
+Deduplicated technical events with severity, component, redacted message, safe context, occurrence counts, timestamps, and human resolution evidence.
+
+### rate_limits
+
+Keyed identity buckets with scope, fixed window, hit count, optional block expiration, and timestamps. Raw IP addresses, user agents, and email addresses are not stored.

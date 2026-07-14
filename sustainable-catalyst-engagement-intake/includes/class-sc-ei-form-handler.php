@@ -305,7 +305,7 @@ final class SC_EI_Form_Handler {
 			'audience'           => self::clean_single( $raw['audience'] ?? '', 191 ),
 			'follow_up_consent'  => empty( $raw['follow_up_consent'] ) ? 'no' : 'yes',
 			'source_url'         => esc_url_raw( (string) ( $raw['source_url'] ?? '' ) ),
-			'privacy_notice'     => 'engagement-intake-v0.9.2',
+			'privacy_notice'     => 'engagement-intake-v0.11.0',
 			'meeting_platform'   => 'microsoft_teams',
 			'request_id'         => $request_id,
 			'documents_selected' => count( $upload_items ),
@@ -356,7 +356,7 @@ final class SC_EI_Form_Handler {
 					'scheduling_status'       => $meeting_requested ? 'requested' : 'not_requested',
 					'relevant_links'          => $links,
 					'metadata'                => $metadata,
-					'consent_version'         => 'engagement-intake-v0.9.2',
+					'consent_version'         => 'engagement-intake-v0.11.0',
 					'consent_at'              => current_time( 'mysql', true ),
 				)
 			);
@@ -383,6 +383,7 @@ final class SC_EI_Form_Handler {
 				'meeting_request'          => $meeting_request,
 				'timezone'                 => $timezone,
 				'request_id'               => $request_id,
+				'hardening_request_id'     => SC_EI_Hardening_Repository::request_id(),
 				'documents_selected'       => count( $upload_items ),
 				'request_content_length'   => SC_EI_Upload_Environment::content_length(),
 			),
@@ -510,21 +511,24 @@ final class SC_EI_Form_Handler {
 
 	private static function check_rate_limit( string $email ) {
 		$settings = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
-		$maximum  = max( 1, min( 20, absint( $settings['submissions_per_hour'] ?? 5 ) ) );
-		$key      = self::rate_key( $email );
-		$count    = absint( get_transient( $key ) );
-
-		if ( $count >= $maximum ) {
-			return new WP_Error( 'rate_limited', __( 'Too many inquiries were submitted from this email address in a short period. Please try again later.', 'sustainable-catalyst-engagement-intake' ) );
-		}
-
-		return true;
+		$identity = hash_hmac( 'sha256', strtolower( $email ), wp_salt( 'auth' ) );
+		$identity_check = SC_EI_Hardening_Repository::guard_public_write(
+			'public_intake_identity',
+			max( 1, absint( $settings['hardening_intake_identity_limit_hour'] ?? $settings['submissions_per_hour'] ?? 5 ) ),
+			HOUR_IN_SECONDS,
+			array( $identity )
+		);
+		if ( is_wp_error( $identity_check ) ) return $identity_check;
+		return SC_EI_Hardening_Repository::consume_rate_limit(
+			'public_intake_ip',
+			array( SC_EI_Hardening_Repository::client_ip_hash() ),
+			max( 1, absint( $settings['hardening_intake_ip_limit_hour'] ?? 15 ) ),
+			HOUR_IN_SECONDS
+		);
 	}
 
 	private static function increment_rate_limit( string $email ): void {
-		$key   = self::rate_key( $email );
-		$count = absint( get_transient( $key ) );
-		set_transient( $key, $count + 1, HOUR_IN_SECONDS );
+		// v0.11.0 consumes durable counters before storage. Kept as a no-op for API compatibility.
 	}
 
 	private static function rate_key( string $email ): string {

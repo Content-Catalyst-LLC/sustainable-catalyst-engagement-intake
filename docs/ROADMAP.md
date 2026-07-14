@@ -49,7 +49,7 @@ Optional app-only Graph calendar connector, encrypted credentials and tokens, pe
 
 ## Current release
 
-### v0.9.2 — Proposal and Engagement Handoff
+### v0.10.0 — Proposal and Engagement Handoff
 One controlled engagement per contracted proposal, immutable commercial snapshots, onboarding requirements, readiness checks, typed human activation, lifecycle events, sender-safe status, private Workbench and Decision Studio handoff exports, and no automatic provisioning, invoice, payment, signature, or project creation.
 
 ## Planned releases

@@ -394,7 +394,7 @@ For higher-risk intake:
 - no contract, signature, invoice, payment, or engagement automation
 
 
-## v0.9.2 engagement handoff controls
+## v0.10.0 engagement handoff controls
 
 - contracted proposal eligibility
 - one engagement per proposal
@@ -414,3 +414,22 @@ For higher-risk intake:
 - no automatic activation or provisioning
 - no invoice, payment, signature, or contract generation
 - approved privacy redaction with verifiable tombstone hash
+
+
+## v0.11.0 production hardening
+
+- database-backed keyed abuse limits
+- atomic rate-limit counter upserts
+- incident public-write pause
+- read-only portal continuity
+- UUID request correlation
+- secret-filtered technical context
+- deduplicated operational event fingerprints
+- fatal metadata without raw messages or traces
+- private redacted export
+- nonce, capability, typed confirmation, and audit controls
+- no automatic remediation or deletion
+- `nosniff`, referrer, permissions, and request-ID headers
+- optional CSP report-only observation
+- sender portal no-store and frame-denial retained
+- accessibility live regions and focus resilience

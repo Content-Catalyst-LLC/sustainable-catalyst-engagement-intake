@@ -32,7 +32,7 @@ $is_error = $message && ! isset( $messages[ $message ] );
 			<h1><?php esc_html_e( 'Microsoft Graph Reliability', 'sustainable-catalyst-engagement-intake' ); ?></h1>
 			<p><?php esc_html_e( 'Create calendar-backed Teams events only after a sender selects an approved time and an authorized staff member deliberately queues the operation. The existing manual Teams-link workflow remains the fallback.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 		</div>
-		<div class="sc-ei-admin__version">v0.9.2</div>
+		<div class="sc-ei-admin__version">v0.11.0</div>
 	</header>
 
 	<?php if ( $message ) : ?>

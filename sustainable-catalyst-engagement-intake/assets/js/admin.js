@@ -1,6 +1,12 @@
 (() => {
   "use strict";
 
+  const scEiLiveRegion = () => document.getElementById("sc-ei-live-region");
+  const scEiAnnounce = (message) => { const region = scEiLiveRegion(); if (!region) return; region.textContent = ""; window.setTimeout(() => { region.textContent = String(message || ""); }, 20); };
+  document.addEventListener("invalid", (event) => { const field = event.target; if (!(field instanceof HTMLElement)) return; scEiAnnounce(field.getAttribute("data-error") || field.getAttribute("aria-label") || "Review the highlighted required field."); }, true);
+  document.addEventListener("submit", (event) => { const form = event.target; if (!(form instanceof HTMLFormElement) || event.defaultPrevented) return; const submit = form.querySelector("button[type='submit'], input[type='submit']"); if (submit && !submit.hasAttribute("data-no-busy")) { submit.setAttribute("aria-busy", "true"); submit.setAttribute("aria-disabled", "true"); window.setTimeout(() => { submit.removeAttribute("aria-busy"); submit.removeAttribute("aria-disabled"); }, 15000); } });
+  document.addEventListener("DOMContentLoaded", () => { const main = document.querySelector(".sc-ei-admin, .sc-ei-form, .sc-ei-sender-portal"); if (main && !main.id) main.id = "sc-ei-primary-content"; document.querySelectorAll("table").forEach((table) => { if (!table.querySelector("thead")) return; table.setAttribute("role", "table"); }); });
+
   const quarantineControls = document.querySelector("[data-sc-ei-bulk-controls]");
   if (quarantineControls) {
     const operation = quarantineControls.querySelector("[data-sc-ei-bulk-operation]");

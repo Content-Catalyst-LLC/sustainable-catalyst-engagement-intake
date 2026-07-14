@@ -1,6 +1,6 @@
 {
   "name": "content-catalyst-llc/sustainable-catalyst-engagement-intake",
-  "description": "Private engagement intake with controlled proposal-to-engagement handoff, immutable commercial snapshots, onboarding readiness, typed activation, optional Microsoft Graph Teams scheduling, privacy governance, and protected uploads.",
+  "description": "Production-hardened private engagement intake with reliability monitoring, accessibility controls, durable abuse protection, analytics, engagement handoff, secure scheduling, privacy, and protected quarantine.",
   "type": "wordpress-plugin",
   "license": "GPL-2.0-or-later",
   "require": {
@@ -8,6 +8,6 @@
   },
   "scripts": {
     "lint": "find sustainable-catalyst-engagement-intake -name '*.php' -print0 | xargs -0 -n1 php -l",
-    "test": "php tests/smoke.php && php tests/validator-fixtures.php && php tests/storage-fixtures.php && php tests/upload-environment-fixtures.php && php tests/scanner-fixtures.php && php tests/quarantine-operations.php && php tests/review-schema-fixtures.php && php tests/review-operations.php && php tests/communication-schema-fixtures.php && php tests/communication-operations.php && php tests/privacy-schema-fixtures.php && php tests/privacy-operations.php && php tests/fit-schema-fixtures.php && php tests/fit-operations.php && php tests/portal-schema-fixtures.php && php tests/portal-operations.php && php tests/portal-auth-recovery.php && php tests/workflow-schema-fixtures.php && php tests/workflow-operations.php && php tests/graph-crypto-fixtures.php && php tests/graph-client-fixtures.php && php tests/graph-credentials.php && php tests/graph-operations.php && php tests/engagement-schema-fixtures.php && php tests/engagement-operations.php && php tests/schema-mapping.php"
+    "test": "php tests/smoke.php && php tests/validator-fixtures.php && php tests/storage-fixtures.php && php tests/upload-environment-fixtures.php && php tests/scanner-fixtures.php && php tests/quarantine-operations.php && php tests/review-schema-fixtures.php && php tests/review-operations.php && php tests/communication-schema-fixtures.php && php tests/communication-operations.php && php tests/privacy-schema-fixtures.php && php tests/privacy-operations.php && php tests/fit-schema-fixtures.php && php tests/fit-operations.php && php tests/portal-schema-fixtures.php && php tests/portal-operations.php && php tests/portal-auth-recovery.php && php tests/workflow-schema-fixtures.php && php tests/workflow-operations.php && php tests/graph-crypto-fixtures.php && php tests/graph-client-fixtures.php && php tests/graph-credentials.php && php tests/graph-operations.php && php tests/engagement-schema-fixtures.php && php tests/engagement-operations.php && php tests/schema-mapping.php && php tests/analytics-schema-fixtures.php && php tests/analytics-operations.php && php tests/hardening-schema-fixtures.php && php tests/hardening-operations.php && php tests/accessibility-security.php"
   }
 }

@@ -141,4 +141,4 @@ if ( $failed ) {
 foreach ( $checks as $label => $passed ) {
 	echo 'PASS: ' . $label . PHP_EOL;
 }
-echo "Engagement Intake v0.9.2 privacy operation checks passed.\n";
+echo "Engagement Intake v0.11.0 privacy operation checks passed.\n";

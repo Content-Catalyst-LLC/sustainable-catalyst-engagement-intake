@@ -133,6 +133,8 @@ final class SC_EI_Portal_Public {
 	}
 
 	public static function handle_activate(): void {
+		$edge = SC_EI_Hardening_Repository::guard_public_write( 'portal_activation', 20, 15 * MINUTE_IN_SECONDS );
+		if ( is_wp_error( $edge ) ) { self::redirect_activation( '', '', $edge->get_error_code() ); }
 		$public_id = isset( $_POST['portal_public_id'] ) ? sanitize_text_field( wp_unslash( $_POST['portal_public_id'] ) ) : '';
 		$token = isset( $_POST['portal_token'] ) ? sanitize_text_field( wp_unslash( $_POST['portal_token'] ) ) : '';
 		$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
@@ -179,6 +181,9 @@ final class SC_EI_Portal_Public {
 	}
 
 	public static function handle_recovery(): void {
+		$settings = SC_EI_Hardening_Repository::settings();
+		$edge = SC_EI_Hardening_Repository::guard_public_write( 'portal_recovery', absint( $settings['hardening_recovery_edge_limit_hour'] ?? 10 ), HOUR_IN_SECONDS );
+		if ( is_wp_error( $edge ) ) { self::redirect( 'overview', 'portal_recovery_received' ); }
 		$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
 		$honeypot = isset( $_POST['portal_company_website'] ) ? trim( (string) wp_unslash( $_POST['portal_company_website'] ) ) : '';
 		if ( ! wp_verify_nonce( $nonce, 'sc_ei_portal_recovery' ) || '' !== $honeypot ) {
@@ -555,6 +560,13 @@ final class SC_EI_Portal_Public {
 	}
 
 	private static function require_context( string $permission = '' ) {
+		$settings = SC_EI_Hardening_Repository::settings();
+		$read_only_permissions = array( 'view_meetings', 'view_proposals' );
+		if ( $permission && ! in_array( $permission, $read_only_permissions, true ) && SC_EI_Hardening_Repository::public_writes_paused() ) {
+			return new WP_Error( 'service_temporarily_paused', __( 'This secure portal action is temporarily paused for maintenance. Read-only portal access remains available.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		$edge = SC_EI_Hardening_Repository::consume_rate_limit( 'portal_authenticated_action', array( SC_EI_Hardening_Repository::client_ip_hash(), SC_EI_Hardening_Repository::user_agent_hash() ), absint( $settings['hardening_portal_edge_limit_15m'] ?? 60 ), 15 * MINUTE_IN_SECONDS );
+		if ( is_wp_error( $edge ) ) return $edge;
 		$context = SC_EI_Portal_Session::current();
 		if ( is_wp_error( $context ) ) {
 			return $context;

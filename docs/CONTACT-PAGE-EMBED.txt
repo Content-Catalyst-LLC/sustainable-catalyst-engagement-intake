@@ -1,4 +1,4 @@
-Sustainable Catalyst Engagement Intake v0.9.2 Shortcodes
+Sustainable Catalyst Engagement Intake v0.11.0 Shortcodes
 ================================================================
 
 Consulting page
@@ -10,9 +10,8 @@ Contact page
 Secure sender portal
 [sc_sender_portal title="Secure Sender Portal"]
 
-v0.9.2 notes
+v0.11.0 notes
 - No new public shortcode is required.
-- Engagement administration is under Engagement Intake → Engagements.
-- The existing sender portal gains an Engagement section when access includes `view_engagements`.
-- Existing portal invitations may require reissue.
-- Workbench and Decision Studio handoff is export-only; no automatic provisioning occurs.
+- Reliability controls are under Engagement Intake → Reliability.
+- Incident pause blocks public mutations while retaining read-only portal access.
+- Existing shortcode markup receives the new accessibility and request-hardening layer automatically.

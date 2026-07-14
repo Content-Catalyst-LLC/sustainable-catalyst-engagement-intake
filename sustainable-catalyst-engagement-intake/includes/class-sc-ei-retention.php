@@ -42,7 +42,7 @@ final class SC_EI_Retention {
 	/**
 	 * Legacy method name retained for compatibility.
 	 *
-	 * v0.9.2 retains the v0.6.0 safety boundary and never deletes here. It queues candidate actions for human review.
+	 * v0.11.0 retains the v0.6.0 safety boundary and never deletes here. It queues candidate actions for human review.
 	 */
 	public static function cleanup( int $limit = 100 ): int {
 		if ( get_transient( 'sc_ei_retention_cleanup_lock' ) ) {

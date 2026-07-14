@@ -2544,7 +2544,7 @@
   }
 }
 
-/* v0.9.2 proposal and engagement handoff */
+/* v0.10.0 proposal and engagement handoff */
 .sc-ei-engagement-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(300px, .65fr);
@@ -2668,3 +2668,20 @@
     display: grid;
   }
 }
+
+/* v0.10.0 analytics */
+.sc-ei-analytics-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:18px 0}.sc-ei-analytics-bars{display:grid;gap:8px}.sc-ei-analytics-bars>div{display:flex;justify-content:space-between;gap:12px;padding:10px;border-bottom:1px solid #ddd}.sc-ei-analytics-bars strong{color:#6d1b2b}.sc-ei-analytics-admin code{word-break:break-all}@media(max-width:1100px){.sc-ei-analytics-grid{grid-template-columns:1fr}}
+
+
+/* v0.11.0 reliability and accessibility hardening */
+.sc-ei-skip-link { position: fixed; left: 12px; top: -100px; z-index: 100000; padding: 10px 14px; background: #fff; color: #111; border: 2px solid currentColor; font-weight: 700; }
+.sc-ei-skip-link:focus { top: 12px; }
+.sc-ei-table-scroll { max-width: 100%; overflow-x: auto; outline: none; }
+.sc-ei-table-scroll:focus { box-shadow: 0 0 0 3px rgba(34,113,177,.35); }
+.sc-ei-hardening-layout { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(280px,.65fr); gap:18px; align-items:start; }
+.sc-ei-hardening-layout .sc-ei-admin__card { margin-bottom:18px; }
+.sc-ei-a11y-enabled :focus-visible, .sc-ei-admin :focus-visible, .sc-ei-form :focus-visible, .sc-ei-sender-portal :focus-visible { outline: 3px solid #2271b1; outline-offset: 2px; }
+.sc-ei-admin [aria-disabled="true"], .sc-ei-form [aria-disabled="true"] { opacity:.65; cursor:not-allowed; }
+@media (max-width: 1000px) { .sc-ei-hardening-layout { grid-template-columns:1fr; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; } }
+@media (forced-colors: active) { .sc-ei-fit-state, .sc-ei-portal-status, .button, button { border:1px solid ButtonText; } .sc-ei-check--ok, .sc-ei-check--bad { color:CanvasText !important; } }

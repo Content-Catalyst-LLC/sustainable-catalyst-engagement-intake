@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -47,6 +47,9 @@ final class SC_EI_Database {
 		$engagement_snapshots = self::table( 'engagement_snapshots' );
 		$engagement_requirements = self::table( 'engagement_requirements' );
 		$engagement_events = self::table( 'engagement_events' );
+		$analytics_snapshots = self::table( 'analytics_snapshots' );
+		$health_events = self::table( 'health_events' );
+		$rate_limits = self::table( 'rate_limits' );
 		$communication_templates = self::table( 'communication_templates' );
 		$privacy_requests = self::table( 'privacy_requests' );
 		$consent_events = self::table( 'consent_events' );
@@ -916,6 +919,69 @@ final class SC_EI_Database {
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
+		$sql_analytics_snapshots = "CREATE TABLE {$analytics_snapshots} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			range_days smallint(5) unsigned NOT NULL DEFAULT 90,
+			period_start datetime NOT NULL,
+			period_end datetime NOT NULL,
+			minimum_cohort smallint(5) unsigned NOT NULL DEFAULT 5,
+			payload_json longtext NOT NULL,
+			content_hash char(64) NOT NULL,
+			generated_by bigint(20) unsigned NULL,
+			generated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY range_days (range_days),
+			KEY content_hash (content_hash),
+			KEY generated_by (generated_by),
+			KEY generated_at (generated_at)
+		) {$charset_collate};";
+
+
+		$sql_health_events = "CREATE TABLE {$health_events} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			fingerprint char(64) NOT NULL,
+			component varchar(40) NOT NULL DEFAULT 'plugin',
+			event_type varchar(100) NOT NULL DEFAULT '',
+			severity varchar(20) NOT NULL DEFAULT 'warning',
+			message text NULL,
+			context_json longtext NULL,
+			occurrences bigint(20) unsigned NOT NULL DEFAULT 1,
+			first_seen_at datetime NOT NULL,
+			last_seen_at datetime NOT NULL,
+			resolved_at datetime NULL,
+			resolved_by bigint(20) unsigned NULL,
+			resolution_note text NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY fingerprint (fingerprint),
+			KEY component (component),
+			KEY event_type (event_type),
+			KEY severity (severity),
+			KEY last_seen_at (last_seen_at),
+			KEY resolved_at (resolved_at),
+			KEY resolved_by (resolved_by)
+		) {$charset_collate};";
+
+		$sql_rate_limits = "CREATE TABLE {$rate_limits} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			bucket_hash char(64) NOT NULL,
+			scope varchar(80) NOT NULL DEFAULT '',
+			window_start datetime NOT NULL,
+			window_seconds int(10) unsigned NOT NULL DEFAULT 3600,
+			hits int(10) unsigned NOT NULL DEFAULT 0,
+			blocked_until datetime NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY scope_bucket_window (scope, bucket_hash, window_start),
+			KEY scope (scope),
+			KEY blocked_until (blocked_until),
+			KEY updated_at (updated_at)
+		) {$charset_collate};";
+
 		$sql_communications = "CREATE TABLE {$communications} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			inquiry_id bigint(20) unsigned NOT NULL,
@@ -1218,6 +1284,9 @@ final class SC_EI_Database {
 		dbDelta( $sql_engagement_snapshots );
 		dbDelta( $sql_engagement_requirements );
 		dbDelta( $sql_engagement_events );
+		dbDelta( $sql_analytics_snapshots );
+		dbDelta( $sql_health_events );
+		dbDelta( $sql_rate_limits );
 		dbDelta( $sql_communications );
 		dbDelta( $sql_communication_events );
 		dbDelta( $sql_communication_templates );
@@ -1343,7 +1412,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -1709,6 +1778,18 @@ final class SC_EI_Database {
 				$result[ $table_name . '.' . $column ] = ( $found === $column );
 			}
 		}
+		return $result;
+	}
+
+
+	public static function hardening_columns_exist(): array {
+		global $wpdb;
+		$tables = array(
+			'health_events' => array( 'public_id','fingerprint','component','event_type','severity','message','context_json','occurrences','first_seen_at','last_seen_at','resolved_at','resolved_by','resolution_note' ),
+			'rate_limits' => array( 'bucket_hash','scope','window_start','window_seconds','hits','blocked_until','created_at','updated_at' ),
+		);
+		$result=array();
+		foreach($tables as $table_name=>$columns){ $table=self::table($table_name); foreach($columns as $column){ $found=$wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM {$table} LIKE %s",$column)); $result[$table_name.'.'.$column]=($found===$column); } }
 		return $result;
 	}
 

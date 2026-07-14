@@ -103,4 +103,4 @@ foreach ( $templates as $template ) {
 }
 pass_communication_schema( 'default templates remain plain text' );
 
-echo "Engagement Intake v0.9.2 communication schema fixtures passed.\n";
+echo "Engagement Intake v0.11.0 communication schema fixtures passed.\n";

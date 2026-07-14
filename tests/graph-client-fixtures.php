@@ -93,4 +93,4 @@ foreach ( $checks as $label => $passed ) {
 	pass_graph_client( $label );
 }
 
-echo "Engagement Intake v0.9.2 Graph client fixtures passed.\n";
+echo "Engagement Intake v0.11.0 Graph client fixtures passed.\n";

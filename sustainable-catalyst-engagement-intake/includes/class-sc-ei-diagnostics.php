@@ -20,6 +20,7 @@ final class SC_EI_Diagnostics {
 		$portal_columns        = SC_EI_Database::portal_columns_exist();
 		$workflow_columns      = SC_EI_Database::workflow_columns_exist();
 		$engagement_columns    = SC_EI_Database::engagement_columns_exist();
+		$hardening_columns     = SC_EI_Database::hardening_columns_exist();
 		$admin              = get_role( 'administrator' );
 		$settings           = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
@@ -52,6 +53,8 @@ final class SC_EI_Diagnostics {
 		$graph_health = SC_EI_Graph_Repository::last_health();
 		$graph_metrics = SC_EI_Graph_Repository::metrics();
 		$engagement_metrics = SC_EI_Engagement_Repository::metrics();
+		$hardening_metrics = SC_EI_Hardening_Repository::metrics();
+		$hardening_watchdog = SC_EI_Hardening_Repository::last_watchdog();
 
 		$notification_policies = array(
 			'sender_acknowledgment' => ! empty( $settings['sender_acknowledgment_enabled'] ),
@@ -162,6 +165,24 @@ final class SC_EI_Diagnostics {
 				'portal_sender_safe'         => ! empty( $settings['engagement_sender_portal_enabled'] ),
 				'workbench_export'           => ! empty( $settings['engagement_allow_workbench_export'] ),
 				'decision_studio_export'     => ! empty( $settings['engagement_allow_decision_studio_export'] ),
+			),
+			'hardening_schema_version' => SC_EI_HARDENING_SCHEMA_VERSION,
+			'hardening_columns'        => $hardening_columns,
+			'hardening'                => array(
+				'enabled'                => ! empty( $settings['hardening_enabled'] ),
+				'public_writes_paused'   => ! empty( $settings['hardening_public_writes_paused'] ),
+				'metrics'                => $hardening_metrics,
+				'watchdog'               => $hardening_watchdog,
+				'watchdog_scheduled'     => (bool) wp_next_scheduled( 'sc_ei_hardening_watchdog' ),
+				'prune_scheduled'        => (bool) wp_next_scheduled( 'sc_ei_hardening_prune' ),
+				'durable_rate_limits'    => true,
+				'health_event_deduping'  => true,
+				'fatal_capture'          => ! empty( $settings['hardening_fatal_capture_enabled'] ),
+				'security_headers'       => ! empty( $settings['hardening_security_headers_enabled'] ),
+				'accessibility_helpers'  => ! empty( $settings['hardening_accessibility_helpers'] ),
+				'no_secret_context'      => true,
+				'no_automatic_decisions' => true,
+				'no_automatic_deletion'  => true,
 			),
 			'graph_schema_version'   => SC_EI_GRAPH_SCHEMA_VERSION,
 			'graph'                  => array(
@@ -294,6 +315,8 @@ final class SC_EI_Diagnostics {
 				'honeypot'             => true,
 				'timing'               => true,
 				'rate_limit'           => true,
+				'durable_rate_limit'   => true,
+				'incident_write_pause' => true,
 				'duplicates'           => true,
 				'file_count_limit'     => true,
 				'file_size_limit'      => true,
@@ -390,6 +413,16 @@ final class SC_EI_Diagnostics {
 				&& ! empty( $results['graph']['manual_fallback'] )
 				&& ! empty( $results['graph']['health']['ok'] );
 		}
+		$hardening_ok = ! in_array( false, $results['hardening_columns'], true )
+			&& ! empty( $results['hardening']['watchdog_scheduled'] )
+			&& ! empty( $results['hardening']['prune_scheduled'] )
+			&& ! empty( $results['hardening']['durable_rate_limits'] )
+			&& ! empty( $results['hardening']['health_event_deduping'] )
+			&& ! empty( $results['hardening']['security_headers'] )
+			&& ! empty( $results['hardening']['accessibility_helpers'] )
+			&& ! empty( $results['hardening']['no_secret_context'] )
+			&& ! empty( $results['hardening']['no_automatic_decisions'] )
+			&& ! empty( $results['hardening']['no_automatic_deletion'] );
 		$fit_ok = ! in_array( false, $results['fit_columns'], true )
 			&& empty( $results['fit_human_control']['automatic_recommendation'] )
 			&& empty( $results['fit_human_control']['automatic_acceptance'] )
@@ -460,7 +493,7 @@ final class SC_EI_Diagnostics {
 				&& ! empty( $results['communication_templates']['active_count'] );
 		}
 
-		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $portal_ok && $workflow_ok && $engagement_ok && $graph_ok && $fit_ok && $privacy_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
+		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $portal_ok && $workflow_ok && $engagement_ok && $graph_ok && $hardening_ok && $fit_ok && $privacy_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
 			? 'healthy'
 			: 'attention';
 	}
