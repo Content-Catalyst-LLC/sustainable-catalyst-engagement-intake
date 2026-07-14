@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -50,6 +50,10 @@ final class SC_EI_Database {
 		$analytics_snapshots = self::table( 'analytics_snapshots' );
 		$health_events = self::table( 'health_events' );
 		$rate_limits = self::table( 'rate_limits' );
+		$workflow_cases = self::table( 'workflow_cases' );
+		$workflow_commands = self::table( 'workflow_commands' );
+		$workflow_handoffs = self::table( 'workflow_handoffs' );
+		$workflow_outbox = self::table( 'workflow_outbox' );
 		$communication_templates = self::table( 'communication_templates' );
 		$privacy_requests = self::table( 'privacy_requests' );
 		$consent_events = self::table( 'consent_events' );
@@ -982,6 +986,159 @@ final class SC_EI_Database {
 			KEY updated_at (updated_at)
 		) {$charset_collate};";
 
+
+		$sql_workflow_cases = "CREATE TABLE {$workflow_cases} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			reference varchar(40) NOT NULL DEFAULT '',
+			current_stage varchar(40) NOT NULL DEFAULT 'intake',
+			current_state varchar(50) NOT NULL DEFAULT 'new',
+			terminal_state varchar(40) NOT NULL DEFAULT '',
+			priority varchar(20) NOT NULL DEFAULT 'normal',
+			owner_user_id bigint(20) unsigned NULL,
+			source_updated_at datetime NULL,
+			projection_version int(10) unsigned NOT NULL DEFAULT 1,
+			projection_hash char(64) NOT NULL DEFAULT '',
+			blocker_count int(10) unsigned NOT NULL DEFAULT 0,
+			open_command_count int(10) unsigned NOT NULL DEFAULT 0,
+			pending_handoff_count int(10) unsigned NOT NULL DEFAULT 0,
+			last_event_at datetime NULL,
+			last_transition_at datetime NULL,
+			last_synced_at datetime NOT NULL,
+			stale_after datetime NULL,
+			consistency_status varchar(20) NOT NULL DEFAULT 'consistent',
+			consistency_notes longtext NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY inquiry_id (inquiry_id),
+			KEY reference (reference),
+			KEY current_stage (current_stage),
+			KEY current_state (current_state),
+			KEY terminal_state (terminal_state),
+			KEY priority (priority),
+			KEY owner_user_id (owner_user_id),
+			KEY consistency_status (consistency_status),
+			KEY stale_after (stale_after),
+			KEY updated_at (updated_at)
+		) {$charset_collate};";
+
+		$sql_workflow_commands = "CREATE TABLE {$workflow_commands} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			command_key char(64) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			case_id bigint(20) unsigned NOT NULL,
+			command_type varchar(60) NOT NULL DEFAULT '',
+			target_type varchar(40) NOT NULL DEFAULT 'case',
+			target_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			expected_stage varchar(40) NOT NULL DEFAULT '',
+			requested_by bigint(20) unsigned NULL,
+			reason text NULL,
+			payload_json longtext NULL,
+			payload_hash char(64) NOT NULL DEFAULT '',
+			status varchar(20) NOT NULL DEFAULT 'pending',
+			claimed_at datetime NULL,
+			claimed_by bigint(20) unsigned NULL,
+			completed_at datetime NULL,
+			result_json longtext NULL,
+			error_code varchar(120) NOT NULL DEFAULT '',
+			error_message text NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY command_key (command_key),
+			KEY inquiry_id (inquiry_id),
+			KEY case_id (case_id),
+			KEY command_type (command_type),
+			KEY target_type_id (target_type, target_id),
+			KEY status (status),
+			KEY requested_by (requested_by),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql_workflow_handoffs = "CREATE TABLE {$workflow_handoffs} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			handoff_key char(64) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			case_id bigint(20) unsigned NOT NULL,
+			target varchar(60) NOT NULL DEFAULT '',
+			schema_id varchar(120) NOT NULL DEFAULT '',
+			contract_version varchar(30) NOT NULL DEFAULT '',
+			data_classification varchar(40) NOT NULL DEFAULT 'operational_minimum',
+			status varchar(20) NOT NULL DEFAULT 'prepared',
+			payload_json longtext NOT NULL,
+			content_hash char(64) NOT NULL,
+			signature char(64) NOT NULL,
+			prepared_by bigint(20) unsigned NULL,
+			prepared_at datetime NOT NULL,
+			dispatched_at datetime NULL,
+			acknowledged_by bigint(20) unsigned NULL,
+			acknowledged_at datetime NULL,
+			failed_at datetime NULL,
+			failure_code varchar(120) NOT NULL DEFAULT '',
+			failure_message text NULL,
+			expires_at datetime NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY handoff_key (handoff_key),
+			KEY inquiry_id (inquiry_id),
+			KEY case_id (case_id),
+			KEY target (target),
+			KEY status (status),
+			KEY content_hash (content_hash),
+			KEY prepared_by (prepared_by),
+			KEY expires_at (expires_at),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql_workflow_outbox = "CREATE TABLE {$workflow_outbox} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			event_key char(64) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			case_id bigint(20) unsigned NOT NULL,
+			event_type varchar(80) NOT NULL DEFAULT '',
+			aggregate_type varchar(40) NOT NULL DEFAULT 'case',
+			aggregate_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			target varchar(60) NOT NULL DEFAULT '',
+			payload_json longtext NOT NULL,
+			payload_hash char(64) NOT NULL,
+			status varchar(20) NOT NULL DEFAULT 'pending',
+			available_at datetime NOT NULL,
+			claimed_at datetime NULL,
+			claim_token char(36) NOT NULL DEFAULT '',
+			attempts int(10) unsigned NOT NULL DEFAULT 0,
+			max_attempts int(10) unsigned NOT NULL DEFAULT 6,
+			dispatched_at datetime NULL,
+			acknowledged_at datetime NULL,
+			error_code varchar(120) NOT NULL DEFAULT '',
+			error_message text NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY event_key (event_key),
+			KEY inquiry_id (inquiry_id),
+			KEY case_id (case_id),
+			KEY event_type (event_type),
+			KEY aggregate_type_id (aggregate_type, aggregate_id),
+			KEY target (target),
+			KEY status_available (status, available_at),
+			KEY claimed_at (claimed_at),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
 		$sql_communications = "CREATE TABLE {$communications} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			inquiry_id bigint(20) unsigned NOT NULL,
@@ -1287,6 +1444,10 @@ final class SC_EI_Database {
 		dbDelta( $sql_analytics_snapshots );
 		dbDelta( $sql_health_events );
 		dbDelta( $sql_rate_limits );
+		dbDelta( $sql_workflow_cases );
+		dbDelta( $sql_workflow_commands );
+		dbDelta( $sql_workflow_handoffs );
+		dbDelta( $sql_workflow_outbox );
 		dbDelta( $sql_communications );
 		dbDelta( $sql_communication_events );
 		dbDelta( $sql_communication_templates );
@@ -1412,7 +1573,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -1782,6 +1943,54 @@ final class SC_EI_Database {
 	}
 
 
+	public static function workflow_core_columns_exist(): array {
+		global $wpdb;
+		$tables = array(
+			'workflow_cases' => array(
+				'public_id', 'inquiry_id', 'reference', 'current_stage', 'current_state',
+				'terminal_state', 'priority', 'owner_user_id', 'source_updated_at',
+				'projection_version', 'projection_hash', 'blocker_count',
+				'open_command_count', 'pending_handoff_count', 'last_event_at',
+				'last_transition_at', 'last_synced_at', 'stale_after',
+				'consistency_status', 'consistency_notes', 'row_version',
+				'created_at', 'updated_at',
+			),
+			'workflow_commands' => array(
+				'public_id', 'command_key', 'inquiry_id', 'case_id', 'command_type',
+				'target_type', 'target_id', 'expected_stage', 'requested_by', 'reason',
+				'payload_json', 'payload_hash', 'status', 'claimed_at', 'claimed_by',
+				'completed_at', 'result_json', 'error_code', 'error_message',
+				'row_version', 'created_at', 'updated_at',
+			),
+			'workflow_handoffs' => array(
+				'public_id', 'handoff_key', 'inquiry_id', 'case_id', 'target',
+				'schema_id', 'contract_version', 'data_classification', 'status',
+				'payload_json', 'content_hash', 'signature', 'prepared_by',
+				'prepared_at', 'dispatched_at', 'acknowledged_by', 'acknowledged_at',
+				'failed_at', 'failure_code', 'failure_message', 'expires_at',
+				'row_version', 'created_at', 'updated_at',
+			),
+			'workflow_outbox' => array(
+				'public_id', 'event_key', 'inquiry_id', 'case_id', 'event_type',
+				'aggregate_type', 'aggregate_id', 'target', 'payload_json',
+				'payload_hash', 'status', 'available_at', 'claimed_at', 'claim_token',
+				'attempts', 'max_attempts', 'dispatched_at', 'acknowledged_at',
+				'error_code', 'error_message', 'row_version', 'created_at', 'updated_at',
+			),
+		);
+		$result = array();
+		foreach ( $tables as $table_name => $columns ) {
+			$table = self::table( $table_name );
+			foreach ( $columns as $column ) {
+				$found = $wpdb->get_var(
+					$wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				);
+				$result[ $table_name . '.' . $column ] = ( $found === $column );
+			}
+		}
+		return $result;
+	}
+
 	public static function hardening_columns_exist(): array {
 		global $wpdb;
 		$tables = array(
@@ -1882,7 +2091,7 @@ final class SC_EI_Database {
 	public static function drop_all(): void {
 		global $wpdb;
 
-		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'engagement_events', 'engagement_requirements', 'engagement_snapshots', 'engagements', 'workflow_events', 'proposal_versions', 'proposals', 'graph_operations', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
+		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'workflow_outbox', 'workflow_handoffs', 'workflow_commands', 'workflow_cases', 'engagement_events', 'engagement_requirements', 'engagement_snapshots', 'engagements', 'workflow_events', 'proposal_versions', 'proposals', 'graph_operations', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
 			$table = self::table( $name );
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}

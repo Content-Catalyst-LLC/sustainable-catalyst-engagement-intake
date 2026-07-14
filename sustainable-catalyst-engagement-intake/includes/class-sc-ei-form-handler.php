@@ -305,7 +305,7 @@ final class SC_EI_Form_Handler {
 			'audience'           => self::clean_single( $raw['audience'] ?? '', 191 ),
 			'follow_up_consent'  => empty( $raw['follow_up_consent'] ) ? 'no' : 'yes',
 			'source_url'         => esc_url_raw( (string) ( $raw['source_url'] ?? '' ) ),
-			'privacy_notice'     => 'engagement-intake-v0.11.0',
+			'privacy_notice'     => 'engagement-intake-v0.12.0',
 			'meeting_platform'   => 'microsoft_teams',
 			'request_id'         => $request_id,
 			'documents_selected' => count( $upload_items ),
@@ -356,7 +356,7 @@ final class SC_EI_Form_Handler {
 					'scheduling_status'       => $meeting_requested ? 'requested' : 'not_requested',
 					'relevant_links'          => $links,
 					'metadata'                => $metadata,
-					'consent_version'         => 'engagement-intake-v0.11.0',
+					'consent_version'         => 'engagement-intake-v0.12.0',
 					'consent_at'              => current_time( 'mysql', true ),
 				)
 			);

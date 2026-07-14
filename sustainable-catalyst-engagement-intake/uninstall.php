@@ -23,6 +23,9 @@ wp_clear_scheduled_hook( 'sc_ei_graph_catchup' );
 wp_clear_scheduled_hook( 'sc_ei_hardening_watchdog' );
 wp_clear_scheduled_hook( 'sc_ei_hardening_prune' );
 wp_clear_scheduled_hook( 'sc_ei_analytics_daily_snapshot' );
+wp_clear_scheduled_hook( 'sc_ei_workflow_core_sync' );
+wp_clear_scheduled_hook( 'sc_ei_workflow_core_outbox' );
+wp_clear_scheduled_hook( 'sc_ei_workflow_core_sync_inquiry' );
 SC_EI_Capabilities::uninstall();
 
 if ( $delete ) {
@@ -47,6 +50,9 @@ if ( $delete ) {
 	delete_option( 'sc_ei_workflow_schema_version' );
 	delete_option( 'sc_ei_graph_schema_version' );
 	delete_option( 'sc_ei_hardening_schema_version' );
+	delete_option( 'sc_ei_workflow_core_schema_version' );
+	delete_option( 'sc_ei_workflow_core_last_sync' );
+	delete_option( 'sc_ei_workflow_core_last_outbox' );
 	delete_option( 'sc_ei_last_hardening_watchdog' );
 	delete_option( 'sc_ei_analytics_schema_version' );
 	delete_option( 'sc_ei_engagement_schema_version' );
@@ -68,11 +74,12 @@ if ( $delete ) {
 	$review_bulk_timeout = $wpdb->esc_like( '_transient_timeout_sc_ei_bulk_review_result_' ) . '%';
 	$mail_lock_like       = $wpdb->esc_like( 'sc_ei_mail_lock_' ) . '%';
 	$hardening_lock_like = $wpdb->esc_like( 'sc_ei_hardening_lock_' ) . '%';
+	$workflow_core_like = $wpdb->esc_like( 'sc_ei_workflow_core_' ) . '%';
 	$graph_token_like     = $wpdb->esc_like( '_site_transient_sc_ei_graph_token_' ) . '%';
 	$graph_token_timeout  = $wpdb->esc_like( '_site_transient_timeout_sc_ei_graph_token_' ) . '%';
 	$wpdb->query(
 		$wpdb->prepare(
-			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$lock_like,
 			$success_like,
 			$timeout_like,
@@ -82,6 +89,7 @@ if ( $delete ) {
 			$review_bulk_timeout,
 			$mail_lock_like,
 			$hardening_lock_like,
+			$workflow_core_like,
 			$graph_token_like,
 			$graph_token_timeout
 		)

@@ -672,7 +672,7 @@ final class SC_EI_Privacy_Repository {
 		global $wpdb;
 		$tables = array(
 			'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items',
-			'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events',
+			'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox',
 			'communications', 'communication_events',
 			'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds',
 			'retention_policies', 'retention_actions', 'audit_log',

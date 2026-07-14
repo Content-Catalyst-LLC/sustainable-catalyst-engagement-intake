@@ -57,6 +57,7 @@ $scheduled_end_input   = SC_EI_Teams::format_utc_for_input( $inquiry['scheduled_
 		· <a href="<?php echo esc_url( SC_EI_Communication_Admin::thread_url( absint( $inquiry['id'] ) ) ); ?>"><?php esc_html_e( 'Open Communications', 'sustainable-catalyst-engagement-intake' ); ?></a>
 		· <a href="<?php echo esc_url( SC_EI_Privacy_Admin::url( 'overview', array( 'inquiry' => absint( $inquiry['id'] ) ) ) ); ?>"><?php esc_html_e( 'Open Privacy Center', 'sustainable-catalyst-engagement-intake' ); ?></a>
 		· <?php if ( current_user_can( 'sc_intake_view_engagements' ) ) : ?><a href="<?php echo esc_url( SC_EI_Engagement_Admin::url( 0, array( 'inquiry' => absint( $inquiry['id'] ) ) ) ); ?>"><?php esc_html_e( 'Open Engagement Handoff', 'sustainable-catalyst-engagement-intake' ); ?></a><?php endif; ?>
+		· <?php if ( current_user_can( 'sc_intake_view_workflow_core' ) ) : ?><?php $workflow_core_case = SC_EI_Workflow_Core_Repository::case_for_inquiry( absint( $inquiry['id'] ) ); ?><a href="<?php echo esc_url( $workflow_core_case ? SC_EI_Workflow_Core_Admin::url( absint( $workflow_core_case['id'] ) ) : SC_EI_Workflow_Core_Admin::url( 0, array( 's' => (string) $inquiry['reference'] ) ) ); ?>"><?php esc_html_e( 'Open Workflow Core', 'sustainable-catalyst-engagement-intake' ); ?></a><?php endif; ?>
 		· <?php if ( current_user_can( 'sc_intake_view_workflow' ) ) : ?><a href="<?php echo esc_url( SC_EI_Workflow_Admin::url( absint( $inquiry['id'] ) ) ); ?>"><?php esc_html_e( 'Open Teams & Proposal Workflow', 'sustainable-catalyst-engagement-intake' ); ?></a><?php endif; ?>
 		· <?php if ( ! empty( $inquiry['portal_access_id'] ) ) : ?><a href="<?php echo esc_url( SC_EI_Portal_Admin::url( absint( $inquiry['portal_access_id'] ) ) ); ?>"><?php esc_html_e( 'Open Sender Portal Record', 'sustainable-catalyst-engagement-intake' ); ?></a><?php elseif ( current_user_can( 'sc_intake_issue_portal_invites' ) ) : ?><a href="<?php echo esc_url( SC_EI_Portal_Admin::url( 0, array( 's' => $inquiry['reference'] ) ) ); ?>"><?php esc_html_e( 'Create Sender Portal Access', 'sustainable-catalyst-engagement-intake' ); ?></a><?php endif; ?>
 		· <?php if ( ! empty( $inquiry['current_fit_assessment_id'] ) ) : ?><a href="<?php echo esc_url( SC_EI_Fit_Admin::url( absint( $inquiry['current_fit_assessment_id'] ) ) ); ?>"><?php esc_html_e( 'Open Fit Assessment', 'sustainable-catalyst-engagement-intake' ); ?></a><?php elseif ( current_user_can( 'sc_intake_create_fit_assessments' ) ) : ?><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-inline-form"><input type="hidden" name="action" value="sc_ei_create_fit_assessment"><input type="hidden" name="inquiry_id" value="<?php echo esc_attr( $inquiry['id'] ); ?>"><?php wp_nonce_field( 'sc_ei_create_fit_assessment' ); ?><button type="submit" class="button-link"><?php esc_html_e( 'Start Fit Assessment', 'sustainable-catalyst-engagement-intake' ); ?></button></form><?php endif; ?>
@@ -108,6 +109,26 @@ $scheduled_end_input   = SC_EI_Teams::format_utc_for_input( $inquiry['scheduled_
 
 	<div class="sc-ei-admin__layout">
 		<main class="sc-ei-admin__main">
+			<?php if ( current_user_can( 'sc_intake_view_workflow_core' ) ) : ?>
+				<?php $workflow_core_case = $workflow_core_case ?? SC_EI_Workflow_Core_Repository::case_for_inquiry( absint( $inquiry['id'] ) ); ?>
+				<section class="sc-ei-admin__card sc-ei-admin__card--workflow-core">
+					<p class="sc-ei-admin__card-kicker"><?php esc_html_e( 'Canonical Integration', 'sustainable-catalyst-engagement-intake' ); ?></p>
+					<h2><?php esc_html_e( 'Workflow Core', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+					<?php if ( ! $workflow_core_case ) : ?>
+						<p><?php esc_html_e( 'No canonical case projection exists yet. Open Workflow Core and run synchronization.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+						<p><a class="button" href="<?php echo esc_url( SC_EI_Workflow_Core_Admin::url( 0, array( 's' => (string) $inquiry['reference'] ) ) ); ?>"><?php esc_html_e( 'Open Workflow Core', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
+					<?php else : ?>
+						<dl class="sc-ei-admin__details">
+							<dt><?php esc_html_e( 'Canonical stage', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( SC_EI_Workflow_Core_Schema::label( SC_EI_Workflow_Core_Schema::stages(), $workflow_core_case['current_stage'] ) ); ?></dd>
+							<dt><?php esc_html_e( 'Canonical state', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( SC_EI_Workflow_Core_Schema::label( SC_EI_Workflow_Core_Schema::states(), $workflow_core_case['current_state'] ) ); ?></dd>
+							<dt><?php esc_html_e( 'Consistency', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( SC_EI_Workflow_Core_Schema::label( SC_EI_Workflow_Core_Schema::consistency_states(), $workflow_core_case['consistency_status'] ) ); ?></dd>
+							<dt><?php esc_html_e( 'Projection', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd>v<?php echo esc_html( absint( $workflow_core_case['projection_version'] ) ); ?> · <code><?php echo esc_html( substr( $workflow_core_case['projection_hash'], 0, 16 ) ); ?></code></dd>
+							<dt><?php esc_html_e( 'Last synchronized', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $workflow_core_case['last_synced_at'] . ' UTC' ); ?></dd>
+						</dl>
+						<p><a class="button" href="<?php echo esc_url( SC_EI_Workflow_Core_Admin::url( absint( $workflow_core_case['id'] ) ) ); ?>"><?php esc_html_e( 'Open Canonical Case', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
+					<?php endif; ?>
+				</section>
+			<?php endif; ?>
 			<section class="sc-ei-admin__card">
 				<h2><?php esc_html_e( 'Inquiry details', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 				<dl class="sc-ei-admin__details">

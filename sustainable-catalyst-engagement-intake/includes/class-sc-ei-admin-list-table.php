@@ -218,6 +218,13 @@ final class SC_EI_Admin_List_Table extends WP_List_Table {
 			'fit' => ! empty( $item['current_fit_assessment_id'] )
 				? sprintf( '<a href="%s">%s</a>', esc_url( SC_EI_Fit_Admin::url( absint( $item['current_fit_assessment_id'] ) ) ), esc_html__( 'Fit Assessment', 'sustainable-catalyst-engagement-intake' ) )
 				: '',
+			'workflow_core' => current_user_can( 'sc_intake_view_workflow_core' )
+				? sprintf(
+					'<a href="%s">%s</a>',
+					esc_url( SC_EI_Workflow_Core_Admin::url( 0, array( 's' => (string) $item['reference'] ) ) ),
+					esc_html__( 'Workflow Core', 'sustainable-catalyst-engagement-intake' )
+				)
+				: '',
 			'privacy' => sprintf(
 				'<a href="%s">%s</a>',
 				esc_url( SC_EI_Privacy_Admin::url( 'overview', array( 'inquiry' => absint( $item['id'] ) ) ) ),

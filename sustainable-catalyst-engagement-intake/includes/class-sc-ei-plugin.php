@@ -45,6 +45,8 @@ final class SC_EI_Plugin {
 		SC_EI_Graph_Repository::register();
 		SC_EI_Analytics_Repository::register();
 		SC_EI_Hardening_Repository::register();
+		SC_EI_Workflow_Core_Repository::register();
+		SC_EI_Workflow_Core_Service::register();
 		SC_EI_Retention::register();
 		SC_EI_Mailer::register();
 		SC_EI_Notification_Service::register();
@@ -61,6 +63,7 @@ final class SC_EI_Plugin {
 			SC_EI_Engagement_Admin::register();
 			SC_EI_Analytics_Admin::register();
 			SC_EI_Hardening_Admin::register();
+			SC_EI_Workflow_Core_Admin::register();
 		}
 
 		do_action( 'sc_ei_loaded', $this );

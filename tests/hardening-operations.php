@@ -27,4 +27,4 @@ $checks=array(
  'boundary disclosure'=>strpos($view,'does not inspect message bodies or documents')!==false && strpos($view,'does not')!==false,
  'default settings purity'=>strpos($default_segment,'SC_EI_Hardening_Schema::default_settings()')!==false && strpos($default_segment,'$value[')===false && strpos($default_segment,'$current[')===false,
 );
-$failed=array_keys(array_filter($checks,fn($v)=>!$v)); if($failed){fwrite(STDERR,'Hardening operation checks failed: '.implode(', ',$failed).PHP_EOL);exit(1);} foreach($checks as $k=>$v) echo 'PASS: '.$k.PHP_EOL; echo "Engagement Intake v0.11.0 hardening operations passed.\n";
+$failed=array_keys(array_filter($checks,fn($v)=>!$v)); if($failed){fwrite(STDERR,'Hardening operation checks failed: '.implode(', ',$failed).PHP_EOL);exit(1);} foreach($checks as $k=>$v) echo 'PASS: '.$k.PHP_EOL; echo "Engagement Intake v0.12.0 hardening operations passed.\n";

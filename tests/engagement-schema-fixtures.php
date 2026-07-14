@@ -64,4 +64,4 @@ foreach ( array( 'engagement_handoff_created', 'engagement_snapshot_created', 'e
 }
 pass_engagement_schema( 'engagement lifecycle and governance events are auditable' );
 
-echo "Engagement Intake v0.11.0 engagement schema fixtures passed.\n";
+echo "Engagement Intake v0.12.0 engagement schema fixtures passed.\n";

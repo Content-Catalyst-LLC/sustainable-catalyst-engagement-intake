@@ -1,6 +1,6 @@
 <?php
 /**
- * Static v0.11.0 schema, repository, and privacy mapping checks.
+ * Static v0.12.0 schema, repository, and privacy mapping checks.
  */
 
 $root       = dirname( __DIR__ );
@@ -15,6 +15,7 @@ $workflow_repository = file_get_contents( $plugin . '/includes/class-sc-ei-workf
 $graph_repository = file_get_contents( $plugin . '/includes/class-sc-ei-graph-repository.php' );
 $engagement_repository = file_get_contents( $plugin . '/includes/class-sc-ei-engagement-repository.php' );
 $hardening_repository = file_get_contents( $plugin . '/includes/class-sc-ei-hardening-repository.php' );
+$workflow_core_repository = file_get_contents( $plugin . '/includes/class-sc-ei-workflow-core-repository.php' );
 $communications = file_get_contents( $plugin . '/includes/class-sc-ei-communication-repository.php' );
 $templates  = file_get_contents( $plugin . '/includes/class-sc-ei-template-repository.php' );
 $mailer     = file_get_contents( $plugin . '/includes/class-sc-ei-mailer.php' );
@@ -214,6 +215,22 @@ foreach ( array(
 }
 
 foreach ( array(
+	'sql_workflow_cases' => 'Workflow Core case',
+	'sql_workflow_commands' => 'Workflow Core command',
+	'sql_workflow_handoffs' => 'Workflow Core handoff',
+	'sql_workflow_outbox' => 'Workflow Core outbox event',
+) as $variable => $label ) {
+	$columns = array_values( array_diff( schema_columns( $database, $variable ), array( 'id' ) ) );
+	$missing = array();
+	foreach ( $columns as $column ) {
+		if ( false === strpos( $workflow_core_repository, "'" . $column . "'" ) && false === strpos( $workflow_core_repository, $column ) ) $missing[] = $column;
+	}
+	if ( $missing ) { fwrite( STDERR, $label . ' fields lack repository coverage: ' . implode( ', ', $missing ) . PHP_EOL ); exit( 1 ); }
+	echo 'PASS: ' . $label . ' schema operational coverage (' . count( $columns ) . " fields)
+";
+}
+
+foreach ( array(
 	'sql_health_events' => 'Health event',
 	'sql_rate_limits' => 'Durable rate limit',
 ) as $variable => $label ) {
@@ -238,7 +255,7 @@ if ( $missing_communication ) {
 }
 echo 'PASS: Communication schema operational coverage (' . count( $communication_columns ) . " fields)\n";
 
-foreach ( array( $inquiries, $attachments, $reviews, $fit_repository, $portal_repository, $workflow_repository, $graph_repository, $engagement_repository, $hardening_repository, $communications, $templates, $privacy_repository, $policy_repository ) as $source ) {
+foreach ( array( $inquiries, $attachments, $reviews, $fit_repository, $portal_repository, $workflow_repository, $graph_repository, $engagement_repository, $hardening_repository, $workflow_core_repository, $communications, $templates, $privacy_repository, $policy_repository ) as $source ) {
 	if ( false === strpos( $source, 'array_keys( $data )' ) && false === strpos( $source, 'array_keys( $fields )' ) ) {
 		fwrite( STDERR, "Repository insert/update formats are not key-derived.\n" );
 		exit( 1 );
@@ -281,4 +298,4 @@ if (
 }
 echo "PASS: physical deletion verification, dependency blocking, and tombstone markers present\n";
 
-echo "Engagement Intake v0.11.0 schema checks passed.\n";
+echo "Engagement Intake v0.12.0 schema checks passed.\n";

@@ -76,6 +76,7 @@ final class SC_EI_Admin {
 		SC_EI_Engagement_Admin::submenu();
 		SC_EI_Analytics_Admin::submenu();
 		SC_EI_Hardening_Admin::submenu();
+		SC_EI_Workflow_Core_Admin::submenu();
 		SC_EI_Communication_Admin::submenu();
 		SC_EI_Privacy_Admin::submenu();
 
@@ -204,7 +205,8 @@ final class SC_EI_Admin {
 			SC_EI_Graph_Credentials::defaults(),
 			SC_EI_Engagement_Schema::default_settings(),
 			SC_EI_Analytics_Schema::default_settings(),
-			SC_EI_Hardening_Schema::default_settings()
+			SC_EI_Hardening_Schema::default_settings(),
+			SC_EI_Workflow_Core_Schema::default_settings()
 		);
 	}
 
@@ -384,6 +386,25 @@ final class SC_EI_Admin {
 			'hardening_no_secret_context'          => 1,
 			'hardening_no_automatic_decisions'     => 1,
 			'hardening_no_automatic_deletion'      => 1,
+			'workflow_core_enabled'                        => array_key_exists( 'workflow_core_enabled', $value ) ? ( empty( $value['workflow_core_enabled'] ) ? 0 : 1 ) : absint( $current['workflow_core_enabled'] ),
+			'workflow_core_auto_sync_on_audit'             => array_key_exists( 'workflow_core_auto_sync_on_audit', $value ) ? ( empty( $value['workflow_core_auto_sync_on_audit'] ) ? 0 : 1 ) : absint( $current['workflow_core_auto_sync_on_audit'] ),
+			'workflow_core_sync_interval_minutes'          => max( 15, min( 1440, absint( $value['workflow_core_sync_interval_minutes'] ?? $current['workflow_core_sync_interval_minutes'] ) ) ),
+			'workflow_core_stale_after_hours'              => max( 1, min( 720, absint( $value['workflow_core_stale_after_hours'] ?? $current['workflow_core_stale_after_hours'] ) ) ),
+			'workflow_core_outbox_enabled'                 => array_key_exists( 'workflow_core_outbox_enabled', $value ) ? ( empty( $value['workflow_core_outbox_enabled'] ) ? 0 : 1 ) : absint( $current['workflow_core_outbox_enabled'] ),
+			'workflow_core_outbox_batch_limit'             => max( 1, min( 250, absint( $value['workflow_core_outbox_batch_limit'] ?? $current['workflow_core_outbox_batch_limit'] ) ) ),
+			'workflow_core_outbox_max_attempts'            => max( 1, min( 20, absint( $value['workflow_core_outbox_max_attempts'] ?? $current['workflow_core_outbox_max_attempts'] ) ) ),
+			'workflow_core_handoff_expiry_days'            => max( 1, min( 365, absint( $value['workflow_core_handoff_expiry_days'] ?? $current['workflow_core_handoff_expiry_days'] ) ) ),
+			'workflow_core_default_classification'         => SC_EI_Workflow_Core_Schema::sanitize_classification( (string) ( $value['workflow_core_default_classification'] ?? $current['workflow_core_default_classification'] ) ),
+			'workflow_core_require_typed_commands'         => 1,
+			'workflow_core_require_handoff_signature'      => 1,
+			'workflow_core_include_personal_data_default'  => 0,
+			'workflow_core_no_auto_acceptance'             => 1,
+			'workflow_core_no_auto_fit_decision'           => 1,
+			'workflow_core_no_auto_proposal'               => 1,
+			'workflow_core_no_auto_contract'               => 1,
+			'workflow_core_no_auto_activation'             => 1,
+			'workflow_core_no_auto_external_delivery'      => 1,
+			'workflow_core_no_unverified_inbound_commands' => 1,
 			'delete_data_on_uninstall'           => empty( $value['delete_data_on_uninstall'] ) ? 0 : 1,
 			'default_unaccepted_retention_days'  => max( 30, min( 3650, absint( $value['default_unaccepted_retention_days'] ?? $current['default_unaccepted_retention_days'] ) ) ),
 			'withdrawn_retention_days'           => max( 1, min( 3650, absint( $value['withdrawn_retention_days'] ?? $current['withdrawn_retention_days'] ) ) ),

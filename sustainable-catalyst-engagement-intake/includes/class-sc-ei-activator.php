@@ -39,12 +39,14 @@ final class SC_EI_Activator {
 		update_option( 'sc_ei_engagement_schema_version', SC_EI_ENGAGEMENT_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_analytics_schema_version', SC_EI_ANALYTICS_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_hardening_schema_version', SC_EI_HARDENING_SCHEMA_VERSION, false );
+		update_option( 'sc_ei_workflow_core_schema_version', SC_EI_WORKFLOW_CORE_SCHEMA_VERSION, false );
 		SC_EI_Analytics_Repository::schedule();
 		SC_EI_Hardening_Repository::schedule();
+		SC_EI_Workflow_Core_Repository::schedule();
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Engagement Intake v0.11.0 activated with durable production health monitoring, database-backed abuse protection, incident pause and recovery controls, accessible administration and sender workflows, safer headers and exports, and all prior analytics, engagement, Graph, portal, privacy, review, quarantine, and storage controls.',
+			'Engagement Intake v0.12.0 activated with a canonical Workflow Core, audit-driven case projections, idempotent human commands, signed versioned cross-plugin handoffs, durable internal-adapter outbox delivery, and all prior reliability, analytics, engagement, Graph, portal, privacy, review, quarantine, and storage controls.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}
@@ -57,5 +59,6 @@ final class SC_EI_Activator {
 		SC_EI_Graph_Repository::unschedule();
 		SC_EI_Analytics_Repository::unschedule();
 		SC_EI_Hardening_Repository::unschedule();
+		SC_EI_Workflow_Core_Repository::unschedule();
 	}
 }

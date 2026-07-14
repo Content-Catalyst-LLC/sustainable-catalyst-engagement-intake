@@ -446,3 +446,7 @@ Deduplicated technical events with severity, component, redacted message, safe c
 ### rate_limits
 
 Keyed identity buckets with scope, fixed window, hit count, optional block expiration, and timestamps. Raw IP addresses, user agents, and email addresses are not stored.
+## v0.12.0 Workflow Core data
+
+New tables: `workflow_cases`, `workflow_commands`, `workflow_handoffs`, and `workflow_outbox`. Case projections contain operational status and hashes. Handoff payloads can contain private data only under the dedicated private-export capability.
+

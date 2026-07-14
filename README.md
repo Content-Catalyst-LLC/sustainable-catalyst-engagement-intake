@@ -1,241 +1,233 @@
 # Sustainable Catalyst Engagement Intake
 
-**Version:** 0.11.0  
-**Release:** Reliability, Accessibility, and Security Hardening
+**Version:** 0.12.0  
+**Release:** Workflow Core Integration
 
-v0.11.0 hardens the complete inquiry-to-engagement platform for production operation without adding automated intake, fit, contracting, payment, or engagement decisions.
+v0.12.0 unifies the private inquiry-to-engagement workflow behind a canonical integration layer while preserving the existing authoritative domain records and every human decision boundary.
 
-## Production hardening model
+## Core model
 
 ```text
-public intake and sender portal
-→ durable abuse limits
-→ validated human-controlled workflows
-→ deduplicated technical health ledger
-→ scheduled watchdog and pruning
-→ administrator incident controls
-→ redacted recovery export
+authoritative inquiry, review, fit, meeting, proposal, privacy, and engagement records
+→ canonical case projection
+→ idempotent human command
+→ signed versioned handoff
+→ durable outbox
+→ registered internal WordPress adapter
+→ explicit acknowledgment
 ```
 
-## New Reliability workspace
+The core derives state. It does not replace the domain repositories.
+
+## Canonical cases
+
+New table:
 
 ```text
-Engagement Intake → Reliability
+{prefix}sc_ei_workflow_cases
+```
+
+Each case records:
+
+- inquiry and public case identifiers
+- canonical stage and state
+- terminal state
+- owner and priority
+- source update timestamp
+- projection version and SHA-256 hash
+- blocker and pending-work counts
+- last event and transition timestamps
+- stale-after threshold
+- consistency status and notes
+- optimistic row version
+
+Stages cover intake, review, fit, consultation, proposal, contracted, engagement handoff, active engagement, completed, and closed.
+
+## Idempotent commands
+
+New table:
+
+```text
+{prefix}sc_ei_workflow_commands
+```
+
+A command key is derived from:
+
+```text
+command type
++ case ID
++ expected projection hash
++ canonical payload hash
+```
+
+Repeating the same command returns the existing record rather than duplicating work. Commands use optimistic claims and record success or failure without mutating authoritative business decisions.
+
+Supported commands include synchronization, handoff preparation, outbox dispatch, acknowledgment, cancellation, and consistency review.
+
+## Signed handoff contract
+
+New table:
+
+```text
+{prefix}sc_ei_workflow_handoffs
+```
+
+Contract schema:
+
+```text
+sc-engagement-workflow-handoff/1.0
+```
+
+Every package receives:
+
+- canonical JSON ordering
+- SHA-256 content hash
+- HMAC-SHA-256 signature derived from WordPress salts
+- target binding
+- contract version
+- data classification
+- expiry timestamp
+- human preparer and audit record
+
+Default classification:
+
+```text
+operational_minimum
+```
+
+Private personal data is excluded by default. `internal_private` requires the dedicated private-export capability.
+
+## Durable outbox
+
+New table:
+
+```text
+{prefix}sc_ei_workflow_outbox
+```
+
+The outbox provides:
+
+- unique event keys
+- payload hashes
+- optimistic claims
+- attempt limits
+- bounded exponential retry
+- stale-claim recovery
+- dispatched and acknowledged states
+- redacted failure metadata
+
+Dispatch supports registered internal WordPress adapters only.
+
+There is no arbitrary URL field, no generic webhook posting, no direct `wp_remote_*` delivery, and no inbound command endpoint.
+
+## Adapter API
+
+A cooperating internal plugin registers a target callback:
+
+```php
+SC_EI_Workflow_Core_Service::register_adapter(
+    'workbench',
+    static function ( array $event, array $payload ): array {
+        // Validate and import into the target plugin.
+        return array( 'acknowledged' => true );
+    }
+);
+```
+
+Available target keys include:
+
+```text
+workbench
+decision_studio
+site_intelligence
+research_librarian
+platform_core
+generic_internal
+```
+
+Targets can be extended with `sc_ei_workflow_core_handoff_targets`.
+
+## Workflow Core workspace
+
+```text
+Engagement Intake → Workflow Core
 ```
 
 The workspace provides:
 
-- open critical, warning, and informational health events
-- deduplicated event fingerprints and occurrence counts
-- component and severity filtering
-- scheduled-work watchdog results
-- public-write incident pause and recovery
-- typed event resolution with an audit note
-- redacted operational report export
-- bounded retention and pruning controls
-- hardened rate-limit thresholds
-- security-header and accessibility-helper settings
+- canonical case filtering
+- consistency blockers and warnings
+- typed case synchronization
+- signed handoff preparation
+- adapter registration visibility
+- integrity verification
+- handoff export
+- dispatch and acknowledgment
+- handoff cancellation
+- command ledger
+- outbox history
+- runtime and schedule status
 
-## Durable health ledger
-
-New table:
-
-```text
-{prefix}sc_ei_health_events
-```
-
-The ledger records technical metadata only:
-
-- component
-- event type
-- severity
-- redacted message
-- secret-filtered context
-- occurrence count
-- first and last seen timestamps
-- resolution time, user, and note
-
-Events are deduplicated by a SHA-256 fingerprint that deliberately excludes the per-request correlation ID.
-
-The ledger does not store sender names, email addresses, message bodies, document contents, access tokens, passwords, client secrets, cookies, or authorization headers.
-
-## Durable abuse protection
-
-New table:
+## Human controls
 
 ```text
-{prefix}sc_ei_rate_limits
+SYNC WORKFLOW CORE
+SYNC CASE <REFERENCE>
+HANDOFF <REFERENCE> <TARGET>
+DISPATCH OUTBOX
+ACK HANDOFF <HANDOFF-ID>
+CANCEL HANDOFF <HANDOFF-ID>
+RESOLVE CASE <REFERENCE>
+SAVE WORKFLOW CORE SETTINGS
 ```
 
-The limiter uses keyed hashes rather than raw IP addresses or user agents. It protects:
-
-- public inquiry identity submissions
-- public inquiry network volume
-- sender portal activation
-- sender portal recovery
-- authenticated portal actions
-
-Counter updates use an atomic database upsert so they remain effective when object caches or transients are cleared.
-
-A rate-limit database failure fails open for availability and records a health warning. Existing nonce, timing, honeypot, duplicate, upload, permission, CSRF, and optimistic-locking controls remain in force.
-
-## Incident write pause
-
-Authorized administrators can enter:
-
-```text
-PAUSE PUBLIC WRITES
-```
-
-This blocks new public inquiry submissions and sender portal mutations during an incident.
-
-Read-only sender capabilities remain available, including:
-
-- authenticated portal viewing
-- sign out
-- proposal viewing and printing
-- calendar-file download
-
-Recovery requires:
-
-```text
-RESUME PUBLIC WRITES
-```
-
-Every state change is capability-gated, nonce-protected, typed-confirmation protected, and audited.
-
-## Watchdog
-
-The hourly watchdog checks:
-
-- all plugin database tables
-- hardening table columns
-- private storage directory, marker, writability, and protection files
-- sender portal cleanup schedule
-- workflow cleanup schedule
-- retention schedule
-- notification schedule
-- Graph catch-up schedule
-- analytics snapshot schedule
-- hardening watchdog and pruning schedules
-- secure portal transport
-- authenticated encryption availability
-
-Manual execution requires:
-
-```text
-RUN HARDENING CHECK
-```
-
-The watchdog never repairs or deletes records automatically. It records issues for human review.
-
-## Request correlation
-
-Each request receives a UUID correlation identifier through:
-
-```text
-X-SC-EI-Request-ID
-```
-
-The request ID appears in redacted health and audit context but is excluded from health-event deduplication.
-
-## Security headers
-
-When enabled, v0.11.0 sends:
-
-```text
-X-Content-Type-Options: nosniff
-Referrer-Policy: strict-origin-when-cross-origin
-Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
-X-SC-EI-Request-ID: <uuid>
-```
-
-A conservative Content Security Policy can be enabled in report-only mode for deployment observation before enforcement.
-
-The Secure Sender Portal retains stricter no-store, no-index, no-referrer, frame-denial, and same-origin protections.
-
-## Fatal error capture
-
-Fatal capture records only:
-
-- PHP error class number
-- plugin filename basename
-- line number
-- request ID
-
-It does not persist the raw PHP error message, stack trace, request body, query string, cookie, or authorization value.
-
-## Accessibility hardening
-
-v0.11.0 adds:
-
-- skip link for Engagement Intake administration pages
-- stable primary-content target
-- polite live regions
-- required-field announcements
-- submit busy state announcements
-- visible focus treatment
-- horizontally keyboard-scrollable data tables
-- scoped table headers in the Reliability workspace
-- reduced-motion support
-- forced-colors support
-- non-color status text retained across workflows
-
-These changes strengthen accessibility but are not a third-party accessibility certification.
+Actions require capabilities, nonces, current-state checks, typed confirmation, and audit records.
 
 ## Fixed boundaries
 
-v0.11.0 does not:
+Workflow Core does not:
 
-- inspect private message bodies or uploaded-document contents for health monitoring
-- rank senders or staff
-- recommend acceptance or rejection
-- automate fit assessment
-- publish proposals automatically
-- create contracts or signatures
-- generate invoices or collect payment
-- activate engagements automatically
-- provision Workbench, Decision Studio, or external projects automatically
-- automatically delete personal data or private files
+- accept or reject inquiries
+- rank senders
+- finalize fit assessments
+- publish proposals
+- create or attest contracts
+- activate engagements
+- create external projects
+- send arbitrary webhooks
+- expose public write APIs
+- execute inbound commands
+- invoice, sign, or collect payment
 
-## Capabilities
+## Privacy
+
+Workflow Core records are included in WordPress privacy export and the private data inventory.
+
+Approved erasure replaces personal command, handoff, and outbox payloads with integrity-preserving tombstones. Handoff hashes and signatures are recomputed for the replacement payload so the local ledger does not retain deliberately invalid integrity records.
+
+## REST
+
+Capability-gated read-only resources:
 
 ```text
-sc_intake_view_reliability
-sc_intake_manage_reliability
-sc_intake_export_reliability
+GET /wp-json/sc-engagement-intake/v1/workflow-core/cases
+GET /wp-json/sc-engagement-intake/v1/workflow-core/cases/{id}
 ```
 
-Reviewers receive view access. Engagement Managers receive view, management, and export access. Administrators retain all plugin capabilities.
-
-## Typed operations
-
-```text
-SAVE HARDENING SETTINGS
-RUN HARDENING CHECK
-PAUSE PUBLIC WRITES
-RESUME PUBLIC WRITES
-RESOLVE <EVENT-ID>
-PRUNE HARDENING DATA
-```
+No REST command endpoint is included.
 
 ## Upgrade checklist
 
-1. Back up the database and protected storage.
-2. Upgrade from v0.10.0.
-3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
-4. Open **Engagement Intake → Diagnostics**.
-5. Confirm database version `0.11.0`.
-6. Confirm hardening schema `1.0.0`.
-7. Confirm the health-event and rate-limit tables.
-8. Confirm the watchdog and pruning schedules.
-9. Open **Engagement Intake → Reliability**.
-10. Run `RUN HARDENING CHECK`.
-11. Review any critical or warning events.
-12. Test public inquiry throttling in staging.
-13. Test sender portal activation and recovery throttling.
-14. Pause public writes and verify read-only portal access.
-15. Resume public writes.
-16. Test keyboard navigation, focus, reduced motion, and forced-colors behavior.
-17. Export a redacted hardening report.
-18. Review production query and cron performance.
+1. Back up database and protected storage.
+2. Upgrade to v0.12.0.
+3. Clear all caches.
+4. Confirm DB 0.12.0.
+5. Confirm Workflow Core schema 1.0.0.
+6. Confirm four new tables.
+7. Confirm role capabilities.
+8. Confirm sync and outbox cron hooks.
+9. Run `SYNC WORKFLOW CORE`.
+10. Review consistency warnings.
+11. Register target adapters in staging.
+12. Prepare, dispatch, acknowledge, and export one handoff.
+13. Test privacy erasure and rollback behavior.

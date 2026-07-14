@@ -556,6 +556,127 @@ final class SC_EI_Privacy {
 				}
 			}
 
+
+			$workflow_core = SC_EI_Workflow_Core_Repository::export_for_inquiry( $inquiry_id );
+			$core_case = (array) ( $workflow_core['case'] ?? array() );
+			if ( $core_case ) {
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-workflow-core-cases',
+					'group_label' => __( 'Engagement Intake Workflow Core Cases', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-workflow-core-case-' . $core_case['id'],
+					'data'        => self::export_fields(
+						$core_case,
+						array(
+							'public_id'             => 'Workflow Core public ID',
+							'reference'             => 'Inquiry reference',
+							'current_stage'         => 'Canonical stage',
+							'current_state'         => 'Canonical state',
+							'terminal_state'        => 'Terminal state',
+							'priority'              => 'Priority',
+							'source_updated_at'     => 'Authoritative source updated at',
+							'projection_version'    => 'Projection version',
+							'projection_hash'       => 'Projection SHA-256',
+							'blocker_count'         => 'Consistency blocker count',
+							'open_command_count'    => 'Open command count',
+							'pending_handoff_count' => 'Pending handoff count',
+							'last_event_at'         => 'Last authoritative event',
+							'last_transition_at'    => 'Last canonical stage transition',
+							'last_synced_at'        => 'Last synchronized at',
+							'stale_after'           => 'Projection stale after',
+							'consistency_status'    => 'Consistency status',
+							'consistency_notes'     => 'Consistency review data',
+							'created_at'            => 'Created at',
+							'updated_at'            => 'Updated at',
+						)
+					),
+				);
+			}
+
+			foreach ( (array) ( $workflow_core['commands'] ?? array() ) as $command ) {
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-workflow-core-commands',
+					'group_label' => __( 'Engagement Intake Workflow Core Commands', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-workflow-core-command-' . $command['id'],
+					'data'        => self::export_fields(
+						$command,
+						array(
+							'public_id'      => 'Command public ID',
+							'command_key'    => 'Idempotency key',
+							'command_type'   => 'Command type',
+							'target_type'    => 'Target type',
+							'target_id'      => 'Target ID',
+							'expected_stage' => 'Expected canonical stage',
+							'payload_hash'   => 'Command payload SHA-256',
+							'status'         => 'Command status',
+							'error_code'     => 'Error code',
+							'created_at'     => 'Created at',
+							'completed_at'   => 'Completed at',
+							'updated_at'     => 'Updated at',
+						)
+					),
+				);
+			}
+
+			foreach ( SC_EI_Workflow_Core_Repository::handoffs( absint( $core_case['id'] ?? 0 ), 1000 ) as $handoff ) {
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-workflow-core-handoffs',
+					'group_label' => __( 'Engagement Intake Workflow Core Handoffs', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-workflow-core-handoff-' . $handoff['id'],
+					'data'        => self::export_fields(
+						$handoff,
+						array(
+							'public_id'           => 'Handoff public ID',
+							'handoff_key'         => 'Handoff idempotency key',
+							'target'              => 'Integration target',
+							'schema_id'           => 'Contract schema',
+							'contract_version'    => 'Contract version',
+							'data_classification' => 'Data classification',
+							'status'              => 'Handoff status',
+							'payload_json'        => 'Signed handoff payload',
+							'content_hash'        => 'Handoff SHA-256',
+							'signature'           => 'HMAC signature',
+							'prepared_at'         => 'Prepared at',
+							'dispatched_at'       => 'Dispatched at',
+							'acknowledged_at'     => 'Acknowledged at',
+							'failure_code'        => 'Failure code',
+							'failure_message'     => 'Failure message',
+							'expires_at'          => 'Expires at',
+							'created_at'          => 'Created at',
+							'updated_at'          => 'Updated at',
+						)
+					),
+				);
+			}
+
+			foreach ( (array) ( $workflow_core['outbox'] ?? array() ) as $event ) {
+				$data[] = array(
+					'group_id'    => 'sc-engagement-intake-workflow-core-outbox',
+					'group_label' => __( 'Engagement Intake Workflow Core Delivery Events', 'sustainable-catalyst-engagement-intake' ),
+					'item_id'     => 'sc-ei-workflow-core-outbox-' . $event['id'],
+					'data'        => self::export_fields(
+						$event,
+						array(
+							'public_id'       => 'Outbox public ID',
+							'event_key'       => 'Outbox idempotency key',
+							'event_type'      => 'Event type',
+							'aggregate_type'  => 'Aggregate type',
+							'aggregate_id'    => 'Aggregate ID',
+							'target'          => 'Integration target',
+							'payload_hash'    => 'Payload SHA-256',
+							'status'          => 'Delivery status',
+							'available_at'    => 'Available at',
+							'attempts'        => 'Delivery attempts',
+							'max_attempts'    => 'Maximum delivery attempts',
+							'dispatched_at'   => 'Dispatched at',
+							'acknowledged_at' => 'Acknowledged at',
+							'error_code'      => 'Error code',
+							'created_at'      => 'Created at',
+							'updated_at'      => 'Updated at',
+						)
+					),
+				);
+			}
+
 			foreach ( SC_EI_Attachment_Repository::for_inquiry( $inquiry_id, true ) as $attachment ) {
 				$data[] = array(
 					'group_id'    => 'sc-engagement-intake-documents',
@@ -707,7 +828,7 @@ final class SC_EI_Privacy {
 	/**
 	 * WordPress eraser bridge.
 	 *
-	 * v0.11.0 retains the queue-only behavior introduced in v0.6.0 and does not erase synchronously. It creates a tracked case and queues
+	 * v0.12.0 retains the queue-only behavior introduced in v0.6.0 and does not erase synchronously. It creates a tracked case and queues
 	 * legal-hold-aware lifecycle actions for human approval and verified execution.
 	 */
 	public static function erase_by_email( string $email_address, int $page = 1 ): array {

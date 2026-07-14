@@ -20,4 +20,4 @@ $checks=array(
  'visible focus'=>strpos($admin_css,':focus-visible')!==false && strpos($public_css,':focus-visible')!==false,
  'table headers scoped'=>strpos($view,'<th scope="col">')!==false,
 );
-$failed=array_keys(array_filter($checks,fn($v)=>!$v)); if($failed){fwrite(STDERR,'Accessibility/security checks failed: '.implode(', ',$failed).PHP_EOL);exit(1);} foreach($checks as $k=>$v) echo 'PASS: '.$k.PHP_EOL; echo "Engagement Intake v0.11.0 accessibility and security checks passed.\n";
+$failed=array_keys(array_filter($checks,fn($v)=>!$v)); if($failed){fwrite(STDERR,'Accessibility/security checks failed: '.implode(', ',$failed).PHP_EOL);exit(1);} foreach($checks as $k=>$v) echo 'PASS: '.$k.PHP_EOL; echo "Engagement Intake v0.12.0 accessibility and security checks passed.\n";

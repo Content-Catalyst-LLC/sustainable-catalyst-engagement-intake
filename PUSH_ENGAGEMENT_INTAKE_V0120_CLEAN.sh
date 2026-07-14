@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-VERSION="0.11.0"
+VERSION="0.12.0"
 SLUG="sustainable-catalyst-engagement-intake"
 ARCHIVE="${SLUG}-v${VERSION}-repo.zip"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
@@ -11,7 +11,7 @@ REPO_DIR="${SC_EI_REPO_DIR:-$HOME/Downloads/$SLUG}"
 ZIP_PATH="${SC_EI_ZIP_PATH:-$SCRIPT_DIR/$ARCHIVE}"
 SKIP_PUSH="${SC_EI_SKIP_PUSH:-0}"
 SKIP_REMOTE_CHECK="${SC_EI_SKIP_REMOTE_CHECK:-0}"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v0110.XXXXXX")"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v0120.XXXXXX")"
 
 cleanup() { rm -rf "$WORK"; }
 trap cleanup EXIT
@@ -28,9 +28,7 @@ unzip -q "$ZIP_PATH" -d "$WORK"
 SRC="$(find "$WORK" -mindepth 1 -maxdepth 1 -type d | head -1)"
 [[ -n "$SRC" && -d "$SRC/$SLUG" && -f "$SRC/composer.json" ]] || { echo "Invalid repository archive." >&2; exit 1; }
 
-# Repair the historical test-fixture fallback before any test runs. This is
-# intentionally brace-aware so a cached older ZIP cannot redeclare mb_substr
-# on macOS PHP installations that already include mbstring.
+# Repair the historical mb_substr fixture fallback before any tests run.
 FIX="$SRC/tests/graph-client-fixtures.php"
 if [[ -f "$FIX" ]] && ! grep -Fq "if ( ! function_exists( 'mb_substr' ) )" "$FIX"; then
   python3 - "$FIX" <<'PY_FIX'
@@ -70,42 +68,52 @@ find "$REPO_DIR" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
 rsync -a "$SRC/" "$REPO_DIR/"
 cd "$REPO_DIR"
 
-echo "==> Validating v0.11.0 release contract"
+echo "==> Validating v0.12.0 release contract"
 MAIN="$SLUG/$SLUG.php"
 DB="$SLUG/includes/class-sc-ei-database.php"
-HARDENING="$SLUG/includes/class-sc-ei-hardening-repository.php"
-HARDENING_ADMIN="$SLUG/includes/class-sc-ei-hardening-admin.php"
-HARDENING_SCHEMA="$SLUG/includes/class-sc-ei-hardening-schema.php"
-PORTAL="$SLUG/includes/class-sc-ei-portal-public.php"
+CORE_SCHEMA="$SLUG/includes/class-sc-ei-workflow-core-schema.php"
+CORE_CONTRACT="$SLUG/includes/class-sc-ei-workflow-core-contract.php"
+CORE_REPO="$SLUG/includes/class-sc-ei-workflow-core-repository.php"
+CORE_SERVICE="$SLUG/includes/class-sc-ei-workflow-core-service.php"
+CORE_ADMIN="$SLUG/includes/class-sc-ei-workflow-core-admin.php"
+CORE_VIEW="$SLUG/admin/views/workflow-core.php"
+REST="$SLUG/includes/class-sc-ei-rest.php"
 
 required_markers=(
-  "Version:     0.11.0"
-  "SC_EI_DB_VERSION', '0.11.0'"
-  "SC_EI_HARDENING_SCHEMA_VERSION', '1.0.0'"
+  "Version:     0.12.0"
+  "SC_EI_DB_VERSION', '0.12.0'"
+  "SC_EI_WORKFLOW_CORE_SCHEMA_VERSION', '1.0.0'"
 )
 for marker in "${required_markers[@]}"; do grep -Fq "$marker" "$MAIN" || { echo "Missing release marker: $marker" >&2; exit 1; }; done
 
-grep -Fq '$sql_health_events' "$DB" || { echo "Health event table declaration missing." >&2; exit 1; }
-grep -Fq '$sql_rate_limits' "$DB" || { echo "Durable rate-limit table declaration missing." >&2; exit 1; }
-grep -Fq 'dbDelta( $sql_health_events )' "$DB" || { echo "Health event dbDelta missing." >&2; exit 1; }
-grep -Fq 'dbDelta( $sql_rate_limits )' "$DB" || { echo "Rate-limit dbDelta missing." >&2; exit 1; }
-grep -Fq 'ON DUPLICATE KEY UPDATE hits = hits + 1' "$HARDENING" || { echo "Atomic durable limiter missing." >&2; exit 1; }
-grep -Fq "unset( \$fingerprint_context['request_id'] )" "$HARDENING" || { echo "Health-event deduplication boundary missing." >&2; exit 1; }
-grep -Fq 'X-SC-EI-Request-ID' "$HARDENING" || { echo "Request correlation header missing." >&2; exit 1; }
-grep -Fq 'PAUSE PUBLIC WRITES' "$HARDENING_ADMIN" || { echo "Incident pause control missing." >&2; exit 1; }
-grep -Fq 'RESUME PUBLIC WRITES' "$HARDENING_ADMIN" || { echo "Incident resume control missing." >&2; exit 1; }
-grep -Fq "\$read_only_permissions = array( 'view_meetings', 'view_proposals' )" "$PORTAL" || { echo "Read-only portal incident boundary missing." >&2; exit 1; }
-grep -Fq "'hardening_no_automatic_decisions'" "$HARDENING_SCHEMA" || { echo "No-automated-decisions boundary missing." >&2; exit 1; }
-grep -Fq '@media (prefers-reduced-motion: reduce)' "$SLUG/assets/css/public.css" || { echo "Reduced-motion accessibility support missing." >&2; exit 1; }
-grep -Fq '@media (forced-colors: active)' "$SLUG/assets/css/public.css" || { echo "Forced-colors accessibility support missing." >&2; exit 1; }
-grep -Fq 'sc-ei-skip-link' "$HARDENING" || { echo "Engagement Intake skip-link helper missing." >&2; exit 1; }
-grep -Fq 'id="sc-ei-primary-content"' "$SLUG/admin/views/reliability.php" || { echo "Reliability primary-content target missing." >&2; exit 1; }
+for table in workflow_cases workflow_commands workflow_handoffs workflow_outbox; do
+  grep -Fq "\$sql_${table}" "$DB" || { echo "Workflow Core table declaration missing: $table" >&2; exit 1; }
+  grep -Fq "dbDelta( \$sql_${table} )" "$DB" || { echo "Workflow Core dbDelta missing: $table" >&2; exit 1; }
+done
+
+grep -Fq "workflow_core_no_auto_acceptance" "$CORE_SCHEMA" || { echo "No automatic acceptance boundary missing." >&2; exit 1; }
+grep -Fq "workflow_core_no_auto_activation" "$CORE_SCHEMA" || { echo "No automatic activation boundary missing." >&2; exit 1; }
+grep -Fq "SCHEMA_ID = 'sc-engagement-workflow-handoff/1.0'" "$CORE_CONTRACT" || { echo "Workflow Core handoff schema missing." >&2; exit 1; }
+grep -Fq "hash_hmac( 'sha256'" "$CORE_CONTRACT" || { echo "HMAC signature missing." >&2; exit 1; }
+grep -Fq "public static function verify" "$CORE_CONTRACT" || { echo "Handoff verification missing." >&2; exit 1; }
+grep -Fq "\$command_key = hash(" "$CORE_REPO" || { echo "Idempotent command key missing." >&2; exit 1; }
+grep -Fq "\$handoff_key = hash(" "$CORE_REPO" || { echo "Idempotent handoff key missing." >&2; exit 1; }
+grep -Fq "recover_stale_outbox_claims" "$CORE_REPO" || { echo "Outbox stale-claim recovery missing." >&2; exit 1; }
+grep -Fq "workflow_core_adapter_unavailable" "$CORE_SERVICE" || { echo "Explicit adapter requirement missing." >&2; exit 1; }
+grep -Fq "public static function register_adapter" "$CORE_SERVICE" || { echo "Adapter registry missing." >&2; exit 1; }
+grep -Fq "SYNC WORKFLOW CORE" "$CORE_ADMIN" || { echo "Typed core synchronization missing." >&2; exit 1; }
+grep -Fq "DISPATCH OUTBOX" "$CORE_ADMIN" || { echo "Typed outbox dispatch missing." >&2; exit 1; }
+grep -Fq "No arbitrary URL or webhook field is exposed" "$CORE_VIEW" || { echo "Adapter-only boundary disclosure missing." >&2; exit 1; }
+grep -Fq "'/workflow-core/cases'" "$REST" || { echo "Read-only Workflow Core REST resource missing." >&2; exit 1; }
+if grep -Fq "'/workflow-core/commands'" "$REST"; then echo "Public or REST command endpoint is not allowed." >&2; exit 1; fi
+if grep -Fq 'wp_remote_' "$CORE_REPO" || grep -Fq 'wp_remote_' "$CORE_SERVICE"; then echo "Direct external HTTP delivery is not allowed." >&2; exit 1; fi
+if grep -Fq 'SC_EI_Inquiry_Repository::update_status' "$CORE_REPO" || grep -Fq 'SC_EI_Engagement_Repository::activate' "$CORE_REPO"; then echo "Workflow Core may not mutate authoritative decisions." >&2; exit 1; fi
 
 echo "==> PHP syntax"
 while IFS= read -r -d '' file; do php -l "$file" >/dev/null; done < <(find "$SLUG" -name '*.php' -print0)
 node --check "$SLUG/assets/js/public.js"
 node --check "$SLUG/assets/js/admin.js"
-bash -n "PUSH_ENGAGEMENT_INTAKE_V0110_CLEAN.sh"
+bash -n "PUSH_ENGAGEMENT_INTAKE_V0120_CLEAN.sh"
 
 echo "==> Release tests"
 python3 - <<'PY_TESTS'
@@ -118,7 +126,7 @@ raise SystemExit(result.returncode)
 PY_TESTS
 
 echo "==> Push-safe secret scan"
-if grep -RInE --exclude='PUSH_ENGAGEMENT_INTAKE_V0110_CLEAN.sh' --exclude-dir=.git '(AIza[0-9A-Za-z_-]{20,}|sk-[0-9A-Za-z]{20,}|ghp_[0-9A-Za-z]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' .; then
+if grep -RInE --exclude='PUSH_ENGAGEMENT_INTAKE_V0120_CLEAN.sh' --exclude-dir=.git '(AIza[0-9A-Za-z_-]{20,}|sk-[0-9A-Za-z]{20,}|ghp_[0-9A-Za-z]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' .; then
   echo "Potential secret detected." >&2
   exit 1
 fi
@@ -127,7 +135,7 @@ git add -A
 if git diff --cached --quiet; then
   echo "No changes to commit."
 else
-  git commit -m "Build Engagement Intake v0.11.0 reliability accessibility security hardening"
+  git commit -m "Build Engagement Intake v0.12.0 Workflow Core Integration"
 fi
 
 if [[ "$SKIP_PUSH" == "1" ]]; then
@@ -136,4 +144,4 @@ else
   git push origin main
 fi
 
-echo "Engagement Intake v0.11.0 push workflow completed."
+echo "Engagement Intake v0.12.0 push workflow completed."

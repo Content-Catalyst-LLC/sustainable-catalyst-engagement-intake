@@ -618,6 +618,9 @@ final class SC_EI_Review_Repository {
 			'engagement_handoff' => current_user_can( 'sc_intake_view_engagements' )
 				? SC_EI_Engagement_Repository::export_for_inquiry( $inquiry_id )
 				: null,
+			'workflow_core' => current_user_can( 'sc_intake_view_workflow_core' )
+				? SC_EI_Workflow_Core_Repository::export_for_inquiry( $inquiry_id )
+				: null,
 			'attachments'    => $attachments,
 			'communications' => SC_EI_Communication_Repository::for_inquiry( $inquiry_id, 500, true ),
 			'privacy'        => array(

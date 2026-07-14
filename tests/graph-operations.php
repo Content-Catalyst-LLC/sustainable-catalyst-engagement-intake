@@ -76,4 +76,4 @@ if ( $failed ) {
 foreach ( $checks as $label => $passed ) {
 	echo 'PASS: ' . $label . PHP_EOL;
 }
-echo "Engagement Intake v0.11.0 Microsoft Graph reliability checks passed.\n";
+echo "Engagement Intake v0.12.0 Microsoft Graph reliability checks passed.\n";

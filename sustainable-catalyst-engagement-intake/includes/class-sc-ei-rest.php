@@ -58,6 +58,36 @@ final class SC_EI_REST {
 
 		register_rest_route(
 			'sc-engagement-intake/v1',
+			'/workflow-core/cases',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'workflow_core_cases' ),
+				'permission_callback' => static fn(): bool => current_user_can( 'sc_intake_view_workflow_core' ),
+				'args'                => array(
+					'stage'       => array( 'sanitize_callback' => 'sanitize_key' ),
+					'state'       => array( 'sanitize_callback' => 'sanitize_key' ),
+					'consistency' => array( 'sanitize_callback' => 'sanitize_key' ),
+					'search'      => array( 'sanitize_callback' => 'sanitize_text_field' ),
+					'limit'       => array( 'sanitize_callback' => 'absint', 'default' => 100 ),
+				),
+			)
+		);
+
+		register_rest_route(
+			'sc-engagement-intake/v1',
+			'/workflow-core/cases/(?P<id>\d+)',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'workflow_core_case' ),
+				'permission_callback' => static fn(): bool => current_user_can( 'sc_intake_view_workflow_core' ),
+				'args'                => array(
+					'id' => array( 'sanitize_callback' => 'absint' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			'sc-engagement-intake/v1',
 			'/submit',
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
@@ -119,6 +149,9 @@ final class SC_EI_REST {
 		if ( current_user_can( 'sc_intake_view_engagements' ) ) {
 			$record['engagement_handoff'] = SC_EI_Engagement_Repository::export_for_inquiry( absint( $request['id'] ) );
 		}
+		if ( current_user_can( 'sc_intake_view_workflow_core' ) ) {
+			$record['workflow_core'] = SC_EI_Workflow_Core_Repository::export_for_inquiry( absint( $request['id'] ) );
+		}
 		if ( current_user_can( 'sc_intake_view_fit_assessments' ) ) {
 			$record['fit_assessment'] = ! empty( $record['current_fit_assessment_id'] )
 				? SC_EI_Fit_Repository::find( absint( $record['current_fit_assessment_id'] ) )
@@ -143,6 +176,54 @@ final class SC_EI_REST {
 		}
 
 		return new WP_REST_Response( $record );
+	}
+
+	public static function workflow_core_cases( WP_REST_Request $request ): WP_REST_Response {
+		$cases = SC_EI_Workflow_Core_Repository::query_cases(
+			array(
+				'stage'       => $request->get_param( 'stage' ),
+				'state'       => $request->get_param( 'state' ),
+				'consistency' => $request->get_param( 'consistency' ),
+				'search'      => $request->get_param( 'search' ),
+				'limit'       => $request->get_param( 'limit' ),
+			)
+		);
+		return new WP_REST_Response(
+			array(
+				'schema'      => 'sc-engagement-workflow-core-cases/1.0',
+				'generated_at'=> current_time( 'mysql', true ),
+				'count'       => count( $cases ),
+				'cases'       => $cases,
+				'read_only'   => true,
+			)
+		);
+	}
+
+	public static function workflow_core_case( WP_REST_Request $request ) {
+		$case = SC_EI_Workflow_Core_Repository::find_case( absint( $request['id'] ) );
+		if ( ! $case ) {
+			return new WP_Error( 'sc_ei_workflow_core_not_found', __( 'Workflow Core case not found.', 'sustainable-catalyst-engagement-intake' ), array( 'status' => 404 ) );
+		}
+		return new WP_REST_Response(
+			array(
+				'schema'      => 'sc-engagement-workflow-core-case/1.0',
+				'generated_at'=> current_time( 'mysql', true ),
+				'case'        => $case,
+				'commands'    => SC_EI_Workflow_Core_Repository::commands( absint( $case['id'] ), 250 ),
+				'handoffs'    => array_map(
+					static fn( array $handoff ): array => SC_EI_Workflow_Core_Contract::public_metadata( $handoff ),
+					SC_EI_Workflow_Core_Repository::handoffs( absint( $case['id'] ), 250 )
+				),
+				'outbox'      => array_map(
+					static function ( array $event ): array {
+						unset( $event['payload_json'], $event['claim_token'], $event['error_message'] );
+						return $event;
+					},
+					SC_EI_Workflow_Core_Repository::outbox( absint( $case['id'] ), 250 )
+				),
+				'read_only' => true,
+			)
+		);
 	}
 
 	public static function submit( WP_REST_Request $request ) {

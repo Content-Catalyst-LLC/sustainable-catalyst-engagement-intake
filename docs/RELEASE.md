@@ -1,61 +1,41 @@
-# Release Notes — v0.11.0
+# Release Notes — v0.12.0
 
 ## Release
 
-Reliability, Accessibility, and Security Hardening
+Workflow Core Integration
 
 ## Outcome
 
-Strengthen the full Engagement Intake platform for production operations while preserving human decisions and private-data boundaries.
+Create one canonical, auditable workflow projection and controlled cross-plugin handoff mechanism across the Sustainable Catalyst platform.
 
 ## Reliability contract
 
 ```text
-durable health ledger
-+ durable keyed abuse limits
-+ request correlation
-+ actual cron readiness checks
-+ private storage checks
-+ fatal metadata capture
-+ incident write pause
-+ human recovery
-```
-
-## Accessibility contract
-
-```text
-skip link
-+ primary target
-+ live region
-+ invalid-field announcement
-+ submit busy state
-+ visible focus
-+ reduced motion
-+ forced colors
-+ keyboard-scrollable tables
-```
-
-## Security contract
-
-```text
-no secret context
-+ no raw identity rate-limit keys
-+ no automatic decisions
-+ no automatic deletion
-+ redacted exports
-+ conservative headers
-+ CSP report-only option
+authoritative records
++ projection hash
++ idempotent command key
++ signed handoff
++ unique outbox event key
++ optimistic claim
++ bounded retry
++ explicit acknowledgment
 ```
 
 ## Production verification
 
-1. Run schema and capability checks.
-2. Run the watchdog.
-3. Validate private storage.
-4. Validate WordPress cron or real cron.
-5. Exercise rate limits.
-6. Exercise write pause and resume.
-7. Verify read-only portal operations during pause.
-8. Review response headers.
-9. Test keyboard and assistive-technology behavior.
-10. Export and inspect the redacted report.
+1. Verify all four new tables and indexes.
+2. Verify Workflow Core capabilities.
+3. Verify sync and outbox cron schedules.
+4. Synchronize all cases.
+5. Review blockers and warnings.
+6. Register one staging adapter.
+7. Prepare an operational-minimum handoff.
+8. Verify content hash and signature.
+9. Dispatch the outbox event.
+10. Verify idempotent target import.
+11. Record acknowledgment.
+12. Test stale-claim recovery.
+13. Test adapter failure and retry.
+14. Test privacy erasure tombstones.
+15. Test read-only REST access.
+16. Test rollback while preserving tables.

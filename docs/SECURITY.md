@@ -433,3 +433,17 @@ For higher-risk intake:
 - optional CSP report-only observation
 - sender portal no-store and frame-denial retained
 - accessibility live regions and focus resilience
+## v0.12.0 Workflow Core security
+
+- canonical JSON and SHA-256 content hashing
+- HMAC-SHA-256 target-bound signatures
+- operational-minimum data by default
+- capability-gated internal-private packages
+- idempotent command and event keys
+- optimistic database claims
+- no arbitrary webhook configuration
+- no direct external HTTP delivery
+- no inbound command endpoint
+- no automatic acceptance, fit, proposal, contract, activation, or project creation
+- integrity-preserving privacy tombstones
+

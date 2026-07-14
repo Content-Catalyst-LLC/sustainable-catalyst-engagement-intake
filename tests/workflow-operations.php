@@ -19,8 +19,8 @@ $caps       = file_get_contents( $plugin . '/includes/class-sc-ei-capabilities.p
 $admin_view = file_get_contents( $plugin . '/admin/views/teams-proposals.php' );
 
 $checks = array(
-	'v0.11.0 release markers' => strpos( $main, 'Version:     0.11.0' ) !== false
-		&& strpos( $main, "SC_EI_DB_VERSION', '0.11.0'" ) !== false
+	'v0.12.0 release markers' => strpos( $main, 'Version:     0.12.0' ) !== false
+		&& strpos( $main, "SC_EI_DB_VERSION', '0.12.0'" ) !== false
 		&& strpos( $main, "SC_EI_PORTAL_SCHEMA_VERSION', '1.3.0'" ) !== false
 		&& strpos( $main, "SC_EI_WORKFLOW_SCHEMA_VERSION', '1.1.0'" ) !== false
 		&& strpos( $main, "SC_EI_GRAPH_SCHEMA_VERSION', '1.0.0'" ) !== false,
@@ -127,4 +127,4 @@ if ( $failed ) {
 foreach ( $checks as $label => $passed ) {
 	echo 'PASS: ' . $label . PHP_EOL;
 }
-echo "Engagement Intake v0.11.0 Teams scheduling and proposal workflow checks passed.\n";
+echo "Engagement Intake v0.12.0 Teams scheduling and proposal workflow checks passed.\n";

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.12.0 — Workflow Core Integration
+
+- Added canonical case projections derived from authoritative workflow records.
+- Added versioned projection hashes and consistency checks.
+- Added an idempotent command ledger with optimistic claims.
+- Added signed, versioned cross-plugin handoff packages.
+- Added operational-minimum and internal-private classifications.
+- Added a durable internal-adapter outbox with bounded retry and stale-claim recovery.
+- Added explicit internal adapter registration and acknowledgment.
+- Added audit-driven deferred case synchronization.
+- Added capability-gated read-only Workflow Core REST resources.
+- Added Workflow Core administration, Diagnostics, review-packet, privacy, reliability, and uninstall integration.
+- Added integrity-preserving privacy tombstones.
+- Preserved no automatic acceptance, fit decision, proposal, contract, activation, project creation, external delivery, or inbound commands.
+
 ## 0.11.0 — Reliability, Accessibility, and Security Hardening
 
 - Added the Reliability administration workspace.

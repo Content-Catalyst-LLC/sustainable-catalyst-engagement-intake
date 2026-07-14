@@ -21,6 +21,7 @@ final class SC_EI_Diagnostics {
 		$workflow_columns      = SC_EI_Database::workflow_columns_exist();
 		$engagement_columns    = SC_EI_Database::engagement_columns_exist();
 		$hardening_columns     = SC_EI_Database::hardening_columns_exist();
+		$workflow_core_columns = SC_EI_Database::workflow_core_columns_exist();
 		$admin              = get_role( 'administrator' );
 		$settings           = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
@@ -55,6 +56,10 @@ final class SC_EI_Diagnostics {
 		$engagement_metrics = SC_EI_Engagement_Repository::metrics();
 		$hardening_metrics = SC_EI_Hardening_Repository::metrics();
 		$hardening_watchdog = SC_EI_Hardening_Repository::last_watchdog();
+		$workflow_core_metrics = SC_EI_Workflow_Core_Repository::metrics();
+		$workflow_core_targets = SC_EI_Workflow_Core_Service::registered_targets();
+		$workflow_core_last_sync = get_option( 'sc_ei_workflow_core_last_sync', array() );
+		$workflow_core_last_outbox = get_option( 'sc_ei_workflow_core_last_outbox', array() );
 
 		$notification_policies = array(
 			'sender_acknowledgment' => ! empty( $settings['sender_acknowledgment_enabled'] ),
@@ -165,6 +170,32 @@ final class SC_EI_Diagnostics {
 				'portal_sender_safe'         => ! empty( $settings['engagement_sender_portal_enabled'] ),
 				'workbench_export'           => ! empty( $settings['engagement_allow_workbench_export'] ),
 				'decision_studio_export'     => ! empty( $settings['engagement_allow_decision_studio_export'] ),
+			),
+			'workflow_core_schema_version' => SC_EI_WORKFLOW_CORE_SCHEMA_VERSION,
+			'workflow_core_columns'        => $workflow_core_columns,
+			'workflow_core'                => array(
+				'enabled'                   => ! empty( $settings['workflow_core_enabled'] ),
+				'metrics'                   => $workflow_core_metrics,
+				'targets'                   => $workflow_core_targets,
+				'sync_scheduled'            => (bool) wp_next_scheduled( SC_EI_Workflow_Core_Repository::SYNC_HOOK ),
+				'next_sync_utc'             => ( $workflow_core_sync = wp_next_scheduled( SC_EI_Workflow_Core_Repository::SYNC_HOOK ) ) ? gmdate( 'Y-m-d H:i:s', $workflow_core_sync ) : null,
+				'outbox_scheduled'          => (bool) wp_next_scheduled( SC_EI_Workflow_Core_Repository::OUTBOX_HOOK ),
+				'next_outbox_utc'           => ( $workflow_core_outbox = wp_next_scheduled( SC_EI_Workflow_Core_Repository::OUTBOX_HOOK ) ) ? gmdate( 'Y-m-d H:i:s', $workflow_core_outbox ) : null,
+				'last_sync'                 => is_array( $workflow_core_last_sync ) ? $workflow_core_last_sync : array(),
+				'last_outbox'               => is_array( $workflow_core_last_outbox ) ? $workflow_core_last_outbox : array(),
+				'audit_driven_sync'         => ! empty( $settings['workflow_core_auto_sync_on_audit'] ),
+				'signed_handoffs'           => true,
+				'idempotent_commands'       => true,
+				'durable_outbox'            => true,
+				'internal_adapters_only'    => true,
+				'arbitrary_webhooks'        => false,
+				'inbound_commands'          => false,
+				'automatic_acceptance'      => false,
+				'automatic_fit_decision'    => false,
+				'automatic_proposal'        => false,
+				'automatic_contract'        => false,
+				'automatic_activation'      => false,
+				'automatic_project_creation'=> false,
 			),
 			'hardening_schema_version' => SC_EI_HARDENING_SCHEMA_VERSION,
 			'hardening_columns'        => $hardening_columns,
@@ -413,6 +444,21 @@ final class SC_EI_Diagnostics {
 				&& ! empty( $results['graph']['manual_fallback'] )
 				&& ! empty( $results['graph']['health']['ok'] );
 		}
+		$workflow_core_ok = ! in_array( false, $results['workflow_core_columns'], true )
+			&& ! empty( $results['workflow_core']['sync_scheduled'] )
+			&& ! empty( $results['workflow_core']['outbox_scheduled'] )
+			&& ! empty( $results['workflow_core']['signed_handoffs'] )
+			&& ! empty( $results['workflow_core']['idempotent_commands'] )
+			&& ! empty( $results['workflow_core']['durable_outbox'] )
+			&& ! empty( $results['workflow_core']['internal_adapters_only'] )
+			&& empty( $results['workflow_core']['arbitrary_webhooks'] )
+			&& empty( $results['workflow_core']['inbound_commands'] )
+			&& empty( $results['workflow_core']['automatic_acceptance'] )
+			&& empty( $results['workflow_core']['automatic_fit_decision'] )
+			&& empty( $results['workflow_core']['automatic_proposal'] )
+			&& empty( $results['workflow_core']['automatic_contract'] )
+			&& empty( $results['workflow_core']['automatic_activation'] )
+			&& empty( $results['workflow_core']['automatic_project_creation'] );
 		$hardening_ok = ! in_array( false, $results['hardening_columns'], true )
 			&& ! empty( $results['hardening']['watchdog_scheduled'] )
 			&& ! empty( $results['hardening']['prune_scheduled'] )
@@ -493,7 +539,7 @@ final class SC_EI_Diagnostics {
 				&& ! empty( $results['communication_templates']['active_count'] );
 		}
 
-		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $portal_ok && $workflow_ok && $engagement_ok && $graph_ok && $hardening_ok && $fit_ok && $privacy_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
+		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $portal_ok && $workflow_ok && $engagement_ok && $graph_ok && $workflow_core_ok && $hardening_ok && $fit_ok && $privacy_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
 			? 'healthy'
 			: 'attention';
 	}

@@ -1,4 +1,4 @@
-Sustainable Catalyst Engagement Intake v0.11.0 Shortcodes
+Sustainable Catalyst Engagement Intake v0.12.0 Shortcodes
 ================================================================
 
 Consulting page
@@ -10,8 +10,9 @@ Contact page
 Secure sender portal
 [sc_sender_portal title="Secure Sender Portal"]
 
-v0.11.0 notes
+Workflow Core notes
 - No new public shortcode is required.
-- Reliability controls are under Engagement Intake → Reliability.
-- Incident pause blocks public mutations while retaining read-only portal access.
-- Existing shortcode markup receives the new accessibility and request-hardening layer automatically.
+- Workflow Core is private and capability-gated.
+- Read-only resources are available through authenticated REST routes.
+- Target plugins register internal adapters programmatically.
+- No arbitrary webhook URL or inbound command endpoint is included.

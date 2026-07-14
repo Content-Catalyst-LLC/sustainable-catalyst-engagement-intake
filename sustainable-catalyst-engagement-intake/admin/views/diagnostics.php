@@ -325,6 +325,33 @@ $effective       = $diagnostics['effective_limits'];
 			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-engagements' ) ); ?>"><?php esc_html_e( 'Open Proposal and Engagement Handoff', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
 		</section>
 
+
+		<section class="sc-ei-admin__card sc-ei-admin__card--wide">
+			<p class="sc-ei-admin__card-kicker"><?php esc_html_e( 'Canonical Integration Layer', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<h2><?php esc_html_e( 'Workflow Core Integration Health', 'sustainable-catalyst-engagement-intake' ); ?></h2>
+			<div class="sc-ei-diagnostic-metrics">
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['workflow_core']['metrics']['cases'] ) ); ?></strong><span><?php esc_html_e( 'canonical cases', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['workflow_core']['metrics']['blocked_cases'] ) ); ?></strong><span><?php esc_html_e( 'blocked cases', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['workflow_core']['metrics']['prepared_handoffs'] ) ); ?></strong><span><?php esc_html_e( 'prepared handoffs', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['workflow_core']['metrics']['pending_outbox'] ) ); ?></strong><span><?php esc_html_e( 'pending outbox', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( number_format_i18n( $diagnostics['workflow_core']['metrics']['failed_outbox'] ) ); ?></strong><span><?php esc_html_e( 'failed outbox', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+				<div><strong><?php echo esc_html( $diagnostics['workflow_core_schema_version'] ); ?></strong><span><?php esc_html_e( 'core schema', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+			</div>
+			<ul class="sc-ei-checks">
+				<li><span class="<?php echo ! in_array( false, $diagnostics['workflow_core_columns'], true ) ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'canonical case, command, handoff, and outbox schema', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['workflow_core']['sync_scheduled'] && $diagnostics['workflow_core']['outbox_scheduled'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'projection synchronization and outbox processing scheduled', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['workflow_core']['signed_handoffs'] && $diagnostics['workflow_core']['idempotent_commands'] && $diagnostics['workflow_core']['durable_outbox'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'signed handoffs, idempotent commands, and durable delivery ledger', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo $diagnostics['workflow_core']['internal_adapters_only'] && ! $diagnostics['workflow_core']['arbitrary_webhooks'] && ! $diagnostics['workflow_core']['inbound_commands'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'registered internal adapters only; no arbitrary webhooks or inbound commands', 'sustainable-catalyst-engagement-intake' ); ?></li>
+				<li><span class="<?php echo ! $diagnostics['workflow_core']['automatic_acceptance'] && ! $diagnostics['workflow_core']['automatic_fit_decision'] && ! $diagnostics['workflow_core']['automatic_proposal'] && ! $diagnostics['workflow_core']['automatic_contract'] && ! $diagnostics['workflow_core']['automatic_activation'] && ! $diagnostics['workflow_core']['automatic_project_creation'] ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php esc_html_e( 'no automated service, commercial, activation, or project-provisioning decisions', 'sustainable-catalyst-engagement-intake' ); ?></li>
+			</ul>
+			<dl class="sc-ei-admin__details">
+				<dt><?php esc_html_e( 'Next synchronization UTC', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $diagnostics['workflow_core']['next_sync_utc'] ?: __( 'Not scheduled', 'sustainable-catalyst-engagement-intake' ) ); ?></dd>
+				<dt><?php esc_html_e( 'Next outbox UTC', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $diagnostics['workflow_core']['next_outbox_utc'] ?: __( 'Not scheduled', 'sustainable-catalyst-engagement-intake' ) ); ?></dd>
+				<dt><?php esc_html_e( 'Registered adapters', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( array_filter( $diagnostics['workflow_core']['targets'], static fn( array $target ): bool => ! empty( $target['registered'] ) ) ) ) ); ?></dd>
+			</dl>
+			<p><a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-workflow-core' ) ); ?>"><?php esc_html_e( 'Open Workflow Core', 'sustainable-catalyst-engagement-intake' ); ?></a></p>
+		</section>
+
 \t\t<section class="sc-ei-admin__card sc-ei-admin__card--wide">
 \t\t\t<p class="sc-ei-admin__card-kicker"><?php esc_html_e( 'Production Hardening', 'sustainable-catalyst-engagement-intake' ); ?></p>
 \t\t\t<h2><?php esc_html_e( 'Reliability, Accessibility, and Security Health', 'sustainable-catalyst-engagement-intake' ); ?></h2>
@@ -480,7 +507,7 @@ $effective       = $diagnostics['effective_limits'];
 			<h2><?php esc_html_e( 'Database Migrations', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 			<h3><?php esc_html_e( 'Tables', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['tables'] as $name => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $name ); ?></li><?php endforeach; ?></ul>
-			<h3><?php esc_html_e( 'v0.11.0 inquiry, attachment, review, fit assessment, sender portal, Teams scheduling, Microsoft Graph reliability, proposal, engagement handoff, analytics, hardening, communication, and privacy fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<h3><?php esc_html_e( 'v0.12.0 inquiry, attachment, review, fit assessment, sender portal, Teams scheduling, Microsoft Graph reliability, proposal, engagement handoff, analytics, hardening, Workflow Core, communication, and privacy fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks"><?php foreach ( $diagnostics['attachment_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>
 			<h3><?php esc_html_e( 'Sender portal tables and fields', 'sustainable-catalyst-engagement-intake' ); ?></h3>
 			<ul class="sc-ei-checks sc-ei-checks--columns"><?php foreach ( $diagnostics['portal_columns'] as $column => $ok ) : ?><li><span class="<?php echo $ok ? 'sc-ei-check--ok' : 'sc-ei-check--bad'; ?>">●</span> <?php echo esc_html( $column ); ?></li><?php endforeach; ?></ul>

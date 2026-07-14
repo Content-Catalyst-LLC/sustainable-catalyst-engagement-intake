@@ -2685,3 +2685,152 @@
 @media (max-width: 1000px) { .sc-ei-hardening-layout { grid-template-columns:1fr; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; } }
 @media (forced-colors: active) { .sc-ei-fit-state, .sc-ei-portal-status, .button, button { border:1px solid ButtonText; } .sc-ei-check--ok, .sc-ei-check--bad { color:CanvasText !important; } }
+
+/* v0.12.0 Workflow Core Integration */
+.sc-ei-workflow-core-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.72fr) minmax(300px, .68fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.sc-ei-workflow-core-layout .sc-ei-admin__card {
+  margin-bottom: 18px;
+}
+
+.sc-ei-workflow-core-detail-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  margin: 18px 0;
+  padding: 18px 20px;
+  border-left: 6px solid #6d1b2b;
+  background: #fff;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, .06);
+}
+
+.sc-ei-workflow-core-detail-header h2 {
+  margin: 8px 0 4px;
+}
+
+.sc-ei-card-heading-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.sc-ei-card-heading-row h2 {
+  margin-top: 0;
+}
+
+.sc-ei-core-consistency-grid,
+.sc-ei-core-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.sc-ei-core-consistency-grid > div {
+  padding: 14px;
+  border: 1px solid #d7d0c4;
+  background: #fffdf9;
+}
+
+.sc-ei-core-consistency-grid h3 {
+  margin-top: 0;
+}
+
+.sc-ei-core-handoff-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid #d7d0c4;
+  border-left: 5px solid #6d1b2b;
+  background: #fffdf9;
+}
+
+.sc-ei-core-event-list {
+  display: grid;
+  gap: 10px;
+}
+
+.sc-ei-core-event-list article {
+  display: grid;
+  gap: 3px;
+  padding: 11px 0;
+  border-bottom: 1px solid #ddd5ca;
+}
+
+.sc-ei-core-event-list small,
+.sc-ei-core-event-list span {
+  color: #665e54;
+}
+
+.sc-ei-inline-settings-form {
+  display: grid;
+  gap: 12px;
+}
+
+.sc-ei-inline-settings-form label:not(.sc-ei-check) {
+  display: grid;
+  gap: 5px;
+}
+
+.sc-ei-admin__card--workflow-core {
+  border-top: 5px solid #6d1b2b;
+}
+
+.sc-ei-fit-state--consistent,
+.sc-ei-fit-state--acknowledged,
+.sc-ei-fit-state--dispatched,
+.sc-ei-fit-state--succeeded {
+  border-color: #2f6f44;
+  background: #edf7f0;
+  color: #245937;
+}
+
+.sc-ei-fit-state--warning,
+.sc-ei-fit-state--stale,
+.sc-ei-fit-state--prepared,
+.sc-ei-fit-state--retry_wait,
+.sc-ei-fit-state--pending,
+.sc-ei-fit-state--processing {
+  border-color: #9b6b16;
+  background: #fff7df;
+  color: #714b09;
+}
+
+.sc-ei-fit-state--blocked,
+.sc-ei-fit-state--failed,
+.sc-ei-fit-state--canceled,
+.sc-ei-fit-state--expired {
+  border-color: #a32d2e;
+  background: #fcf0f1;
+  color: #8a2424;
+}
+
+.sc-ei-workflow-core-admin code,
+.sc-ei-admin__card--workflow-core code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 1100px) {
+  .sc-ei-workflow-core-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 782px) {
+  .sc-ei-workflow-core-detail-header,
+  .sc-ei-card-heading-row,
+  .sc-ei-core-consistency-grid,
+  .sc-ei-core-action-grid,
+  .sc-ei-core-handoff-form {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}

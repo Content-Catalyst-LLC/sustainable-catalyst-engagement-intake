@@ -37,7 +37,15 @@ final class SC_EI_Audit_Log {
 			array( '%d', '%d', '%d', '%s', '%s', '%s', '%s' )
 		);
 
-		return (int) $wpdb->insert_id;
+		$audit_id = (int) $wpdb->insert_id;
+		do_action(
+			'sc_ei_audit_recorded',
+			sanitize_key( $event_type ),
+			$inquiry_id,
+			$context,
+			$audit_id
+		);
+		return $audit_id;
 	}
 
 	public static function file_event_types(): array {

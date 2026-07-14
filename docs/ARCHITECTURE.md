@@ -359,3 +359,16 @@ SC_EI_Hardening_Admin
 ```
 
 The hardening layer observes technical state and gates public mutations. It does not alter fit, proposal, contract, engagement, or privacy decisions.
+## v0.12.0 Workflow Core architecture
+
+```text
+authoritative repositories
+→ canonical workflow case projection
+→ idempotent command ledger
+→ signed versioned handoff
+→ durable outbox
+→ registered internal WordPress adapter
+```
+
+The core is a projection and integration layer, not a replacement domain model.
+

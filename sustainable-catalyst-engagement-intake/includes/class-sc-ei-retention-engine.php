@@ -517,6 +517,7 @@ final class SC_EI_Retention_Engine {
 			$portal_result = SC_EI_Portal_Repository::redact_for_privacy( $inquiry_id, $now );
 			$workflow_result = SC_EI_Workflow_Repository::redact_for_privacy( $inquiry_id, $now );
 			$engagement_result = SC_EI_Engagement_Repository::redact_for_privacy( $inquiry_id, $now );
+			$workflow_core_result = SC_EI_Workflow_Core_Repository::redact_for_privacy( $inquiry_id, $now );
 			if (
 				false === $communication_result
 				|| false === $event_result
@@ -529,6 +530,7 @@ final class SC_EI_Retention_Engine {
 				|| false === $portal_result
 				|| false === $workflow_result
 				|| false === $engagement_result
+				|| false === $workflow_core_result
 			) {
 				throw new RuntimeException( 'Related communication, review, fit assessment, sender portal, scheduling, engagement, consent, request, hold, or lifecycle data could not be redacted.' );
 			}
