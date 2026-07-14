@@ -56,6 +56,8 @@ if ( $delete ) {
 	delete_option( 'sc_ei_platform_launch_record' );
 	delete_option( 'sc_ei_platform_live_validation' );
 	delete_option( 'sc_ei_platform_backup_attestation' );
+	delete_option( 'sc_ei_platform_pilot_evidence' );
+	delete_option( 'sc_ei_platform_external_mail_evidence' );
 	delete_option( 'sc_ei_version_previous' );
 	delete_option( 'sc_ei_workflow_core_last_sync' );
 	delete_option( 'sc_ei_workflow_core_last_outbox' );

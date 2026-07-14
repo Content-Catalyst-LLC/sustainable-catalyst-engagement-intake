@@ -73,3 +73,22 @@ Both values are private and are not shown in a public archive.
 ```
 
 This is the recommended primary Contact-page entry. It composes the existing adaptive contact hub and provides secure portal and privacy routes. Existing shortcodes remain supported.
+
+
+## v1.0.3 routed Contact-page entries
+
+Keep one published Contact page with `[sc_contact_engagement_platform]` and link specialized calls to action to it:
+
+```text
+/contact/?engagement=general
+/contact/?engagement=advisory
+/contact/?engagement=ai-assurance
+/contact/?engagement=collaboration
+/contact/?engagement=media
+/contact/?engagement=technical
+/contact/?engagement=partnership
+/contact/?engagement=workshop
+/contact/?engagement=monthly-advisory
+```
+
+These routes preselect and attribute the inquiry. They do not create separate submission endpoints.

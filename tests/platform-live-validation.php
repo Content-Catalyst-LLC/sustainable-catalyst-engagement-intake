@@ -1,6 +1,6 @@
 <?php
 /**
- * v1.0.2 production readiness and live-validation contracts.
+ * v1.0.3 production readiness and live-validation contracts.
  */
 $root   = dirname( __DIR__ );
 $plugin = $root . '/sustainable-catalyst-engagement-intake';
@@ -13,8 +13,8 @@ $view   = file_get_contents( $plugin . '/admin/views/platform-overview.php' );
 $uninstall = file_get_contents( $plugin . '/uninstall.php' );
 
 $checks = array(
-	'v1.0.2 identity and evidence schema' => false !== strpos( $main, 'Version:     1.0.2' )
-		&& false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '1.0.1'" )
+	'v1.0.3 identity and evidence schema' => false !== strpos( $main, 'Version:     1.0.3' )
+		&& false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '1.0.2'" )
 		&& false !== strpos( $main, 'class-sc-ei-platform-validation.php' ),
 	'nondestructive patch migration' => false !== strpos( $repo, "PATCH_MIGRATION_KEY = 'v1_0_2_production_readiness_live_validation'" )
 		&& false !== strpos( $repo, 'record_patch_migration' )
@@ -68,4 +68,4 @@ if ( $failed ) {
 foreach ( $checks as $name => $passed ) {
 	echo 'PASS: ' . $name . PHP_EOL;
 }
-echo "Sustainable Catalyst Contact and Engagement Platform v1.0.2 live-validation checks passed.\n";
+echo "Sustainable Catalyst Contact and Engagement Platform v1.0.3 live-validation checks passed.\n";

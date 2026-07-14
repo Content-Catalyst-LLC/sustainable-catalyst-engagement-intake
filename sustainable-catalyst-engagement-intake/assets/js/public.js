@@ -30,6 +30,9 @@
       this.source = form.querySelector("[name='source_page']")?.value || this.container?.dataset.sourcePage || "other";
       this.entryCta = form.querySelector("[name='entry_cta']")?.value || "unspecified";
       this.isSubmitting = false;
+      this.draftKey = `scEiDraft:${this.variant}:${this.source}:${this.entryCta}`;
+      this.restoreDraft();
+      this.bindDraftRecovery();
       this.suggestTimezone();
       this.bindUploads();
       emit("formView", this.eventDetail());
@@ -43,6 +46,82 @@
         formId: this.form.id,
         ...extra
       };
+    }
+
+    draftFields() {
+      const excluded = new Set([
+        "sc_ei_nonce", "action", "form_mode", "form_variant", "source_page", "entry_cta",
+        "attribution_signature", "form_id", "form_started_at", "form_signature", "request_id",
+        "redirect_to", "source_url", "company_website", "privacy_consent", "authorization_consent",
+        "document_upload_consent", "calendar_invite_consent"
+      ]);
+      return Array.from(this.form.elements).filter((field) => {
+        if (!field.name || excluded.has(field.name)) return false;
+        if (["hidden", "file", "password", "submit", "button"].includes(field.type)) return false;
+        return field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement;
+      });
+    }
+
+    bindDraftRecovery() {
+      if (!window.sessionStorage) return;
+      let timer = 0;
+      const save = () => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => this.saveDraft(), 250);
+      };
+      this.form.addEventListener("input", save);
+      this.form.addEventListener("change", save);
+      window.addEventListener("pagehide", () => this.saveDraft(), { once: true });
+    }
+
+    saveDraft() {
+      if (!window.sessionStorage || !this.draftKey) return;
+      const values = {};
+      this.draftFields().forEach((field) => {
+        if (field.type === "checkbox" || field.type === "radio") {
+          if (!values[field.name]) values[field.name] = [];
+          if (field.checked) values[field.name].push(field.value);
+        } else {
+          values[field.name] = field.value;
+        }
+      });
+      try {
+        window.sessionStorage.setItem(this.draftKey, JSON.stringify({ savedAt: Date.now(), values }));
+      } catch (error) {
+        // Form submission remains available when browser storage is unavailable.
+      }
+    }
+
+    restoreDraft() {
+      if (!window.sessionStorage || !this.draftKey) return;
+      try {
+        const payload = JSON.parse(window.sessionStorage.getItem(this.draftKey) || "null");
+        if (!payload || !payload.values || Date.now() - Number(payload.savedAt || 0) > 8 * 60 * 60 * 1000) {
+          window.sessionStorage.removeItem(this.draftKey);
+          return;
+        }
+        this.draftFields().forEach((field) => {
+          const saved = payload.values[field.name];
+          if (saved === undefined) return;
+          if (field.type === "checkbox" || field.type === "radio") {
+            field.checked = Array.isArray(saved) && saved.includes(field.value);
+          } else if (!field.value || field.tagName === "SELECT") {
+            field.value = String(saved);
+          }
+        });
+        this.form.dataset.scEiDraftRestored = "true";
+        scEiAnnounce(config.i18n?.draftRestored || "Your unsent form details were restored in this browser tab.");
+      } catch (error) {
+        window.sessionStorage.removeItem(this.draftKey);
+      }
+    }
+
+    clearDraft() {
+      try {
+        window.sessionStorage?.removeItem(this.draftKey);
+      } catch (error) {
+        // Nothing else is required.
+      }
     }
 
     suggestTimezone() {
@@ -218,6 +297,7 @@
         return;
       }
 
+      this.saveDraft();
       this.isSubmitting = true;
       this.setSubmitting(true);
       this.clearErrors();
@@ -317,6 +397,7 @@
         this.success.setAttribute("tabindex", "-1");
         this.success.focus();
       }
+      this.clearDraft();
       this.form.reset();
       this.form.querySelectorAll("[data-sc-ei-files]").forEach((input) => this.updateUploadState(input));
     }

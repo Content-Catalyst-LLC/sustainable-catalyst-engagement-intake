@@ -32,6 +32,12 @@ final class SC_EI_Platform_Public {
 			'sc_contact_engagement_platform'
 		);
 
+		$route = SC_EI_Pilot_Operations::current_route();
+		if ( ! empty( $route['applied'] ) ) {
+			$atts['default_type'] = (string) $route['type'];
+			$atts['source'] = 'routed-' . (string) $route['key'];
+			$atts['entry_cta'] = 'engagement-' . (string) $route['key'];
+		}
 		$portal_url = esc_url_raw( (string) $atts['portal_url'] );
 		$privacy_url = esc_url_raw( (string) $atts['privacy_url'] );
 		$show_form = 'yes' === strtolower( sanitize_text_field( (string) $atts['show_form'] ) );
@@ -48,6 +54,7 @@ final class SC_EI_Platform_Public {
 					'title'        => __( 'Start a Contact or Engagement Request', 'sustainable-catalyst-engagement-intake' ),
 					'intro'        => __( 'Choose the inquiry type that best matches your request. The form will show only the fields needed for that path.', 'sustainable-catalyst-engagement-intake' ),
 					'default_type' => sanitize_key( (string) $atts['default_type'] ),
+					'default_service' => sanitize_key( (string) ( $route['service'] ?? '' ) ),
 				)
 			);
 		}
@@ -60,6 +67,13 @@ final class SC_EI_Platform_Public {
 				<h2 id="sc-ei-platform-title"><?php echo esc_html( sanitize_text_field( (string) $atts['title'] ) ); ?></h2>
 				<p><?php echo esc_html( sanitize_textarea_field( (string) $atts['intro'] ) ); ?></p>
 			</header>
+
+			<?php if ( ! empty( $route['applied'] ) ) : ?>
+				<div class="sc-ei-platform-public__route-notice" role="status">
+					<strong><?php esc_html_e( 'Request path selected:', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+					<span><?php echo esc_html( (string) $route['label'] ); ?></span>
+				</div>
+			<?php endif; ?>
 
 			<div class="sc-ei-platform-public__routes" aria-label="<?php esc_attr_e( 'Contact and engagement paths', 'sustainable-catalyst-engagement-intake' ); ?>">
 				<article>

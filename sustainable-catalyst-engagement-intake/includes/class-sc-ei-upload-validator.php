@@ -131,6 +131,38 @@ final class SC_EI_Upload_Validator {
 		);
 	}
 
+	/**
+	 * Side-effect-bounded runtime probe for clean text and disguised executable rejection.
+	 */
+	public static function runtime_security_probe(): array {
+		$settings = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
+		$settings['allowed_upload_extensions'] = array_values( array_unique( array_merge( (array) $settings['allowed_upload_extensions'], array( 'txt' ) ) ) );
+		$clean = wp_tempnam( 'sc-ei-clean.txt' );
+		$blocked = wp_tempnam( 'sc-ei-blocked.txt' );
+		if ( ! $clean || ! $blocked ) {
+			if ( $clean && is_file( $clean ) ) unlink( $clean );
+			if ( $blocked && is_file( $blocked ) ) unlink( $blocked );
+			return array( 'passed' => false, 'detail' => 'temporary probe files could not be created' );
+		}
+		try {
+			file_put_contents( $clean, "Sustainable Catalyst upload validation probe\n", LOCK_EX );
+			file_put_contents( $blocked, "<?php echo 'unsafe'; ?>", LOCK_EX );
+			$clean_result = self::validate( array( 'name' => 'probe.txt', 'tmp_name' => $clean, 'size' => filesize( $clean ), 'error' => UPLOAD_ERR_OK ), $settings );
+			$blocked_result = self::validate( array( 'name' => 'notes.txt', 'tmp_name' => $blocked, 'size' => filesize( $blocked ), 'error' => UPLOAD_ERR_OK ), $settings );
+			$blocked_code = is_wp_error( $blocked_result ) ? $blocked_result->get_error_code() : '';
+			$passed = ! is_wp_error( $clean_result ) && 'executable_signature' === $blocked_code;
+			return array(
+				'passed' => $passed,
+				'clean_accepted' => ! is_wp_error( $clean_result ),
+				'executable_rejected' => 'executable_signature' === $blocked_code,
+				'detail' => $passed ? 'clean text accepted and disguised executable rejected' : 'upload validator runtime probe failed',
+			);
+		} finally {
+			if ( is_file( $clean ) ) unlink( $clean );
+			if ( is_file( $blocked ) ) unlink( $blocked );
+		}
+	}
+
 	private static function validate_pdf( string $path, string $detected_mime ) {
 		$header = self::read_bytes( $path, 0, 8 );
 		if ( ! str_starts_with( $header, '%PDF-' ) ) {

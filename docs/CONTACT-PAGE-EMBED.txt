@@ -1,4 +1,4 @@
-Sustainable Catalyst Engagement Intake v0.12.0 Shortcodes
+Sustainable Catalyst Contact and Engagement Platform v1.0.3 Shortcodes
 ================================================================
 
 Consulting page
@@ -23,3 +23,14 @@ Unified v1.0 recommended Contact-page embed
 [sc_contact_engagement_platform title="Contact Sustainable Catalyst" source="contact-page" entry_cta="unified-contact-engagement" show_form="yes" show_portal="yes" show_privacy="yes"]
 
 This composes the existing contact hub. It does not create a second submission endpoint.
+
+
+v1.0.3 routed calls to action
+============================================
+
+/contact/?engagement=advisory
+/contact/?engagement=ai-assurance
+/contact/?engagement=collaboration
+/contact/?engagement=media
+
+All routes return to the same Contact-page shortcode and submission pipeline.

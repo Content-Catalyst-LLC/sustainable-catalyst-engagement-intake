@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.3 — Pilot Findings and Public Launch Hardening
+
+- Added canonical routed Contact-page entry URLs for Advisory, Sustainable AI Assurance, collaboration, media, technical, partnership, workshop, monthly advisory, and general inquiries.
+- Added route resolution, attribution, preselection, runtime contract evidence, and public route notices without creating a second submission pipeline.
+- Added browser-tab draft recovery with an eight-hour freshness window while excluding files, tokens, nonces, hidden controls, and consent state.
+- Added a runtime upload-security probe that accepts a clean text fixture and rejects a disguised executable fixture before launch.
+- Separated WordPress mail-transport acceptance from externally confirmed inbox-delivery evidence.
+- Added controlled pilot evidence requiring at least five completed inquiries and completion of every launch checklist item.
+- Added an operational launch dashboard and production blockers for failed communications, quarantine, portal lockouts, overdue work, and unresolved critical events.
+- Added a nondestructive v1.0.3 migration journal and uninstall cleanup for pilot and external-mail evidence.
+- Preserved database version 1.0.0 and advanced the platform evidence schema to 1.0.2.
+
 ## 1.0.2 — Production Readiness and Live Validation
 
 - Replaced configured-URL assumptions with published local page and shortcode verification.

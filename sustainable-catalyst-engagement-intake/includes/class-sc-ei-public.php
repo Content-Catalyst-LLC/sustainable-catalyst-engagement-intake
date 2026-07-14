@@ -27,6 +27,7 @@ final class SC_EI_Public {
 				'title'        => __( 'Contact Sustainable Catalyst', 'sustainable-catalyst-engagement-intake' ),
 				'intro'        => __( 'Choose the inquiry path that best matches the question, project, collaboration, or engagement.', 'sustainable-catalyst-engagement-intake' ),
 				'default_type' => 'general',
+				'default_service' => '',
 			),
 			$atts,
 			'sc_contact_hub'
@@ -38,6 +39,7 @@ final class SC_EI_Public {
 			sanitize_text_field( $atts['title'] ),
 			sanitize_textarea_field( $atts['intro'] ),
 			sanitize_key( $atts['default_type'] ),
+			sanitize_key( (string) $atts['default_service'] ),
 			SC_EI_Conversion::sanitize_source( (string) $atts['source'] ),
 			SC_EI_Conversion::sanitize_entry_cta( (string) $atts['entry_cta'] )
 		);
@@ -63,6 +65,7 @@ final class SC_EI_Public {
 			sanitize_text_field( $atts['title'] ),
 			sanitize_textarea_field( $atts['intro'] ),
 			sanitize_key( $atts['default_type'] ),
+			'',
 			SC_EI_Conversion::sanitize_source( (string) $atts['source'] ),
 			SC_EI_Conversion::sanitize_entry_cta( (string) $atts['entry_cta'] )
 		);
@@ -98,6 +101,7 @@ final class SC_EI_Public {
 			sanitize_text_field( $atts['title'] ),
 			sanitize_textarea_field( $atts['intro'] ),
 			sanitize_key( $atts['default_type'] ),
+			'',
 			SC_EI_Conversion::sanitize_source( (string) $atts['source'] ),
 			SC_EI_Conversion::sanitize_entry_cta( (string) $atts['entry_cta'] )
 		);
@@ -216,7 +220,7 @@ final class SC_EI_Public {
 						<select id="<?php echo esc_attr( $form_id . '-budget' ); ?>" name="budget_range" required data-sc-ei-compact-budget>
 							<option value=""><?php esc_html_e( 'Choose a range', 'sustainable-catalyst-engagement-intake' ); ?></option>
 							<?php foreach ( SC_EI_Form_Schema::compact_budget_ranges() as $key => $label ) : ?>
-								<option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option>
+								<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $default_service, $key ); ?>><?php echo esc_html( $label ); ?></option>
 							<?php endforeach; ?>
 						</select>
 					</div>
@@ -321,7 +325,7 @@ final class SC_EI_Public {
 	}
 
 
-	private static function render_adaptive( string $mode, array $types, string $title, string $intro, string $default_type, string $source, string $entry_cta ): string {
+	private static function render_adaptive( string $mode, array $types, string $title, string $intro, string $default_type, string $default_service, string $source, string $entry_cta ): string {
 		self::protect_dynamic_form_page();
 		self::enqueue_assets();
 
@@ -329,6 +333,9 @@ final class SC_EI_Public {
 		$form_id = 'sc-ei-form-' . self::$form_count;
 		if ( ! array_key_exists( $default_type, $types ) ) {
 			$default_type = (string) array_key_first( $types );
+		}
+		if ( ! array_key_exists( $default_service, SC_EI_Form_Schema::service_interests() ) ) {
+			$default_service = '';
 		}
 
 		$settings               = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
@@ -350,7 +357,7 @@ final class SC_EI_Public {
 
 		ob_start();
 		?>
-		<div class="sc-ei-public sc-ei-public--<?php echo esc_attr( $mode ); ?>" data-sc-ei-hub data-form-variant="<?php echo esc_attr( $mode ); ?>" data-source-page="<?php echo esc_attr( $source ); ?>">
+		<div class="sc-ei-public sc-ei-public--<?php echo esc_attr( $mode ); ?>" data-sc-ei-hub data-form-variant="<?php echo esc_attr( $mode ); ?>" data-source-page="<?php echo esc_attr( $source ); ?>" data-default-service="<?php echo esc_attr( $default_service ); ?>">
 			<div class="sc-ei-public__header">
 				<p class="sc-ei-public__eyebrow"><?php esc_html_e( 'Private Contact and Engagement Intake', 'sustainable-catalyst-engagement-intake' ); ?></p>
 				<h2><?php echo esc_html( $title ); ?></h2>
@@ -993,6 +1000,7 @@ final class SC_EI_Public {
 					'uploadingSecurely'    => __( 'Uploading and verifying the inquiry securely. Keep this page open.', 'sustainable-catalyst-engagement-intake' ),
 					'uploadTimeout'        => __( 'The secure upload took too long to complete. The server may still be processing it; check for a confirmation before submitting again.', 'sustainable-catalyst-engagement-intake' ),
 					'networkOffline'       => __( 'The browser is offline. Reconnect before submitting the inquiry.', 'sustainable-catalyst-engagement-intake' ),
+					'draftRestored'        => __( 'Your unsent form details were restored in this browser tab.', 'sustainable-catalyst-engagement-intake' ),
 				),
 			)
 		);

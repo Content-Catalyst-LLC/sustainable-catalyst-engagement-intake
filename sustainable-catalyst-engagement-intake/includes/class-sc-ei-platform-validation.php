@@ -34,6 +34,7 @@ final class SC_EI_Platform_Validation {
 		$attestation = self::backup_attestation();
 		return ! empty( $attestation['database_confirmed'] )
 			&& ! empty( $attestation['storage_confirmed'] )
+			&& SC_EI_VERSION === (string) ( $attestation['plugin_version'] ?? '' )
 			&& self::fresh_timestamp( (string) ( $attestation['attested_at'] ?? '' ) );
 	}
 
@@ -104,6 +105,12 @@ final class SC_EI_Platform_Validation {
 			! empty( $duplicate_controls['passed'] ) ? 'duplicate fingerprint and request lock both blocked a second attempt and cleaned up' : wp_json_encode( $duplicate_controls )
 		);
 
+		$route_evidence = SC_EI_Pilot_Operations::route_contract_evidence();
+		self::add( $checks, 'routed_entry_contracts', __( 'Advisory, AI Assurance, collaboration, media, and technical entry routes', 'sustainable-catalyst-engagement-intake' ), ! empty( $route_evidence['passed'] ), (string) ( $route_evidence['detail'] ?? '' ) );
+
+		$upload_security = SC_EI_Upload_Validator::runtime_security_probe();
+		self::add( $checks, 'upload_security_runtime', __( 'Upload validator clean-file acceptance and executable rejection', 'sustainable-catalyst-engagement-intake' ), ! empty( $upload_security['passed'] ), (string) ( $upload_security['detail'] ?? '' ) );
+
 		$storage_probe = SC_EI_Storage::probe();
 		$storage_health = SC_EI_Storage::storage_health();
 		$storage_secure = ! empty( $storage_health['outside_document_root'] ) || ! empty( $storage_health['protection_files'] );
@@ -116,7 +123,7 @@ final class SC_EI_Platform_Validation {
 					'inquiry_type'    => 'general',
 					'contact_name'    => 'Platform Validation',
 					'contact_email'   => $validation_email,
-					'subject'         => '[TEST] v1.0.2 live validation',
+					'subject'         => '[TEST] v1.0.3 live validation',
 					'message'         => 'Temporary administrator-generated validation record. Safe to remove.',
 					'form_variant'    => 'advanced',
 					'source_page'     => 'platform-validation',
@@ -191,7 +198,7 @@ final class SC_EI_Platform_Validation {
 
 		$failures = array_values( array_filter( $checks, static fn( array $check ): bool => 'pass' !== $check['status'] ) );
 		$result = array(
-			'schema'         => 'sc-contact-engagement-live-validation/1.0',
+			'schema'         => 'sc-contact-engagement-live-validation/1.1',
 			'plugin_version' => SC_EI_VERSION,
 			'passed'         => empty( $failures ),
 			'score'          => $checks ? (int) round( 100 * ( count( $checks ) - count( $failures ) ) / count( $checks ) ) : 0,

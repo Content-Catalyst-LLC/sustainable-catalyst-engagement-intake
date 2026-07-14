@@ -2,9 +2,9 @@
 
 ## Stable release
 
-### v1.0.0 — Unified Contact and Engagement Platform
+### v1.0.3 — Pilot Findings and Public Launch Hardening
 
-Complete governed contact-to-engagement platform with stable compatibility, unified administration, launch readiness, migration provenance, public entry routing, secure sender collaboration, review, fit, Teams scheduling, proposals, engagement handoff, analytics, reliability, privacy, and Workflow Core integration.
+Production-candidate maintenance release with runtime-backed readiness, canonical routed Contact-page entries, draft recovery, upload-attack probes, external inbox evidence, controlled pilot evidence, operational blockers, backup evidence, and typed launch governance.
 
 ## Post-1.0 maintenance direction
 

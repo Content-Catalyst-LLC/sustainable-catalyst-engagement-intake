@@ -51,6 +51,7 @@ final class SC_EI_Form_Schema {
 				'training_workshop'           => __( 'Training or Workshop', 'sustainable-catalyst-engagement-intake' ),
 				'monthly_advisory'            => __( 'Monthly Advisory Partnership', 'sustainable-catalyst-engagement-intake' ),
 				'research_collaboration'      => __( 'Research Collaboration', 'sustainable-catalyst-engagement-intake' ),
+				'institutional_partnership'  => __( 'Institutional Platform Partnership', 'sustainable-catalyst-engagement-intake' ),
 				'speaking_media'              => __( 'Speaking, Media, or Press', 'sustainable-catalyst-engagement-intake' ),
 				'open_source_technical'       => __( 'Open-Source or Technical Inquiry', 'sustainable-catalyst-engagement-intake' ),
 				'other'                       => __( 'Other or Unsure', 'sustainable-catalyst-engagement-intake' ),

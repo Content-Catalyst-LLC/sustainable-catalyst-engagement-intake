@@ -18,6 +18,8 @@ final class SC_EI_Platform_Admin {
 		add_action( 'admin_post_sc_ei_platform_repair', array( __CLASS__, 'handle_repair' ) );
 		add_action( 'admin_post_sc_ei_platform_live_validation', array( __CLASS__, 'handle_live_validation' ) );
 		add_action( 'admin_post_sc_ei_platform_backup_attestation', array( __CLASS__, 'handle_backup_attestation' ) );
+		add_action( 'admin_post_sc_ei_platform_external_mail', array( __CLASS__, 'handle_external_mail' ) );
+		add_action( 'admin_post_sc_ei_platform_pilot_evidence', array( __CLASS__, 'handle_pilot_evidence' ) );
 	}
 
 	public static function page(): void {
@@ -31,6 +33,9 @@ final class SC_EI_Platform_Admin {
 		$readiness = $summary['readiness'];
 		$settings = SC_EI_Platform_Repository::settings();
 		$launch_record = get_option( 'sc_ei_platform_launch_record', array() );
+		$pilot_operations = SC_EI_Pilot_Operations::operational_summary();
+		$pilot_evidence = SC_EI_Pilot_Operations::pilot_evidence();
+		$external_mail_evidence = SC_EI_Pilot_Operations::external_mail_evidence();
 		include SC_EI_DIR . 'admin/views/platform-overview.php';
 	}
 
@@ -146,6 +151,28 @@ final class SC_EI_Platform_Admin {
 			get_current_user_id()
 		);
 		self::redirect( is_wp_error( $result ) ? $result->get_error_code() : 'platform_backups_attested' );
+	}
+
+
+	public static function handle_external_mail(): void {
+		self::require_cap( 'sc_intake_manage_platform' );
+		check_admin_referer( 'sc_ei_platform_external_mail' );
+		self::require_confirmation( 'CONFIRM EXTERNAL MAIL', $_POST['platform_confirmation'] ?? '', 'platform_external_mail_confirmation_failed' );
+		$result = SC_EI_Pilot_Operations::confirm_external_mail(
+			(string) wp_unslash( $_POST['external_mail_recipient'] ?? '' ),
+			(string) wp_unslash( $_POST['external_mail_reference'] ?? '' ),
+			get_current_user_id()
+		);
+		self::redirect( is_wp_error( $result ) ? $result->get_error_code() : 'platform_external_mail_confirmed' );
+	}
+
+	public static function handle_pilot_evidence(): void {
+		self::require_cap( 'sc_intake_manage_platform' );
+		check_admin_referer( 'sc_ei_platform_pilot_evidence' );
+		self::require_confirmation( 'RECORD PILOT EVIDENCE', $_POST['platform_confirmation'] ?? '', 'platform_pilot_evidence_confirmation_failed' );
+		$input = isset( $_POST['pilot_evidence'] ) ? (array) wp_unslash( $_POST['pilot_evidence'] ) : array();
+		$result = SC_EI_Pilot_Operations::record_pilot_evidence( $input, get_current_user_id() );
+		self::redirect( is_wp_error( $result ) ? $result->get_error_code() : 'platform_pilot_evidence_recorded' );
 	}
 
 	private static function require_cap( string $capability ): void {

@@ -12,6 +12,7 @@ final class SC_EI_Platform_Repository {
 	public const SNAPSHOT_HOOK = 'sc_ei_platform_readiness_snapshot';
 	public const MIGRATION_KEY = 'v1_0_0_unified_contact_engagement_platform';
 	public const PATCH_MIGRATION_KEY = 'v1_0_2_production_readiness_live_validation';
+	public const LAUNCH_MIGRATION_KEY = 'v1_0_3_pilot_findings_public_launch_hardening';
 
 	public static function maybe_upgrade(): void {
 		$stored_version = (string) get_option( 'sc_ei_version', '' );
@@ -24,6 +25,7 @@ final class SC_EI_Platform_Repository {
 			self::run_migrations( $stored_version );
 		}
 		self::record_patch_migration( $stored_version );
+		self::record_launch_migration( $stored_version );
 		self::schedule_all();
 	}
 
@@ -143,7 +145,7 @@ final class SC_EI_Platform_Repository {
 			$wpdb->prepare( "SELECT * FROM {$table} WHERE migration_key = %s LIMIT 1", self::PATCH_MIGRATION_KEY ),
 			ARRAY_A
 		);
-		if ( $existing && 'completed' === (string) $existing['status'] && SC_EI_VERSION === (string) $existing['to_version'] ) {
+		if ( $existing && 'completed' === (string) $existing['status'] ) {
 			return $existing;
 		}
 		$now = current_time( 'mysql', true );
@@ -151,7 +153,7 @@ final class SC_EI_Platform_Repository {
 			'public_id'     => $existing['public_id'] ?? wp_generate_uuid4(),
 			'migration_key' => self::PATCH_MIGRATION_KEY,
 			'from_version'  => sanitize_text_field( $from_version ),
-			'to_version'    => SC_EI_VERSION,
+			'to_version'    => '1.0.2',
 			'status'        => 'completed',
 			'schema_hash'   => self::schema_hash(),
 			'context_json'  => wp_json_encode(
@@ -183,11 +185,49 @@ final class SC_EI_Platform_Repository {
 		SC_EI_Audit_Log::record(
 			'platform_patch_upgrade_recorded',
 			'Production readiness and live-validation release upgrade recorded without a destructive database migration.',
-			array( 'migration_key' => self::PATCH_MIGRATION_KEY, 'from_version' => $from_version, 'to_version' => SC_EI_VERSION ),
+			array( 'migration_key' => self::PATCH_MIGRATION_KEY, 'from_version' => $from_version, 'to_version' => '1.0.2' ),
 			null,
 			null,
 			get_current_user_id()
 		);
+		return self::find_migration( $id );
+	}
+
+
+	public static function record_launch_migration( string $from_version = '' ) {
+		global $wpdb;
+		$table = SC_EI_Database::table( 'platform_migrations' );
+		$existing = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE migration_key = %s LIMIT 1", self::LAUNCH_MIGRATION_KEY ), ARRAY_A );
+		if ( $existing && 'completed' === (string) $existing['status'] ) {
+			return $existing;
+		}
+		$now = current_time( 'mysql', true );
+		$data = array(
+			'public_id' => $existing['public_id'] ?? wp_generate_uuid4(),
+			'migration_key' => self::LAUNCH_MIGRATION_KEY,
+			'from_version' => sanitize_text_field( $from_version ),
+			'to_version' => '1.0.3',
+			'status' => 'completed',
+			'schema_hash' => self::schema_hash(),
+			'context_json' => wp_json_encode( array( 'release' => 'Pilot Findings and Public Launch Hardening', 'routed_public_entries' => true, 'pilot_evidence' => true, 'external_mail_confirmation' => true, 'database_schema_changed' => false, 'no_destructive_migration' => true ), JSON_UNESCAPED_SLASHES ),
+			'started_at' => $existing['started_at'] ?? $now,
+			'completed_at' => $now,
+			'error_code' => '',
+			'error_message' => '',
+			'created_at' => $existing['created_at'] ?? $now,
+			'updated_at' => $now,
+		);
+		if ( $existing ) {
+			$ok = $wpdb->update( $table, $data, array( 'id' => absint( $existing['id'] ) ), self::formats( $data, array() ), array( '%d' ) );
+			$id = absint( $existing['id'] );
+		} else {
+			$ok = $wpdb->insert( $table, $data, self::formats( $data, array() ) );
+			$id = (int) $wpdb->insert_id;
+		}
+		if ( false === $ok ) {
+			return new WP_Error( 'platform_launch_migration_journal_failed', __( 'The v1.0.3 release journal could not be recorded.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		SC_EI_Audit_Log::record( 'platform_launch_hardening_upgrade_recorded', 'Pilot findings and public-launch hardening upgrade recorded without a destructive database migration.', array( 'migration_key' => self::LAUNCH_MIGRATION_KEY, 'from_version' => $from_version, 'to_version' => '1.0.3' ), null, null, get_current_user_id() );
 		return self::find_migration( $id );
 	}
 
@@ -212,6 +252,10 @@ final class SC_EI_Platform_Repository {
 		$registered_count = count( array_filter( $targets, static fn( array $target ): bool => ! empty( $target['registered'] ) ) );
 		$live_validation = SC_EI_Platform_Validation::latest();
 		$backup_attestation = SC_EI_Platform_Validation::backup_attestation();
+		$pilot_evidence = SC_EI_Pilot_Operations::pilot_evidence();
+		$mail_evidence = SC_EI_Pilot_Operations::external_mail_evidence();
+		$operations = SC_EI_Pilot_Operations::operational_summary();
+		$route_evidence = SC_EI_Pilot_Operations::route_contract_evidence();
 
 		$checks = array();
 		$checks[] = self::check( 'platform_version', 'platform', __( 'Installed platform version state', 'sustainable-catalyst-engagement-intake' ), SC_EI_VERSION === (string) get_option( 'sc_ei_version', '' ), true, SC_EI_VERSION . ' / ' . (string) get_option( 'sc_ei_version', '' ), 'refresh_version' );
@@ -220,6 +264,7 @@ final class SC_EI_Platform_Repository {
 		$checks[] = self::check( 'platform_columns', 'data', __( 'Platform governance schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $platform_columns, true ), true, sprintf( '%d/%d', count( array_filter( $platform_columns ) ), count( $platform_columns ) ), 'repair_database' );
 		$checks[] = self::check( 'migration_journal', 'data', __( 'v1.0 base migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::MIGRATION_KEY ), true, self::MIGRATION_KEY, 'verify_migration' );
 		$checks[] = self::check( 'patch_migration_journal', 'data', __( 'v1.0.2 upgrade journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::PATCH_MIGRATION_KEY ), true, self::PATCH_MIGRATION_KEY, 'verify_patch_migration' );
+		$checks[] = self::check( 'launch_migration_journal', 'data', __( 'v1.0.3 launch-hardening journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::LAUNCH_MIGRATION_KEY ), true, self::LAUNCH_MIGRATION_KEY, 'verify_launch_migration' );
 		$storage_ok = ! empty( $storage['exists'] ) && ! empty( $storage['writable'] ) && ! empty( $storage['marker'] ) && ! empty( $storage['protection_files'] ) && empty( $storage['base_is_symlink'] );
 		$checks[] = self::check( 'protected_storage', 'security', __( 'Protected document storage', 'sustainable-catalyst-engagement-intake' ), $storage_ok, ! empty( $settings['platform_require_protected_storage'] ), (string) ( $storage['path'] ?? '' ), 'repair_storage' );
 		$https_ok = is_ssl() || SC_EI_Portal_Schema::secure_transport_available();
@@ -228,6 +273,7 @@ final class SC_EI_Platform_Repository {
 		$checks[] = self::check( 'public_writes', 'operations', __( 'Public writes incident state', 'sustainable-catalyst-engagement-intake' ), ! SC_EI_Hardening_Repository::public_writes_paused(), true, SC_EI_Hardening_Repository::public_writes_paused() ? 'paused' : 'open', 'review_reliability' );
 		$checks[] = self::check( 'cron_schedules', 'operations', __( 'Required scheduled jobs and callbacks', 'sustainable-catalyst-engagement-intake' ), ! empty( $cron_evidence['passed'] ), true, (string) $cron_evidence['detail'], 'repair_crons' );
 		$checks[] = self::check( 'public_entry', 'public_entry', __( 'Published public contact or engagement entry', 'sustainable-catalyst-engagement-intake' ), ! empty( $page_evidence['public_entry']['passed'] ), ! empty( $settings['platform_require_public_entry'] ), (string) $page_evidence['public_entry']['detail'], 'configure_pages' );
+		$checks[] = self::check( 'routed_entries', 'public_entry', __( 'Advisory and campaign entry-route contracts', 'sustainable-catalyst-engagement-intake' ), ! empty( $route_evidence['passed'] ), true, (string) ( $route_evidence['detail'] ?? '' ), 'review_routed_entries' );
 		$checks[] = self::check( 'portal_url', 'portal', __( 'Published secure sender portal page', 'sustainable-catalyst-engagement-intake' ), ! empty( $page_evidence['portal']['passed'] ), ! empty( $settings['platform_require_portal_url'] ), (string) $page_evidence['portal']['detail'], 'configure_pages' );
 		$checks[] = self::check( 'support_email', 'operations', __( 'Platform support email', 'sustainable-catalyst-engagement-intake' ), is_email( (string) $settings['platform_support_email'] ), true, (string) $settings['platform_support_email'], 'configure_settings' );
 		$checks[] = self::check( 'workflow_core', 'integrations', __( 'Workflow Core consistency', 'sustainable-catalyst-engagement-intake' ), 0 === absint( $core['blocked_cases'] ?? 0 ), false, sprintf( '%d blocked, %d warning', absint( $core['blocked_cases'] ?? 0 ), absint( $core['warning_cases'] ?? 0 ) ), 'review_workflow_core' );
@@ -236,6 +282,9 @@ final class SC_EI_Platform_Repository {
 		$checks[] = self::check( 'accessibility_controls', 'accessibility', __( 'Rendered accessibility controls', 'sustainable-catalyst-engagement-intake' ), ! empty( $accessibility['passed'] ), true, (string) $accessibility['detail'], 'review_accessibility' );
 		$checks[] = self::check( 'live_validation', 'operations', __( 'Recent successful live validation', 'sustainable-catalyst-engagement-intake' ), SC_EI_Platform_Validation::successful_and_fresh(), true, ! empty( $live_validation['completed_at'] ) ? sprintf( '%s · %d%%', $live_validation['completed_at'], absint( $live_validation['score'] ?? 0 ) ) : 'not run', 'run_live_validation' );
 		$checks[] = self::check( 'backup_attestation', 'security', __( 'Recent database and protected-storage backup attestation', 'sustainable-catalyst-engagement-intake' ), SC_EI_Platform_Validation::backups_fresh(), true, ! empty( $backup_attestation['attested_at'] ) ? (string) $backup_attestation['attested_at'] : 'not attested', 'attest_backups' );
+		$checks[] = self::check( 'external_mail_delivery', 'operations', __( 'Externally confirmed email delivery', 'sustainable-catalyst-engagement-intake' ), SC_EI_Pilot_Operations::external_mail_confirmed_and_fresh(), true, ! empty( $mail_evidence['confirmed_at'] ) ? sprintf( '%s · %s', (string) $mail_evidence['confirmed_at'], (string) $mail_evidence['reference'] ) : 'not confirmed', 'confirm_external_mail' );
+		$checks[] = self::check( 'pilot_launch_evidence', 'operations', __( 'Completed controlled pilot and launch checklist', 'sustainable-catalyst-engagement-intake' ), SC_EI_Pilot_Operations::pilot_complete_and_fresh(), true, ! empty( $pilot_evidence['recorded_at'] ) ? sprintf( '%s · %d controlled inquiries', (string) $pilot_evidence['recorded_at'], absint( $pilot_evidence['controlled_inquiry_count'] ?? 0 ) ) : 'not recorded', 'record_pilot_evidence' );
+		$checks[] = self::check( 'operational_attention', 'operations', __( 'No unresolved public-launch operational blockers', 'sustainable-catalyst-engagement-intake' ), ! empty( $operations['clear'] ), true, ! empty( $operations['blockers'] ) ? implode( '; ', (array) $operations['blockers'] ) : 'no failed communications, overdue follow-ups, quarantine or file-integrity issues, portal lockouts or failures, or critical events', 'review_operations' );
 
 		$required_failures = array_values( array_filter( $checks, static fn( array $check ): bool => ! empty( $check['required'] ) && 'fail' === $check['status'] ) );
 		$warnings = array_values( array_filter( $checks, static fn( array $check ): bool => 'warn' === $check['status'] ) );
@@ -244,7 +293,7 @@ final class SC_EI_Platform_Repository {
 		$ready_for_production = 100 === $score && empty( $required_failures ) && empty( $warnings );
 
 		return array(
-			'schema'               => 'sc-unified-contact-engagement-platform-readiness/1.1',
+			'schema'               => 'sc-unified-contact-engagement-platform-readiness/1.2',
 			'generated_at'         => current_time( 'mysql', true ),
 			'plugin_version'       => SC_EI_VERSION,
 			'database_version'     => (string) get_option( 'sc_ei_db_version', '' ),
@@ -262,6 +311,10 @@ final class SC_EI_Platform_Repository {
 			'cron'                 => $cron_evidence,
 			'live_validation'      => $live_validation,
 			'backup_attestation'   => $backup_attestation,
+			'pilot_evidence'        => $pilot_evidence,
+			'external_mail_evidence'=> $mail_evidence,
+			'operations'            => $operations,
+			'route_evidence'        => $route_evidence,
 			'boundaries'           => self::boundaries(),
 		);
 	}
@@ -286,6 +339,7 @@ final class SC_EI_Platform_Repository {
 			'migrations' => self::migrations( 20 ),
 			'snapshots'  => self::snapshots( 20 ),
 			'targets'    => SC_EI_Workflow_Core_Service::registered_targets(),
+			'pilot_operations' => SC_EI_Pilot_Operations::operational_summary(),
 		);
 	}
 
@@ -523,6 +577,9 @@ final class SC_EI_Platform_Repository {
 			case 'verify_patch_migration':
 				$result = self::record_patch_migration( (string) get_option( 'sc_ei_version_previous', '' ) );
 				break;
+			case 'verify_launch_migration':
+				$result = self::record_launch_migration( (string) get_option( 'sc_ei_version_previous', '' ) );
+				break;
 			case 'repair_storage':
 				$result = SC_EI_Storage::repair();
 				if ( empty( $result['ok'] ) ) {
@@ -679,6 +736,7 @@ final class SC_EI_Platform_Repository {
 			'repair_database'       => __( 'Repair database contract', 'sustainable-catalyst-engagement-intake' ),
 			'verify_migration'      => __( 'Verify base migration', 'sustainable-catalyst-engagement-intake' ),
 			'verify_patch_migration'=> __( 'Record v1.0.2 upgrade', 'sustainable-catalyst-engagement-intake' ),
+			'verify_launch_migration'=> __( 'Record v1.0.3 upgrade', 'sustainable-catalyst-engagement-intake' ),
 			'repair_storage'        => __( 'Repair and probe storage', 'sustainable-catalyst-engagement-intake' ),
 			'repair_crons'          => __( 'Repair scheduled jobs', 'sustainable-catalyst-engagement-intake' ),
 			'configure_pages'       => __( 'Configure public pages', 'sustainable-catalyst-engagement-intake' ),
@@ -689,6 +747,10 @@ final class SC_EI_Platform_Repository {
 			'review_accessibility'  => __( 'Review rendered interface', 'sustainable-catalyst-engagement-intake' ),
 			'run_live_validation'   => __( 'Run live validation', 'sustainable-catalyst-engagement-intake' ),
 			'attest_backups'        => __( 'Record backup evidence', 'sustainable-catalyst-engagement-intake' ),
+			'confirm_external_mail' => __( 'Confirm inbox delivery', 'sustainable-catalyst-engagement-intake' ),
+			'record_pilot_evidence' => __( 'Record pilot evidence', 'sustainable-catalyst-engagement-intake' ),
+			'review_operations'     => __( 'Review launch operations', 'sustainable-catalyst-engagement-intake' ),
+			'review_routed_entries' => __( 'Review routed entry URLs', 'sustainable-catalyst-engagement-intake' ),
 		);
 		return $labels[ $repair ] ?? '';
 	}

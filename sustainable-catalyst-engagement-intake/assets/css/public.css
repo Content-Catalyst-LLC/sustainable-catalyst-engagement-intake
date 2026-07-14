@@ -1290,3 +1290,28 @@
 @media (max-width: 900px) { .sc-ei-platform-public__routes { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .sc-ei-platform-public * { scroll-behavior: auto !important; } }
 @media (forced-colors: active) { .sc-ei-platform-public__button, .sc-ei-platform-public__routes article, .sc-ei-platform-public__hero { border: 1px solid CanvasText; } }
+
+
+/* v1.0.3 routed entry and browser-session recovery */
+.sc-ei-platform-public__route-notice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+  margin: 0 0 1.25rem;
+  padding: .85rem 1rem;
+  border: 1px solid rgba(110, 22, 38, .24);
+  border-left: 4px solid #6e1626;
+  background: rgba(110, 22, 38, .05);
+  border-radius: 10px;
+}
+.sc-ei-form[data-sc-ei-draft-restored="true"]::before {
+  content: "Unsent details restored in this browser tab. Files and consent choices must be selected again.";
+  display: block;
+  margin: 0 0 1rem;
+  padding: .75rem .9rem;
+  border: 1px solid rgba(0, 0, 0, .14);
+  border-radius: 8px;
+  background: #fff;
+  font-size: .9rem;
+}

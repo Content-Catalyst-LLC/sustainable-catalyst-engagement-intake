@@ -3,7 +3,7 @@ Contributors: content-catalyst
 Tags: contact, engagement, workflow, sender portal, microsoft teams, proposals, analytics, privacy, accessibility
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,7 +11,7 @@ A governed contact-to-engagement platform with adaptive intake, secure sender co
 
 == Description ==
 
-Version 1.0.2 is the Production Readiness and Live Validation release. It replaces assumption-based readiness checks with runtime evidence, guided repairs, a controlled live validation suite, recent backup attestation, and a strict 100% production gate.
+Version 1.0.3 is the Pilot Findings and Public Launch Hardening release. It adds routed public entry contracts, browser-tab draft recovery, runtime upload-attack rejection probes, external inbox evidence, controlled pilot evidence, operational blockers, and a stricter public-launch gate.
 
 It connects:
 
@@ -54,11 +54,16 @@ Platform Overview now provides:
 * Initialized internal-adapter registry evidence
 * Rendered accessibility evidence
 * Guided repair actions for bounded operational issues
-* Administrator-only live validation with temporary inquiry, portal, file, duplicate-control, mail, and cleanup checks
+* Administrator-only live validation with temporary inquiry, portal, file, duplicate-control, mail, upload-rejection, routing, and cleanup checks
+* Canonical routed entry URLs through the published Contact page
+* Browser-tab draft recovery that excludes files, tokens, nonces, and consent state
+* External inbox delivery evidence recorded separately from WordPress transport acceptance
+* Controlled pilot evidence requiring at least five completed inquiries and a complete launch checklist
+* Operational blocker evidence for failed communications, quarantine, portal lockouts, overdue work, and critical events
 * Recent database and protected-storage backup attestation
-* A production gate requiring 100%, zero failures, zero warnings, fresh successful validation, and fresh backup evidence
+* A production gate requiring 100%, zero failures, zero warnings, and fresh validation, inbox, pilot, and backup evidence
 
-WordPress mail acceptance does not prove inbox delivery; administrators must confirm the live-validation message manually.
+WordPress mail acceptance does not prove inbox delivery. Administrators must confirm receipt separately and record the external evidence.
 
 == Human-control boundary ==
 
@@ -80,17 +85,27 @@ The platform does not automatically:
 == Installation ==
 
 1. Back up the WordPress database and protected storage.
-2. Upgrade the existing plugin or install v1.0.2.
+2. Upgrade the existing plugin or install v1.0.3.
 3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
 4. Open Contact & Engagement → Platform Overview.
 5. Complete guided repairs and configure published Contact, Sender Portal, and Privacy pages.
 6. Run Live Validation with a monitored email recipient.
-7. Confirm the validation message reached the recipient.
-8. Complete and attest database and protected-storage backups.
-9. Require 100%, zero failures, and zero warnings.
-10. Record Pilot and complete controlled public tests before recording Production.
+7. Confirm the validation message reached the recipient and record external inbox evidence.
+8. Complete at least five controlled inquiries and every pilot checklist item.
+9. Resolve all operational blockers.
+10. Complete and attest database and protected-storage backups.
+11. Require 100%, zero failures, and zero warnings before the typed Production action.
 
 == Changelog ==
+
+= 1.0.3 =
+* Added canonical routed Contact-page entry URLs for Advisory, Sustainable AI Assurance, collaboration, media, technical, partnership, workshop, and monthly-advisory inquiries.
+* Added browser-tab draft recovery without persisting files, tokens, nonces, or consent state.
+* Added runtime acceptance of a safe text file and rejection of a disguised executable upload.
+* Added external inbox delivery evidence separately from WordPress mail-transport acceptance.
+* Added controlled pilot evidence requiring at least five completed inquiries and all launch checklist items.
+* Added an operational blocker dashboard and production checks for failed communications, quarantine, portal lockouts, overdue work, and critical events.
+* Added a nondestructive v1.0.3 migration journal and advanced the platform evidence schema to 1.0.2 while preserving database version 1.0.0.
 
 = 1.0.2 =
 * Added guided production-readiness repairs and runtime evidence.

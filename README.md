@@ -1,9 +1,9 @@
 # Sustainable Catalyst Contact and Engagement Platform
 
-**Version:** 1.0.2  
-**Release:** Production Readiness and Live Validation
+**Version:** 1.0.3  
+**Release:** Pilot Findings and Public Launch Hardening
 
-v1.0.2 turns the production gate into a runtime-backed launch process. It adds guided repair actions, verified page and shortcode contracts, cron callback evidence, rendered accessibility evidence, an administrator-run live validation suite, recent backup attestation, and a stricter 100% production requirement. The database remains at 1.0.0; the platform evidence schema advances to 1.0.1.
+v1.0.3 hardens the pilot-to-public-launch path. It adds canonical routed Contact-page entry URLs, browser-tab draft recovery, runtime disguised-executable rejection, externally confirmed email-delivery evidence, a controlled pilot checklist, and an operational blocker dashboard. Production remains a typed human action and now requires recent pilot, inbox, validation, and backup evidence. The database remains at 1.0.0; the platform evidence schema advances to 1.0.2.
 
 ## Core model
 
@@ -219,14 +219,17 @@ No REST command endpoint is included.
 ## Upgrade checklist
 
 1. Back up the WordPress database and protected document storage.
-2. Install v1.0.2 over the existing plugin.
+2. Install v1.0.3 over the existing plugin.
 3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
 4. Open **Contact & Engagement → Platform Overview**.
 5. Use the guided repair center until configuration and runtime checks pass.
 6. Confirm the Contact page contains `[sc_contact_engagement_platform]`.
 7. Confirm the Sender Portal page contains `[sc_sender_portal]`.
 8. Configure support email and a published Privacy Policy URL.
-9. Run **Live Validation** with a monitored email recipient and confirm inbox delivery manually.
-10. Back up the database and protected storage, then record the backup attestation.
-11. Require 100%, zero failures, zero warnings, fresh validation evidence, and fresh backup evidence before recording Production.
-12. Keep human review, fit, proposal, contract, scheduling, and engagement decisions manual.
+9. Run **Live Validation** with a monitored email recipient.
+10. Confirm the message reached the external inbox and record the delivery reference.
+11. Complete at least five controlled inquiries and every pilot checklist item.
+12. Resolve all operational blockers, including failed communications, quarantine items, portal lockouts, overdue work, and critical events.
+13. Back up the database and protected storage, then record the backup attestation.
+14. Require 100%, zero failures, zero warnings, and fresh validation, inbox, pilot, and backup evidence before recording Production.
+15. Keep human review, fit, proposal, contract, scheduling, and engagement decisions manual.
