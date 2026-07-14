@@ -148,6 +148,11 @@ final class SC_EI_Lifecycle_Schema {
 				'inquiry_type' => 'speaking_media',
 				'service_interest' => 'media_speaking',
 			),
+			'support' => array(
+				'label' => __( 'Product Support', 'sustainable-catalyst-engagement-intake' ),
+				'inquiry_type' => 'product_support',
+				'service_interest' => 'product_support',
+			),
 			'technical' => array(
 				'label' => __( 'Platform or Technical Work', 'sustainable-catalyst-engagement-intake' ),
 				'inquiry_type' => 'platform_technical',

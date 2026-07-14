@@ -124,6 +124,27 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 					<?php if ( ! empty( $lifecycle_snapshot['summary'] ) ) : ?>
 						<div class="sc-ei-portal-notice sc-ei-portal-notice--info"><strong><?php esc_html_e( 'Current update', 'sustainable-catalyst-engagement-intake' ); ?></strong><br><?php echo nl2br( esc_html( $lifecycle_snapshot['summary'] ) ); ?></div>
 					<?php endif; ?>
+					<?php if ( ! empty( $support_snapshot ) ) : ?>
+						<section class="sc-ei-portal-notice sc-ei-portal-notice--info" aria-labelledby="sc-ei-support-case-title">
+							<h4 id="sc-ei-support-case-title"><?php esc_html_e( 'Product support case', 'sustainable-catalyst-engagement-intake' ); ?></h4>
+							<dl class="sc-ei-portal-details">
+								<dt><?php esc_html_e( 'Case', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $support_snapshot['case_number'] ); ?></dd>
+								<dt><?php esc_html_e( 'Product', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $support_snapshot['product'] ); ?><?php echo ! empty( $support_snapshot['version'] ) ? ' · ' . esc_html( $support_snapshot['version'] ) : ''; ?></dd>
+								<?php if ( ! empty( $support_snapshot['component'] ) ) : ?><dt><?php esc_html_e( 'Component', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $support_snapshot['component'] ); ?></dd><?php endif; ?>
+								<dt><?php esc_html_e( 'Support status', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $support_snapshot['status'] ); ?></dd>
+								<?php if ( ! empty( $support_snapshot['known_issue'] ) ) : ?><dt><?php esc_html_e( 'Known issue', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $support_snapshot['known_issue'] ); ?></dd><?php endif; ?>
+							</dl>
+							<?php if ( ! empty( $support_snapshot['summary'] ) ) : ?><p><strong><?php esc_html_e( 'Approved update', 'sustainable-catalyst-engagement-intake' ); ?></strong><br><?php echo nl2br( esc_html( $support_snapshot['summary'] ) ); ?></p><?php endif; ?>
+							<?php if ( ! empty( $support_snapshot['next_step'] ) ) : ?><p><strong><?php esc_html_e( 'Next step', 'sustainable-catalyst-engagement-intake' ); ?></strong><br><?php echo nl2br( esc_html( $support_snapshot['next_step'] ) ); ?></p><?php endif; ?>
+							<?php if ( ! empty( $support_snapshot['links'] ) ) : ?>
+								<ul>
+									<?php foreach ( $support_snapshot['links'] as $support_link ) : ?>
+										<li><?php echo esc_html( $support_link['title'] ?: ucwords( str_replace( '_', ' ', $support_link['related_type'] ) ) ); ?>: <?php echo esc_html( $support_link['related_reference'] ); ?></li>
+									<?php endforeach; ?>
+								</ul>
+							<?php endif; ?>
+						</section>
+					<?php endif; ?>
 					<?php if ( $inquiry['project_summary'] ) : ?><h4><?php esc_html_e( 'Submitted project summary', 'sustainable-catalyst-engagement-intake' ); ?></h4><p><?php echo nl2br( esc_html( $inquiry['project_summary'] ) ); ?></p><?php endif; ?>
 				</section>
 

@@ -98,6 +98,44 @@ final class SC_EI_REST {
 
 		register_rest_route(
 			'sc-engagement-intake/v1',
+			'/support/cases',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'support_cases' ),
+				'permission_callback' => static fn(): bool => current_user_can( 'sc_intake_view_support' ),
+				'args'                => array(
+					'stage'    => array( 'sanitize_callback' => 'sanitize_key' ),
+					'product'  => array( 'sanitize_callback' => 'sanitize_key' ),
+					'severity' => array( 'sanitize_callback' => 'sanitize_key' ),
+					'search'   => array( 'sanitize_callback' => 'sanitize_text_field' ),
+					'limit'    => array( 'sanitize_callback' => 'absint', 'default' => 200 ),
+				),
+			)
+		);
+
+		register_rest_route(
+			'sc-engagement-intake/v1',
+			'/support/cases/(?P<id>\d+)',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'support_case' ),
+				'permission_callback' => static fn(): bool => current_user_can( 'sc_intake_view_support' ),
+				'args'                => array( 'id' => array( 'sanitize_callback' => 'absint' ) ),
+			)
+		);
+
+		register_rest_route(
+			'sc-engagement-intake/v1',
+			'/support/handoffs',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'support_handoff' ),
+				'permission_callback' => static fn(): bool => current_user_can( 'sc_intake_ingest_support_handoffs' ),
+			)
+		);
+
+		register_rest_route(
+			'sc-engagement-intake/v1',
 			'/submit',
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
@@ -162,6 +200,9 @@ final class SC_EI_REST {
 		if ( current_user_can( 'sc_intake_view_workflow_core' ) ) {
 			$record['workflow_core'] = SC_EI_Workflow_Core_Repository::export_for_inquiry( absint( $request['id'] ) );
 		}
+		if ( current_user_can( 'sc_intake_view_support' ) ) {
+			$record['product_support'] = SC_EI_Support_Repository::export_for_inquiry( absint( $request['id'] ) );
+		}
 		if ( current_user_can( 'sc_intake_view_fit_assessments' ) ) {
 			$record['fit_assessment'] = ! empty( $record['current_fit_assessment_id'] )
 				? SC_EI_Fit_Repository::find( absint( $record['current_fit_assessment_id'] ) )
@@ -207,6 +248,56 @@ final class SC_EI_REST {
 				'read_only'    => true,
 			)
 		);
+	}
+
+	public static function support_cases( WP_REST_Request $request ): WP_REST_Response {
+		$cases = SC_EI_Support_Repository::query(
+			array(
+				'stage'    => $request->get_param( 'stage' ),
+				'product'  => $request->get_param( 'product' ),
+				'severity' => $request->get_param( 'severity' ),
+				'search'   => $request->get_param( 'search' ),
+				'limit'    => $request->get_param( 'limit' ),
+			)
+		);
+		return new WP_REST_Response(
+			array(
+				'schema'       => 'sc-product-support-cases/1.0',
+				'generated_at' => current_time( 'mysql', true ),
+				'count'        => count( $cases ),
+				'cases'        => $cases,
+				'read_only'    => true,
+			)
+		);
+	}
+
+	public static function support_case( WP_REST_Request $request ) {
+		$case = SC_EI_Support_Repository::find( absint( $request['id'] ) );
+		if ( ! $case ) {
+			return new WP_Error( 'sc_ei_support_case_not_found', __( 'Support case not found.', 'sustainable-catalyst-engagement-intake' ), array( 'status' => 404 ) );
+		}
+		return new WP_REST_Response(
+			array(
+				'schema'       => 'sc-product-support-case/1.0',
+				'generated_at' => current_time( 'mysql', true ),
+				'case'         => $case,
+				'links'        => SC_EI_Support_Repository::links( absint( $case['id'] ) ),
+				'events'       => SC_EI_Support_Repository::events( absint( $case['id'] ), 500 ),
+			)
+		);
+	}
+
+	public static function support_handoff( WP_REST_Request $request ) {
+		$payload = $request->get_json_params();
+		if ( ! is_array( $payload ) || empty( $payload ) ) {
+			$payload = $request->get_params();
+		}
+		$result = SC_EI_Support_Repository::ingest_handoff( (array) $payload, get_current_user_id() );
+		if ( is_wp_error( $result ) ) {
+			$result->add_data( array( 'status' => 400 ) );
+			return $result;
+		}
+		return new WP_REST_Response( $result, 201 );
 	}
 
 	public static function workflow_core_cases( WP_REST_Request $request ): WP_REST_Response {

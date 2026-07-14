@@ -201,6 +201,7 @@ final class SC_EI_Template_Repository {
 		$contact_name = trim( (string) ( $inquiry['contact_name'] ?? '' ) );
 		$first_name = $contact_name ? preg_split( '/\s+/', $contact_name )[0] : '';
 		$timezone = (string) ( $inquiry['scheduled_timezone'] ?: $inquiry['timezone'] ?? '' );
+		$support_case = ! empty( $inquiry['id'] ) ? SC_EI_Support_Repository::for_inquiry( absint( $inquiry['id'] ) ) : null;
 		$scheduled_start = '';
 		if ( ! empty( $inquiry['scheduled_start_utc'] ) ) {
 			try {
@@ -241,6 +242,12 @@ final class SC_EI_Template_Repository {
 			'{lifecycle_next_action}' => (string) ( $inquiry['next_action'] ?? '' ),
 			'{lifecycle_task}'        => (string) ( $inquiry['_lifecycle_task'] ?? '' ),
 			'{lifecycle_task_due}'    => (string) ( $inquiry['_lifecycle_task_due'] ?? '' ),
+			'{support_case_number}'   => (string) ( $support_case['case_number'] ?? '' ),
+			'{support_product}'       => $support_case ? SC_EI_Support_Schema::label( SC_EI_Support_Schema::products(), (string) $support_case['product'] ) : '',
+			'{support_version}'       => (string) ( $support_case['product_version'] ?? '' ),
+			'{support_component}'     => (string) ( $support_case['component'] ?? '' ),
+			'{support_status}'        => $support_case ? SC_EI_Support_Schema::public_stage( (string) $support_case['workflow_stage'] ) : '',
+			'{support_next_step}'     => (string) ( $support_case['sender_next_step'] ?? '' ),
 		);
 
 		$subject = strtr( (string) $template['subject_template'], $variables );

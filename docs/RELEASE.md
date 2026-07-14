@@ -1,65 +1,62 @@
-# Release Procedure — v1.1.0
+# Release Procedure — v1.2.0
 
 ## Release identity
 
 - Product: Sustainable Catalyst Contact and Engagement Platform
-- Release: Advisory Operations and Engagement Lifecycle
+- Release: Support Operations and Product Intelligence Integration
 - Plugin slug: `sustainable-catalyst-engagement-intake`
-- Plugin version: `1.1.0`
-- Database version: `1.1.0`
+- Plugin version: `1.2.0`
+- Database version: `1.2.0`
+- Support schema: `1.0.0`
 - Lifecycle schema: `1.0.0`
-- Platform evidence schema: `1.1.0`
-- Portal schema: `1.4.0`
-- Engagement schema: `1.1.0`
-- Lifecycle migration: `v1_1_0_advisory_operations_engagement_lifecycle`
+- Platform evidence schema: `1.2.0`
+- Support migration: `v1_2_0_support_operations_product_intelligence`
+- Handoff contract: `sc-product-support-handoff/1.0`
 
-The v1.1.0 migration is nondestructive and idempotent.
+The v1.2.0 migration is nondestructive and idempotent.
 
 ## Required repository checks
 
 - PHP syntax across plugin and tests
 - JavaScript syntax for public and admin bundles
 - every executable repository test suite
-- database table and inquiry-column contracts
-- lifecycle-stage and allowed-transition contracts
-- typed human transition and optimistic-lock contracts
-- internal-note and Sender Portal isolation contracts
-- task-reminder idempotency and opt-in delivery contracts
-- Teams, proposal, and engagement linkage contracts
-- privacy export, erasure, retention, diagnostics, readiness, cron, and uninstall contracts
+- four support-table and support-column contracts
+- governed support-stage and typed-confirmation contracts
+- privacy-safe product-intelligence rejection and aggregation contracts
+- REST capability and Sender Portal data-boundary contracts
+- privacy export, approved redaction, retention, readiness, watchdog, cron, and uninstall contracts
+- Live Validation support-case creation, transition, signal rejection/acceptance, and cleanup
 - common-secret scan
 - installable and repository ZIP roots
-- release manifest and ZIP CRC verification
-- fresh-extraction full retest
+- release manifest, ZIP CRC, and fresh-extraction verification
 
 ## Staging acceptance
 
-- upgrade from v1.0.3 without record loss
-- database version and lifecycle migration journal reach v1.1.0
-- existing inquiries receive valid lifecycle stages
-- a typed authorized transition records both lifecycle and audit events
-- invalid stage jumps and stale concurrent edits are rejected
-- internal notes never appear in Sender Portal output
-- approved public stage, summary, and next step appear correctly
-- task creation, completion, due handling, and idempotent reminders work
-- lifecycle task email remains disabled unless intentionally enabled
-- linked Teams offers, proposals, and engagements remain available
-- advisory routes preserve source and service attribution
-- privacy export and approved erasure include lifecycle records
-- overdue lifecycle tasks and next actions block Production
-- existing v1.0.3 live, inbox, pilot, backup, and operational controls remain effective
+- upgrade from v1.1.1 without record loss
+- database version and v1.2.0 migration journal complete
+- `[sc_support_request]` creates one canonical inquiry and one support case
+- product, version, component, environment, error, and reproduction context persist correctly
+- invalid and stale support transitions are rejected
+- Sender Portal exposes only approved support context
+- typed Knowledge Base, known issue, Feature Suggestion, release, event, and duplicate-case relationships persist and audit
+- handoff payloads containing identity, messages, files, or credentials are rejected
+- nonpersonal product-intelligence signals aggregate without sender data
+- support communication templates remain drafts until deliberate human sending
+- privacy export and approved redaction include support records
+- high-priority unresolved support cases block Production
+- all v1.1.1 inquiry, advisory, portal, upload, notification, backup, and launch controls remain effective
 
 ## Production promotion
 
 1. Complete staging acceptance.
-2. Back up the production database and protected storage.
-3. Install v1.1.0 and clear all caches.
-4. Complete database and lifecycle migration repairs.
-5. Inspect backfilled records and assign operational owners.
+2. Back up the database and protected storage.
+3. Install v1.2.0 and clear all caches.
+4. Complete database and support migration repairs.
+5. Inspect the Support Cases workspace.
 6. Run Live Validation with a monitored recipient.
-7. Confirm external inbox delivery and record current evidence.
-8. Repeat controlled pilot checks for the current release.
-9. Resolve all lifecycle and public-launch operational blockers.
+7. Confirm external inbox delivery.
+8. Complete controlled general, advisory, support, upload, and Sender Portal tests.
+9. Resolve all high-priority support and public-launch blockers.
 10. Record current database and protected-storage backup evidence.
 11. Require 100%, zero failures, and zero warnings.
 12. Promote only through the typed human Production action.

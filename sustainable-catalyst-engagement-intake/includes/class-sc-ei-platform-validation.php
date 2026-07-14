@@ -78,6 +78,8 @@ final class SC_EI_Platform_Validation {
 		$checks = array();
 		$inquiry_id = 0;
 		$access_id = 0;
+		$support_case_id = 0;
+		$support_signal_id = 0;
 		$relative_path = '';
 		$temp_path = '';
 		$cleanup_ok = true;
@@ -87,9 +89,12 @@ final class SC_EI_Platform_Validation {
 		$columns = SC_EI_Database::platform_columns_exist();
 		$inquiry_columns = SC_EI_Database::inquiry_columns_exist();
 		$lifecycle_columns = SC_EI_Database::lifecycle_columns_exist();
-		self::add( $checks, 'database_contract', __( 'Database tables, platform schema, and lifecycle schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ) && ! in_array( false, $inquiry_columns, true ) && ! in_array( false, $lifecycle_columns, true ), sprintf( '%d/%d tables; %d/%d platform columns; %d/%d inquiry columns; %d/%d lifecycle columns', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ), count( array_filter( $inquiry_columns ) ), count( $inquiry_columns ), count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ) ) );
+		$support_columns = SC_EI_Database::support_columns_exist();
+		self::add( $checks, 'database_contract', __( 'Database tables, platform, lifecycle, and support schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ) && ! in_array( false, $inquiry_columns, true ) && ! in_array( false, $lifecycle_columns, true ) && ! in_array( false, $support_columns, true ), sprintf( '%d/%d tables; %d/%d platform columns; %d/%d inquiry columns; %d/%d lifecycle columns; %d/%d support columns', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ), count( array_filter( $inquiry_columns ) ), count( $inquiry_columns ), count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ), count( array_filter( $support_columns ) ), count( $support_columns ) ) );
 		$lifecycle_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Lifecycle_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		self::add( $checks, 'lifecycle_migration', __( 'v1.1.0 advisory lifecycle migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $lifecycle_migration, (string) ( $lifecycle_migration ?: 'missing' ) );
+		$support_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Support_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::add( $checks, 'support_migration', __( 'v1.2.0 support operations migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $support_migration, (string) ( $support_migration ?: 'missing' ) );
 
 		$page_evidence = SC_EI_Platform_Repository::page_contract_evidence();
 		self::add( $checks, 'public_page_contracts', __( 'Published public-entry and portal page contracts', 'sustainable-catalyst-engagement-intake' ), ! empty( $page_evidence['public_entry']['passed'] ) && ! empty( $page_evidence['portal']['passed'] ), (string) ( $page_evidence['summary'] ?? '' ) );
@@ -127,7 +132,7 @@ final class SC_EI_Platform_Validation {
 					'inquiry_type'    => 'general',
 					'contact_name'    => 'Platform Validation',
 					'contact_email'   => $validation_email,
-					'subject'         => '[TEST] v1.1.1 live validation',
+					'subject'         => '[TEST] v1.2.0 live validation',
 					'message'         => 'Temporary administrator-generated validation record. Safe to remove.',
 					'form_variant'    => 'advanced',
 					'source_page'     => 'platform-validation',
@@ -159,6 +164,51 @@ final class SC_EI_Platform_Validation {
 				&& '' !== trim( (string) ( $sender_snapshot['label'] ?? '' ) )
 				&& 'Complete the temporary validation review.' === (string) ( $sender_snapshot['next_step'] ?? '' );
 			self::add( $checks, 'inquiry_lifecycle', __( 'Inquiry persistence, audited lifecycle transition, and sender-safe projection', 'sustainable-catalyst-engagement-intake' ), $lifecycle_ok, $lifecycle_ok ? 'temporary inquiry created, transitioned through the governed lifecycle, audited, and safely projected' : ( is_wp_error( $transition_result ) ? $transition_result->get_error_message() : 'temporary lifecycle validation failed' ) );
+
+			$support_case = $created ? SC_EI_Support_Repository::create_for_inquiry(
+				$inquiry_id,
+				array(
+					'product'            => 'workbench',
+					'product_version'    => 'validation',
+					'component'          => 'live-validation',
+					'issue_type'         => 'runtime_error',
+					'error_message'      => 'Temporary support validation fixture.',
+					'reproduction_steps' => 'Run the administrator live validation suite.',
+					'source_system'      => 'platform_validation',
+				),
+				$actor_user_id
+			) : new WP_Error( 'platform_validation_inquiry_missing', 'Validation inquiry unavailable.' );
+			if ( ! is_wp_error( $support_case ) ) {
+				$support_case_id = absint( $support_case['id'] ?? 0 );
+				$support_transition = SC_EI_Support_Repository::transition(
+					$support_case_id,
+					'triage',
+					'MOVE ' . strtoupper( (string) $support_case['case_number'] ) . ' TO TRIAGE',
+					'Administrator live validation support transition.',
+					$actor_user_id
+				);
+			} else {
+				$support_transition = $support_case;
+			}
+			$support_snapshot = $support_case_id ? SC_EI_Support_Repository::sender_snapshot( $inquiry_id ) : array();
+			$private_rejection = SC_EI_Support_Schema::signal_payload( array( 'product' => 'workbench', 'email' => 'private@example.com' ) );
+			$clean_signal = SC_EI_Support_Repository::record_signal(
+				'documentation_gap',
+				array( 'product' => 'workbench', 'component' => 'live-validation', 'issue_type' => 'documentation', 'search_query' => 'temporary validation query', 'article_ids' => array(), 'resolution_attempted' => true, 'source_url' => home_url( '/support/' ) ),
+				$actor_user_id
+			);
+			if ( ! is_wp_error( $clean_signal ) ) {
+				$support_signal_id = absint( $clean_signal['id'] ?? 0 );
+			}
+			$support_ok = ! is_wp_error( $support_case )
+				&& ! is_wp_error( $support_transition )
+				&& 'triage' === (string) ( $support_transition['workflow_stage'] ?? '' )
+				&& ! empty( $support_snapshot['case_number'] )
+				&& 'Under Review' === (string) ( $support_snapshot['status'] ?? '' )
+				&& is_wp_error( $private_rejection )
+				&& ! is_wp_error( $clean_signal )
+				&& empty( $clean_signal['contains_personal_data'] );
+			self::add( $checks, 'support_operations', __( 'Product support case, governed transition, sender-safe projection, and privacy-safe intelligence signal', 'sustainable-catalyst-engagement-intake' ), $support_ok, $support_ok ? 'temporary support case created and transitioned; private signal payload rejected; nonpersonal signal accepted' : ( is_wp_error( $support_transition ) ? $support_transition->get_error_message() : ( is_wp_error( $clean_signal ) ? $clean_signal->get_error_message() : 'support operations validation failed' ) ) );
 
 			$portal_result = $created ? SC_EI_Portal_Repository::issue_invitation(
 				$inquiry_id,
@@ -205,7 +255,13 @@ final class SC_EI_Platform_Validation {
 		if ( $temp_path && file_exists( $temp_path ) ) {
 			$cleanup_ok = wp_delete_file( $temp_path ) && $cleanup_ok;
 		}
+		if ( $support_signal_id ) {
+			$wpdb->delete( SC_EI_Database::table( 'support_signals' ), array( 'id' => $support_signal_id ), array( '%d' ) );
+		}
 		if ( $inquiry_id ) {
+			$wpdb->delete( SC_EI_Database::table( 'support_case_links' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
+			$wpdb->delete( SC_EI_Database::table( 'support_case_events' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
+			$wpdb->delete( SC_EI_Database::table( 'support_cases' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
 			$wpdb->delete( SC_EI_Database::table( 'lifecycle_tasks' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
 			$wpdb->delete( SC_EI_Database::table( 'lifecycle_notes' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
 			$wpdb->delete( SC_EI_Database::table( 'lifecycle_events' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
@@ -223,7 +279,7 @@ final class SC_EI_Platform_Validation {
 
 		$failures = array_values( array_filter( $checks, static fn( array $check ): bool => 'pass' !== $check['status'] ) );
 		$result = array(
-			'schema'         => 'sc-contact-engagement-live-validation/1.3',
+			'schema'         => 'sc-contact-engagement-live-validation/1.4',
 			'plugin_version' => SC_EI_VERSION,
 			'passed'         => empty( $failures ),
 			'score'          => $checks ? (int) round( 100 * ( count( $checks ) - count( $failures ) ) / count( $checks ) ) : 0,

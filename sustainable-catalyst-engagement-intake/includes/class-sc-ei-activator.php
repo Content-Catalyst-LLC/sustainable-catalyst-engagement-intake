@@ -26,6 +26,7 @@ final class SC_EI_Activator {
 		SC_EI_Workflow_Repository::schedule();
 		SC_EI_Graph_Repository::schedule();
 		SC_EI_Lifecycle_Repository::schedule();
+		SC_EI_Support_Repository::schedule();
 		SC_EI_Template_Repository::seed_defaults();
 		SC_EI_Retention_Policy_Repository::seed_defaults();
 
@@ -42,6 +43,7 @@ final class SC_EI_Activator {
 		update_option( 'sc_ei_engagement_schema_version', SC_EI_ENGAGEMENT_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_lifecycle_schema_version_previous', $previous_lifecycle_schema, false );
 		update_option( 'sc_ei_lifecycle_schema_version', SC_EI_LIFECYCLE_SCHEMA_VERSION, false );
+		update_option( 'sc_ei_support_schema_version', SC_EI_SUPPORT_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_analytics_schema_version', SC_EI_ANALYTICS_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_hardening_schema_version', SC_EI_HARDENING_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_workflow_core_schema_version', SC_EI_WORKFLOW_CORE_SCHEMA_VERSION, false );
@@ -54,10 +56,11 @@ final class SC_EI_Activator {
 		SC_EI_Platform_Repository::schedule();
 		SC_EI_Lifecycle_Repository::backfill_defaults();
 		SC_EI_Lifecycle_Repository::record_migration( $previous_lifecycle_schema );
+		SC_EI_Support_Repository::record_migration( $previous_version );
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Sustainable Catalyst Contact and Engagement Platform v1.1.0 activated with nondestructive advisory lifecycle migration, structured qualification, private internal notes, follow-up tasks, Teams-centered coordination, proposal and engagement linkage, sender-safe lifecycle summaries, and the established production gate.',
+			'Sustainable Catalyst Contact and Engagement Platform v1.2.0 activated with private product-support cases, typed product-intelligence handoffs, sender-safe support status, privacy-safe documentation-gap signals, and the established advisory and production gates.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}
@@ -69,6 +72,7 @@ final class SC_EI_Activator {
 		SC_EI_Workflow_Repository::unschedule();
 		SC_EI_Graph_Repository::unschedule();
 		SC_EI_Lifecycle_Repository::unschedule();
+		SC_EI_Support_Repository::unschedule();
 		SC_EI_Analytics_Repository::unschedule();
 		SC_EI_Hardening_Repository::unschedule();
 		SC_EI_Workflow_Core_Repository::unschedule();

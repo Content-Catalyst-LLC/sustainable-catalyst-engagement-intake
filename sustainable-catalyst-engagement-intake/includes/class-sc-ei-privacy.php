@@ -79,6 +79,32 @@ final class SC_EI_Privacy {
 				);
 			}
 
+			$support = SC_EI_Support_Repository::export_for_inquiry( $inquiry_id );
+			if ( ! empty( $support['case'] ) ) {
+				$data[] = array(
+					'group_id' => 'sc-engagement-intake-product-support',
+					'group_label' => __( 'Product Support Case', 'sustainable-catalyst-engagement-intake' ),
+					'item_id' => 'sc-ei-support-case-' . $support['case']['id'],
+					'data' => self::export_fields( $support['case'], array( 'case_number' => 'Support case number', 'workflow_stage' => 'Support stage', 'product' => 'Product', 'product_version' => 'Product version', 'component' => 'Component', 'issue_type' => 'Issue type', 'environment_json' => 'Environment', 'error_message' => 'Error message', 'reproduction_steps' => 'Reproduction steps', 'expected_behavior' => 'Expected behavior', 'actual_behavior' => 'Actual behavior', 'severity' => 'Severity', 'priority' => 'Priority', 'source_system' => 'Source system', 'source_reference' => 'Source reference', 'known_issue_reference' => 'Known issue reference', 'sender_summary' => 'Published sender summary', 'sender_next_step' => 'Published sender next step', 'created_at' => 'Created at', 'updated_at' => 'Updated at', 'resolved_at' => 'Resolved at', 'closed_at' => 'Closed at' ) ),
+				);
+			}
+			foreach ( (array) ( $support['links'] ?? array() ) as $link ) {
+				$data[] = array(
+					'group_id' => 'sc-engagement-intake-product-support-links',
+					'group_label' => __( 'Product Support Relationships', 'sustainable-catalyst-engagement-intake' ),
+					'item_id' => 'sc-ei-support-link-' . $link['id'],
+					'data' => self::export_fields( $link, array( 'related_type' => 'Related record type', 'related_reference' => 'Related record reference', 'relation_type' => 'Relationship', 'title' => 'Title', 'sender_visible' => 'Sender visible', 'created_at' => 'Created at', 'updated_at' => 'Updated at' ) ),
+				);
+			}
+			foreach ( (array) ( $support['events'] ?? array() ) as $event ) {
+				$data[] = array(
+					'group_id' => 'sc-engagement-intake-product-support-events',
+					'group_label' => __( 'Product Support Events', 'sustainable-catalyst-engagement-intake' ),
+					'item_id' => 'sc-ei-support-event-' . $event['id'],
+					'data' => self::export_fields( $event, array( 'event_type' => 'Support event', 'from_stage' => 'Previous stage', 'to_stage' => 'New stage', 'payload_json' => 'Event context', 'occurred_at' => 'Occurred at' ) ),
+				);
+			}
+
 			foreach ( SC_EI_Review_Repository::history( $inquiry_id, 500 ) as $review ) {
 				$data[] = array(
 					'group_id'    => 'sc-engagement-intake-reviews',

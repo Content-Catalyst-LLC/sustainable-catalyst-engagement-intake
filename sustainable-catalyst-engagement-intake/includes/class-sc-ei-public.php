@@ -16,6 +16,7 @@ final class SC_EI_Public {
 		add_shortcode( 'sc_contact_hub', array( __CLASS__, 'contact_hub' ) );
 		add_shortcode( 'sc_contact_form', array( __CLASS__, 'contact_form' ) );
 		add_shortcode( 'sc_engagement_inquiry', array( __CLASS__, 'engagement_form' ) );
+		add_shortcode( 'sc_support_request', array( __CLASS__, 'support_form' ) );
 	}
 
 	public static function contact_hub( array $atts = array() ): string {
@@ -102,6 +103,30 @@ final class SC_EI_Public {
 			sanitize_textarea_field( $atts['intro'] ),
 			sanitize_key( $atts['default_type'] ),
 			'',
+			SC_EI_Conversion::sanitize_source( (string) $atts['source'] ),
+			SC_EI_Conversion::sanitize_entry_cta( (string) $atts['entry_cta'] )
+		);
+	}
+
+
+	public static function support_form( array $atts = array() ): string {
+		$atts = shortcode_atts(
+			array(
+				'source'       => 'support-page',
+				'entry_cta'    => 'support-request',
+				'title'        => __( 'Report a Product or Platform Issue', 'sustainable-catalyst-engagement-intake' ),
+				'intro'        => __( 'Provide the affected product, version, component, environment, exact error, and reproduction steps. Private files enter protected quarantine.', 'sustainable-catalyst-engagement-intake' ),
+			),
+			$atts,
+			'sc_support_request'
+		);
+		return self::render_adaptive(
+			'general',
+			array( 'product_support' => SC_EI_Statuses::inquiry_types()['product_support'] ),
+			sanitize_text_field( $atts['title'] ),
+			sanitize_textarea_field( $atts['intro'] ),
+			'product_support',
+			'product_support',
 			SC_EI_Conversion::sanitize_source( (string) $atts['source'] ),
 			SC_EI_Conversion::sanitize_entry_cta( (string) $atts['entry_cta'] )
 		);
@@ -523,6 +548,24 @@ final class SC_EI_Public {
 						<p class="sc-ei-help"><?php esc_html_e( 'Explain the context, the current issue, and the kind of response or conversation you are seeking.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 					</div>
 
+
+					<div class="sc-ei-conditional" data-show-for="product_support">
+						<div class="sc-ei-guidance" role="note"><strong><?php esc_html_e( 'Product support context', 'sustainable-catalyst-engagement-intake' ); ?></strong><span><?php esc_html_e( 'Do not submit passwords, API keys, authentication tokens, payment data, or regulated records. Use protected uploads only for files you are authorized to share.', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+						<div class="sc-ei-field-grid">
+							<div class="sc-ei-field"><label for="<?php echo esc_attr( $form_id . '-support-product' ); ?>"><?php esc_html_e( 'Affected product', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label><select id="<?php echo esc_attr( $form_id . '-support-product' ); ?>" name="support_product" data-required-when-visible><option value=""><?php esc_html_e( 'Choose a product', 'sustainable-catalyst-engagement-intake' ); ?></option><?php foreach ( SC_EI_Support_Schema::products() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></div>
+							<div class="sc-ei-field"><label for="<?php echo esc_attr( $form_id . '-support-version' ); ?>"><?php esc_html_e( 'Installed product version', 'sustainable-catalyst-engagement-intake' ); ?></label><input id="<?php echo esc_attr( $form_id . '-support-version' ); ?>" name="support_product_version" maxlength="80" placeholder="e.g. 5.0.0"></div>
+							<div class="sc-ei-field"><label for="<?php echo esc_attr( $form_id . '-support-component' ); ?>"><?php esc_html_e( 'Component or module', 'sustainable-catalyst-engagement-intake' ); ?></label><input id="<?php echo esc_attr( $form_id . '-support-component' ); ?>" name="support_component" maxlength="120"></div>
+							<div class="sc-ei-field"><label for="<?php echo esc_attr( $form_id . '-support-issue-type' ); ?>"><?php esc_html_e( 'Issue category', 'sustainable-catalyst-engagement-intake' ); ?></label><select id="<?php echo esc_attr( $form_id . '-support-issue-type' ); ?>" name="support_issue_type"><?php foreach ( SC_EI_Support_Schema::issue_types() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></div>
+							<div class="sc-ei-field"><label for="<?php echo esc_attr( $form_id . '-support-browser' ); ?>"><?php esc_html_e( 'Browser', 'sustainable-catalyst-engagement-intake' ); ?></label><input id="<?php echo esc_attr( $form_id . '-support-browser' ); ?>" name="support_browser" maxlength="191"></div>
+							<div class="sc-ei-field"><label for="<?php echo esc_attr( $form_id . '-support-os' ); ?>"><?php esc_html_e( 'Operating system', 'sustainable-catalyst-engagement-intake' ); ?></label><input id="<?php echo esc_attr( $form_id . '-support-os' ); ?>" name="support_os" maxlength="191"></div>
+							<div class="sc-ei-field"><label for="<?php echo esc_attr( $form_id . '-support-wp' ); ?>"><?php esc_html_e( 'WordPress version', 'sustainable-catalyst-engagement-intake' ); ?></label><input id="<?php echo esc_attr( $form_id . '-support-wp' ); ?>" name="support_wordpress_version" maxlength="80"></div>
+							<div class="sc-ei-field"><label for="<?php echo esc_attr( $form_id . '-support-php' ); ?>"><?php esc_html_e( 'PHP version', 'sustainable-catalyst-engagement-intake' ); ?></label><input id="<?php echo esc_attr( $form_id . '-support-php' ); ?>" name="support_php_version" maxlength="80"></div>
+						</div>
+						<div class="sc-ei-field"><label for="<?php echo esc_attr( $form_id . '-support-error' ); ?>"><?php esc_html_e( 'Exact error message', 'sustainable-catalyst-engagement-intake' ); ?></label><textarea id="<?php echo esc_attr( $form_id . '-support-error' ); ?>" name="support_error_message" rows="4" maxlength="12000"></textarea></div>
+						<div class="sc-ei-field"><label for="<?php echo esc_attr( $form_id . '-support-reproduction' ); ?>"><?php esc_html_e( 'Steps to reproduce', 'sustainable-catalyst-engagement-intake' ); ?> <span aria-hidden="true">*</span></label><textarea id="<?php echo esc_attr( $form_id . '-support-reproduction' ); ?>" name="support_reproduction_steps" rows="6" maxlength="12000" data-required-when-visible></textarea></div>
+						<div class="sc-ei-field-grid"><div class="sc-ei-field"><label for="<?php echo esc_attr( $form_id . '-support-expected' ); ?>"><?php esc_html_e( 'Expected behavior', 'sustainable-catalyst-engagement-intake' ); ?></label><textarea id="<?php echo esc_attr( $form_id . '-support-expected' ); ?>" name="support_expected_behavior" rows="4" maxlength="12000"></textarea></div><div class="sc-ei-field"><label for="<?php echo esc_attr( $form_id . '-support-actual' ); ?>"><?php esc_html_e( 'Actual behavior', 'sustainable-catalyst-engagement-intake' ); ?></label><textarea id="<?php echo esc_attr( $form_id . '-support-actual' ); ?>" name="support_actual_behavior" rows="4" maxlength="12000"></textarea></div></div>
+					</div>
+
 					<div class="sc-ei-conditional" data-show-for="consulting,platform_technical,workshop_training,monthly_advisory,institutional_partnership">
 						<div class="sc-ei-field-grid">
 							<div class="sc-ei-field">
@@ -828,6 +871,7 @@ final class SC_EI_Public {
 
 	private static function route_kicker( string $type ): string {
 		$map = array(
+			'product_support'           => __( 'Support', 'sustainable-catalyst-engagement-intake' ),
 			'general'                   => __( 'Question', 'sustainable-catalyst-engagement-intake' ),
 			'consulting'                => __( 'Advisory', 'sustainable-catalyst-engagement-intake' ),
 			'research_collaboration'    => __( 'Research', 'sustainable-catalyst-engagement-intake' ),
@@ -844,6 +888,7 @@ final class SC_EI_Public {
 
 	private static function route_description( string $type ): string {
 		$map = array(
+			'product_support'           => __( 'Product-specific troubleshooting, access, installation, runtime, documentation, or data issue.', 'sustainable-catalyst-engagement-intake' ),
 			'general'                   => __( 'A concise question or request that does not require a project scope.', 'sustainable-catalyst-engagement-intake' ),
 			'consulting'                => __( 'A defined advisory, diagnostic, strategy, architecture, or implementation need.', 'sustainable-catalyst-engagement-intake' ),
 			'research_collaboration'    => __( 'Research, publication, evidence, academic, or public-interest collaboration.', 'sustainable-catalyst-engagement-intake' ),

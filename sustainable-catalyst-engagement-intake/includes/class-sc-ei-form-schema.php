@@ -13,6 +13,7 @@ final class SC_EI_Form_Schema {
 		$types = SC_EI_Statuses::inquiry_types();
 		$keys  = array(
 			'general',
+			'product_support',
 			'research_collaboration',
 			'speaking_media',
 			'open_source',
@@ -43,6 +44,7 @@ final class SC_EI_Form_Schema {
 		return apply_filters(
 			'sc_ei_service_interests',
 			array(
+				'product_support'            => __( 'Product Support Request', 'sustainable-catalyst-engagement-intake' ),
 				'initial_fit_call'            => __( 'Initial Fit Call', 'sustainable-catalyst-engagement-intake' ),
 				'strategic_consultation'      => __( 'Strategic Advisory Consultation', 'sustainable-catalyst-engagement-intake' ),
 				'sustainable_ai_assurance'     => __( 'Sustainable AI Assurance', 'sustainable-catalyst-engagement-intake' ),

@@ -82,6 +82,7 @@ final class SC_EI_Admin {
 		SC_EI_Workflow_Admin::submenu();
 		SC_EI_Graph_Admin::submenu();
 		SC_EI_Lifecycle_Admin::submenu();
+		SC_EI_Support_Admin::submenu();
 		SC_EI_Engagement_Admin::submenu();
 		SC_EI_Workflow_Core_Admin::submenu();
 		SC_EI_Analytics_Admin::submenu();

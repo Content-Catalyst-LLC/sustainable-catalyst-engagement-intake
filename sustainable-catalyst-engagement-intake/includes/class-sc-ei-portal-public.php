@@ -112,6 +112,7 @@ final class SC_EI_Portal_Public {
 		$meeting_offers = SC_EI_Workflow_Repository::meeting_offers_for_inquiry( absint( $inquiry['id'] ), true );
 		$proposals = SC_EI_Workflow_Repository::proposals_for_inquiry( absint( $inquiry['id'] ), true );
 		$lifecycle_snapshot = SC_EI_Lifecycle_Repository::sender_snapshot( absint( $inquiry['id'] ) );
+		$support_snapshot = SC_EI_Support_Repository::sender_snapshot( absint( $inquiry['id'] ) );
 		$engagement_settings = SC_EI_Engagement_Repository::settings();
 		$engagements = ! empty( $engagement_settings['engagement_sender_portal_enabled'] )
 			? SC_EI_Engagement_Repository::for_inquiry( absint( $inquiry['id'] ), true )

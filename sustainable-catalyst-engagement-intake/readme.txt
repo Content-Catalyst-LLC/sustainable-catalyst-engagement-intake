@@ -1,9 +1,9 @@
 === Sustainable Catalyst Contact and Engagement Platform ===
 Contributors: content-catalyst
-Tags: contact, advisory, engagement, lifecycle, sender portal, microsoft teams, proposals, privacy
+Tags: contact, support, help desk, product support, advisory, engagement, sender portal, known issues, privacy
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 1.1.1
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,11 +11,14 @@ A governed contact-to-engagement platform with adaptive intake, advisory lifecyc
 
 == Description ==
 
-Version 1.1.1 is the Inquiry Persistence and Lifecycle Reliability Patch. It preserves the v1.1.0 advisory lifecycle while repairing strict-mode inquiry inserts, strengthening runtime schema evidence, and preventing the stored database version from advancing before the required write-path contract is complete. It preserves the v1.0.3 public-launch gate and adds thirteen audited lifecycle stages, structured qualification, internal-only notes, follow-up tasks, Teams/proposal/engagement linkage, sender-safe status publishing, service routes, communication templates, privacy integration, and operational metrics.
+Version 1.2.0 adds Support Operations and Product Intelligence Integration. It preserves v1.1.1 inquiry persistence and the advisory lifecycle while adding private support cases, product/version/component diagnostics, governed support stages, typed Knowledge Base/known issue/Feature Suggestion/release relationships, sender-safe support updates, privacy-safe product-intelligence signals, focused support intake, REST handoffs, communication templates, privacy export and redaction, readiness checks, and live validation.
 
 The platform connects:
 
 * Adaptive general contact and service-specific engagement inquiry experiences
+* Focused product-support intake and private support-case operations
+* Typed integration with public Knowledge Base, known issues, Feature Suggestions, and releases
+* Privacy-safe, nonpersonal documentation-gap and product-friction signals
 * Protected document intake and quarantine
 * Human review, fit assessment, and structured advisory qualification
 * Governed lifecycle stages from inquiry through active engagement and completion
@@ -35,6 +38,10 @@ The plugin slug, text domain, existing tables, public URLs, and existing shortco
 Use the unified entry point on the primary Contact page:
 
 [sc_contact_engagement_platform]
+
+Use the focused support entry on `/support/`:
+
+[sc_support_request]
 
 Service-specific links can use the same Contact page:
 
@@ -79,12 +86,12 @@ Production requires:
 
 * 100% readiness
 * zero required failures and zero warnings
-* current v1.1.1 persistence-patch, v1.1.0 lifecycle, and database evidence
+* current v1.2.0 support, v1.1.1 persistence-patch, v1.1.0 lifecycle, and database evidence
 * recent successful live validation
 * externally confirmed inbox evidence
 * completed controlled-pilot evidence
 * current database and protected-storage backup evidence
-* no critical events, public-launch blockers, overdue lifecycle tasks, or overdue next actions
+* no critical events, public-launch blockers, overdue lifecycle work, or unresolved high-priority support cases
 * typed human promotion to Production
 
 Repository validation does not replace live WordPress-host testing.
@@ -92,18 +99,26 @@ Repository validation does not replace live WordPress-host testing.
 == Installation ==
 
 1. Back up the WordPress database and protected storage.
-2. Upgrade the existing plugin or install v1.1.1.
+2. Upgrade the existing plugin or install v1.2.0.
 3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
 4. Open Contact & Engagement → Platform Overview.
-5. Complete database, v1.1.0 lifecycle, and v1.1.1 persistence-patch repairs if shown.
-6. Inspect backfilled inquiries in Contact & Engagement → Advisory Lifecycle.
+5. Complete database, lifecycle, persistence-patch, and v1.2.0 support repairs if shown.
+6. Inspect Advisory Lifecycle and Contact & Engagement → Support Cases.
 7. Run Live Validation with a monitored recipient.
-8. Confirm inbox delivery and repeat controlled pilot checks for v1.1.1.
+8. Confirm inbox delivery and repeat controlled support and advisory pilot checks for v1.2.0.
 9. Resolve public-launch and lifecycle operational blockers.
 10. Record current database and protected-storage backup evidence.
 11. Require 100%, zero failures, and zero warnings before Production.
 
 == Changelog ==
+
+= 1.2.0 =
+* Added private product-support cases tied to canonical inquiries.
+* Added governed support stages, product/version/component diagnostics, environment and reproduction evidence, severity, assignment, and sender-safe updates.
+* Added support case events, typed relationships, and privacy-safe aggregated product-intelligence signals.
+* Added the `sc-product-support-handoff/1.0` contract and capability-protected REST endpoints.
+* Added `[sc_support_request]`, `/contact/?engagement=support`, a Support Cases workspace, Sender Portal support status, communication templates, privacy integration, readiness, watchdog, cron, and Live Validation.
+* Preserved all v1.1.1 persistence and human-control boundaries.
 
 = 1.1.1 =
 * Fixed strict-mode inquiry creation by initializing `qualification_score` to the non-null database default of zero.

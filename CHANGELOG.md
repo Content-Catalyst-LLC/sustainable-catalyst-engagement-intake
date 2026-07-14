@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.2.0 — Support Operations and Product Intelligence Integration
+
+- Added private product-support cases keyed to the canonical inquiry rather than creating a separate sender system.
+- Added governed stages from New Support Request through Triage, Investigation, Known Issue, Workaround, Fix Planned, Resolved, and Closed.
+- Added product, version, component, environment, error, reproduction, expected/actual behavior, severity, priority, assignment, and sender-safe update fields.
+- Added four nondestructive support tables for cases, events, typed relationships, and privacy-safe aggregated product-intelligence signals.
+- Added the `sc-product-support-handoff/1.0` contract and capability-protected REST endpoints.
+- Added typed links to Knowledge Base articles, known issues, Feature Suggestions, releases, reliability events, and duplicate cases.
+- Added a focused `[sc_support_request]` shortcode and `/contact/?engagement=support` route.
+- Added a dedicated Support Cases administration workspace and operational metrics.
+- Added sender-safe support views to the Secure Sender Portal while excluding private diagnostics and internal reasoning.
+- Added reviewable support communication templates without automatic sending or release commitments.
+- Added support records to WordPress privacy export, approved redaction, retention execution, readiness, watchdog, cron, uninstall, and Live Validation.
+- Preserved all v1.1.1 inquiry-persistence and human-control boundaries.
+
 ## 1.1.1 — Inquiry Persistence and Lifecycle Reliability Patch
 
 - Fixed strict-mode inquiry creation by initializing `qualification_score` to `0`, matching the non-null database contract.

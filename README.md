@@ -1,9 +1,44 @@
 # Sustainable Catalyst Contact and Engagement Platform
 
-**Version:** 1.1.1  
-**Release:** Inquiry Persistence and Lifecycle Reliability Patch
+**Version:** 1.2.0  
+**Release:** Support Operations and Product Intelligence Integration
 
-v1.1.1 is a focused production-blocking reliability patch for the v1.1.0 advisory lifecycle. It repairs new inquiry persistence under MySQL strict mode, adds runtime verification of the complete inquiry write-path schema, records protected database diagnostics, and prevents the stored database version from advancing when the required contract is incomplete. No destructive migration is performed and the database schema version remains 1.1.0.
+v1.2.0 adds a private product-support case layer while preserving the governed advisory lifecycle and v1.1.1 inquiry-persistence repair. Support requests remain canonical inquiries, then receive structured product/version/component diagnostics, a governed support workflow, typed relationships to Knowledge Base articles, known issues, Feature Suggestions, releases, reliability events, and related cases, plus privacy-safe product-intelligence signals.
+
+The public Knowledge Base and feature-feedback system remain in Feature Suggestions. Contact and Engagement owns private cases, sender communication, diagnostic files, internal reasoning, resolution, and Sender Portal continuity. The integration contract is `sc-product-support-handoff/1.0`.
+
+## Product support model
+
+```text
+New Support Request
+→ Triage / Needs Information
+→ Reproducing / Known Issue
+→ Workaround Provided / Fix Planned
+→ Resolved
+→ Closed
+```
+
+Every transition is a deliberate administrator action with authorization, current-state validation, typed confirmation, and an audit event. The support repository does not send mail, publish a fix, promise a release date, or mutate a Feature Suggestion automatically.
+
+## Support workspace
+
+```text
+Contact & Engagement → Support Cases
+```
+
+The workspace includes product and version context, environment details, reproduction evidence, severity, assignment, sender-safe updates, governed stages, typed product relationships, privacy-safe intelligence signals, and an audit timeline.
+
+## Public support entry
+
+```text
+[sc_support_request]
+```
+
+or:
+
+```text
+/contact/?engagement=support
+```
 
 ## Lifecycle model
 
@@ -81,11 +116,11 @@ The canonical Contact page supports routed entry links without creating separate
 
 ## Production gate
 
-v1.1.1 retains the v1.1.0 launch gate and adds an inquiry-persistence contract check. Production requires:
+v1.2.0 retains the inquiry-persistence and advisory-lifecycle gates and adds the product-support database, migration, handoff-privacy, scheduled-job, and operational-queue contracts. Production requires:
 
 - 100% readiness
 - zero required failures and zero warnings
-- current v1.1.1 persistence-patch and v1.1.0 lifecycle migration evidence
+- current v1.2.0 support, v1.1.1 persistence-patch, and v1.1.0 lifecycle migration evidence
 - recent successful live validation
 - externally confirmed inbox delivery
 - completed controlled-pilot evidence
@@ -99,14 +134,14 @@ Repository tests do not replace validation on the live WordPress host.
 ## Upgrade
 
 1. Back up the database and protected storage.
-2. Install the v1.1.1 ZIP over the existing plugin.
+2. Install the v1.2.0 ZIP over the existing plugin.
 3. Clear WordPress, object, host, CDN, browser, and PHP opcode caches.
 4. Open **Contact & Engagement → Platform Overview**.
-5. Complete database, v1.1.0 lifecycle, and v1.1.1 persistence-patch repairs if shown.
-6. Open **Contact & Engagement → Advisory Lifecycle** and inspect backfilled inquiries.
+5. Complete database, v1.0–v1.1, and v1.2.0 support migration repairs if shown.
+6. Open **Contact & Engagement → Advisory Lifecycle** and **Support Cases** and inspect migrated records.
 7. Assign owners and resolve overdue next actions or tasks.
 8. Run Live Validation and repeat the controlled pilot where required.
-9. Record fresh backup, inbox, and pilot evidence for v1.1.1.
+9. Record fresh backup, inbox, and pilot evidence for v1.2.0.
 10. Promote only after the gate returns 100%, zero failures, and zero warnings.
 
-See `docs/ADVISORY-LIFECYCLE.md`, `docs/MIGRATION-v1.1.0.md`, `docs/MIGRATION-v1.1.1.md`, and `docs/RELEASE.md`.
+See `docs/PRODUCT-SUPPORT-INTEGRATION.md`, `docs/MIGRATION-v1.2.0.md`, `docs/ADVISORY-LIFECYCLE.md`, and `docs/RELEASE.md`.

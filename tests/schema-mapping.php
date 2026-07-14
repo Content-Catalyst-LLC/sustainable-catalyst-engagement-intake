@@ -17,6 +17,7 @@ $engagement_repository = file_get_contents( $plugin . '/includes/class-sc-ei-eng
 $hardening_repository = file_get_contents( $plugin . '/includes/class-sc-ei-hardening-repository.php' );
 $workflow_core_repository = file_get_contents( $plugin . '/includes/class-sc-ei-workflow-core-repository.php' );
 $platform_repository = file_get_contents( $plugin . '/includes/class-sc-ei-platform-repository.php' );
+$support_repository = file_get_contents( $plugin . '/includes/class-sc-ei-support-repository.php' );
 $communications = file_get_contents( $plugin . '/includes/class-sc-ei-communication-repository.php' );
 $templates  = file_get_contents( $plugin . '/includes/class-sc-ei-template-repository.php' );
 $mailer     = file_get_contents( $plugin . '/includes/class-sc-ei-mailer.php' );
@@ -238,6 +239,19 @@ foreach ( array(
 	$columns = array_values( array_diff( schema_columns( $database, $variable ), array( 'id' ) ) );
 	$missing = array();
 	foreach ( $columns as $column ) { if ( false === strpos( $platform_repository, $column ) ) $missing[] = $column; }
+	if ( $missing ) { fwrite( STDERR, $label . ' fields lack repository coverage: ' . implode( ', ', $missing ) . PHP_EOL ); exit( 1 ); }
+	echo 'PASS: ' . $label . ' schema operational coverage (' . count( $columns ) . " fields)\n";
+}
+
+foreach ( array(
+	'sql_support_cases' => 'Product support case',
+	'sql_support_case_events' => 'Product support event',
+	'sql_support_case_links' => 'Product support relationship',
+	'sql_support_signals' => 'Product intelligence signal',
+) as $variable => $label ) {
+	$columns = array_values( array_diff( schema_columns( $database, $variable ), array( 'id' ) ) );
+	$missing = array();
+	foreach ( $columns as $column ) { if ( false === strpos( $support_repository, $column ) ) $missing[] = $column; }
 	if ( $missing ) { fwrite( STDERR, $label . ' fields lack repository coverage: ' . implode( ', ', $missing ) . PHP_EOL ); exit( 1 ); }
 	echo 'PASS: ' . $label . ' schema operational coverage (' . count( $columns ) . " fields)\n";
 }

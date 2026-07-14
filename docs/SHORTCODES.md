@@ -45,3 +45,23 @@ Routes preselect and attribute the inquiry path. They do not create separate for
 ```
 
 The Sender Portal must be placed on its own published page and excluded from full-page caching. v1.1.0 can deliberately publish a safe lifecycle stage, summary, and next step. Internal notes, qualification context, assignments, tasks, scores, and transition reasons remain private.
+
+## Product support request
+
+```text
+[sc_support_request]
+```
+
+Renders a focused product-support intake using the same canonical inquiry pipeline. It captures product, version, component, environment, error message, reproduction steps, expected behavior, and actual behavior.
+
+The full Contact page can also use:
+
+```text
+[sc_contact_engagement_platform]
+```
+
+with a routed link:
+
+```text
+/contact/?engagement=support
+```

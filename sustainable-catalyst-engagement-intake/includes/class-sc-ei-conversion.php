@@ -23,6 +23,7 @@ final class SC_EI_Conversion {
 			'sc_ei_sources',
 			array(
 				'consulting-page' => __( 'Consulting Page', 'sustainable-catalyst-engagement-intake' ),
+				'support-page'    => __( 'Support Page', 'sustainable-catalyst-engagement-intake' ),
 				'contact-page'    => __( 'Contact Page', 'sustainable-catalyst-engagement-intake' ),
 				'research-page'   => __( 'Research Page', 'sustainable-catalyst-engagement-intake' ),
 				'platform-page'   => __( 'Platform Page', 'sustainable-catalyst-engagement-intake' ),
@@ -128,6 +129,7 @@ final class SC_EI_Conversion {
 
 	public static function route_guidance(): array {
 		return array(
+			'product_support'           => __( 'Include the product, version, component, environment, exact error message, reproduction steps, expected behavior, and actual behavior. Do not include passwords or secrets.', 'sustainable-catalyst-engagement-intake' ),
 			'general'                   => __( 'Keep the request concise. General inquiries do not need project, budget, or procurement details.', 'sustainable-catalyst-engagement-intake' ),
 			'consulting'                => __( 'Include the current problem, desired outcome, budget range, timeline, and the decision the engagement should support.', 'sustainable-catalyst-engagement-intake' ),
 			'research_collaboration'    => __( 'Explain the research topic, proposed contribution, current stage, methodology, and intended public or institutional outcome.', 'sustainable-catalyst-engagement-intake' ),

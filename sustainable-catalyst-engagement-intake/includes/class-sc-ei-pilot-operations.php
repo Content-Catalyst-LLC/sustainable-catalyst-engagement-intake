@@ -50,6 +50,8 @@ final class SC_EI_Pilot_Operations {
 			'evidence_systems_diagnostic' => 'evidence-systems',
 			'knowledge_architecture' => 'knowledge-architecture',
 			'technical_storytelling' => 'technical-storytelling',
+			'product_support' => 'support',
+			'help' => 'support',
 			'responsible_ai' => 'responsible-ai',
 			'responsible_ai_workflows' => 'responsible-ai',
 		);
@@ -200,6 +202,7 @@ final class SC_EI_Pilot_Operations {
 		$portal = SC_EI_Portal_Repository::metrics();
 		$hardening = SC_EI_Hardening_Repository::metrics();
 		$lifecycle = SC_EI_Lifecycle_Repository::metrics();
+		$support = SC_EI_Support_Repository::metrics();
 		$blockers = array();
 		if ( absint( $communications['failed'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d failed communication(s)', absint( $communications['failed'] ) );
 		if ( absint( $communications['follow_up_due'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d overdue follow-up(s)', absint( $communications['follow_up_due'] ) );
@@ -214,6 +217,7 @@ final class SC_EI_Pilot_Operations {
 		if ( absint( $hardening['open_critical'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d open critical reliability event(s)', absint( $hardening['open_critical'] ) );
 		if ( absint( $lifecycle['overdue_tasks'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d overdue lifecycle task(s)', absint( $lifecycle['overdue_tasks'] ) );
 		if ( absint( $lifecycle['next_actions_due'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d lifecycle next action(s) due', absint( $lifecycle['next_actions_due'] ) );
+		if ( absint( $support['high_priority'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d high-priority product support case(s) unresolved', absint( $support['high_priority'] ) );
 		return array(
 			'inquiries' => $inquiry,
 			'communications' => $communications,
@@ -221,6 +225,7 @@ final class SC_EI_Pilot_Operations {
 			'portal' => $portal,
 			'hardening' => $hardening,
 			'lifecycle' => $lifecycle,
+			'support' => $support,
 			'blockers' => $blockers,
 			'clear' => empty( $blockers ),
 			'generated_at' => current_time( 'mysql', true ),

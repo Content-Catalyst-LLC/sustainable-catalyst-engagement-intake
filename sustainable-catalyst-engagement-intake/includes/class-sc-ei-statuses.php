@@ -36,6 +36,7 @@ final class SC_EI_Statuses {
 				'general'                   => __( 'General Question', 'sustainable-catalyst-engagement-intake' ),
 				'consulting'                => __( 'Consulting or Advisory', 'sustainable-catalyst-engagement-intake' ),
 				'research_collaboration'    => __( 'Research Collaboration', 'sustainable-catalyst-engagement-intake' ),
+				'product_support'          => __( 'Product Support', 'sustainable-catalyst-engagement-intake' ),
 				'platform_technical'        => __( 'Platform or Technical Work', 'sustainable-catalyst-engagement-intake' ),
 				'workshop_training'         => __( 'Workshop or Training', 'sustainable-catalyst-engagement-intake' ),
 				'monthly_advisory'          => __( 'Monthly Advisory', 'sustainable-catalyst-engagement-intake' ),

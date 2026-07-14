@@ -173,6 +173,16 @@ final class SC_EI_Form_Handler {
 			return new WP_Error( 'authorization_required', __( 'Confirm that you are authorized to share the information included in the inquiry.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 
+		if ( 'product_support' === $inquiry_type ) {
+			$support_product = sanitize_title( (string) ( $raw['support_product'] ?? '' ) );
+			if ( ! isset( SC_EI_Support_Schema::products()[ $support_product ] ) ) {
+				return new WP_Error( 'support_product_required', __( 'Choose the affected Sustainable Catalyst product.', 'sustainable-catalyst-engagement-intake' ) );
+			}
+			if ( '' === trim( self::clean_textarea( $raw['support_reproduction_steps'] ?? '' ) ) ) {
+				return new WP_Error( 'support_reproduction_required', __( 'Describe the steps that reproduce the support issue.', 'sustainable-catalyst-engagement-intake' ) );
+			}
+		}
+
 		if ( SC_EI_Form_Schema::type_requires_engagement_fields( $inquiry_type ) ) {
 			$service_choices = 'compact' === $mode ? SC_EI_Form_Schema::compact_service_interests() : SC_EI_Form_Schema::service_interests();
 			$budget_choices  = 'compact' === $mode ? SC_EI_Form_Schema::compact_budget_ranges() : SC_EI_Form_Schema::budget_ranges();
