@@ -1,271 +1,180 @@
 # Sustainable Catalyst Engagement Intake
 
-**Version:** 0.9.1  
-**Release:** Microsoft Graph Reliability Patch
+**Version:** 0.9.2  
+**Release:** Proposal and Engagement Handoff
 
-## Connector model
+## End-to-end workflow
 
 ```text
-sender accepts approved time
-→ authorized staff queues Graph create
-→ encrypted durable operation
-→ app-only Microsoft Graph v1.0
-→ Outlook calendar event with Teams meeting
-→ join URL reconciliation
-→ sender-safe finalized meeting
+public inquiry
+→ administrative review
+→ human-controlled fit assessment
+→ secure sender portal
+→ Teams consultation
+→ versioned proposal
+→ sender intent response
+→ external contract recorded
+→ controlled engagement handoff
+→ onboarding readiness
+→ human activation
+→ active / paused / completed / canceled
 ```
 
-The manual Teams URL path remains fully supported.
+No stage automatically performs the next legally or operationally significant stage.
 
-## Microsoft prerequisites
+## Core invariant
 
 ```text
-single-tenant Microsoft Entra application
-Microsoft Graph application Calendars.ReadWrite
-administrator consent
-client secret
-Microsoft 365 organizer mailbox
-Exchange Online Application RBAC scope
+one contracted proposal
+→ at most one engagement
 ```
 
-Application RBAC should limit the service principal to the intended organizer mailbox or mailbox set.
+The `engagements.proposal_id` field is unique, and the repository checks for an existing handoff before beginning its transaction.
 
-## OAuth
+## Atomic handoff
 
 ```text
-POST /{tenant}/oauth2/v2.0/token
-grant_type=client_credentials
-scope=https://graph.microsoft.com/.default
+START TRANSACTION
+→ create handoff_pending engagement
+→ create immutable commercial snapshot
+→ attach snapshot
+→ seed onboarding requirements
+→ record handoff and snapshot events
+COMMIT
 ```
 
-The token is cached only in an authenticated encrypted site transient.
+Any persistence failure performs `ROLLBACK`. The contracted proposal remains unchanged.
 
-## Secret storage
+## Snapshot model
+
+The handoff snapshot includes the exact contracted proposal version and its existing content hash, plus an independent hash of the complete handoff payload.
 
 ```text
-sc_ei_graph_credentials
+proposal_content_hash
+content_hash
 ```
 
-The separate option contains an authenticated encryption envelope.
+Normal workflow never edits the snapshot. Approved privacy erasure replaces the personal payload with a limited tombstone and updates the snapshot hash so integrity remains verifiable.
 
-Preferred algorithm:
-
-```text
-sodium secretbox
-```
-
-Fallback:
+## Engagement states
 
 ```text
-OpenSSL AES-256-GCM
-```
-
-No client secret or access token appears in the settings UI, diagnostics export, workflow export, or operation export.
-
-## Calendar event creation
-
-The connector uses:
-
-```text
-POST /users/{organizer}/calendar/events
-```
-
-or:
-
-```text
-POST /users/{organizer}/calendars/{calendar-id}/events
-```
-
-Payload controls:
-
-```text
-isOnlineMeeting = true
-onlineMeetingProvider = teamsForBusiness
-start/end timezone = UTC
-transactionId = persistent meeting UUID
-sensitivity = private
-```
-
-The event also receives two legacy single-value extended properties containing the local offer number and public meeting ID.
-
-## Idempotency
-
-```text
-graph_transaction_id
-idempotency_key
-request_hash
-encrypted payload
-```
-
-A repeated create operation uses the same Graph `transactionId`.
-
-A manually retried permanent failure uses the same operation identity and payload.
-
-## Durable operation table
-
-```text
-{prefix}sc_ei_graph_operations
-```
-
-Operations:
-
-```text
-create
-reconcile
-delete
-```
-
-States:
-
-```text
-pending
-processing
-retry_wait
-succeeded
-permanent_failure
-canceled
-```
-
-## Reliability
-
-```text
-optimistic queue claim
-15-minute stale-lock recovery
-Retry-After support
-exponential backoff with jitter
-bounded maximum attempts
-circuit breaker
-hourly catch-up
-one-time token refresh after 401
-request-id capture
-client-request-id capture
-manual queue processing
-manual same-operation retry
-```
-
-## Reconciliation
-
-The supported sender join link comes from:
-
-```text
-onlineMeeting.joinUrl
-```
-
-The connector does not use deprecated `onlineMeetingUrl`.
-
-If the event is created before the Teams join URL becomes available:
-
-```text
-created_pending_join_url
-→ reconcile_queued
-→ retry_wait
-→ synced
-```
-
-## Local state protection
-
-A Graph create operation is permitted only while:
-
-```text
-meeting.status = accepted_pending_link
-```
-
-Reconciliation can update remote metadata but cannot reopen:
-
-```text
-canceled
+handoff_pending
+ready_for_setup
+active
+paused
 completed
-declined
-superseded
+canceled
 ```
 
-## Attendees
-
-Default:
+Allowed operational transitions:
 
 ```text
-graph_include_sender_attendee = false
+handoff_pending → ready_for_setup
+ready_for_setup → active
+active → paused / completed / canceled
+paused → active / completed / canceled
+handoff_pending / ready_for_setup → canceled
 ```
 
-When enabled:
+## Readiness gate
+
+Readiness checks:
 
 ```text
-calendar_invite_consent = true
+contract reference present
+owner assigned
+snapshot present
+snapshot hash valid
+all required onboarding items complete or waived
+source proposal still contracted
+snapshot proposal version still matches
+privacy state permits activation
 ```
 
-is required before the sender is added.
+Activation reruns all checks.
 
-Microsoft 365 can send attendee invitations or cancellation notices as a consequence of the human-triggered calendar action.
-
-## Human controls
+## Typed controls
 
 ```text
-SAVE GRAPH SETTINGS
-TEST GRAPH
-RESET GRAPH CIRCUIT
-CLEAR GRAPH TOKEN
-PROCESS GRAPH QUEUE
-GRAPH <OFFER-NUMBER>
-RECONCILE <OFFER-NUMBER>
-DELETE GRAPH <OFFER-NUMBER>
-RESET GRAPH <OFFER-NUMBER>
-RETRY GRAPH <OPERATION-ID>
+HANDOFF <PROPOSAL-NUMBER>
+READY <ENGAGEMENT-NUMBER>
+ACTIVATE <ENGAGEMENT-NUMBER>
+PAUSE <ENGAGEMENT-NUMBER>
+RESUME <ENGAGEMENT-NUMBER>
+COMPLETE <ENGAGEMENT-NUMBER>
+CANCEL <ENGAGEMENT-NUMBER>
 ```
 
-## Capabilities
+## New tables
 
 ```text
-sc_intake_view_graph
-sc_intake_manage_graph_settings
-sc_intake_create_graph_events
-sc_intake_reconcile_graph_events
-sc_intake_cancel_graph_events
-sc_intake_export_graph_operations
+{prefix}sc_ei_engagements
+{prefix}sc_ei_engagement_snapshots
+{prefix}sc_ei_engagement_requirements
+{prefix}sc_ei_engagement_events
 ```
 
-Reviewers receive view access.
-
-Managers can create, reconcile, cancel, retry, and export Graph operations.
-
-Only administrators receive credential-management access.
-
-## Manual fallback
+## New capabilities
 
 ```text
-SCHEDULE <OFFER-NUMBER>
+sc_intake_view_engagements
+sc_intake_create_engagement_handoffs
+sc_intake_manage_engagements
+sc_intake_activate_engagements
+sc_intake_complete_engagements
+sc_intake_export_engagements
 ```
 
-remains available and independent of the Graph connector.
+Reviewers receive view access. Managers receive operational handoff capabilities. Administrators receive all capabilities.
 
-## Privacy boundary
+## Portal permission
 
-Graph privacy export includes operation status, attempts, timestamps, HTTP status, safe error code, request ID, and client request ID.
+```text
+view_engagements
+```
 
-It excludes decrypted payloads and all credentials.
+Existing access records retain their existing permission JSON. Reissue an invitation to add the new permission.
 
-Approved erasure redacts local Graph identifiers and personal operation narratives.
+## Integration package
 
-Remote Microsoft 365 deletion remains a separate reviewed action.
+Private handoff export schema:
 
-## Upgrade checklist
+```text
+sc-engagement-handoff-package/1.0
+```
 
-1. Back up database and protected storage.
-2. Upgrade to v0.9.1.
-3. Clear caches.
-4. Confirm DB 0.9.1.
-5. Confirm workflow schema 1.1.0.
-6. Confirm Graph schema 1.0.0.
-7. Confirm Graph operation table.
-8. Confirm expanded meeting fields.
-9. Confirm capabilities.
-10. Confirm Graph catch-up cron.
-11. Configure Entra application permission.
-12. Scope mailbox access.
-13. Save encrypted credentials.
-14. Enable connector.
-15. Test calendar access.
-16. Create one staging event.
-17. Reconcile join URL.
-18. Test manual fallback.
-19. Test retry and circuit controls.
-20. Test redacted export and privacy erasure.
+Contains:
+
+```text
+engagement record
+commercial snapshot and integrity state
+onboarding requirements
+event ledger
+Workbench handoff metadata
+Decision Studio handoff metadata
+fixed no-automation boundaries
+```
+
+It does not provision either platform.
+
+## Fixed boundaries
+
+```text
+automatic activation = false
+automatic provisioning = false
+automatic invoice = false
+automatic payment = false
+electronic signature = false
+contract generation = false
+```
+
+## Public shortcodes
+
+```text
+[sc_engagement_inquiry mode="compact" source="consulting-page" entry_cta="discuss-an-engagement" title="Discuss an Engagement"]
+[sc_contact_hub mode="advanced" source="contact-page" entry_cta="contact-hub" title="Contact Sustainable Catalyst"]
+[sc_sender_portal title="Secure Sender Portal"]
+```
+
+No additional public shortcode is required.

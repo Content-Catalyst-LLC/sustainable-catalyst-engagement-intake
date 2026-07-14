@@ -62,4 +62,4 @@ if ( 12 !== strlen( $fingerprint_a ) || $fingerprint_a === $fingerprint_b ) {
 }
 pass_graph_crypto( 'secret fingerprints support safe rotation diagnostics' );
 
-echo "Engagement Intake v0.9.1 Graph crypto fixtures passed.\n";
+echo "Engagement Intake v0.9.2 Graph crypto fixtures passed.\n";

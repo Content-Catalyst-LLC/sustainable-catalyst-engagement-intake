@@ -73,6 +73,7 @@ final class SC_EI_Admin {
 		SC_EI_Portal_Admin::submenu();
 		SC_EI_Workflow_Admin::submenu();
 		SC_EI_Graph_Admin::submenu();
+		SC_EI_Engagement_Admin::submenu();
 		SC_EI_Communication_Admin::submenu();
 		SC_EI_Privacy_Admin::submenu();
 
@@ -198,7 +199,8 @@ final class SC_EI_Admin {
 			SC_EI_Fit_Schema::default_settings(),
 			SC_EI_Portal_Schema::default_settings(),
 			SC_EI_Workflow_Schema::default_settings(),
-			SC_EI_Graph_Credentials::defaults()
+			SC_EI_Graph_Credentials::defaults(),
+			SC_EI_Engagement_Schema::default_settings()
 		);
 	}
 
@@ -333,6 +335,21 @@ final class SC_EI_Admin {
 			'graph_circuit_cooldown_minutes'    => max( 1, min( 1440, absint( $value['graph_circuit_cooldown_minutes'] ?? $current['graph_circuit_cooldown_minutes'] ) ) ),
 			'graph_reconcile_delay_seconds'     => max( 10, min( 900, absint( $value['graph_reconcile_delay_seconds'] ?? $current['graph_reconcile_delay_seconds'] ) ) ),
 			'graph_global_cloud_only'           => 1,
+			'engagement_enabled'                     => array_key_exists( 'engagement_enabled', $value ) ? ( empty( $value['engagement_enabled'] ) ? 0 : 1 ) : absint( $current['engagement_enabled'] ),
+			'engagement_require_all_required_items'  => 1,
+			'engagement_require_owner'               => 1,
+			'engagement_require_contract_reference'  => 1,
+			'engagement_require_snapshot_hash'       => 1,
+			'engagement_sender_portal_enabled'       => array_key_exists( 'engagement_sender_portal_enabled', $value ) ? ( empty( $value['engagement_sender_portal_enabled'] ) ? 0 : 1 ) : absint( $current['engagement_sender_portal_enabled'] ),
+			'engagement_default_kickoff_days'        => max( 1, min( 90, absint( $value['engagement_default_kickoff_days'] ?? $current['engagement_default_kickoff_days'] ) ) ),
+			'engagement_default_requirement_days'    => max( 1, min( 365, absint( $value['engagement_default_requirement_days'] ?? $current['engagement_default_requirement_days'] ) ) ),
+			'engagement_allow_workbench_export'      => array_key_exists( 'engagement_allow_workbench_export', $value ) ? ( empty( $value['engagement_allow_workbench_export'] ) ? 0 : 1 ) : absint( $current['engagement_allow_workbench_export'] ),
+			'engagement_allow_decision_studio_export'=> array_key_exists( 'engagement_allow_decision_studio_export', $value ) ? ( empty( $value['engagement_allow_decision_studio_export'] ) ? 0 : 1 ) : absint( $current['engagement_allow_decision_studio_export'] ),
+			'engagement_no_auto_activation'          => 1,
+			'engagement_no_auto_provisioning'        => 1,
+			'engagement_no_auto_invoice'             => 1,
+			'engagement_no_auto_payment'             => 1,
+			'engagement_no_auto_signature'           => 1,
 			'delete_data_on_uninstall'           => empty( $value['delete_data_on_uninstall'] ) ? 0 : 1,
 			'default_unaccepted_retention_days'  => max( 30, min( 3650, absint( $value['default_unaccepted_retention_days'] ?? $current['default_unaccepted_retention_days'] ) ) ),
 			'withdrawn_retention_days'           => max( 1, min( 3650, absint( $value['withdrawn_retention_days'] ?? $current['withdrawn_retention_days'] ) ) ),

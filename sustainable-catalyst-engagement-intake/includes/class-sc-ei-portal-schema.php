@@ -76,6 +76,7 @@ final class SC_EI_Portal_Schema {
 			'documents'   => __( 'Private Documents', 'sustainable-catalyst-engagement-intake' ),
 			'meetings'    => __( 'Teams Meetings', 'sustainable-catalyst-engagement-intake' ),
 			'proposals'   => __( 'Proposals', 'sustainable-catalyst-engagement-intake' ),
+			'engagement'  => __( 'Engagement', 'sustainable-catalyst-engagement-intake' ),
 			'preferences' => __( 'Contact and Scheduling', 'sustainable-catalyst-engagement-intake' ),
 			'privacy'     => __( 'Privacy and Withdrawal', 'sustainable-catalyst-engagement-intake' ),
 			'access'      => __( 'Access and Security', 'sustainable-catalyst-engagement-intake' ),
@@ -93,6 +94,7 @@ final class SC_EI_Portal_Schema {
 			'respond_meetings'  => __( 'Respond to Microsoft Teams time offers', 'sustainable-catalyst-engagement-intake' ),
 			'view_proposals'    => __( 'View published proposals', 'sustainable-catalyst-engagement-intake' ),
 			'respond_proposals' => __( 'Accept or decline published proposals', 'sustainable-catalyst-engagement-intake' ),
+			'view_engagements'  => __( 'View sender-safe engagement handoff and lifecycle status', 'sustainable-catalyst-engagement-intake' ),
 			'update_contact'    => __( 'Update contact preferences', 'sustainable-catalyst-engagement-intake' ),
 			'update_scheduling' => __( 'Update Microsoft Teams scheduling preferences', 'sustainable-catalyst-engagement-intake' ),
 			'privacy_requests'  => __( 'Submit privacy requests', 'sustainable-catalyst-engagement-intake' ),
@@ -259,7 +261,7 @@ final class SC_EI_Portal_Schema {
 			return true;
 		}
 		if ( in_array( $status, array( 'restricted', 'erasure_requested' ), true ) ) {
-			return ! in_array( $action, array( 'view_status', 'view_messages', 'view_meetings', 'view_proposals', 'privacy_requests', 'revoke_access' ), true );
+			return ! in_array( $action, array( 'view_status', 'view_messages', 'view_meetings', 'view_proposals', 'view_engagements', 'privacy_requests', 'revoke_access' ), true );
 		}
 		return false;
 	}

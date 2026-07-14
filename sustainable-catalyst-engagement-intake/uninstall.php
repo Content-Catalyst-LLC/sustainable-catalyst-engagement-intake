@@ -43,6 +43,7 @@ if ( $delete ) {
 	delete_option( 'sc_ei_portal_schema_version' );
 	delete_option( 'sc_ei_workflow_schema_version' );
 	delete_option( 'sc_ei_graph_schema_version' );
+	delete_option( 'sc_ei_engagement_schema_version' );
 	delete_option( 'sc_ei_graph_credentials' );
 	delete_option( 'sc_ei_graph_circuit' );
 	delete_option( 'sc_ei_graph_last_health' );

@@ -392,3 +392,25 @@ For higher-risk intake:
 - redacted export
 - privacy erasure integration
 - no contract, signature, invoice, payment, or engagement automation
+
+
+## v0.9.2 engagement handoff controls
+
+- contracted proposal eligibility
+- one engagement per proposal
+- atomic transaction and rollback
+- immutable snapshot and SHA-256 verification
+- exact proposal-version binding
+- contract-reference requirement
+- owner and required-item readiness gate
+- privacy-state activation block
+- fresh readiness check during activation
+- optimistic row versions
+- typed handoff, readiness, activation, and lifecycle actions
+- capability and nonce gates
+- sender-safe portal projection
+- internal-note exclusion
+- private export only
+- no automatic activation or provisioning
+- no invoice, payment, signature, or contract generation
+- approved privacy redaction with verifiable tombstone hash

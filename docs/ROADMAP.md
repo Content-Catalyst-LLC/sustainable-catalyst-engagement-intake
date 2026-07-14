@@ -1,88 +1,70 @@
 # Build Roadmap
 
-## v0.1.0 — Private Inquiry Records and Plugin Foundation
+## Completed foundation
 
-Completed.
+### v0.1.0 — Private Inquiry Records and Plugin Foundation
+Private inquiry records, protected administration, audit history, and plugin foundation.
 
-## v0.2.0 — Adaptive Contact Hub and Conditional Forms
+### v0.2.0 — Adaptive Contact Hub and Conditional Forms
+Public routing, conditional fields, accessible review, private submission, and reference confirmation.
 
-Completed. Public routing, conditional fields, review step, accessible errors, private submission, and reference confirmation.
+### v0.2.1 — Microsoft Teams Communication Preferences and Scheduling Readiness
+Teams-only preferences, timezone, availability, participants, invitation consent, and scheduling records.
 
-## v0.2.1 — Microsoft Teams Communication Preferences and Scheduling Readiness
+### v0.2.2 — Dual Intake Experiences and Conversion Routing
+Compact Consulting intake, advanced Contact Hub, source attribution, conversion routes, filters, and hooks.
 
-Completed. Teams-only contact preferences, timezone and location, availability, participants, invitation consent, scheduling statuses, and approved meeting records.
+### v0.3.0 — Secure Document Intake and Quarantine
+Protected multi-file intake, fail-closed validation, quarantine, approved storage, scanner bridge, downloads, retention, and erasure.
 
-## v0.2.2 — Dual Intake Experiences and Conversion Routing
+### v0.3.1 — Production Storage and Upload Reliability
+Atomic storage commits, envelope checks, probes, reconciliation, integrity tracking, retention previews, and cache bypass.
 
-Completed. Compact Consulting intake, advanced Contact Hub, source attribution, conversion routes, admin filters, and event hooks.
+### v0.3.2 — Quarantine Operations and Scanner Readiness
+Cross-inquiry quarantine queue, scanner readiness, guarded bulk controls, access reports, storage utilization, and CSV export.
 
-## v0.3.0 — Secure Document Intake and Quarantine
+### v0.4.0 — Administrative Review Workspace
+Human assignment, review queues, due dates, evidence and scope assessment, escalation, snapshots, bulk actions, and review packets.
 
-Completed. Protected multi-file intake, fail-closed validation, quarantine and approved storage, scanner bridge, audited downloads, retention, and privacy erasure.
+### v0.5.0 — Notifications and Communication History
+Reviewed plain-text messages, immutable transport events, inbound interaction logging, follow-up controls, templates, and default-off notification policies.
 
-## v0.3.1 — Production Storage and Upload Reliability
+### v0.6.0 — Privacy and Retention Center
+Private data inventory, privacy cases, consent history, processing restrictions, legal holds, versioned policies, reviewed retention execution, and tombstones.
 
-Completed. Atomic storage commits, request-envelope checks, storage probes, reconciliation, integrity tracking, retention previews, cache bypass, and mobile upload reliability.
+### v0.7.0 — Human-Controlled Fit Assessment
+Evidence-backed criteria, advisory scoring without automatic thresholds, human recommendations, second review, typed finalization, and review-workspace application.
 
-## v0.3.2 — Quarantine Operations and Scanner Readiness
+### v0.8.0 — Secure Sender Portal
+Passwordless invitations, revocable sessions, secure messages, protected follow-up documents, contact and Teams updates, and privacy controls.
 
-Completed. Cross-inquiry quarantine queue, scanner readiness and retry, guarded bulk controls, access reporting, storage utilization, CSV export, and isolation guidance.
+### v0.8.1 — Portal Authentication and Recovery Patch
+Atomic activation, wrong-token isolation, `__Host-` cookie migration, non-enumerating recovery, human approval, typed lockout reset, and authentication diagnostics.
 
-## v0.4.0 — Administrative Review Workspace
+### v0.9.0 — Teams Scheduling and Proposal Workflow
+Human-published Teams offers, sender slot responses, human-finalized meetings, authenticated ICS, versioned proposals, sender intent responses, and external-contract attestation.
 
-Completed. Human assignment, review queues, due-date and aging visibility, manual fit and risk judgments, evidence and scope assessment, explicit next steps and status, checklists, escalation, concurrency protection, immutable snapshots, bulk review operations, review packet export, privacy integration, and diagnostics.
+### v0.9.1 — Microsoft Graph Reliability Patch
+Optional app-only Graph calendar connector, encrypted credentials and tokens, persistent transaction IDs, durable operations, Retry-After, backoff, circuit breaking, reconciliation, and manual fallback.
 
-## v0.5.0 — Notifications and Communication History
+## Current release
 
-Current release. Reviewed plain-text messages, immutable transport events, inbound and Teams interaction logging, follow-up and suppression controls, versioned templates, default-off notification policies, cron reminders, private exports, privacy integration, and communication diagnostics.
+### v0.9.2 — Proposal and Engagement Handoff
+One controlled engagement per contracted proposal, immutable commercial snapshots, onboarding requirements, readiness checks, typed human activation, lifecycle events, sender-safe status, private Workbench and Decision Studio handoff exports, and no automatic provisioning, invoice, payment, signature, or project creation.
 
-## v0.6.0 — Privacy and Retention Center
+## Planned releases
 
-Current release. Private data inventory, privacy-request cases, consent history, processing restrictions, legal holds, versioned policies, queue-only candidate scans, mandatory approval, typed execution, verified deletion and redaction, WordPress privacy bridging, and non-personal tombstones.
+### v0.10.0 — Inquiry Analytics and Operational Intelligence
+Private aggregate reporting, response time, conversion, communications, scheduling, proposal, engagement, storage, and retention metrics.
 
-## v0.7.0 — Human-Controlled Fit Assessment
+### v0.11.0 — Reliability, Accessibility, and Security Hardening
+Production recovery, permission audits, transport monitoring, concurrency testing, accessibility verification, and security review remediation.
 
-Current release. Evidence-backed criteria, transparent advisory scoring without thresholds, human recommendations, service and scope routing, material concerns, assistance disclosure, independent second review, typed finalization, explicit Review Workspace application, privacy integration, and Diagnostics.
+### v0.11.1 — Independent Security Review Patch
+Focused remediation from external security, privacy, and accessibility review.
 
-## v0.8.0 — Secure Sender Portal
+### v0.12.0 — Workflow Core and Cross-Plugin Integration
+Reusable private workflow components and controlled handoff contracts for Sustainable Catalyst platform services without combining public and private records.
 
-Planned. Magic-link access, controlled replies, additional uploads, sender-visible status, withdrawal, and deletion requests.
-
-## v0.9.0 — Scheduling, Consultation, and Proposal Workflow
-
-Planned. Teams-centered scheduling, paid consultation, proposal delivery, and engagement handoff.
-
-## v0.10.0 — Inquiry Analytics and Operational Intelligence
-
-Planned. Private aggregate reporting, response time, conversion, communications, storage, and retention metrics.
-
-## v0.11.0 — Reliability, Accessibility, and Security Hardening
-
-Planned. Production hardening, recovery, permission audits, transport monitoring, and comprehensive accessibility tests.
-
-## v0.12.0 — Workflow Core and Cross-Plugin Integration
-
-Planned. Reusable private workflow components without combining public and private records.
-
-## v1.0.0 — Unified Contact and Engagement Platform
-
-Planned. Production contact hub, private engagement workflow, communications, scheduling, proposals, privacy lifecycle, and operational intelligence.
-
-
-## v0.8.0 — Secure Sender Portal
-
-Completed. Passwordless one-time invitations, email challenge, revocable sessions, secure messages, protected follow-up documents, contact and Teams updates, privacy and withdrawal controls, audit export, privacy lifecycle integration, and strict internal-data boundaries.
-
-## v0.8.1 — Portal Authentication and Recovery Patch
-
-Completed. Atomic invitation activation, wrong-token lockout isolation, `__Host-` cookie migration, invitation-state recovery, non-enumerating sender recovery requests, human approval and decline, typed lockout reset, recovery privacy controls, and authentication diagnostics.
-
-
-## v0.9.0 — Teams Scheduling and Proposal Workflow
-
-Completed. Human-published Microsoft Teams offers, sender slot responses, human-finalized meeting records, authenticated ICS, structured versioned proposals, stable published revisions, typed sender intent responses, external contract attestation, workflow events, privacy lifecycle integration, and strict no-calendar/no-contract/no-payment automation boundaries.
-
-
-## v0.9.1 — Microsoft Graph Reliability Patch
-
-Current release. Optional application-only Microsoft Graph calendar connector, encrypted credentials and tokens, persistent transaction IDs, durable encrypted operations, Retry-After and bounded backoff, circuit breaking, Teams join URL reconciliation, request diagnostics, manual permanent-failure recovery, privacy lifecycle integration, and full manual Teams fallback.
+### v1.0.0 — Unified Contact and Engagement Platform
+Production contact hub, private engagement workflow, communications, scheduling, proposals, privacy lifecycle, engagement operations, and operational intelligence.

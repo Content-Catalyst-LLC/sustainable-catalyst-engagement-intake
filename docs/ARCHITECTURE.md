@@ -320,3 +320,19 @@ The background queue processes only preauthorized operations. It does not autono
 Request payloads are encrypted separately from operation metadata.
 
 Graph state is linked to but remains distinct from local meeting workflow state.
+
+
+## v0.9.2 engagement handoff architecture
+
+```text
+contracted proposal
+→ atomic engagement repository
+→ immutable snapshot
+→ onboarding requirements
+→ readiness gate
+→ typed activation
+→ event ledger
+→ portal, export, review, REST, privacy, and Diagnostics
+```
+
+The commercial proposal and operational engagement remain separate records. Integration packages are export-only.

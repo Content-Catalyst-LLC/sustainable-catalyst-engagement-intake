@@ -38,6 +38,7 @@ $export_url = wp_nonce_url(
 		· <a href="<?php echo esc_url( SC_EI_Privacy_Admin::url( 'overview', array( 'inquiry' => absint( $inquiry['id'] ) ) ) ); ?>"><?php esc_html_e( 'Privacy Center', 'sustainable-catalyst-engagement-intake' ); ?></a>
 		· <?php if ( ! empty( $inquiry['portal_access_id'] ) ) : ?><a href="<?php echo esc_url( SC_EI_Portal_Admin::url( absint( $inquiry['portal_access_id'] ) ) ); ?>"><?php esc_html_e( 'Sender Portal', 'sustainable-catalyst-engagement-intake' ); ?></a><?php endif; ?>
 		· <?php if ( current_user_can( 'sc_intake_view_workflow' ) ) : ?><a href="<?php echo esc_url( SC_EI_Workflow_Admin::url( absint( $inquiry['id'] ) ) ); ?>"><?php esc_html_e( 'Teams & Proposals', 'sustainable-catalyst-engagement-intake' ); ?></a><?php endif; ?>
+		· <?php if ( current_user_can( 'sc_intake_view_engagements' ) ) : ?><a href="<?php echo esc_url( SC_EI_Engagement_Admin::url( 0, array( 'inquiry' => absint( $inquiry['id'] ) ) ) ); ?>"><?php esc_html_e( 'Engagement Handoff', 'sustainable-catalyst-engagement-intake' ); ?></a><?php endif; ?>
 	</p>
 	<h1><?php echo esc_html( $inquiry['reference'] ); ?> · <?php esc_html_e( 'Communication History', 'sustainable-catalyst-engagement-intake' ); ?></h1>
 	<p><?php echo esc_html( $inquiry['contact_name'] ); ?> · <?php echo esc_html( $inquiry['contact_email'] ); ?><?php echo $inquiry['organization'] ? ' · ' . esc_html( $inquiry['organization'] ) : ''; ?></p>

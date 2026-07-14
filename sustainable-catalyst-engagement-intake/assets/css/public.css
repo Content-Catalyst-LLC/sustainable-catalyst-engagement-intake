@@ -1176,3 +1176,65 @@
     white-space: normal;
   }
 }
+
+/* v0.9.2 sender-safe engagement handoff */
+.sc-ei-portal-engagement-list {
+  display: grid;
+  gap: 18px;
+}
+
+.sc-ei-portal-engagement {
+  display: grid;
+  gap: 14px;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-left: 6px solid #7f2337;
+  background: rgba(255, 255, 255, .045);
+}
+
+.sc-ei-portal-engagement > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.sc-ei-portal-engagement > header div,
+.sc-ei-portal-engagement > header span {
+  display: block;
+}
+
+.sc-ei-portal-engagement > header div > span {
+  margin-top: 5px;
+  color: rgba(255, 255, 255, .72);
+}
+
+.sc-ei-portal-engagement-requirements {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sc-ei-portal-engagement-requirements li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px 14px;
+  padding: 11px 13px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(0, 0, 0, .22);
+}
+
+.sc-ei-portal-engagement-requirements small {
+  grid-column: 1 / -1;
+  color: rgba(255, 255, 255, .66);
+}
+
+@media (max-width: 680px) {
+  .sc-ei-portal-engagement > header,
+  .sc-ei-portal-engagement-requirements li {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}

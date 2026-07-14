@@ -124,4 +124,4 @@ if (
 }
 echo "PASS: recovery approval, decline, and unlock require deliberate typed actions\n";
 
-echo "Engagement Intake v0.9.1 focused authentication and recovery checks passed.\n";
+echo "Engagement Intake v0.9.2 focused authentication and recovery checks passed.\n";

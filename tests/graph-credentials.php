@@ -39,4 +39,4 @@ if ( $failed ) {
 foreach ( $checks as $label => $passed ) {
 	echo 'PASS: ' . $label . PHP_EOL;
 }
-echo "Engagement Intake v0.9.1 Graph credential checks passed.\n";
+echo "Engagement Intake v0.9.2 Graph credential checks passed.\n";

@@ -19,6 +19,7 @@ final class SC_EI_Diagnostics {
 		$fit_columns           = SC_EI_Database::fit_columns_exist();
 		$portal_columns        = SC_EI_Database::portal_columns_exist();
 		$workflow_columns      = SC_EI_Database::workflow_columns_exist();
+		$engagement_columns    = SC_EI_Database::engagement_columns_exist();
 		$admin              = get_role( 'administrator' );
 		$settings           = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
@@ -50,6 +51,7 @@ final class SC_EI_Diagnostics {
 		$graph_circuit = SC_EI_Graph_Client::circuit_status();
 		$graph_health = SC_EI_Graph_Repository::last_health();
 		$graph_metrics = SC_EI_Graph_Repository::metrics();
+		$engagement_metrics = SC_EI_Engagement_Repository::metrics();
 
 		$notification_policies = array(
 			'sender_acknowledgment' => ! empty( $settings['sender_acknowledgment_enabled'] ),
@@ -138,6 +140,28 @@ final class SC_EI_Diagnostics {
 				'max_meeting_slots'       => absint( $settings['workflow_max_meeting_slots'] ?? 5 ),
 				'meeting_expiry_days'     => absint( $settings['workflow_meeting_offer_expiry_days'] ?? 7 ),
 				'proposal_expiry_days'    => absint( $settings['workflow_proposal_expiry_days'] ?? 14 ),
+			),
+			'engagement_columns'       => $engagement_columns,
+			'engagement_schema_version'=> SC_EI_ENGAGEMENT_SCHEMA_VERSION,
+			'engagement_metrics'       => $engagement_metrics,
+			'engagement_controls'      => array(
+				'enabled'                    => ! empty( $settings['engagement_enabled'] ),
+				'unique_proposal_handoff'    => true,
+				'immutable_snapshot'         => true,
+				'snapshot_hash_required'     => ! empty( $settings['engagement_require_snapshot_hash'] ),
+				'contract_reference_required'=> ! empty( $settings['engagement_require_contract_reference'] ),
+				'owner_required'             => ! empty( $settings['engagement_require_owner'] ),
+				'all_required_items'         => ! empty( $settings['engagement_require_all_required_items'] ),
+				'human_ready_required'       => true,
+				'human_activation_required'  => true,
+				'automatic_activation'       => false,
+				'automatic_provisioning'     => false,
+				'automatic_invoice'          => false,
+				'automatic_payment'          => false,
+				'electronic_signature'       => false,
+				'portal_sender_safe'         => ! empty( $settings['engagement_sender_portal_enabled'] ),
+				'workbench_export'           => ! empty( $settings['engagement_allow_workbench_export'] ),
+				'decision_studio_export'     => ! empty( $settings['engagement_allow_decision_studio_export'] ),
 			),
 			'graph_schema_version'   => SC_EI_GRAPH_SCHEMA_VERSION,
 			'graph'                  => array(
@@ -341,6 +365,16 @@ final class SC_EI_Diagnostics {
 			&& ! empty( $results['workflow_controls']['proposal_version_hash'] )
 			&& ! empty( $results['workflow_controls']['human_publish_required'] )
 			&& ! empty( $results['workflow_controls']['human_contract_attestation'] );
+		$engagement_ok = ! in_array( false, $results['engagement_columns'], true )
+			&& ! empty( $results['engagement_controls']['unique_proposal_handoff'] )
+			&& ! empty( $results['engagement_controls']['immutable_snapshot'] )
+			&& ! empty( $results['engagement_controls']['human_ready_required'] )
+			&& ! empty( $results['engagement_controls']['human_activation_required'] )
+			&& empty( $results['engagement_controls']['automatic_activation'] )
+			&& empty( $results['engagement_controls']['automatic_provisioning'] )
+			&& empty( $results['engagement_controls']['automatic_invoice'] )
+			&& empty( $results['engagement_controls']['automatic_payment'] )
+			&& empty( $results['engagement_controls']['electronic_signature'] );
 		$graph_ok = true;
 		if ( ! empty( $results['graph']['enabled'] ) ) {
 			$graph_ok = ! empty( $results['graph']['crypto']['available'] )
@@ -426,7 +460,7 @@ final class SC_EI_Diagnostics {
 				&& ! empty( $results['communication_templates']['active_count'] );
 		}
 
-		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $portal_ok && $workflow_ok && $graph_ok && $fit_ok && $privacy_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
+		return ( $tables_ok && $inquiry_ok && $attachments_ok && $reviews_ok && $communications_ok && $portal_ok && $workflow_ok && $engagement_ok && $graph_ok && $fit_ok && $privacy_ok && $caps_ok && $storage_ok && $environment_ok && $upload_ok && $reconciliation_ok && $disk_ok && $notifications_ok )
 			? 'healthy'
 			: 'attention';
 	}

@@ -36,10 +36,11 @@ final class SC_EI_Activator {
 		update_option( 'sc_ei_portal_schema_version', SC_EI_PORTAL_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_workflow_schema_version', SC_EI_WORKFLOW_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_graph_schema_version', SC_EI_GRAPH_SCHEMA_VERSION, false );
+		update_option( 'sc_ei_engagement_schema_version', SC_EI_ENGAGEMENT_SCHEMA_VERSION, false );
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Engagement Intake v0.9.1 activated with an optional encrypted Microsoft Graph connector, human-triggered idempotent calendar-backed Teams creation, durable retries and reconciliation, circuit breaking, manual fallback, and all v0.9.0 scheduling, proposal, portal, privacy, review, quarantine, and storage controls.',
+			'Engagement Intake v0.9.2 activated with controlled contracted-proposal handoff, immutable commercial snapshots, onboarding readiness, typed human activation, engagement lifecycle records, and all v0.9.1 Graph, Teams, proposal, portal, privacy, review, quarantine, and storage controls.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}

@@ -193,4 +193,4 @@ if ( class_exists( 'ZipArchive' ) ) {
 	echo "SKIP: DOCX fixtures because ZipArchive is unavailable\n";
 }
 
-echo "Engagement Intake v0.9.1 validator fixtures passed.\n";
+echo "Engagement Intake v0.9.2 validator fixtures passed.\n";

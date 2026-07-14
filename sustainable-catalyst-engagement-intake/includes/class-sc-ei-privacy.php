@@ -461,6 +461,101 @@ final class SC_EI_Privacy {
 				);
 			}
 
+
+			$engagement_export = SC_EI_Engagement_Repository::export_for_inquiry( $inquiry_id );
+			foreach ( (array) ( $engagement_export['engagements'] ?? array() ) as $engagement_package ) {
+				$engagement = (array) ( $engagement_package['engagement'] ?? array() );
+				if ( $engagement ) {
+					$data[] = array(
+						'group_id'    => 'sc-engagement-intake-engagements',
+						'group_label' => __( 'Engagement Intake Engagement Handoffs', 'sustainable-catalyst-engagement-intake' ),
+						'item_id'     => 'sc-ei-engagement-' . $engagement['id'],
+						'data'        => self::export_fields(
+							$engagement,
+							array(
+								'engagement_number'              => 'Engagement number',
+								'status'                         => 'Engagement state',
+								'title'                          => 'Engagement title',
+								'sender_organization'            => 'Sender organization',
+								'contract_reference'             => 'External contract reference',
+								'currency'                       => 'Currency',
+								'total_minor'                    => 'Total minor currency units',
+								'proposed_start_date'            => 'Proposed start date',
+								'target_end_date'                => 'Target end date',
+								'kickoff_status'                 => 'Kickoff state',
+								'kickoff_at'                     => 'Kickoff at',
+								'onboarding_summary'             => 'Onboarding summary',
+								'sender_summary'                 => 'Sender-visible engagement summary',
+								'external_project_reference'     => 'External project reference',
+								'workbench_handoff_status'       => 'Workbench handoff state',
+								'decision_studio_handoff_status' => 'Decision Studio handoff state',
+								'handoff_prepared_at'            => 'Handoff prepared at',
+								'ready_at'                       => 'Ready at',
+								'activated_at'                   => 'Activated at',
+								'paused_at'                      => 'Paused at',
+								'pause_reason'                   => 'Pause reason',
+								'completed_at'                   => 'Completed at',
+								'completion_note'                => 'Completion note',
+								'canceled_at'                    => 'Canceled at',
+								'cancellation_reason'            => 'Cancellation reason',
+								'created_at'                     => 'Created at',
+								'updated_at'                     => 'Updated at',
+							)
+						),
+					);
+				}
+
+				$snapshot = (array) ( $engagement_package['commercial_snapshot']['metadata'] ?? array() );
+				if ( $snapshot ) {
+					$data[] = array(
+						'group_id'    => 'sc-engagement-intake-engagement-snapshots',
+						'group_label' => __( 'Engagement Intake Commercial Handoff Snapshots', 'sustainable-catalyst-engagement-intake' ),
+						'item_id'     => 'sc-ei-engagement-snapshot-' . $snapshot['id'],
+						'data'        => self::export_fields(
+							$snapshot,
+							array(
+								'snapshot_version'        => 'Snapshot version',
+								'snapshot_type'           => 'Snapshot type',
+								'proposal_number'         => 'Proposal number',
+								'proposal_version_number' => 'Proposal version',
+								'proposal_content_hash'   => 'Proposal content hash',
+								'contract_reference'      => 'External contract reference',
+								'payload_json'            => 'Commercial handoff snapshot',
+								'content_hash'            => 'Snapshot content hash',
+								'created_at'              => 'Created at',
+							)
+						),
+					);
+				}
+
+				foreach ( (array) ( $engagement_package['onboarding_requirements'] ?? array() ) as $requirement ) {
+					$data[] = array(
+						'group_id'    => 'sc-engagement-intake-engagement-requirements',
+						'group_label' => __( 'Engagement Intake Onboarding Requirements', 'sustainable-catalyst-engagement-intake' ),
+						'item_id'     => 'sc-ei-engagement-requirement-' . $requirement['id'],
+						'data'        => self::export_fields(
+							$requirement,
+							array(
+								'requirement_key'    => 'Requirement key',
+								'title'              => 'Requirement title',
+								'description'        => 'Requirement description',
+								'category'           => 'Requirement category',
+								'status'             => 'Requirement state',
+								'is_required'        => 'Required',
+								'sender_visible'     => 'Sender visible',
+								'due_date'           => 'Due date',
+								'completion_note'    => 'Completion or waiver note',
+								'evidence_reference' => 'Evidence reference',
+								'completed_at'       => 'Completed at',
+								'waived_at'          => 'Waived at',
+								'created_at'         => 'Created at',
+								'updated_at'         => 'Updated at',
+							)
+						),
+					);
+				}
+			}
+
 			foreach ( SC_EI_Attachment_Repository::for_inquiry( $inquiry_id, true ) as $attachment ) {
 				$data[] = array(
 					'group_id'    => 'sc-engagement-intake-documents',
@@ -612,7 +707,7 @@ final class SC_EI_Privacy {
 	/**
 	 * WordPress eraser bridge.
 	 *
-	 * v0.9.1 retains the queue-only behavior introduced in v0.6.0 and does not erase synchronously. It creates a tracked case and queues
+	 * v0.9.2 retains the queue-only behavior introduced in v0.6.0 and does not erase synchronously. It creates a tracked case and queues
 	 * legal-hold-aware lifecycle actions for human approval and verified execution.
 	 */
 	public static function erase_by_email( string $email_address, int $page = 1 ): array {

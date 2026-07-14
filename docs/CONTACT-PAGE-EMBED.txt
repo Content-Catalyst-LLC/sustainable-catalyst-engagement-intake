@@ -1,4 +1,4 @@
-Sustainable Catalyst Engagement Intake v0.9.1 Shortcodes
+Sustainable Catalyst Engagement Intake v0.9.2 Shortcodes
 ================================================================
 
 Consulting page
@@ -10,8 +10,9 @@ Contact page
 Secure sender portal
 [sc_sender_portal title="Secure Sender Portal"]
 
-Microsoft Graph notes
+v0.9.2 notes
 - No new public shortcode is required.
-- Graph configuration is under Engagement Intake → Microsoft Graph.
-- Per-meeting Graph actions appear under Engagement Intake → Teams & Proposals.
-- Existing manual Teams URL finalization remains available.
+- Engagement administration is under Engagement Intake → Engagements.
+- The existing sender portal gains an Engagement section when access includes `view_engagements`.
+- Existing portal invitations may require reissue.
+- Workbench and Decision Studio handoff is export-only; no automatic provisioning occurs.

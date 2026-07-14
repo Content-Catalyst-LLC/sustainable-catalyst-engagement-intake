@@ -2,7 +2,7 @@
 define( 'ABSPATH', __DIR__ . '/' );
 define( 'DAY_IN_SECONDS', 86400 );
 define( 'MINUTE_IN_SECONDS', 60 );
-define( 'SC_EI_VERSION', '0.9.1' );
+define( 'SC_EI_VERSION', '0.9.2' );
 
 final class WP_Error {
 	private string $code;
@@ -93,4 +93,4 @@ foreach ( $checks as $label => $passed ) {
 	pass_graph_client( $label );
 }
 
-echo "Engagement Intake v0.9.1 Graph client fixtures passed.\n";
+echo "Engagement Intake v0.9.2 Graph client fixtures passed.\n";

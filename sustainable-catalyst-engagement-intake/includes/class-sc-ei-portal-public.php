@@ -111,6 +111,14 @@ final class SC_EI_Portal_Public {
 		$workflow_settings = SC_EI_Workflow_Repository::settings();
 		$meeting_offers = SC_EI_Workflow_Repository::meeting_offers_for_inquiry( absint( $inquiry['id'] ), true );
 		$proposals = SC_EI_Workflow_Repository::proposals_for_inquiry( absint( $inquiry['id'] ), true );
+		$engagement_settings = SC_EI_Engagement_Repository::settings();
+		$engagements = ! empty( $engagement_settings['engagement_sender_portal_enabled'] )
+			? SC_EI_Engagement_Repository::for_inquiry( absint( $inquiry['id'] ), true )
+			: array();
+		$engagement_requirements = array();
+		foreach ( $engagements as $engagement_record ) {
+			$engagement_requirements[ $engagement_record['id'] ] = SC_EI_Engagement_Repository::requirements( absint( $engagement_record['id'] ), true );
+		}
 		$portal_url = SC_EI_Portal_Schema::sanitize_portal_page_url( (string) $settings['portal_page_url'] );
 		$effective_upload_limits = SC_EI_Upload_Environment::effective_limits( $settings );
 		$upload_extensions = array_values(

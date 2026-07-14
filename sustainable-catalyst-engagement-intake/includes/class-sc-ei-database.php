@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -43,6 +43,10 @@ final class SC_EI_Database {
 		$proposals = self::table( 'proposals' );
 		$proposal_versions = self::table( 'proposal_versions' );
 		$workflow_events = self::table( 'workflow_events' );
+		$engagements = self::table( 'engagements' );
+		$engagement_snapshots = self::table( 'engagement_snapshots' );
+		$engagement_requirements = self::table( 'engagement_requirements' );
+		$engagement_events = self::table( 'engagement_events' );
 		$communication_templates = self::table( 'communication_templates' );
 		$privacy_requests = self::table( 'privacy_requests' );
 		$consent_events = self::table( 'consent_events' );
@@ -757,6 +761,161 @@ final class SC_EI_Database {
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
+
+		$sql_engagements = "CREATE TABLE {$engagements} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			engagement_number varchar(40) NOT NULL DEFAULT '',
+			inquiry_id bigint(20) unsigned NOT NULL,
+			proposal_id bigint(20) unsigned NOT NULL,
+			proposal_version_id bigint(20) unsigned NOT NULL,
+			access_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			current_snapshot_id bigint(20) unsigned NULL,
+			status varchar(40) NOT NULL DEFAULT 'handoff_pending',
+			title varchar(255) NOT NULL DEFAULT '',
+			sender_organization varchar(191) NOT NULL DEFAULT '',
+			contract_reference varchar(191) NOT NULL DEFAULT '',
+			currency char(3) NOT NULL DEFAULT 'USD',
+			total_minor bigint(20) unsigned NOT NULL DEFAULT 0,
+			owner_user_id bigint(20) unsigned NULL,
+			participant_user_ids_json longtext NULL,
+			proposed_start_date date NULL,
+			target_end_date date NULL,
+			kickoff_status varchar(40) NOT NULL DEFAULT 'not_scheduled',
+			kickoff_at datetime NULL,
+			onboarding_summary longtext NULL,
+			sender_summary longtext NULL,
+			internal_notes longtext NULL,
+			external_project_reference varchar(191) NOT NULL DEFAULT '',
+			workbench_handoff_status varchar(40) NOT NULL DEFAULT 'not_requested',
+			decision_studio_handoff_status varchar(40) NOT NULL DEFAULT 'not_requested',
+			handoff_prepared_by bigint(20) unsigned NULL,
+			handoff_prepared_at datetime NULL,
+			ready_by bigint(20) unsigned NULL,
+			ready_at datetime NULL,
+			activated_by bigint(20) unsigned NULL,
+			activated_at datetime NULL,
+			paused_by bigint(20) unsigned NULL,
+			paused_at datetime NULL,
+			pause_reason longtext NULL,
+			completed_by bigint(20) unsigned NULL,
+			completed_at datetime NULL,
+			completion_note longtext NULL,
+			canceled_by bigint(20) unsigned NULL,
+			canceled_at datetime NULL,
+			cancellation_reason longtext NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY engagement_number (engagement_number),
+			UNIQUE KEY proposal_id (proposal_id),
+			KEY inquiry_id (inquiry_id),
+			KEY proposal_version_id (proposal_version_id),
+			KEY access_id (access_id),
+			KEY current_snapshot_id (current_snapshot_id),
+			KEY status (status),
+			KEY owner_user_id (owner_user_id),
+			KEY proposed_start_date (proposed_start_date),
+			KEY kickoff_at (kickoff_at),
+			KEY activated_at (activated_at),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql_engagement_snapshots = "CREATE TABLE {$engagement_snapshots} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			engagement_id bigint(20) unsigned NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			proposal_id bigint(20) unsigned NOT NULL,
+			proposal_version_id bigint(20) unsigned NOT NULL,
+			snapshot_version int(10) unsigned NOT NULL DEFAULT 1,
+			snapshot_type varchar(40) NOT NULL DEFAULT 'contracted_proposal_handoff',
+			proposal_number varchar(40) NOT NULL DEFAULT '',
+			proposal_version_number int(10) unsigned NOT NULL DEFAULT 1,
+			proposal_content_hash char(64) NOT NULL DEFAULT '',
+			contract_reference varchar(191) NOT NULL DEFAULT '',
+			payload_json longtext NULL,
+			content_hash char(64) NOT NULL DEFAULT '',
+			created_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY engagement_snapshot (engagement_id, snapshot_version),
+			KEY engagement_id (engagement_id),
+			KEY inquiry_id (inquiry_id),
+			KEY proposal_id (proposal_id),
+			KEY proposal_version_id (proposal_version_id),
+			KEY content_hash (content_hash),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql_engagement_requirements = "CREATE TABLE {$engagement_requirements} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			engagement_id bigint(20) unsigned NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			requirement_key varchar(100) NOT NULL DEFAULT '',
+			title varchar(255) NOT NULL DEFAULT '',
+			description longtext NULL,
+			category varchar(40) NOT NULL DEFAULT 'other',
+			status varchar(40) NOT NULL DEFAULT 'pending',
+			is_required tinyint(1) unsigned NOT NULL DEFAULT 1,
+			sender_visible tinyint(1) unsigned NOT NULL DEFAULT 0,
+			due_date date NULL,
+			assigned_user_id bigint(20) unsigned NULL,
+			completion_note longtext NULL,
+			evidence_reference varchar(255) NOT NULL DEFAULT '',
+			sort_order int(10) unsigned NOT NULL DEFAULT 0,
+			completed_by bigint(20) unsigned NULL,
+			completed_at datetime NULL,
+			waived_by bigint(20) unsigned NULL,
+			waived_at datetime NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY engagement_requirement (engagement_id, requirement_key),
+			KEY engagement_id (engagement_id),
+			KEY inquiry_id (inquiry_id),
+			KEY category (category),
+			KEY status (status),
+			KEY is_required (is_required),
+			KEY sender_visible (sender_visible),
+			KEY due_date (due_date),
+			KEY assigned_user_id (assigned_user_id),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql_engagement_events = "CREATE TABLE {$engagement_events} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			engagement_id bigint(20) unsigned NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			actor_type varchar(30) NOT NULL DEFAULT 'system',
+			actor_id bigint(20) unsigned NULL,
+			event_type varchar(80) NOT NULL DEFAULT '',
+			object_type varchar(40) NOT NULL DEFAULT 'engagement',
+			object_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			from_status varchar(40) NOT NULL DEFAULT '',
+			to_status varchar(40) NOT NULL DEFAULT '',
+			context_json longtext NULL,
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY engagement_id (engagement_id),
+			KEY inquiry_id (inquiry_id),
+			KEY actor_type (actor_type),
+			KEY actor_id (actor_id),
+			KEY event_type (event_type),
+			KEY object_type_id (object_type, object_id),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
 		$sql_communications = "CREATE TABLE {$communications} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			inquiry_id bigint(20) unsigned NOT NULL,
@@ -1055,6 +1214,10 @@ final class SC_EI_Database {
 		dbDelta( $sql_proposals );
 		dbDelta( $sql_proposal_versions );
 		dbDelta( $sql_workflow_events );
+		dbDelta( $sql_engagements );
+		dbDelta( $sql_engagement_snapshots );
+		dbDelta( $sql_engagement_requirements );
+		dbDelta( $sql_engagement_events );
 		dbDelta( $sql_communications );
 		dbDelta( $sql_communication_events );
 		dbDelta( $sql_communication_templates );
@@ -1180,7 +1343,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'communications', 'communication_events', 'communication_templates', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -1497,6 +1660,58 @@ final class SC_EI_Database {
 		return $result;
 	}
 
+	public static function engagement_columns_exist(): array {
+		global $wpdb;
+
+		$tables = array(
+			'engagements' => array(
+				'public_id', 'engagement_number', 'inquiry_id', 'proposal_id',
+				'proposal_version_id', 'access_id', 'current_snapshot_id', 'status',
+				'title', 'sender_organization', 'contract_reference', 'currency',
+				'total_minor', 'owner_user_id', 'participant_user_ids_json',
+				'proposed_start_date', 'target_end_date', 'kickoff_status', 'kickoff_at',
+				'onboarding_summary', 'sender_summary', 'internal_notes',
+				'external_project_reference', 'workbench_handoff_status',
+				'decision_studio_handoff_status', 'handoff_prepared_by',
+				'handoff_prepared_at', 'ready_by', 'ready_at', 'activated_by',
+				'activated_at', 'paused_by', 'paused_at', 'pause_reason',
+				'completed_by', 'completed_at', 'completion_note', 'canceled_by',
+				'canceled_at', 'cancellation_reason', 'row_version', 'created_by',
+				'created_at', 'updated_at',
+			),
+			'engagement_snapshots' => array(
+				'public_id', 'engagement_id', 'inquiry_id', 'proposal_id',
+				'proposal_version_id', 'snapshot_version', 'snapshot_type',
+				'proposal_number', 'proposal_version_number', 'proposal_content_hash',
+				'contract_reference', 'payload_json', 'content_hash', 'created_by',
+				'created_at',
+			),
+			'engagement_requirements' => array(
+				'public_id', 'engagement_id', 'inquiry_id', 'requirement_key', 'title',
+				'description', 'category', 'status', 'is_required', 'sender_visible',
+				'due_date', 'assigned_user_id', 'completion_note',
+				'evidence_reference', 'sort_order', 'completed_by', 'completed_at',
+				'waived_by', 'waived_at', 'row_version', 'created_by', 'created_at',
+				'updated_at',
+			),
+			'engagement_events' => array(
+				'public_id', 'engagement_id', 'inquiry_id', 'actor_type', 'actor_id',
+				'event_type', 'object_type', 'object_id', 'from_status', 'to_status',
+				'context_json', 'created_at',
+			),
+		);
+
+		$result = array();
+		foreach ( $tables as $table_name => $columns ) {
+			$table = self::table( $table_name );
+			foreach ( $columns as $column ) {
+				$found = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$result[ $table_name . '.' . $column ] = ( $found === $column );
+			}
+		}
+		return $result;
+	}
+
 	public static function privacy_columns_exist(): array {
 		global $wpdb;
 
@@ -1586,7 +1801,7 @@ final class SC_EI_Database {
 	public static function drop_all(): void {
 		global $wpdb;
 
-		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'workflow_events', 'proposal_versions', 'proposals', 'graph_operations', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
+		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'engagement_events', 'engagement_requirements', 'engagement_snapshots', 'engagements', 'workflow_events', 'proposal_versions', 'proposals', 'graph_operations', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
 			$table = self::table( $name );
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}

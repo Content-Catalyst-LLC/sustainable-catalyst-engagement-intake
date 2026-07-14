@@ -251,6 +251,18 @@ $success = array(
 							<?php if ( 'accepted_pending_contract' === $proposal['status'] && current_user_can( 'sc_intake_record_contracts' ) ) : ?>
 								<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-portal-admin-form sc-ei-workflow-contract"><input type="hidden" name="action" value="sc_ei_change_proposal_status"><input type="hidden" name="proposal_id" value="<?php echo esc_attr( $proposal['id'] ); ?>"><input type="hidden" name="proposal_status" value="contracted"><?php wp_nonce_field( 'sc_ei_change_proposal_status_' . absint( $proposal['id'] ) ); ?><label><span><?php esc_html_e( 'External contract reference', 'sustainable-catalyst-engagement-intake' ); ?></span><input type="text" name="contract_reference" required></label><label><span><?php echo esc_html( 'CONTRACT ' . strtoupper( $proposal['proposal_number'] ) ); ?></span><input type="text" name="proposal_confirmation" required></label><label class="sc-ei-portal-admin-form__wide"><span><?php esc_html_e( 'Administrative note', 'sustainable-catalyst-engagement-intake' ); ?></span><textarea name="proposal_note" rows="3"></textarea></label><button class="button button-primary"><?php esc_html_e( 'Record External Contract', 'sustainable-catalyst-engagement-intake' ); ?></button></form>
 							<?php endif; ?>
+							<?php if ( 'contracted' === $proposal['status'] && current_user_can( 'sc_intake_view_engagements' ) ) : ?>
+								<?php $proposal_engagement = SC_EI_Engagement_Repository::find_by_proposal( absint( $proposal['id'] ) ); ?>
+								<div class="sc-ei-engagement-proposal-handoff">
+									<?php if ( $proposal_engagement ) : ?>
+										<strong><?php esc_html_e( 'Engagement handoff:', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+										<a class="button" href="<?php echo esc_url( SC_EI_Engagement_Admin::url( absint( $proposal_engagement['id'] ) ) ); ?>"><?php echo esc_html( $proposal_engagement['engagement_number'] . ' · ' . SC_EI_Engagement_Schema::label( SC_EI_Engagement_Schema::statuses(), $proposal_engagement['status'] ) ); ?></a>
+									<?php elseif ( current_user_can( 'sc_intake_create_engagement_handoffs' ) ) : ?>
+										<strong><?php esc_html_e( 'External contract recorded. No engagement exists yet.', 'sustainable-catalyst-engagement-intake' ); ?></strong>
+										<a class="button button-primary" href="<?php echo esc_url( add_query_arg( array( 'page' => 'sc-engagement-intake-engagements', 'proposal' => absint( $proposal['id'] ), 'create' => 1 ), admin_url( 'admin.php' ) ) ); ?>"><?php esc_html_e( 'Prepare Engagement Handoff', 'sustainable-catalyst-engagement-intake' ); ?></a>
+									<?php endif; ?>
+								</div>
+							<?php endif; ?>
 							<?php if ( in_array( $proposal['status'], array( 'draft', 'published', 'accepted_pending_contract' ), true ) && current_user_can( 'sc_intake_publish_proposals' ) ) : ?>
 								<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-inline-confirm-form"><input type="hidden" name="action" value="sc_ei_change_proposal_status"><input type="hidden" name="proposal_id" value="<?php echo esc_attr( $proposal['id'] ); ?>"><input type="hidden" name="proposal_status" value="withdrawn"><?php wp_nonce_field( 'sc_ei_change_proposal_status_' . absint( $proposal['id'] ) ); ?><input type="text" name="proposal_note" placeholder="<?php esc_attr_e( 'Withdrawal reason', 'sustainable-catalyst-engagement-intake' ); ?>" required><input type="text" name="proposal_confirmation" placeholder="<?php echo esc_attr( 'WITHDRAW ' . strtoupper( $proposal['proposal_number'] ) ); ?>" required><button class="button"><?php esc_html_e( 'Withdraw Proposal', 'sustainable-catalyst-engagement-intake' ); ?></button></form>
 							<?php endif; ?>
@@ -274,11 +286,11 @@ $success = array(
 					<h2><?php esc_html_e( 'Operational Boundaries', 'sustainable-catalyst-engagement-intake' ); ?></h2>
 					<ul>
 						<li><?php esc_html_e( 'Microsoft Teams only.', 'sustainable-catalyst-engagement-intake' ); ?></li>
-						<li><?php esc_html_e( 'No Graph API or automatic calendar booking.', 'sustainable-catalyst-engagement-intake' ); ?></li>
+						<li><?php esc_html_e( 'Graph calendar creation is optional, human-triggered, and separate from engagement activation.', 'sustainable-catalyst-engagement-intake' ); ?></li>
 						<li><?php esc_html_e( 'No automatic email delivery.', 'sustainable-catalyst-engagement-intake' ); ?></li>
 						<li><?php esc_html_e( 'No electronic signature.', 'sustainable-catalyst-engagement-intake' ); ?></li>
 						<li><?php esc_html_e( 'No payment collection.', 'sustainable-catalyst-engagement-intake' ); ?></li>
-						<li><?php esc_html_e( 'No active engagement until an external contract is recorded by authorized staff.', 'sustainable-catalyst-engagement-intake' ); ?></li>
+						<li><?php esc_html_e( 'An external contract permits handoff preparation; a separate readiness review and human activation are still required.', 'sustainable-catalyst-engagement-intake' ); ?></li>
 					</ul>
 				</section>
 				<section class="sc-ei-admin__card">

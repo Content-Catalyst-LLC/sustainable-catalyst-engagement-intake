@@ -421,3 +421,17 @@ attempt and reconciliation timestamps
 Operation payloads are authenticated-encrypted.
 
 Exports remove payload envelopes and expose only a boolean encrypted-payload marker.
+
+
+## v0.9.2 engagement data model
+
+New tables:
+
+```text
+engagements
+engagement_snapshots
+engagement_requirements
+engagement_events
+```
+
+`engagements.proposal_id` is unique. Snapshots preserve the source proposal version and independent SHA-256 handoff hash. Requirements use optimistic row versions. Events are append-only except privacy redaction of personal context.

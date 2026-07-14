@@ -56,6 +56,7 @@ final class SC_EI_Plugin {
 			SC_EI_Portal_Admin::register();
 			SC_EI_Workflow_Admin::register();
 			SC_EI_Graph_Admin::register();
+			SC_EI_Engagement_Admin::register();
 		}
 
 		do_action( 'sc_ei_loaded', $this );

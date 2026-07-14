@@ -78,7 +78,7 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 		<div class="sc-ei-portal-notice sc-ei-portal-notice--error" role="alert"><?php echo esc_html( $error_messages[ $error_code ] ?? __( 'The secure portal action could not be completed.', 'sustainable-catalyst-engagement-intake' ) ); ?></div>
 	<?php endif; ?>
 	<?php if ( $privacy_restricted ) : ?>
-		<div class="sc-ei-portal-notice sc-ei-portal-notice--warning"><strong><?php esc_html_e( 'Processing restriction active.', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Status viewing, existing secure messages, meeting and proposal records, privacy requests, and access revocation remain available. New messages, responses, documents, and preference changes are blocked.', 'sustainable-catalyst-engagement-intake' ); ?></div>
+		<div class="sc-ei-portal-notice sc-ei-portal-notice--warning"><strong><?php esc_html_e( 'Processing restriction active.', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php esc_html_e( 'Status viewing, existing secure messages, meeting, proposal, and engagement records, privacy requests, and access revocation remain available. New messages, responses, documents, and preference changes are blocked.', 'sustainable-catalyst-engagement-intake' ); ?></div>
 	<?php endif; ?>
 
 	<nav class="sc-ei-portal-nav" aria-label="<?php esc_attr_e( 'Sender portal sections', 'sustainable-catalyst-engagement-intake' ); ?>">
@@ -90,6 +90,7 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 				'documents' => 'view_documents',
 				'meetings' => 'view_meetings',
 				'proposals' => 'view_proposals',
+				'engagement' => 'view_engagements',
 				'preferences' => 'update_contact',
 				'privacy' => 'privacy_requests',
 				'access' => 'revoke_access',
@@ -298,6 +299,49 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 						<?php elseif ( 'declined' === $proposal['status'] ) : ?>
 							<p><?php esc_html_e( 'You declined this proposal.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 						<?php endif; ?>
+					</article>
+				<?php endforeach; ?>
+			</div>
+		</section>
+	<?php elseif ( 'engagement' === $view ) : ?>
+		<section class="sc-ei-portal-card">
+			<h3><?php esc_html_e( 'Engagement handoff and lifecycle', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<p><?php esc_html_e( 'This section shows sender-safe operational status. The separately executed agreement remains the binding commercial record. No invoice, payment, signature, or external project is created by this portal.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<div class="sc-ei-portal-engagement-list">
+				<?php if ( empty( $engagements ) ) : ?><p><?php esc_html_e( 'No engagement handoff has been created for this inquiry.', 'sustainable-catalyst-engagement-intake' ); ?></p><?php endif; ?>
+				<?php foreach ( $engagements as $engagement ) : ?>
+					<article class="sc-ei-portal-engagement">
+						<header>
+							<div>
+								<strong><?php echo esc_html( $engagement['engagement_number'] ); ?></strong>
+								<span><?php echo esc_html( $engagement['title'] ); ?></span>
+							</div>
+							<span class="sc-ei-portal-status"><?php echo esc_html( SC_EI_Engagement_Schema::label( SC_EI_Engagement_Schema::statuses(), $engagement['status'] ) ); ?></span>
+						</header>
+						<?php if ( $engagement['sender_summary'] ) : ?><p><?php echo nl2br( esc_html( $engagement['sender_summary'] ) ); ?></p><?php endif; ?>
+						<dl class="sc-ei-portal-details">
+							<dt><?php esc_html_e( 'Contract reference', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $engagement['contract_reference'] ?: '—' ); ?></dd>
+							<dt><?php esc_html_e( 'Engagement owner', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $engagement['owner_name'] ?: __( 'Being assigned', 'sustainable-catalyst-engagement-intake' ) ); ?></dd>
+							<dt><?php esc_html_e( 'Proposed start', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $engagement['proposed_start_date'] ?: '—' ); ?></dd>
+							<dt><?php esc_html_e( 'Target end', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $engagement['target_end_date'] ?: '—' ); ?></dd>
+							<dt><?php esc_html_e( 'Kickoff', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( SC_EI_Engagement_Schema::label( SC_EI_Engagement_Schema::kickoff_statuses(), $engagement['kickoff_status'] ) ); ?></dd>
+							<dt><?php esc_html_e( 'Activated', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $engagement['activated_at'] ?: '—' ); ?></dd>
+						</dl>
+						<?php $visible_requirements = $engagement_requirements[ $engagement['id'] ] ?? array(); ?>
+						<?php if ( $visible_requirements ) : ?>
+							<h4><?php esc_html_e( 'Onboarding items visible to you', 'sustainable-catalyst-engagement-intake' ); ?></h4>
+							<ul class="sc-ei-portal-engagement-requirements">
+								<?php foreach ( $visible_requirements as $requirement ) : ?>
+									<li><strong><?php echo esc_html( $requirement['title'] ); ?></strong><span><?php echo esc_html( SC_EI_Engagement_Schema::label( SC_EI_Engagement_Schema::requirement_statuses(), $requirement['status'] ) ); ?></span><?php if ( $requirement['due_date'] ) : ?><small><?php echo esc_html( sprintf( __( 'Due %s', 'sustainable-catalyst-engagement-intake' ), $requirement['due_date'] ) ); ?></small><?php endif; ?></li>
+								<?php endforeach; ?>
+							</ul>
+						<?php endif; ?>
+						<?php if ( 'handoff_pending' === $engagement['status'] ) : ?><div class="sc-ei-portal-notice sc-ei-portal-notice--warning"><?php esc_html_e( 'A handoff record exists, but delivery has not been activated.', 'sustainable-catalyst-engagement-intake' ); ?></div><?php endif; ?>
+						<?php if ( 'ready_for_setup' === $engagement['status'] ) : ?><div class="sc-ei-portal-notice sc-ei-portal-notice--warning"><?php esc_html_e( 'The handoff is ready for final internal activation. Work has not started automatically.', 'sustainable-catalyst-engagement-intake' ); ?></div><?php endif; ?>
+						<?php if ( 'active' === $engagement['status'] ) : ?><div class="sc-ei-portal-notice sc-ei-portal-notice--success"><?php esc_html_e( 'This engagement is active under the separately executed agreement.', 'sustainable-catalyst-engagement-intake' ); ?></div><?php endif; ?>
+						<?php if ( 'paused' === $engagement['status'] ) : ?><div class="sc-ei-portal-notice sc-ei-portal-notice--warning"><?php esc_html_e( 'This engagement is currently paused. Use secure messages for clarification.', 'sustainable-catalyst-engagement-intake' ); ?></div><?php endif; ?>
+						<?php if ( 'completed' === $engagement['status'] ) : ?><div class="sc-ei-portal-notice sc-ei-portal-notice--success"><?php esc_html_e( 'This engagement is recorded as completed.', 'sustainable-catalyst-engagement-intake' ); ?></div><?php endif; ?>
+						<?php if ( 'canceled' === $engagement['status'] ) : ?><div class="sc-ei-portal-notice sc-ei-portal-notice--warning"><?php esc_html_e( 'This engagement record is closed.', 'sustainable-catalyst-engagement-intake' ); ?></div><?php endif; ?>
 					</article>
 				<?php endforeach; ?>
 			</div>
