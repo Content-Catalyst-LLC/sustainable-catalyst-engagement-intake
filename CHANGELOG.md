@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.1 — Inquiry Persistence and Lifecycle Reliability Patch
+
+- Fixed strict-mode inquiry creation by initializing `qualification_score` to `0`, matching the non-null database contract.
+- Added protected `inquiry_insert_failed` reliability events with request correlation and redacted database diagnostics.
+- Kept public submission failures generic while providing an administrator-facing reliability reference.
+- Added the full inquiry-column contract to Platform Readiness, Live Validation, and the reliability watchdog.
+- Prevented `sc_ei_db_version` from advancing unless all required tables, inquiry columns, platform columns, and lifecycle columns verify successfully.
+- Added a nondestructive v1.1.1 migration journal tied to the runtime persistence contract.
+- Added executable inquiry-persistence regression coverage using a strict fake database adapter that rejects null qualification scores.
+- Preserved database schema version 1.1.0 and all v1.1.0 lifecycle records and boundaries.
+
 ## 1.1.0 — Advisory Operations and Engagement Lifecycle
 
 - Added thirteen governed lifecycle stages from new inquiry through completed, declined, or archived.

@@ -2,20 +2,20 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-VERSION="1.1.0"
+VERSION="1.1.1"
 SLUG="sustainable-catalyst-engagement-intake"
 REPO_URL="${SC_EI_REPO_URL:-git@github.com:Content-Catalyst-LLC/${SLUG}.git}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 ZIP_PATH="${SC_EI_ZIP_PATH:-$SCRIPT_DIR/${SLUG}-v${VERSION}-repo.zip}"
 REPO_DIR="${SC_EI_REPO_DIR:-}"
 SKIP_PUSH="${SC_EI_SKIP_PUSH:-0}"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v110-push.XXXXXX")"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v111-push.XXXXXX")"
 BACKUP_ROOT="${SC_EI_BACKUP_DIR:-$HOME/Downloads/${SLUG}-local-backups}"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 
 cleanup() { rm -rf "$WORK"; }
 trap cleanup EXIT
-trap 'rc=$?; echo; echo "ERROR: v1.1.0 repository update failed on line $LINENO (exit $rc)." >&2; exit $rc' ERR
+trap 'rc=$?; echo; echo "ERROR: v1.1.1 repository update failed on line $LINENO (exit $rc)." >&2; exit $rc' ERR
 say() { printf '\n==> %s\n' "$1"; }
 fail() { echo "ERROR: $1" >&2; exit 1; }
 
@@ -52,12 +52,15 @@ LIFECYCLE_ADMIN="$SRC/$SLUG/includes/class-sc-ei-lifecycle-admin.php"
 DATABASE="$SRC/$SLUG/includes/class-sc-ei-database.php"
 PLATFORM="$SRC/$SLUG/includes/class-sc-ei-platform-repository.php"
 PORTAL="$SRC/$SLUG/public/views/sender-portal.php"
-[[ -f "$MAIN" && -f "$README" && -f "$LIFECYCLE" && -f "$LIFECYCLE_SCHEMA" && -f "$LIFECYCLE_ADMIN" && -f "$DATABASE" && -f "$PLATFORM" && -f "$PORTAL" ]] || fail "Required v1.1.0 files are missing."
+[[ -f "$MAIN" && -f "$README" && -f "$LIFECYCLE" && -f "$LIFECYCLE_SCHEMA" && -f "$LIFECYCLE_ADMIN" && -f "$DATABASE" && -f "$PLATFORM" && -f "$PORTAL" ]] || fail "Required v1.1.1 files are missing."
 grep -Fq "Version:     $VERSION" "$MAIN" || fail "Plugin version marker is not $VERSION."
 grep -Fq "SC_EI_DB_VERSION', '1.1.0'" "$MAIN" || fail "Database version marker is not 1.1.0."
+grep -Fq "SC_EI_PLATFORM_SCHEMA_VERSION', '1.1.1'" "$MAIN" || fail "Platform evidence schema marker is not 1.1.1."
 grep -Fq "SC_EI_LIFECYCLE_SCHEMA_VERSION', '1.0.0'" "$MAIN" || fail "Lifecycle schema marker is missing."
 grep -Fq "Stable tag: $VERSION" "$README" || fail "WordPress stable tag is not $VERSION."
 grep -Fq "MIGRATION_KEY = 'v1_1_0_advisory_operations_engagement_lifecycle'" "$LIFECYCLE" || fail "v1.1.0 lifecycle migration is missing."
+grep -Fq "PERSISTENCE_PATCH_MIGRATION_KEY = 'v1_1_1_inquiry_persistence_lifecycle_reliability'" "$PLATFORM" || fail "v1.1.1 persistence patch migration is missing."
+grep -Fq "'qualification_score'      => 0" "$SRC/$SLUG/includes/class-sc-ei-inquiry-repository.php" || fail "Non-null qualification score fix is missing."
 grep -Fq "allowed_transitions" "$LIFECYCLE_SCHEMA" || fail "Governed transition map is missing."
 grep -Fq "MOVE ' . strtoupper" "$LIFECYCLE_ADMIN" || fail "Typed human transition confirmation is missing."
 grep -Fq "lifecycle_events" "$DATABASE" || fail "Lifecycle event table contract is missing."
@@ -130,7 +133,7 @@ git add -A
 if git diff --cached --quiet; then
   echo "No changes detected. Nothing to commit."
 else
-  git commit -m "Build v1.1.0 Advisory Operations and Engagement Lifecycle"
+  git commit -m "Build v1.1.1 Inquiry Persistence and Lifecycle Reliability Patch"
 fi
 
 if [[ "$SKIP_PUSH" == "1" ]]; then

@@ -85,8 +85,9 @@ final class SC_EI_Platform_Validation {
 		self::add( $checks, 'version_state', __( 'Installed version state', 'sustainable-catalyst-engagement-intake' ), SC_EI_VERSION === (string) get_option( 'sc_ei_version', '' ), SC_EI_VERSION . ' / ' . (string) get_option( 'sc_ei_version', '' ) );
 		$tables = SC_EI_Database::tables_exist();
 		$columns = SC_EI_Database::platform_columns_exist();
+		$inquiry_columns = SC_EI_Database::inquiry_columns_exist();
 		$lifecycle_columns = SC_EI_Database::lifecycle_columns_exist();
-		self::add( $checks, 'database_contract', __( 'Database tables, platform schema, and lifecycle schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ) && ! in_array( false, $lifecycle_columns, true ), sprintf( '%d/%d tables; %d/%d platform columns; %d/%d lifecycle tables', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ), count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ) ) );
+		self::add( $checks, 'database_contract', __( 'Database tables, platform schema, and lifecycle schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ) && ! in_array( false, $inquiry_columns, true ) && ! in_array( false, $lifecycle_columns, true ), sprintf( '%d/%d tables; %d/%d platform columns; %d/%d inquiry columns; %d/%d lifecycle columns', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ), count( array_filter( $inquiry_columns ) ), count( $inquiry_columns ), count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ) ) );
 		$lifecycle_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Lifecycle_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		self::add( $checks, 'lifecycle_migration', __( 'v1.1.0 advisory lifecycle migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $lifecycle_migration, (string) ( $lifecycle_migration ?: 'missing' ) );
 
@@ -126,7 +127,7 @@ final class SC_EI_Platform_Validation {
 					'inquiry_type'    => 'general',
 					'contact_name'    => 'Platform Validation',
 					'contact_email'   => $validation_email,
-					'subject'         => '[TEST] v1.1.0 live validation',
+					'subject'         => '[TEST] v1.1.1 live validation',
 					'message'         => 'Temporary administrator-generated validation record. Safe to remove.',
 					'form_variant'    => 'advanced',
 					'source_page'     => 'platform-validation',
@@ -222,7 +223,7 @@ final class SC_EI_Platform_Validation {
 
 		$failures = array_values( array_filter( $checks, static fn( array $check ): bool => 'pass' !== $check['status'] ) );
 		$result = array(
-			'schema'         => 'sc-contact-engagement-live-validation/1.2',
+			'schema'         => 'sc-contact-engagement-live-validation/1.3',
 			'plugin_version' => SC_EI_VERSION,
 			'passed'         => empty( $failures ),
 			'score'          => $checks ? (int) round( 100 * ( count( $checks ) - count( $failures ) ) / count( $checks ) ) : 0,

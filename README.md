@@ -1,9 +1,9 @@
 # Sustainable Catalyst Contact and Engagement Platform
 
-**Version:** 1.1.0  
-**Release:** Advisory Operations and Engagement Lifecycle
+**Version:** 1.1.1  
+**Release:** Inquiry Persistence and Lifecycle Reliability Patch
 
-v1.1.0 extends the production-hardened intake platform into a governed advisory-operations workspace. It preserves the v1.0.3 public-launch gate while adding audited lifecycle stages, structured qualification, private internal notes, follow-up tasks, Microsoft Teams coordination context, proposal and engagement linkage, sender-safe status publishing, service-specific routing, communication templates, privacy handling, and operational metrics.
+v1.1.1 is a focused production-blocking reliability patch for the v1.1.0 advisory lifecycle. It repairs new inquiry persistence under MySQL strict mode, adds runtime verification of the complete inquiry write-path schema, records protected database diagnostics, and prevents the stored database version from advancing when the required contract is incomplete. No destructive migration is performed and the database schema version remains 1.1.0.
 
 ## Lifecycle model
 
@@ -20,7 +20,7 @@ New Inquiry
 
 All stage changes are explicit administrator actions. They require authorization, a nonce, current-state validation, a typed confirmation, and—when configured—a reason and assigned owner. The platform does not automatically accept, reject, qualify, schedule, publish, contract, or activate an engagement.
 
-## New v1.1.0 records
+## Preserved v1.1.0 records
 
 The nondestructive database upgrade adds:
 
@@ -81,11 +81,11 @@ The canonical Contact page supports routed entry links without creating separate
 
 ## Production gate
 
-v1.1.0 retains and extends the launch gate. Production requires:
+v1.1.1 retains the v1.1.0 launch gate and adds an inquiry-persistence contract check. Production requires:
 
 - 100% readiness
 - zero required failures and zero warnings
-- current v1.1.0 migration evidence
+- current v1.1.1 persistence-patch and v1.1.0 lifecycle migration evidence
 - recent successful live validation
 - externally confirmed inbox delivery
 - completed controlled-pilot evidence
@@ -99,14 +99,14 @@ Repository tests do not replace validation on the live WordPress host.
 ## Upgrade
 
 1. Back up the database and protected storage.
-2. Install the v1.1.0 ZIP over the existing plugin.
+2. Install the v1.1.1 ZIP over the existing plugin.
 3. Clear WordPress, object, host, CDN, browser, and PHP opcode caches.
 4. Open **Contact & Engagement → Platform Overview**.
-5. Complete database and v1.1.0 migration repairs if shown.
+5. Complete database, v1.1.0 lifecycle, and v1.1.1 persistence-patch repairs if shown.
 6. Open **Contact & Engagement → Advisory Lifecycle** and inspect backfilled inquiries.
 7. Assign owners and resolve overdue next actions or tasks.
 8. Run Live Validation and repeat the controlled pilot where required.
-9. Record fresh backup, inbox, and pilot evidence for v1.1.0.
+9. Record fresh backup, inbox, and pilot evidence for v1.1.1.
 10. Promote only after the gate returns 100%, zero failures, and zero warnings.
 
-See `docs/ADVISORY-LIFECYCLE.md`, `docs/MIGRATION-v1.1.0.md`, and `docs/RELEASE.md`.
+See `docs/ADVISORY-LIFECYCLE.md`, `docs/MIGRATION-v1.1.0.md`, `docs/MIGRATION-v1.1.1.md`, and `docs/RELEASE.md`.

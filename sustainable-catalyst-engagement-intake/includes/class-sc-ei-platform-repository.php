@@ -13,6 +13,7 @@ final class SC_EI_Platform_Repository {
 	public const MIGRATION_KEY = 'v1_0_0_unified_contact_engagement_platform';
 	public const PATCH_MIGRATION_KEY = 'v1_0_2_production_readiness_live_validation';
 	public const LAUNCH_MIGRATION_KEY = 'v1_0_3_pilot_findings_public_launch_hardening';
+	public const PERSISTENCE_PATCH_MIGRATION_KEY = 'v1_1_1_inquiry_persistence_lifecycle_reliability';
 
 	public static function maybe_upgrade(): void {
 		$stored_version = (string) get_option( 'sc_ei_version', '' );
@@ -26,6 +27,7 @@ final class SC_EI_Platform_Repository {
 		}
 		self::record_patch_migration( $stored_version );
 		self::record_launch_migration( $stored_version );
+		self::record_persistence_patch_migration( $stored_version );
 		self::schedule_all();
 	}
 
@@ -231,11 +233,69 @@ final class SC_EI_Platform_Repository {
 		return self::find_migration( $id );
 	}
 
+
+	public static function record_persistence_patch_migration( string $from_version = '' ) {
+		global $wpdb;
+		$table = SC_EI_Database::table( 'platform_migrations' );
+		$existing = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE migration_key = %s LIMIT 1", self::PERSISTENCE_PATCH_MIGRATION_KEY ), ARRAY_A );
+		if ( $existing && 'completed' === (string) $existing['status'] ) {
+			return $existing;
+		}
+		$contract = SC_EI_Database::required_contract();
+		$ok = ! in_array( false, $contract, true );
+		$now = current_time( 'mysql', true );
+		$data = array(
+			'public_id' => $existing['public_id'] ?? wp_generate_uuid4(),
+			'migration_key' => self::PERSISTENCE_PATCH_MIGRATION_KEY,
+			'from_version' => sanitize_text_field( $from_version ),
+			'to_version' => '1.1.1',
+			'status' => $ok ? 'completed' : 'failed',
+			'schema_hash' => self::schema_hash(),
+			'context_json' => wp_json_encode(
+				array(
+					'release' => 'Inquiry Persistence and Lifecycle Reliability Patch',
+					'qualification_score_default' => 0,
+					'database_contract_verified' => $ok,
+					'missing_contract_items' => array_keys( array_filter( $contract, static fn( bool $available ): bool => ! $available ) ),
+					'database_schema_changed' => false,
+					'no_destructive_migration' => true,
+				),
+				JSON_UNESCAPED_SLASHES
+			),
+			'started_at' => $existing['started_at'] ?? $now,
+			'completed_at' => $now,
+			'error_code' => $ok ? '' : 'inquiry_persistence_contract_incomplete',
+			'error_message' => $ok ? '' : 'The inquiry persistence contract is incomplete.',
+			'created_at' => $existing['created_at'] ?? $now,
+			'updated_at' => $now,
+		);
+		if ( $existing ) {
+			$write = $wpdb->update( $table, $data, array( 'id' => absint( $existing['id'] ) ), self::formats( $data, array() ), array( '%d' ) );
+			$id = absint( $existing['id'] );
+		} else {
+			$write = $wpdb->insert( $table, $data, self::formats( $data, array() ) );
+			$id = (int) $wpdb->insert_id;
+		}
+		if ( false === $write ) {
+			return new WP_Error( 'platform_persistence_patch_journal_failed', __( 'The v1.1.1 persistence reliability journal could not be recorded.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		SC_EI_Audit_Log::record(
+			$ok ? 'platform_persistence_patch_recorded' : 'platform_persistence_patch_failed',
+			$ok ? 'Inquiry persistence and lifecycle reliability patch recorded after runtime database-contract verification.' : 'Inquiry persistence patch found an incomplete runtime database contract.',
+			array( 'migration_key' => self::PERSISTENCE_PATCH_MIGRATION_KEY, 'from_version' => $from_version, 'to_version' => '1.1.1', 'database_schema_changed' => false ),
+			null,
+			null,
+			get_current_user_id()
+		);
+		return $ok ? self::find_migration( $id ) : new WP_Error( 'inquiry_persistence_contract_incomplete', __( 'The v1.1.1 inquiry persistence contract requires database repair.', 'sustainable-catalyst-engagement-intake' ), self::find_migration( $id ) );
+	}
+
 	public static function readiness(): array {
 		$settings = self::settings();
 		$storage = SC_EI_Storage::storage_health();
 		$tables = SC_EI_Database::tables_exist();
 		$platform_columns = SC_EI_Database::platform_columns_exist();
+		$inquiry_columns = SC_EI_Database::inquiry_columns_exist();
 		$lifecycle_columns = SC_EI_Database::lifecycle_columns_exist();
 		$lifecycle_metrics = SC_EI_Lifecycle_Repository::metrics();
 		$hardening = SC_EI_Hardening_Repository::metrics();
@@ -264,11 +324,13 @@ final class SC_EI_Platform_Repository {
 		$checks[] = self::check( 'database_version', 'data', __( 'Database version', 'sustainable-catalyst-engagement-intake' ), SC_EI_DB_VERSION === (string) get_option( 'sc_ei_db_version', '' ), true, (string) get_option( 'sc_ei_db_version', '' ), 'repair_database' );
 		$checks[] = self::check( 'database_tables', 'data', __( 'Required database tables', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ), true, sprintf( '%d/%d', count( array_filter( $tables ) ), count( $tables ) ), 'repair_database' );
 		$checks[] = self::check( 'platform_columns', 'data', __( 'Platform governance schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $platform_columns, true ), true, sprintf( '%d/%d', count( array_filter( $platform_columns ) ), count( $platform_columns ) ), 'repair_database' );
+		$checks[] = self::check( 'inquiry_columns', 'data', __( 'Inquiry persistence schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $inquiry_columns, true ), true, sprintf( '%d/%d', count( array_filter( $inquiry_columns ) ), count( $inquiry_columns ) ), 'repair_database' );
 		$checks[] = self::check( 'lifecycle_columns', 'data', __( 'Advisory lifecycle schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $lifecycle_columns, true ), true, sprintf( '%d/%d', count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ) ), 'repair_database' );
 		$checks[] = self::check( 'migration_journal', 'data', __( 'v1.0 base migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::MIGRATION_KEY ), true, self::MIGRATION_KEY, 'verify_migration' );
 		$checks[] = self::check( 'patch_migration_journal', 'data', __( 'v1.0.2 upgrade journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::PATCH_MIGRATION_KEY ), true, self::PATCH_MIGRATION_KEY, 'verify_patch_migration' );
 		$checks[] = self::check( 'launch_migration_journal', 'data', __( 'v1.0.3 launch-hardening journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::LAUNCH_MIGRATION_KEY ), true, self::LAUNCH_MIGRATION_KEY, 'verify_launch_migration' );
 		$checks[] = self::check( 'lifecycle_migration_journal', 'data', __( 'v1.1.0 advisory-lifecycle migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Lifecycle_Repository::MIGRATION_KEY ), true, SC_EI_Lifecycle_Repository::MIGRATION_KEY, 'verify_lifecycle_migration' );
+		$checks[] = self::check( 'persistence_patch_migration_journal', 'data', __( 'v1.1.1 inquiry-persistence reliability journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::PERSISTENCE_PATCH_MIGRATION_KEY ), true, self::PERSISTENCE_PATCH_MIGRATION_KEY, 'verify_persistence_patch_migration' );
 		$storage_ok = ! empty( $storage['exists'] ) && ! empty( $storage['writable'] ) && ! empty( $storage['marker'] ) && ! empty( $storage['protection_files'] ) && empty( $storage['base_is_symlink'] );
 		$checks[] = self::check( 'protected_storage', 'security', __( 'Protected document storage', 'sustainable-catalyst-engagement-intake' ), $storage_ok, ! empty( $settings['platform_require_protected_storage'] ), (string) ( $storage['path'] ?? '' ), 'repair_storage' );
 		$https_ok = is_ssl() || SC_EI_Portal_Schema::secure_transport_available();

@@ -180,7 +180,7 @@ final class SC_EI_Inquiry_Repository {
 			'next_action'              => __( 'Review the new inquiry and determine the next human action.', 'sustainable-catalyst-engagement-intake' ),
 			'next_action_at'           => SC_EI_Review_Schema::default_due_at( $initial_priority ),
 			'qualification_status'     => 'not_started',
-			'qualification_score'      => null,
+			'qualification_score'      => 0,
 			'qualification_json'       => wp_json_encode( array(), JSON_UNESCAPED_SLASHES ),
 			'decision_authority'       => 'unknown',
 			'funding_status'           => 'unknown',
@@ -231,7 +231,26 @@ final class SC_EI_Inquiry_Repository {
 
 		$inserted = $wpdb->insert( SC_EI_Database::table( 'inquiries' ), $data, $formats );
 		if ( false === $inserted ) {
-			throw new RuntimeException( 'Unable to create inquiry record.' );
+			$request_id = class_exists( 'SC_EI_Hardening_Repository' )
+				? SC_EI_Hardening_Repository::request_id()
+				: wp_generate_uuid4();
+			$database_error = isset( $wpdb->last_error ) ? trim( (string) $wpdb->last_error ) : '';
+			if ( class_exists( 'SC_EI_Hardening_Repository' ) ) {
+				SC_EI_Hardening_Repository::record_event(
+					'database',
+					'inquiry_insert_failed',
+					'critical',
+					'An inquiry record could not be written to the private inquiry table.',
+					array(
+						'request_id'          => $request_id,
+						'database_error'      => mb_substr( $database_error, 0, 500 ),
+						'database_error_hash' => hash( 'sha256', $database_error ),
+						'plugin_version'      => defined( 'SC_EI_VERSION' ) ? SC_EI_VERSION : '',
+						'database_version'    => defined( 'SC_EI_DB_VERSION' ) ? SC_EI_DB_VERSION : '',
+					)
+				);
+			}
+			throw new RuntimeException( 'Unable to create inquiry record. Reliability reference: ' . $request_id );
 		}
 
 		$id = (int) $wpdb->insert_id;

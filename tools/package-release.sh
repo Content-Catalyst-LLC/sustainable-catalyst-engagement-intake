@@ -3,11 +3,11 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-VERSION="1.1.0"
+VERSION="1.1.1"
 SLUG="sustainable-catalyst-engagement-intake"
 REPO_ROOT="${SLUG}-v${VERSION}-repo"
 DIST="${ROOT}/dist"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v110-package.XXXXXX")"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v111-package.XXXXXX")"
 TEST_LOG="${WORK}/tests.log"
 
 cleanup() { rm -rf "$WORK"; }
@@ -32,7 +32,7 @@ if command -v node >/dev/null 2>&1; then
 fi
 
 bash -n "$0"
-bash -n PUSH_ENGAGEMENT_INTAKE_V110_CLEAN.sh
+bash -n PUSH_ENGAGEMENT_INTAKE_V111_CLEAN.sh
 python3 -m json.tool composer.json >/dev/null
 
 printf 'Scanning for common secret material...\n'
@@ -59,7 +59,7 @@ for path in sorted(root.rglob('*')):
 manifest = {
     'name': 'Sustainable Catalyst Contact and Engagement Platform',
     'version': version,
-    'release': 'Advisory Operations and Engagement Lifecycle',
+    'release': 'Inquiry Persistence and Lifecycle Reliability Patch',
     'plugin_slug': 'sustainable-catalyst-engagement-intake',
     'text_domain': 'sustainable-catalyst-engagement-intake',
     'requires_wordpress': '6.5',
@@ -68,14 +68,15 @@ manifest = {
     'schemas': {
         'review': '1.0.0', 'communication': '1.0.0', 'privacy': '1.0.0', 'fit': '1.0.0',
         'portal': '1.4.0', 'workflow': '1.1.0', 'graph': '1.0.0', 'engagement': '1.1.0',
-        'analytics': '1.0.0', 'hardening': '1.0.0', 'workflow_core': '1.0.0', 'platform': '1.1.0',
+        'analytics': '1.0.0', 'hardening': '1.0.0', 'workflow_core': '1.0.0', 'platform': '1.1.1',
         'lifecycle': '1.0.0'
     },
     'migration_keys': [
         'v1_0_0_unified_contact_engagement_platform',
         'v1_0_2_production_readiness_live_validation',
         'v1_0_3_pilot_findings_public_launch_hardening',
-        'v1_1_0_advisory_operations_engagement_lifecycle'
+        'v1_1_0_advisory_operations_engagement_lifecycle',
+        'v1_1_1_inquiry_persistence_lifecycle_reliability'
     ],
     'recommended_shortcode': '[sc_contact_engagement_platform]',
     'routed_entries': [
@@ -100,7 +101,7 @@ manifest = {
         'cron schedules and callbacks', 'rendered accessibility contract',
         'duplicate fingerprint and request lock', 'routed entry contracts',
         'clean upload acceptance and disguised executable rejection', 'protected storage probe',
-        'inquiry persistence and status transition', 'sender portal token verification',
+        'strict-mode inquiry persistence and status transition', 'sender portal token verification',
         'private file integrity and deletion', 'WordPress mail transport acceptance',
         'temporary artifact cleanup', 'lifecycle schema and migration contract',
         'lifecycle cron callback and overdue-work gate', 'sender-safe lifecycle projection'

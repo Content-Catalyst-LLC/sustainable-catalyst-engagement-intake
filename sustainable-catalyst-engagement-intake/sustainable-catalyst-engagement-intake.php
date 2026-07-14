@@ -3,7 +3,7 @@
  * Plugin Name: Sustainable Catalyst Contact and Engagement Platform
  * Plugin URI:  https://sustainablecatalyst.com/
  * Description: Unified contact and engagement platform with governed public intake, secure sender collaboration, human review and fit assessment, Teams scheduling, proposals, engagement handoff, analytics, reliability, privacy, and signed Workflow Core integration.
- * Version:     1.1.0
+ * Version:     1.1.1
  * Author:      Content Catalyst LLC
  * Author URI:  https://sustainablecatalyst.com/
  * Text Domain: sustainable-catalyst-engagement-intake
@@ -18,9 +18,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SC_EI_VERSION', '1.1.0' );
+define( 'SC_EI_VERSION', '1.1.1' );
 define( 'SC_EI_DB_VERSION', '1.1.0' );
-define( 'SC_EI_VALIDATOR_VERSION', '1.1.0' );
+define( 'SC_EI_VALIDATOR_VERSION', '1.1.1' );
 define( 'SC_EI_REVIEW_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_COMMUNICATION_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_PRIVACY_SCHEMA_VERSION', '1.0.0' );
@@ -32,7 +32,7 @@ define( 'SC_EI_ENGAGEMENT_SCHEMA_VERSION', '1.1.0' );
 define( 'SC_EI_ANALYTICS_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_HARDENING_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_WORKFLOW_CORE_SCHEMA_VERSION', '1.0.0' );
-define( 'SC_EI_PLATFORM_SCHEMA_VERSION', '1.1.0' );
+define( 'SC_EI_PLATFORM_SCHEMA_VERSION', '1.1.1' );
 define( 'SC_EI_LIFECYCLE_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_FILE', __FILE__ );
 define( 'SC_EI_DIR', plugin_dir_path( __FILE__ ) );

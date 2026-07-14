@@ -1618,7 +1618,22 @@ final class SC_EI_Database {
 		self::backfill_communication_defaults();
 		self::backfill_privacy_defaults();
 		self::backfill_lifecycle_defaults();
-		update_option( 'sc_ei_db_version', SC_EI_DB_VERSION, false );
+
+		$contract = self::required_contract();
+		if ( ! in_array( false, $contract, true ) ) {
+			update_option( 'sc_ei_db_version', SC_EI_DB_VERSION, false );
+		} elseif ( class_exists( 'SC_EI_Hardening_Repository' ) ) {
+			SC_EI_Hardening_Repository::record_event(
+				'database',
+				'database_contract_incomplete',
+				'critical',
+				'The database installer did not advance the stored database version because required tables or columns remain unavailable.',
+				array(
+					'missing_contract_items' => array_keys( array_filter( $contract, static fn( bool $available ): bool => ! $available ) ),
+					'expected_db_version'    => SC_EI_DB_VERSION,
+				)
+			);
+		}
 	}
 
 	private static function backfill_review_defaults(): void {
@@ -1741,6 +1756,30 @@ final class SC_EI_Database {
 			$result[ $name ] = ( $found === $table );
 		}
 
+		return $result;
+	}
+
+	/**
+	 * Return the minimum write-path database contract required for new inquiries.
+	 *
+	 * This intentionally combines table, inquiry-column, platform, and lifecycle
+	 * evidence so activation and readiness cannot report a current database
+	 * version while the public inquiry insert path is incomplete.
+	 */
+	public static function required_contract(): array {
+		$result = array();
+		foreach ( self::tables_exist() as $key => $available ) {
+			$result[ 'table.' . $key ] = $available;
+		}
+		foreach ( self::inquiry_columns_exist() as $key => $available ) {
+			$result[ 'inquiries.' . $key ] = $available;
+		}
+		foreach ( self::platform_columns_exist() as $key => $available ) {
+			$result[ 'platform.' . $key ] = $available;
+		}
+		foreach ( self::lifecycle_columns_exist() as $key => $available ) {
+			$result[ 'lifecycle.' . $key ] = $available;
+		}
 		return $result;
 	}
 

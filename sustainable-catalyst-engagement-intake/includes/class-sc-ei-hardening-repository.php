@@ -171,6 +171,8 @@ final class SC_EI_Hardening_Repository {
 			$checks['hardening_columns']=!in_array(false,SC_EI_Database::hardening_columns_exist(),true);
 			$checks['workflow_core_columns']=!in_array(false,SC_EI_Database::workflow_core_columns_exist(),true);
 			$checks['platform_columns']=!in_array(false,SC_EI_Database::platform_columns_exist(),true);
+			$checks['inquiry_columns']=!in_array(false,SC_EI_Database::inquiry_columns_exist(),true);
+			$checks['lifecycle_columns']=!in_array(false,SC_EI_Database::lifecycle_columns_exist(),true);
 			$storage=SC_EI_Storage::storage_health();
 			$checks['storage_ready']=!empty($storage['exists']) && !empty($storage['writable']) && !empty($storage['marker']) && !empty($storage['protection_files']);
 			$checks['portal_cleanup']=(bool)wp_next_scheduled('sc_ei_portal_cleanup');
@@ -186,7 +188,7 @@ final class SC_EI_Hardening_Repository {
 			$checks['platform_snapshot']=(bool)wp_next_scheduled(SC_EI_Platform_Repository::SNAPSHOT_HOOK);
 			$checks['secure_transport']=SC_EI_Portal_Schema::secure_transport_available();
 			$checks['crypto']=SC_EI_Graph_Crypto::available();
-			foreach($checks as $key=>$passed) if(!$passed) self::record_event(in_array($key,array('database_tables','hardening_columns','workflow_core_columns','platform_columns'),true)?'database':(str_contains($key,'storage')?'storage':(str_contains($key,'transport')||str_contains($key,'crypto')?'security':'cron')), 'watchdog_'.$key, in_array($key,array('database_tables','hardening_columns','workflow_core_columns','platform_columns','storage_ready'),true)?'critical':'warning', 'Reliability watchdog detected a failed production readiness check.', array('check'=>$key));
+			foreach($checks as $key=>$passed) if(!$passed) self::record_event(in_array($key,array('database_tables','hardening_columns','workflow_core_columns','platform_columns','inquiry_columns','lifecycle_columns'),true)?'database':(str_contains($key,'storage')?'storage':(str_contains($key,'transport')||str_contains($key,'crypto')?'security':'cron')), 'watchdog_'.$key, in_array($key,array('database_tables','hardening_columns','workflow_core_columns','platform_columns','inquiry_columns','lifecycle_columns','storage_ready'),true)?'critical':'warning', 'Reliability watchdog detected a failed production readiness check.', array('check'=>$key));
 			$summary=array('checked_at'=>current_time('mysql',true),'request_id'=>self::request_id(),'manual'=>$manual,'checks'=>$checks,'passed'=>count(array_filter($checks)),'total'=>count($checks));
 			update_option(self::LAST_RUN_OPTION,$summary,false);
 			return $summary;

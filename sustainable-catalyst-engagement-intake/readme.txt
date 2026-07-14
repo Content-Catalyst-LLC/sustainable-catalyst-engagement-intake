@@ -3,7 +3,7 @@ Contributors: content-catalyst
 Tags: contact, advisory, engagement, lifecycle, sender portal, microsoft teams, proposals, privacy
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,7 +11,7 @@ A governed contact-to-engagement platform with adaptive intake, advisory lifecyc
 
 == Description ==
 
-Version 1.1.0 is the Advisory Operations and Engagement Lifecycle release. It preserves the v1.0.3 public-launch gate and adds thirteen audited lifecycle stages, structured qualification, internal-only notes, follow-up tasks, Teams/proposal/engagement linkage, sender-safe status publishing, service routes, communication templates, privacy integration, and operational metrics.
+Version 1.1.1 is the Inquiry Persistence and Lifecycle Reliability Patch. It preserves the v1.1.0 advisory lifecycle while repairing strict-mode inquiry inserts, strengthening runtime schema evidence, and preventing the stored database version from advancing before the required write-path contract is complete. It preserves the v1.0.3 public-launch gate and adds thirteen audited lifecycle stages, structured qualification, internal-only notes, follow-up tasks, Teams/proposal/engagement linkage, sender-safe status publishing, service routes, communication templates, privacy integration, and operational metrics.
 
 The platform connects:
 
@@ -79,7 +79,7 @@ Production requires:
 
 * 100% readiness
 * zero required failures and zero warnings
-* current v1.1.0 database and migration evidence
+* current v1.1.1 persistence-patch, v1.1.0 lifecycle, and database evidence
 * recent successful live validation
 * externally confirmed inbox evidence
 * completed controlled-pilot evidence
@@ -92,18 +92,26 @@ Repository validation does not replace live WordPress-host testing.
 == Installation ==
 
 1. Back up the WordPress database and protected storage.
-2. Upgrade the existing plugin or install v1.1.0.
+2. Upgrade the existing plugin or install v1.1.1.
 3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
 4. Open Contact & Engagement → Platform Overview.
-5. Complete the database and v1.1.0 lifecycle migration repairs if shown.
+5. Complete database, v1.1.0 lifecycle, and v1.1.1 persistence-patch repairs if shown.
 6. Inspect backfilled inquiries in Contact & Engagement → Advisory Lifecycle.
 7. Run Live Validation with a monitored recipient.
-8. Confirm inbox delivery and repeat controlled pilot checks for v1.1.0.
+8. Confirm inbox delivery and repeat controlled pilot checks for v1.1.1.
 9. Resolve public-launch and lifecycle operational blockers.
 10. Record current database and protected-storage backup evidence.
 11. Require 100%, zero failures, and zero warnings before Production.
 
 == Changelog ==
+
+= 1.1.1 =
+* Fixed strict-mode inquiry creation by initializing `qualification_score` to the non-null database default of zero.
+* Added protected reliability events for failed inquiry inserts while keeping raw database errors out of public responses.
+* Added inquiry-column verification to Platform Readiness, Live Validation, and the reliability watchdog.
+* Prevented the stored database version from advancing until required tables and write-path columns verify successfully.
+* Added a nondestructive v1.1.1 persistence reliability journal and repair path.
+* Added executable inquiry-persistence regression coverage with a strict fake database adapter.
 
 = 1.1.0 =
 * Added thirteen governed advisory lifecycle stages with allowed transitions.
