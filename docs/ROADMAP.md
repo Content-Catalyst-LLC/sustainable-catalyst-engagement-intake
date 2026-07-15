@@ -2,22 +2,15 @@
 
 ## Current release
 
+### v1.2.1 — Support Operations and Cross-Product Reliability Patch
+
+Recoverable public support persistence, retry-safe support records and relationships, strict product/source validation, stable replay-safe handoffs, protected failure evidence, Sender Portal isolation checks, product-context operations metrics, and expanded Live Validation. Database schema remains 1.2.0.
+
+## Previous feature release
+
 ### v1.2.0 — Support Operations and Product Intelligence Integration
 
 Private product-support cases, governed support stages, product/version/component diagnostics, typed Knowledge Base/known issue/Feature Suggestion/release relationships, privacy-safe product-intelligence signals, focused support intake, Sender Portal support views, communications, privacy, readiness, and Live Validation.
-
-## Next maintenance release
-
-### v1.2.1 — Support Operations Reliability Patch
-
-- live-host migration and support-case creation findings
-- typed handoff idempotency and retry handling
-- support transition concurrency and recovery
-- relationship integrity and duplicate-case repair tools
-- Sender Portal support rendering and cache compatibility
-- communication delivery diagnostics
-- product/version normalization and validation refinements
-- mobile, accessibility, privacy-export, and retention fixes
 
 ## Coordinated public product-support roadmap
 

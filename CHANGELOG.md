@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.1 — Support Operations and Cross-Product Reliability Patch
+
+- Made public support intake persist the canonical inquiry and linked support case as a recoverable operation, with bounded rollback of only the newly created inquiry when case creation fails.
+- Added retry and concurrent-insert recovery for support cases, initial case events, typed relationships, and privacy-safe signals.
+- Added stable handoff identifiers, registered source-system validation, strict product identifiers, receipt records, replay idempotency, and success/failure recovery evidence for `sc-product-support-handoff/1.0`.
+- Added typed Knowledge Base article, known-issue, Feature Suggestion, product-release, and handoff-receipt relationships without merging or deleting underlying records.
+- Added protected support-persistence and handoff-failure reliability events with redacted database-error hashes and request correlation.
+- Added Sender Portal allowlist validation so private diagnostics, assignments, internal reasoning, and unreleased information remain excluded.
+- Added missing product/version/component and failed-handoff metrics to Support Cases operations.
+- Added a nondestructive v1.2.1 patch migration journal; database schema remains 1.2.0.
+- Expanded Live Validation to exercise real case creation, governed triage, portal isolation, personal-data rejection, clean signal storage, relationship creation, handoff replay, and complete cleanup.
+- Added dedicated cross-product reliability regression coverage while preserving advisory and inquiry behavior.
+
 ## 1.2.0 — Support Operations and Product Intelligence Integration
 
 - Added private product-support cases keyed to the canonical inquiry rather than creating a separate sender system.

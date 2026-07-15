@@ -577,6 +577,37 @@ final class SC_EI_Inquiry_Repository {
 		);
 	}
 
+
+	/**
+	 * Roll back a newly inserted public inquiry when its required support-case companion cannot be persisted.
+	 *
+	 * The request identifier must match the inquiry metadata and the record must still be in its initial state.
+	 */
+	public static function rollback_public_create( int $inquiry_id, string $request_id, string $reason ): bool {
+		global $wpdb;
+		$record = self::find( $inquiry_id );
+		if ( ! $record || 'new' !== (string) ( $record['status'] ?? '' ) ) {
+			return false;
+		}
+		$metadata = json_decode( (string) ( $record['metadata_json'] ?? '{}' ), true );
+		$stored_request_id = is_array( $metadata ) ? (string) ( $metadata['request_id'] ?? '' ) : '';
+		if ( '' === $request_id || ! hash_equals( $stored_request_id, $request_id ) ) {
+			return false;
+		}
+		$deleted = $wpdb->delete( SC_EI_Database::table( 'inquiries' ), array( 'id' => $inquiry_id ), array( '%d' ) );
+		if ( 1 === $deleted ) {
+			SC_EI_Hardening_Repository::record_event(
+				'database',
+				'public_support_inquiry_rolled_back',
+				'warning',
+				'A newly inserted inquiry was removed because its required support case could not be persisted.',
+				array( 'request_id' => $request_id, 'reason' => sanitize_key( $reason ) )
+			);
+			return true;
+		}
+		return false;
+	}
+
 	private static function generate_reference(): string {
 		global $wpdb;
 

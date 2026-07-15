@@ -24,7 +24,7 @@ $checks=array(
  'responsive platform administration'=>strpos($admin_css,'.sc-ei-platform-layout')!==false&&strpos($admin_css,'@media (max-width: 640px)')!==false,
  'responsive public entry'=>strpos($public_css,'.sc-ei-platform-public__routes')!==false&&strpos($public_css,'@media (max-width: 900px)')!==false,
  'platform accessibility styles'=>strpos($public_css,'prefers-reduced-motion')!==false&&strpos($public_css,'forced-colors')!==false&&strpos($admin_css,':focus-visible')!==false,
- 'readme stable tag'=>strpos($readme,'Stable tag: 1.2.0')!==false,
+ 'readme stable tag'=>strpos($readme,'Stable tag: 1.2.1')!==false,
  'no schema reset'=>strpos($main,"SC_EI_PORTAL_SCHEMA_VERSION', '1.4.0'")!==false&&strpos($main,"SC_EI_WORKFLOW_SCHEMA_VERSION', '1.1.0'")!==false&&strpos($main,"SC_EI_WORKFLOW_CORE_SCHEMA_VERSION', '1.0.0'")!==false,
  'workflow core REST redacts command bodies'=>strpos(file_get_contents($plugin.'/includes/class-sc-ei-rest.php'),"unset( \$command['payload_json'], \$command['result_json'], \$command['reason'], \$command['error_message'] )")!==false,
  'same plugin slug and text domain'=>strpos($main,'Text Domain: sustainable-catalyst-engagement-intake')!==false&&basename($plugin)==='sustainable-catalyst-engagement-intake',

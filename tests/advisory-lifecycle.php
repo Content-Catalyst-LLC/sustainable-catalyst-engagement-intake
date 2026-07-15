@@ -36,7 +36,7 @@ foreach ( $service_routes as $route ) {
 }
 
 $checks = array(
-	'v1.1.0 plugin and schema identity' => false !== strpos( $main, 'Version:     1.2.0' ) && false !== strpos( $main, "SC_EI_DB_VERSION', '1.2.0'" ) && false !== strpos( $main, "SC_EI_LIFECYCLE_SCHEMA_VERSION', '1.0.0'" ),
+	'v1.1.0 plugin and schema identity' => false !== strpos( $main, 'Version:     1.2.1' ) && false !== strpos( $main, "SC_EI_DB_VERSION', '1.2.0'" ) && false !== strpos( $main, "SC_EI_LIFECYCLE_SCHEMA_VERSION', '1.0.0'" ),
 	'lifecycle classes and administrator loaded' => false !== strpos( $main, 'class-sc-ei-lifecycle-schema.php' ) && false !== strpos( $main, 'class-sc-ei-lifecycle-repository.php' ) && false !== strpos( $main, 'class-sc-ei-lifecycle-admin.php' ),
 	'thirteen governed lifecycle stages' => $all_stages_present && false !== strpos( $schema, 'allowed_transitions()' ) && false !== strpos( $schema, 'can_transition' ),
 	'nondestructive legacy status mapping' => false !== strpos( $schema, 'map_legacy_status' ) && false !== strpos( $repository, 'backfill_defaults' ) && false !== strpos( $repository, 'WHERE lifecycle_stage IS NULL' ),

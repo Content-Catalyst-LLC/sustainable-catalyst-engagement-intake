@@ -1,9 +1,9 @@
 # Sustainable Catalyst Contact and Engagement Platform
 
-**Version:** 1.2.0  
-**Release:** Support Operations and Product Intelligence Integration
+**Version:** 1.2.1  
+**Release:** Support Operations and Cross-Product Reliability Patch
 
-v1.2.0 adds a private product-support case layer while preserving the governed advisory lifecycle and v1.1.1 inquiry-persistence repair. Support requests remain canonical inquiries, then receive structured product/version/component diagnostics, a governed support workflow, typed relationships to Knowledge Base articles, known issues, Feature Suggestions, releases, reliability events, and related cases, plus privacy-safe product-intelligence signals.
+v1.2.1 hardens the private support layer introduced in v1.2.0. Public support intake now creates the canonical inquiry and linked support case as one recoverable operation; failed case persistence rolls back only the newly created inquiry. Cross-product handoffs validate registered products and sources, use stable handoff identifiers, replay safely, preserve typed Knowledge Base, known-issue, Feature Suggestion, and release relationships, and reject personal or private signal fields.
 
 The public Knowledge Base and feature-feedback system remain in Feature Suggestions. Contact and Engagement owns private cases, sender communication, diagnostic files, internal reasoning, resolution, and Sender Portal continuity. The integration contract is `sc-product-support-handoff/1.0`.
 
@@ -116,11 +116,11 @@ The canonical Contact page supports routed entry links without creating separate
 
 ## Production gate
 
-v1.2.0 retains the inquiry-persistence and advisory-lifecycle gates and adds the product-support database, migration, handoff-privacy, scheduled-job, and operational-queue contracts. Production requires:
+v1.2.1 retains the v1.2.0 support model and adds patch-migration, atomic persistence, cross-product handoff-recovery, product-context, and historical failure-recovery evidence to the production gate. Production requires:
 
 - 100% readiness
 - zero required failures and zero warnings
-- current v1.2.0 support, v1.1.1 persistence-patch, and v1.1.0 lifecycle migration evidence
+- current v1.2.1 support-reliability patch, v1.2.0 support, v1.1.1 persistence-patch, and v1.1.0 lifecycle migration evidence
 - recent successful live validation
 - externally confirmed inbox delivery
 - completed controlled-pilot evidence
@@ -134,14 +134,14 @@ Repository tests do not replace validation on the live WordPress host.
 ## Upgrade
 
 1. Back up the database and protected storage.
-2. Install the v1.2.0 ZIP over the existing plugin.
+2. Install the v1.2.1 ZIP over the existing plugin.
 3. Clear WordPress, object, host, CDN, browser, and PHP opcode caches.
 4. Open **Contact & Engagement → Platform Overview**.
-5. Complete database, v1.0–v1.1, and v1.2.0 support migration repairs if shown.
+5. Complete database, v1.0–v1.1, and v1.2.0 support migration and v1.2.1 reliability-patch repairs if shown.
 6. Open **Contact & Engagement → Advisory Lifecycle** and **Support Cases** and inspect migrated records.
 7. Assign owners and resolve overdue next actions or tasks.
 8. Run Live Validation and repeat the controlled pilot where required.
-9. Record fresh backup, inbox, and pilot evidence for v1.2.0.
+9. Record fresh backup, inbox, live-validation, and pilot evidence for v1.2.1.
 10. Promote only after the gate returns 100%, zero failures, and zero warnings.
 
-See `docs/PRODUCT-SUPPORT-INTEGRATION.md`, `docs/MIGRATION-v1.2.0.md`, `docs/ADVISORY-LIFECYCLE.md`, and `docs/RELEASE.md`.
+See `docs/PRODUCT-SUPPORT-INTEGRATION.md`, `docs/MIGRATION-v1.2.0.md`, `docs/MIGRATION-v1.2.1.md`, `docs/ADVISORY-LIFECYCLE.md`, and `docs/RELEASE.md`.

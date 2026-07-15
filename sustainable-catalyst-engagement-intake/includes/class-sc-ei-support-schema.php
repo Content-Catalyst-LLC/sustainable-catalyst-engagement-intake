@@ -29,6 +29,41 @@ final class SC_EI_Support_Schema {
 		);
 	}
 
+
+	public static function source_systems(): array {
+		return array(
+			'feature_suggestions' => __( 'Feature Suggestions', 'sustainable-catalyst-engagement-intake' ),
+			'support_knowledge_base' => __( 'Support Knowledge Base', 'sustainable-catalyst-engagement-intake' ),
+			'platform_core' => __( 'Platform Core', 'sustainable-catalyst-engagement-intake' ),
+			'public_support_form' => __( 'Public Support Form', 'sustainable-catalyst-engagement-intake' ),
+			'manual' => __( 'Manual Administration', 'sustainable-catalyst-engagement-intake' ),
+		);
+	}
+
+	public static function strict_product( string $value ) {
+		$value = sanitize_title( $value );
+		if ( '' === $value || ! isset( self::products()[ $value ] ) || 'other' === $value ) {
+			return new WP_Error( 'support_handoff_product_invalid', __( 'The product-support handoff must identify a registered Sustainable Catalyst product.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		return $value;
+	}
+
+	public static function handoff_id( string $value ) {
+		$value = strtolower( trim( sanitize_text_field( $value ) ) );
+		if ( ! preg_match( '/^[a-z0-9][a-z0-9._:-]{7,190}$/', $value ) ) {
+			return new WP_Error( 'support_handoff_id_invalid', __( 'The product-support handoff requires a stable idempotency identifier.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		return $value;
+	}
+
+	public static function source_system( string $value ) {
+		$value = sanitize_key( $value );
+		if ( ! isset( self::source_systems()[ $value ] ) ) {
+			return new WP_Error( 'support_handoff_source_invalid', __( 'The product-support handoff source is not registered.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		return $value;
+	}
+
 	public static function stages(): array {
 		return array(
 			'new_support_request' => __( 'New Support Request', 'sustainable-catalyst-engagement-intake' ),
@@ -183,6 +218,8 @@ final class SC_EI_Support_Schema {
 			'resolution_attempted' => empty( $input['resolution_attempted'] ) ? false : true,
 			'article_helpful'=> isset( $input['article_helpful'] ) ? (bool) $input['article_helpful'] : null,
 			'source_url'    => esc_url_raw( (string) ( $input['source_url'] ?? '' ) ),
+			'feature_suggestion' => substr( sanitize_text_field( (string) ( $input['feature_suggestion'] ?? '' ) ), 0, 191 ),
+			'product_release' => substr( sanitize_text_field( (string) ( $input['product_release'] ?? '' ) ), 0, 191 ),
 		);
 	}
 }

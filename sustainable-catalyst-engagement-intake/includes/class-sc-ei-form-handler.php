@@ -379,6 +379,19 @@ final class SC_EI_Form_Handler {
 			return new WP_Error( 'storage_error', __( 'The inquiry was stored but its confirmation record could not be loaded.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 
+		$support_case = null;
+		if ( 'product_support' === $inquiry_type ) {
+			$support_case = SC_EI_Support_Repository::ensure_public_case( $record, $raw );
+			if ( is_wp_error( $support_case ) ) {
+				$rolled_back = SC_EI_Inquiry_Repository::rollback_public_create( $id, $request_id, $support_case->get_error_code() );
+				return new WP_Error(
+					'support_storage_error',
+					__( 'The support request could not be stored safely. No support case was opened. Please try again or use another contact route.', 'sustainable-catalyst-engagement-intake' ),
+					array( 'request_id' => $request_id, 'rolled_back' => $rolled_back )
+				);
+			}
+		}
+
 		SC_EI_Audit_Log::record(
 			'public_form_submitted',
 			'Inquiry submitted through the adaptive public contact form.',
@@ -444,6 +457,7 @@ final class SC_EI_Form_Handler {
 			'attachments'       => $attachment_result['accepted'],
 			'attachment_errors' => $attachment_result['errors'],
 			'request_id'        => $request_id,
+			'support_case_number'=> is_array( $support_case ) ? (string) ( $support_case['case_number'] ?? '' ) : '',
 		);
 
 		set_transient( self::request_success_key( $request_id ), $response, 15 * MINUTE_IN_SECONDS );

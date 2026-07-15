@@ -57,10 +57,11 @@ final class SC_EI_Activator {
 		SC_EI_Lifecycle_Repository::backfill_defaults();
 		SC_EI_Lifecycle_Repository::record_migration( $previous_lifecycle_schema );
 		SC_EI_Support_Repository::record_migration( $previous_version );
+		SC_EI_Support_Repository::record_patch_migration( $previous_version );
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Sustainable Catalyst Contact and Engagement Platform v1.2.0 activated with private product-support cases, typed product-intelligence handoffs, sender-safe support status, privacy-safe documentation-gap signals, and the established advisory and production gates.',
+			'Sustainable Catalyst Contact and Engagement Platform v1.2.1 activated with atomic support intake, strict cross-product handoff validation, idempotent relationship and signal processing, expanded live validation, and the established advisory and production gates.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}

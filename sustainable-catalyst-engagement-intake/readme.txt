@@ -3,7 +3,7 @@ Contributors: content-catalyst
 Tags: contact, support, help desk, product support, advisory, engagement, sender portal, known issues, privacy
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,7 +11,7 @@ A governed contact-to-engagement platform with adaptive intake, advisory lifecyc
 
 == Description ==
 
-Version 1.2.0 adds Support Operations and Product Intelligence Integration. It preserves v1.1.1 inquiry persistence and the advisory lifecycle while adding private support cases, product/version/component diagnostics, governed support stages, typed Knowledge Base/known issue/Feature Suggestion/release relationships, sender-safe support updates, privacy-safe product-intelligence signals, focused support intake, REST handoffs, communication templates, privacy export and redaction, readiness checks, and live validation.
+Version 1.2.1 is the Support Operations and Cross-Product Reliability Patch. It makes public support intake recoverable, hardens support-case and relationship persistence, validates cross-product source and product identities, makes typed handoffs replay-safe, preserves privacy-safe product intelligence, strengthens Sender Portal isolation, and expands live validation without changing the v1.2.0 database schema.
 
 The platform connects:
 
@@ -86,7 +86,7 @@ Production requires:
 
 * 100% readiness
 * zero required failures and zero warnings
-* current v1.2.0 support, v1.1.1 persistence-patch, v1.1.0 lifecycle, and database evidence
+* current v1.2.1 reliability-patch, v1.2.0 support, v1.1.1 persistence-patch, v1.1.0 lifecycle, and database evidence
 * recent successful live validation
 * externally confirmed inbox evidence
 * completed controlled-pilot evidence
@@ -99,18 +99,26 @@ Repository validation does not replace live WordPress-host testing.
 == Installation ==
 
 1. Back up the WordPress database and protected storage.
-2. Upgrade the existing plugin or install v1.2.0.
+2. Upgrade the existing plugin or install v1.2.1.
 3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
 4. Open Contact & Engagement → Platform Overview.
-5. Complete database, lifecycle, persistence-patch, and v1.2.0 support repairs if shown.
+5. Complete database, lifecycle, persistence-patch, and v1.2.0 support migration and v1.2.1 reliability-patch repairs if shown.
 6. Inspect Advisory Lifecycle and Contact & Engagement → Support Cases.
 7. Run Live Validation with a monitored recipient.
-8. Confirm inbox delivery and repeat controlled support and advisory pilot checks for v1.2.0.
+8. Confirm inbox delivery and repeat controlled support and advisory pilot checks for v1.2.1.
 9. Resolve public-launch and lifecycle operational blockers.
 10. Record current database and protected-storage backup evidence.
 11. Require 100%, zero failures, and zero warnings before Production.
 
 == Changelog ==
+
+= 1.2.1 =
+* Made public support intake and linked support-case creation recoverable.
+* Added retry-safe case, event, relationship, and signal persistence with protected failure evidence.
+* Added strict product/source validation, stable handoff IDs, receipt records, and replay idempotency for `sc-product-support-handoff/1.0`.
+* Added Knowledge Base, known-issue, Feature Suggestion, product-release, and handoff-receipt relationship checks.
+* Strengthened Sender Portal isolation, support operations metrics, readiness, and Live Validation.
+* Added a nondestructive v1.2.1 patch journal while keeping database schema 1.2.0.
 
 = 1.2.0 =
 * Added private product-support cases tied to canonical inquiries.

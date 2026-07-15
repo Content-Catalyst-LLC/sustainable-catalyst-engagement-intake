@@ -80,6 +80,7 @@ final class SC_EI_Platform_Validation {
 		$access_id = 0;
 		$support_case_id = 0;
 		$support_signal_id = 0;
+		$support_link_ids = array();
 		$relative_path = '';
 		$temp_path = '';
 		$cleanup_ok = true;
@@ -95,6 +96,8 @@ final class SC_EI_Platform_Validation {
 		self::add( $checks, 'lifecycle_migration', __( 'v1.1.0 advisory lifecycle migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $lifecycle_migration, (string) ( $lifecycle_migration ?: 'missing' ) );
 		$support_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Support_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		self::add( $checks, 'support_migration', __( 'v1.2.0 support operations migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $support_migration, (string) ( $support_migration ?: 'missing' ) );
+		$support_patch_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Support_Repository::PATCH_MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::add( $checks, 'support_reliability_patch', __( 'v1.2.1 support reliability migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $support_patch_migration, (string) ( $support_patch_migration ?: 'missing' ) );
 
 		$page_evidence = SC_EI_Platform_Repository::page_contract_evidence();
 		self::add( $checks, 'public_page_contracts', __( 'Published public-entry and portal page contracts', 'sustainable-catalyst-engagement-intake' ), ! empty( $page_evidence['public_entry']['passed'] ) && ! empty( $page_evidence['portal']['passed'] ), (string) ( $page_evidence['summary'] ?? '' ) );
@@ -132,7 +135,7 @@ final class SC_EI_Platform_Validation {
 					'inquiry_type'    => 'general',
 					'contact_name'    => 'Platform Validation',
 					'contact_email'   => $validation_email,
-					'subject'         => '[TEST] v1.2.0 live validation',
+					'subject'         => '[TEST] v1.2.1 live validation',
 					'message'         => 'Temporary administrator-generated validation record. Safe to remove.',
 					'form_variant'    => 'advanced',
 					'source_page'     => 'platform-validation',
@@ -192,23 +195,49 @@ final class SC_EI_Platform_Validation {
 			}
 			$support_snapshot = $support_case_id ? SC_EI_Support_Repository::sender_snapshot( $inquiry_id ) : array();
 			$private_rejection = SC_EI_Support_Schema::signal_payload( array( 'product' => 'workbench', 'email' => 'private@example.com' ) );
-			$clean_signal = SC_EI_Support_Repository::record_signal(
-				'documentation_gap',
-				array( 'product' => 'workbench', 'component' => 'live-validation', 'issue_type' => 'documentation', 'search_query' => 'temporary validation query', 'article_ids' => array(), 'resolution_attempted' => true, 'source_url' => home_url( '/support/' ) ),
-				$actor_user_id
+			$handoff_id = 'validation-' . wp_generate_uuid4();
+			$handoff_payload = array(
+				'schema' => SC_EI_Support_Schema::HANDOFF_SCHEMA,
+				'handoff_id' => $handoff_id,
+				'inquiry_id' => $inquiry_id,
+				'source_system' => 'feature_suggestions',
+				'source_reference' => 'validation',
+				'context' => array(
+					'product' => 'workbench',
+					'product_version' => 'validation',
+					'component' => 'live-validation',
+					'issue_type' => 'documentation',
+					'search_query' => 'temporary validation query',
+					'article_ids' => array( 101 ),
+					'known_issue' => 'WB-VALIDATION',
+					'feature_suggestion' => 'FS-VALIDATION',
+					'product_release' => 'WB-vNext',
+					'resolution_attempted' => true,
+					'source_url' => home_url( '/support/' ),
+				),
 			);
-			if ( ! is_wp_error( $clean_signal ) ) {
-				$support_signal_id = absint( $clean_signal['id'] ?? 0 );
+			$handoff_first = SC_EI_Support_Repository::ingest_handoff( $handoff_payload, $actor_user_id );
+			$handoff_second = SC_EI_Support_Repository::ingest_handoff( $handoff_payload, $actor_user_id );
+			if ( ! is_wp_error( $handoff_first ) ) {
+				$links = SC_EI_Support_Repository::links( $support_case_id );
+				$support_link_ids = array_map( 'absint', wp_list_pluck( $links, 'id' ) );
+				$signal_row = $wpdb->get_row( $wpdb->prepare( "SELECT id FROM " . SC_EI_Database::table( 'support_signals' ) . " WHERE product = %s AND product_version = %s AND component = %s ORDER BY id DESC LIMIT 1", 'workbench', 'validation', 'live-validation' ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$support_signal_id = absint( $signal_row['id'] ?? 0 );
 			}
+			$unsafe_keys = array_intersect( array_keys( $support_snapshot ), array( 'error_message', 'reproduction_steps', 'assigned_user_id', 'environment_json' ) );
 			$support_ok = ! is_wp_error( $support_case )
 				&& ! is_wp_error( $support_transition )
 				&& 'triage' === (string) ( $support_transition['workflow_stage'] ?? '' )
 				&& ! empty( $support_snapshot['case_number'] )
 				&& 'Under Review' === (string) ( $support_snapshot['status'] ?? '' )
+				&& empty( $unsafe_keys )
 				&& is_wp_error( $private_rejection )
-				&& ! is_wp_error( $clean_signal )
-				&& empty( $clean_signal['contains_personal_data'] );
-			self::add( $checks, 'support_operations', __( 'Product support case, governed transition, sender-safe projection, and privacy-safe intelligence signal', 'sustainable-catalyst-engagement-intake' ), $support_ok, $support_ok ? 'temporary support case created and transitioned; private signal payload rejected; nonpersonal signal accepted' : ( is_wp_error( $support_transition ) ? $support_transition->get_error_message() : ( is_wp_error( $clean_signal ) ? $clean_signal->get_error_message() : 'support operations validation failed' ) ) );
+				&& ! is_wp_error( $handoff_first )
+				&& ! is_wp_error( $handoff_second )
+				&& empty( $handoff_first['idempotent'] )
+				&& ! empty( $handoff_second['idempotent'] )
+				&& count( $support_link_ids ) >= 4;
+			self::add( $checks, 'support_operations', __( 'Support persistence, governed transition, Sender Portal isolation, typed relationships, and idempotent privacy-safe handoff', 'sustainable-catalyst-engagement-intake' ), $support_ok, $support_ok ? 'temporary support case created; sender projection isolated; known-issue, feature, release, and handoff relationships created; duplicate handoff replayed idempotently' : ( is_wp_error( $support_transition ) ? $support_transition->get_error_message() : ( is_wp_error( $handoff_first ) ? $handoff_first->get_error_message() : ( is_wp_error( $handoff_second ) ? $handoff_second->get_error_message() : 'support operations validation failed' ) ) ) );
 
 			$portal_result = $created ? SC_EI_Portal_Repository::issue_invitation(
 				$inquiry_id,

@@ -1,64 +1,34 @@
-# Release Procedure — v1.2.0
+# Release Procedure — v1.2.1
 
 ## Release identity
 
-- Product: Sustainable Catalyst Contact and Engagement Platform
-- Release: Support Operations and Product Intelligence Integration
-- Plugin slug: `sustainable-catalyst-engagement-intake`
-- Plugin version: `1.2.0`
+- Plugin version: `1.2.1`
 - Database version: `1.2.0`
-- Support schema: `1.0.0`
-- Lifecycle schema: `1.0.0`
-- Platform evidence schema: `1.2.0`
-- Support migration: `v1_2_0_support_operations_product_intelligence`
-- Handoff contract: `sc-product-support-handoff/1.0`
+- Platform evidence schema: `1.2.1`
+- Support schema: `1.0.1`
+- Release: Support Operations and Cross-Product Reliability Patch
 
-The v1.2.0 migration is nondestructive and idempotent.
+## Migration
 
-## Required repository checks
+The v1.2.1 migration is nondestructive and idempotent. It records the runtime reliability contract under `v1_2_1_support_operations_cross_product_reliability`. It does not add, remove, or rewrite database tables. Existing v1.2.0 support cases, links, events, signals, inquiries, lifecycle records, portal sessions, documents, and communications are preserved.
 
-- PHP syntax across plugin and tests
-- JavaScript syntax for public and admin bundles
-- every executable repository test suite
-- four support-table and support-column contracts
-- governed support-stage and typed-confirmation contracts
-- privacy-safe product-intelligence rejection and aggregation contracts
-- REST capability and Sender Portal data-boundary contracts
-- privacy export, approved redaction, retention, readiness, watchdog, cron, and uninstall contracts
-- Live Validation support-case creation, transition, signal rejection/acceptance, and cleanup
-- common-secret scan
-- installable and repository ZIP roots
-- release manifest, ZIP CRC, and fresh-extraction verification
+## Required validation
 
-## Staging acceptance
+1. Lint all plugin and test PHP files.
+2. Run every repository test suite.
+3. Check JavaScript syntax.
+4. Scan the release tree for common secret patterns.
+5. Generate and verify the release manifest.
+6. Verify installable and repository ZIP CRCs and file parity.
+7. Install over v1.2.0 or later on a backed-up WordPress site.
+8. Complete the v1.2.1 patch migration repair if requested.
+9. Run Live Validation and verify support-case creation, governed triage, portal isolation, signal privacy, relationship creation, handoff replay, and cleanup.
+10. Confirm external inbox delivery and repeat controlled public support intake.
 
-- upgrade from v1.1.1 without record loss
-- database version and v1.2.0 migration journal complete
-- `[sc_support_request]` creates one canonical inquiry and one support case
-- product, version, component, environment, error, and reproduction context persist correctly
-- invalid and stale support transitions are rejected
-- Sender Portal exposes only approved support context
-- typed Knowledge Base, known issue, Feature Suggestion, release, event, and duplicate-case relationships persist and audit
-- handoff payloads containing identity, messages, files, or credentials are rejected
-- nonpersonal product-intelligence signals aggregate without sender data
-- support communication templates remain drafts until deliberate human sending
-- privacy export and approved redaction include support records
-- high-priority unresolved support cases block Production
-- all v1.1.1 inquiry, advisory, portal, upload, notification, backup, and launch controls remain effective
+## Production gate
 
-## Production promotion
+Production requires 100% readiness, zero failures, zero warnings, current version-bound live validation, backup, inbox, and pilot evidence, no unresolved support operations blockers, and typed human promotion. Repository tests do not establish live-host readiness.
 
-1. Complete staging acceptance.
-2. Back up the database and protected storage.
-3. Install v1.2.0 and clear all caches.
-4. Complete database and support migration repairs.
-5. Inspect the Support Cases workspace.
-6. Run Live Validation with a monitored recipient.
-7. Confirm external inbox delivery.
-8. Complete controlled general, advisory, support, upload, and Sender Portal tests.
-9. Resolve all high-priority support and public-launch blockers.
-10. Record current database and protected-storage backup evidence.
-11. Require 100%, zero failures, and zero warnings.
-12. Promote only through the typed human Production action.
+## Rollback
 
-Repository validation does not replace live WordPress-host validation.
+Retain the prior plugin ZIP, database backup, and protected-storage backup. Because v1.2.1 makes no structural database change, code rollback to v1.2.0 is possible after reviewing any records created while v1.2.1 was active. Do not delete support records as part of rollback.

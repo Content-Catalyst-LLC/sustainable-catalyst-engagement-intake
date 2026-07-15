@@ -20,6 +20,10 @@ $environment = is_array( $environment ) ? $environment : array();
 		<div class="sc-ei-metric"><strong><?php echo esc_html( number_format_i18n( $metrics['awaiting_sender'] ?? 0 ) ); ?></strong><span><?php esc_html_e( 'Awaiting sender', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
 		<div class="sc-ei-metric"><strong><?php echo esc_html( number_format_i18n( $metrics['known_issues'] ?? 0 ) ); ?></strong><span><?php esc_html_e( 'Known issues', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
 		<div class="sc-ei-metric"><strong><?php echo esc_html( number_format_i18n( $metrics['signals_open'] ?? 0 ) ); ?></strong><span><?php esc_html_e( 'Open intelligence signals', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+		<div class="sc-ei-metric"><strong><?php echo esc_html( number_format_i18n( $metrics['missing_product'] ?? 0 ) ); ?></strong><span><?php esc_html_e( 'Missing product', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+		<div class="sc-ei-metric"><strong><?php echo esc_html( number_format_i18n( $metrics['missing_version'] ?? 0 ) ); ?></strong><span><?php esc_html_e( 'Missing version', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+		<div class="sc-ei-metric"><strong><?php echo esc_html( number_format_i18n( $metrics['missing_component'] ?? 0 ) ); ?></strong><span><?php esc_html_e( 'Missing component', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
+		<div class="sc-ei-metric"><strong><?php echo esc_html( number_format_i18n( $metrics['failed_handoffs'] ?? 0 ) ); ?></strong><span><?php esc_html_e( 'Failed handoffs', 'sustainable-catalyst-engagement-intake' ); ?></span></div>
 	</div>
 	<form method="get" class="sc-ei-filter-bar"><input type="hidden" name="page" value="sc-engagement-intake-support">
 		<select name="support_stage"><option value=""><?php esc_html_e( 'All stages', 'sustainable-catalyst-engagement-intake' ); ?></option><?php foreach ( SC_EI_Support_Schema::stages() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $stage_filter, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select>

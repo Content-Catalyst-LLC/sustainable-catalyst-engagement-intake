@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class SC_EI_Support_Repository {
 
 	public const MIGRATION_KEY = 'v1_2_0_support_operations_product_intelligence';
+	public const PATCH_MIGRATION_KEY = 'v1_2_1_support_operations_cross_product_reliability';
 	public const SIGNAL_DIGEST_HOOK = 'sc_ei_support_signal_digest';
 
 	public static function register(): void {
@@ -19,6 +20,7 @@ final class SC_EI_Support_Repository {
 
 	public static function maybe_upgrade(): void {
 		self::record_migration( (string) get_option( 'sc_ei_version_previous', '' ) );
+		self::record_patch_migration( (string) get_option( 'sc_ei_version_previous', '' ) );
 		self::schedule();
 	}
 
@@ -75,6 +77,76 @@ final class SC_EI_Support_Repository {
 		return $ok ? self::find_migration( $id ) : new WP_Error( 'support_schema_incomplete', __( 'The v1.2.0 support operations database contract requires repair.', 'sustainable-catalyst-engagement-intake' ) );
 	}
 
+
+	public static function record_patch_migration( string $from_version = '' ) {
+		global $wpdb;
+		$table = SC_EI_Database::table( 'platform_migrations' );
+		$existing = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE migration_key = %s LIMIT 1", self::PATCH_MIGRATION_KEY ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( $existing && 'completed' === (string) $existing['status'] ) {
+			return $existing;
+		}
+		$contract = SC_EI_Database::support_columns_exist();
+		$inquiry_contract = SC_EI_Database::inquiry_columns_exist();
+		$ok = ! in_array( false, $contract, true ) && ! in_array( false, $inquiry_contract, true );
+		$now = current_time( 'mysql', true );
+		$data = array(
+			'public_id' => $existing['public_id'] ?? wp_generate_uuid4(),
+			'migration_key' => self::PATCH_MIGRATION_KEY,
+			'from_version' => sanitize_text_field( $from_version ),
+			'to_version' => '1.2.1',
+			'status' => $ok ? 'completed' : 'failed',
+			'schema_hash' => hash( 'sha256', wp_json_encode( array( 'support' => SC_EI_SUPPORT_SCHEMA_VERSION, 'database' => SC_EI_DB_VERSION, 'plugin' => SC_EI_VERSION ) ) ),
+			'context_json' => wp_json_encode( array( 'release' => 'Support Operations and Cross-Product Reliability Patch', 'database_schema_changed' => false, 'atomic_public_support_persistence' => true, 'idempotent_handoffs' => true, 'strict_product_contract' => true ), JSON_UNESCAPED_SLASHES ),
+			'started_at' => $existing['started_at'] ?? $now,
+			'completed_at' => $now,
+			'error_code' => $ok ? '' : 'support_reliability_contract_incomplete',
+			'error_message' => $ok ? '' : 'The support or inquiry write-path database contract is incomplete.',
+			'created_at' => $existing['created_at'] ?? $now,
+			'updated_at' => $now,
+		);
+		if ( $existing ) {
+			$result = $wpdb->update( $table, $data, array( 'id' => absint( $existing['id'] ) ), self::formats( $data ), array( '%d' ) );
+			$id = absint( $existing['id'] );
+		} else {
+			$result = $wpdb->insert( $table, $data, self::formats( $data ) );
+			$id = (int) $wpdb->insert_id;
+		}
+		if ( false === $result ) {
+			return new WP_Error( 'support_patch_migration_journal_failed', __( 'The v1.2.1 support reliability migration journal could not be recorded.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		return $ok ? self::find_migration( $id ) : new WP_Error( 'support_reliability_contract_incomplete', __( 'The v1.2.1 support reliability contract requires repair.', 'sustainable-catalyst-engagement-intake' ) );
+	}
+
+	public static function public_case_input( array $record, array $raw ): array {
+		return array(
+			'product' => $raw['support_product'] ?? 'other',
+			'product_version' => $raw['support_product_version'] ?? '',
+			'component' => $raw['support_component'] ?? '',
+			'issue_type' => $raw['support_issue_type'] ?? 'other',
+			'error_message' => $raw['support_error_message'] ?? '',
+			'reproduction_steps' => $raw['support_reproduction_steps'] ?? '',
+			'expected_behavior' => $raw['support_expected_behavior'] ?? '',
+			'actual_behavior' => $raw['support_actual_behavior'] ?? '',
+			'environment' => array(
+				'browser' => sanitize_text_field( (string) ( $raw['support_browser'] ?? '' ) ),
+				'os' => sanitize_text_field( (string) ( $raw['support_os'] ?? '' ) ),
+				'wordpress' => sanitize_text_field( (string) ( $raw['support_wordpress_version'] ?? '' ) ),
+				'php' => sanitize_text_field( (string) ( $raw['support_php_version'] ?? '' ) ),
+			),
+			'source_system' => 'public_support_form',
+			'source_reference' => (string) ( $record['reference'] ?? '' ),
+		);
+	}
+
+	public static function ensure_public_case( array $record, array $raw ) {
+		$inquiry_id = absint( $record['id'] ?? 0 );
+		$existing = $inquiry_id ? self::for_inquiry( $inquiry_id ) : null;
+		if ( $existing ) {
+			return $existing;
+		}
+		return self::create_for_inquiry( $inquiry_id, self::public_case_input( $record, $raw ), 0 );
+	}
+
 	public static function capture_public_inquiry( array $record, array $raw ): void {
 		$type = sanitize_key( (string) ( $record['inquiry_type'] ?? '' ) );
 		$route = sanitize_key( (string) ( $record['conversion_route'] ?? '' ) );
@@ -82,28 +154,10 @@ final class SC_EI_Support_Repository {
 		if ( 'product_support' !== $type && 'product_support' !== $route && false === strpos( $source, 'support' ) ) {
 			return;
 		}
-		self::create_for_inquiry(
-			absint( $record['id'] ?? 0 ),
-			array(
-				'product'          => $raw['support_product'] ?? 'other',
-				'product_version'  => $raw['support_product_version'] ?? '',
-				'component'        => $raw['support_component'] ?? '',
-				'issue_type'       => $raw['support_issue_type'] ?? 'other',
-				'error_message'    => $raw['support_error_message'] ?? '',
-				'reproduction_steps'=> $raw['support_reproduction_steps'] ?? '',
-				'expected_behavior'=> $raw['support_expected_behavior'] ?? '',
-				'actual_behavior'  => $raw['support_actual_behavior'] ?? '',
-				'environment'      => array(
-					'browser'   => sanitize_text_field( (string) ( $raw['support_browser'] ?? '' ) ),
-					'os'        => sanitize_text_field( (string) ( $raw['support_os'] ?? '' ) ),
-					'wordpress' => sanitize_text_field( (string) ( $raw['support_wordpress_version'] ?? '' ) ),
-					'php'       => sanitize_text_field( (string) ( $raw['support_php_version'] ?? '' ) ),
-				),
-				'source_system'    => 'public_support_form',
-				'source_reference' => (string) ( $record['reference'] ?? '' ),
-			),
-			0
-		);
+		$result = self::ensure_public_case( $record, $raw );
+		if ( is_wp_error( $result ) ) {
+			self::record_failure( 'public_support_case_capture_failed', $result, array( 'inquiry_id' => absint( $record['id'] ?? 0 ) ) );
+		}
 	}
 
 	public static function create_for_inquiry( int $inquiry_id, array $input, int $actor_user_id = 0 ) {
@@ -146,12 +200,31 @@ final class SC_EI_Support_Repository {
 			'resolved_at'         => null,
 			'closed_at'           => null,
 		);
-		$ok = $wpdb->insert( SC_EI_Database::table( 'support_cases' ), $data, self::formats( $data, array( 'inquiry_id', 'assigned_user_id', 'row_version', 'created_by' ) ) );
+		$ok = false;
+		for ( $attempt = 1; $attempt <= 3; $attempt++ ) {
+			$data['case_number'] = self::case_number();
+			$ok = $wpdb->insert( SC_EI_Database::table( 'support_cases' ), $data, self::formats( $data, array( 'inquiry_id', 'assigned_user_id', 'row_version', 'created_by' ) ) );
+			if ( false !== $ok ) {
+				break;
+			}
+			$concurrent = self::for_inquiry( $inquiry_id );
+			if ( $concurrent ) {
+				return $concurrent;
+			}
+		}
 		if ( false === $ok ) {
-			return new WP_Error( 'support_case_create_failed', __( 'The support case could not be created.', 'sustainable-catalyst-engagement-intake' ) );
+			$error = new WP_Error( 'support_case_create_failed', __( 'The support case could not be created.', 'sustainable-catalyst-engagement-intake' ) );
+			self::record_failure( 'support_case_insert_failed', $error, array( 'inquiry_id' => $inquiry_id, 'database_error_hash' => self::database_error_hash() ) );
+			return $error;
 		}
 		$case_id = (int) $wpdb->insert_id;
-		self::insert_event( $case_id, $inquiry_id, 'support_case_created', '', 'new_support_request', $actor_user_id, array( 'product' => $data['product'], 'issue_type' => $data['issue_type'], 'source_system' => $data['source_system'] ) );
+		$event_ok = self::insert_event( $case_id, $inquiry_id, 'support_case_created', '', 'new_support_request', $actor_user_id, array( 'product' => $data['product'], 'issue_type' => $data['issue_type'], 'source_system' => $data['source_system'] ) );
+		if ( ! $event_ok ) {
+			$wpdb->delete( SC_EI_Database::table( 'support_cases' ), array( 'id' => $case_id ), array( '%d' ) );
+			$error = new WP_Error( 'support_case_event_create_failed', __( 'The support case audit event could not be created.', 'sustainable-catalyst-engagement-intake' ) );
+			self::record_failure( 'support_case_event_insert_failed', $error, array( 'inquiry_id' => $inquiry_id, 'database_error_hash' => self::database_error_hash() ) );
+			return $error;
+		}
 		SC_EI_Audit_Log::record( 'support_case_created', 'Private product support case created from the canonical inquiry.', array( 'case_id' => $case_id, 'case_number' => $data['case_number'], 'product' => $data['product'] ), $inquiry_id, null, $actor_user_id ?: null );
 		return self::find( $case_id );
 	}
@@ -216,7 +289,19 @@ final class SC_EI_Support_Repository {
 		if ( 1 !== $ok ) {
 			return new WP_Error( 'support_case_concurrent_update', __( 'The support case changed while you were editing it. Reload and try again.', 'sustainable-catalyst-engagement-intake' ) );
 		}
-		self::insert_event( $case_id, absint( $case['inquiry_id'] ), 'support_stage_changed', $from_stage, $to_stage, $actor_user_id, array( 'reason' => sanitize_textarea_field( $reason ), 'automatic' => false ) );
+		$event_ok = self::insert_event( $case_id, absint( $case['inquiry_id'] ), 'support_stage_changed', $from_stage, $to_stage, $actor_user_id, array( 'reason' => sanitize_textarea_field( $reason ), 'automatic' => false ) );
+		if ( ! $event_ok ) {
+			$wpdb->update(
+				SC_EI_Database::table( 'support_cases' ),
+				array( 'workflow_stage' => $from_stage, 'row_version' => absint( $case['row_version'] ), 'updated_at' => (string) $case['updated_at'], 'resolved_at' => $case['resolved_at'], 'closed_at' => $case['closed_at'] ),
+				array( 'id' => $case_id, 'row_version' => absint( $case['row_version'] ) + 1 ),
+				array( '%s', '%d', '%s', '%s', '%s' ),
+				array( '%d', '%d' )
+			);
+			$error = new WP_Error( 'support_transition_audit_failed', __( 'The support stage could not be changed because its audit event was not stored.', 'sustainable-catalyst-engagement-intake' ) );
+			self::record_failure( 'support_transition_audit_failed', $error, array( 'case_id' => $case_id, 'database_error_hash' => self::database_error_hash() ) );
+			return $error;
+		}
 		SC_EI_Audit_Log::record( 'support_case_stage_changed', 'Authorized staff changed the governed support-case stage.', array( 'case_number' => $case['case_number'], 'from' => $from_stage, 'to' => $to_stage, 'automatic' => false ), absint( $case['inquiry_id'] ), null, $actor_user_id );
 		return self::find( $case_id );
 	}
@@ -235,6 +320,12 @@ final class SC_EI_Support_Repository {
 		if ( '' === $reference ) {
 			return new WP_Error( 'support_relationship_reference_required', __( 'Enter the related article, issue, suggestion, release, event, or case reference.', 'sustainable-catalyst-engagement-intake' ) );
 		}
+		$relation_type = substr( sanitize_key( (string) ( $input['relation_type'] ?? 'related' ) ), 0, 60 );
+		$table = SC_EI_Database::table( 'support_case_links' );
+		$existing_id = absint( $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE support_case_id = %d AND related_type = %s AND related_reference = %s AND relation_type = %s LIMIT 1", $case_id, $type, $reference, $relation_type ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( $existing_id ) {
+			return $existing_id;
+		}
 		$now = current_time( 'mysql', true );
 		$data = array(
 			'public_id'        => wp_generate_uuid4(),
@@ -242,7 +333,7 @@ final class SC_EI_Support_Repository {
 			'inquiry_id'       => absint( $case['inquiry_id'] ),
 			'related_type'     => $type,
 			'related_reference'=> $reference,
-			'relation_type'    => substr( sanitize_key( (string) ( $input['relation_type'] ?? 'related' ) ), 0, 60 ),
+			'relation_type'    => $relation_type,
 			'title'            => substr( sanitize_text_field( (string) ( $input['title'] ?? '' ) ), 0, 191 ),
 			'url'              => esc_url_raw( (string) ( $input['url'] ?? '' ) ),
 			'sender_visible'   => empty( $input['sender_visible'] ) ? 0 : 1,
@@ -253,7 +344,13 @@ final class SC_EI_Support_Repository {
 		);
 		$ok = $wpdb->insert( SC_EI_Database::table( 'support_case_links' ), $data, self::formats( $data, array( 'support_case_id', 'inquiry_id', 'sender_visible', 'created_by' ) ) );
 		if ( false === $ok ) {
-			return new WP_Error( 'support_relationship_save_failed', __( 'The support relationship could not be saved.', 'sustainable-catalyst-engagement-intake' ) );
+			$concurrent = self::find_link( $case_id, $type, $reference, $relation_type );
+			if ( $concurrent ) {
+				return absint( $concurrent['id'] );
+			}
+			$error = new WP_Error( 'support_relationship_save_failed', __( 'The support relationship could not be saved.', 'sustainable-catalyst-engagement-intake' ) );
+			self::record_failure( 'support_relationship_insert_failed', $error, array( 'case_id' => $case_id, 'database_error_hash' => self::database_error_hash() ) );
+			return $error;
 		}
 		self::insert_event( $case_id, absint( $case['inquiry_id'] ), 'support_relationship_added', '', '', $actor_user_id, array( 'related_type' => $type, 'related_reference' => $reference, 'sender_visible' => (bool) $data['sender_visible'] ) );
 		return (int) $wpdb->insert_id;
@@ -262,41 +359,80 @@ final class SC_EI_Support_Repository {
 	public static function ingest_handoff( array $payload, int $actor_user_id ) {
 		$schema = sanitize_text_field( (string) ( $payload['schema'] ?? '' ) );
 		if ( SC_EI_Support_Schema::HANDOFF_SCHEMA !== $schema ) {
-			return new WP_Error( 'support_handoff_schema_invalid', __( 'The product-support handoff schema is unsupported.', 'sustainable-catalyst-engagement-intake' ) );
+			return self::handoff_error( 'support_handoff_schema_invalid', __( 'The product-support handoff schema is unsupported.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		$handoff_id = SC_EI_Support_Schema::handoff_id( (string) ( $payload['handoff_id'] ?? '' ) );
+		if ( is_wp_error( $handoff_id ) ) {
+			return self::handoff_failure( $handoff_id );
+		}
+		$source_system = SC_EI_Support_Schema::source_system( (string) ( $payload['source_system'] ?? '' ) );
+		if ( is_wp_error( $source_system ) ) {
+			return self::handoff_failure( $source_system );
 		}
 		$inquiry_id = absint( $payload['inquiry_id'] ?? 0 );
 		if ( ! $inquiry_id ) {
-			return new WP_Error( 'support_handoff_inquiry_required', __( 'A canonical inquiry ID is required before product-support context can be attached.', 'sustainable-catalyst-engagement-intake' ) );
+			return self::handoff_failure( new WP_Error( 'support_handoff_inquiry_required', __( 'A canonical inquiry ID is required before product-support context can be attached.', 'sustainable-catalyst-engagement-intake' ) ) );
 		}
-		$signal = SC_EI_Support_Schema::signal_payload( (array) ( $payload['context'] ?? array() ) );
+		$context = (array) ( $payload['context'] ?? array() );
+		$product = SC_EI_Support_Schema::strict_product( (string) ( $context['product'] ?? '' ) );
+		if ( is_wp_error( $product ) ) {
+			return self::handoff_failure( $product );
+		}
+		$context['product'] = $product;
+		$signal = SC_EI_Support_Schema::signal_payload( $context );
 		if ( is_wp_error( $signal ) ) {
-			return $signal;
+			return self::handoff_failure( $signal );
+		}
+		$existing_case = self::for_inquiry( $inquiry_id );
+		if ( $existing_case && self::find_link( absint( $existing_case['id'] ), 'external_reference', $handoff_id, 'handoff_receipt' ) ) {
+			return array( 'case' => $existing_case, 'context' => $signal, 'schema' => SC_EI_Support_Schema::HANDOFF_SCHEMA, 'handoff_id' => $handoff_id, 'idempotent' => true );
 		}
 		$case = self::create_for_inquiry(
 			$inquiry_id,
 			array(
-				'product'          => $signal['product'],
-				'product_version'  => $signal['product_version'],
-				'component'        => $signal['component'],
-				'issue_type'       => $signal['issue_type'],
-				'source_system'    => sanitize_key( (string) ( $payload['source_system'] ?? 'feature_suggestions' ) ),
-				'source_reference' => sanitize_text_field( (string) ( $payload['source_reference'] ?? '' ) ),
+				'product' => $signal['product'],
+				'product_version' => $signal['product_version'],
+				'component' => $signal['component'],
+				'issue_type' => $signal['issue_type'],
+				'source_system' => $source_system,
+				'source_reference' => substr( sanitize_text_field( (string) ( $payload['source_reference'] ?? $handoff_id ) ), 0, 191 ),
 			),
 			$actor_user_id
 		);
 		if ( is_wp_error( $case ) ) {
-			return $case;
+			return self::handoff_failure( $case );
 		}
+		$link_inputs = array();
 		foreach ( (array) $signal['article_ids'] as $article_id ) {
-			self::add_link( absint( $case['id'] ), array( 'related_type' => 'knowledge_article', 'related_reference' => (string) $article_id, 'relation_type' => 'suggested_before_case', 'sender_visible' => true ), $actor_user_id );
+			$link_inputs[] = array( 'related_type' => 'knowledge_article', 'related_reference' => (string) $article_id, 'relation_type' => 'suggested_before_case', 'sender_visible' => true );
 		}
 		if ( $signal['known_issue'] ) {
-			self::add_link( absint( $case['id'] ), array( 'related_type' => 'known_issue', 'related_reference' => $signal['known_issue'], 'relation_type' => 'matched_before_case', 'sender_visible' => true ), $actor_user_id );
+			$link_inputs[] = array( 'related_type' => 'known_issue', 'related_reference' => $signal['known_issue'], 'relation_type' => 'matched_before_case', 'sender_visible' => true );
+		}
+		if ( $signal['feature_suggestion'] ) {
+			$link_inputs[] = array( 'related_type' => 'feature_suggestion', 'related_reference' => $signal['feature_suggestion'], 'relation_type' => 'context_from_handoff', 'sender_visible' => false );
+		}
+		if ( $signal['product_release'] ) {
+			$link_inputs[] = array( 'related_type' => 'product_release', 'related_reference' => $signal['product_release'], 'relation_type' => 'affected_release', 'sender_visible' => true );
+		}
+		foreach ( $link_inputs as $link_input ) {
+			$link_result = self::add_link( absint( $case['id'] ), $link_input, $actor_user_id );
+			if ( is_wp_error( $link_result ) ) {
+				return self::handoff_failure( $link_result );
+			}
 		}
 		$signal_type = ! empty( $signal['search_query'] ) && empty( $signal['article_ids'] ) ? 'zero_result_search' : ( false === $signal['article_helpful'] ? 'unhelpful_article' : 'recurring_issue' );
-		self::record_signal( $signal_type, $signal, $actor_user_id );
+		$signal_result = self::record_signal( $signal_type, $signal, $actor_user_id );
+		if ( is_wp_error( $signal_result ) ) {
+			return self::handoff_failure( $signal_result );
+		}
+		$receipt_id = self::add_link( absint( $case['id'] ), array( 'related_type' => 'external_reference', 'related_reference' => $handoff_id, 'relation_type' => 'handoff_receipt', 'title' => $source_system, 'sender_visible' => false ), $actor_user_id );
+		if ( is_wp_error( $receipt_id ) ) {
+			return self::handoff_failure( $receipt_id );
+		}
+		update_option( 'sc_ei_support_last_handoff_at', current_time( 'mysql', true ), false );
 		do_action( 'sc_ei_support_handoff_ingested', $case, $signal, $payload );
-		return array( 'case' => $case, 'context' => $signal, 'schema' => SC_EI_Support_Schema::HANDOFF_SCHEMA );
+		return array( 'case' => $case, 'context' => $signal, 'schema' => SC_EI_Support_Schema::HANDOFF_SCHEMA, 'handoff_id' => $handoff_id, 'idempotent' => false );
 	}
 
 	public static function record_signal( string $signal_type, array $payload, int $actor_user_id = 0 ) {
@@ -321,10 +457,17 @@ final class SC_EI_Support_Repository {
 			'resolution_attempted' => $clean['resolution_attempted'],
 			'article_helpful'      => $clean['article_helpful'],
 			'source_url'           => $clean['source_url'],
+			'feature_suggestion'   => $clean['feature_suggestion'],
+			'product_release'      => $clean['product_release'],
 			'contains_personal_data'=> false,
 		);
 		if ( $existing ) {
-			$wpdb->update( $table, array( 'occurrence_count' => absint( $existing['occurrence_count'] ) + 1, 'evidence_json' => wp_json_encode( $evidence, JSON_UNESCAPED_SLASHES ), 'updated_at' => $now ), array( 'id' => absint( $existing['id'] ) ), array( '%d', '%s', '%s' ), array( '%d' ) );
+			$updated = $wpdb->update( $table, array( 'occurrence_count' => absint( $existing['occurrence_count'] ) + 1, 'evidence_json' => wp_json_encode( $evidence, JSON_UNESCAPED_SLASHES ), 'updated_at' => $now ), array( 'id' => absint( $existing['id'] ) ), array( '%d', '%s', '%s' ), array( '%d' ) );
+			if ( false === $updated ) {
+				$error = new WP_Error( 'support_signal_update_failed', __( 'The privacy-safe product-intelligence signal could not be updated.', 'sustainable-catalyst-engagement-intake' ) );
+				self::record_failure( 'support_signal_update_failed', $error, array( 'aggregate_key' => $aggregate_key, 'database_error_hash' => self::database_error_hash() ) );
+				return $error;
+			}
 			return self::find_signal( absint( $existing['id'] ) );
 		}
 		$data = array(
@@ -344,7 +487,16 @@ final class SC_EI_Support_Repository {
 			'updated_at'          => $now,
 		);
 		$ok = $wpdb->insert( $table, $data, self::formats( $data, array( 'occurrence_count', 'contains_personal_data', 'created_by' ) ) );
-		return false === $ok ? new WP_Error( 'support_signal_save_failed', __( 'The privacy-safe product-intelligence signal could not be recorded.', 'sustainable-catalyst-engagement-intake' ) ) : self::find_signal( (int) $wpdb->insert_id );
+		if ( false === $ok ) {
+			$concurrent = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE aggregate_key = %s LIMIT 1", $aggregate_key ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			if ( $concurrent ) {
+				return self::record_signal( $signal_type, $payload, $actor_user_id );
+			}
+			$error = new WP_Error( 'support_signal_save_failed', __( 'The privacy-safe product-intelligence signal could not be recorded.', 'sustainable-catalyst-engagement-intake' ) );
+			self::record_failure( 'support_signal_insert_failed', $error, array( 'aggregate_key' => $aggregate_key, 'database_error_hash' => self::database_error_hash() ) );
+			return $error;
+		}
+		return self::find_signal( (int) $wpdb->insert_id );
 	}
 
 	public static function for_inquiry( int $inquiry_id ): ?array {
@@ -438,6 +590,13 @@ final class SC_EI_Support_Repository {
 		$row = (array) $wpdb->get_row( "SELECT COUNT(*) total, SUM(workflow_stage='new_support_request') untriaged, SUM(workflow_stage='needs_information') awaiting_sender, SUM(severity IN ('high','critical') AND workflow_stage NOT IN ('resolved','closed')) high_priority, SUM(workflow_stage='known_issue') known_issues, SUM(workflow_stage='resolved') resolved, SUM(workflow_stage='closed') closed FROM {$table}", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		foreach ( $row as $key => $value ) { $row[ $key ] = absint( $value ); }
 		$row['signals_open'] = absint( $wpdb->get_var( "SELECT COUNT(*) FROM " . SC_EI_Database::table( 'support_signals' ) . " WHERE status = 'open'" ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$row['missing_product'] = absint( $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE product = 'other' AND workflow_stage NOT IN ('resolved','closed')" ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row['missing_version'] = absint( $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE product_version = '' AND workflow_stage NOT IN ('resolved','closed')" ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row['missing_component'] = absint( $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE component = '' AND workflow_stage NOT IN ('resolved','closed')" ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row['failed_handoffs'] = absint( get_option( 'sc_ei_support_failed_handoff_count', 0 ) );
+		$last_success = strtotime( (string) get_option( 'sc_ei_support_last_handoff_at', '' ) . ' UTC' ) ?: 0;
+		$last_failure = strtotime( (string) get_option( 'sc_ei_support_last_handoff_failure_at', '' ) . ' UTC' ) ?: 0;
+		$row['handoff_reliability_open'] = $last_failure > 0 && $last_success < $last_failure ? 1 : 0;
 		return $row;
 	}
 
@@ -448,7 +607,42 @@ final class SC_EI_Support_Repository {
 		return $row ?: null;
 	}
 
-	private static function insert_event( int $case_id, int $inquiry_id, string $event_type, string $from_stage, string $to_stage, int $actor_user_id, array $payload ): void {
+
+	public static function find_link( int $case_id, string $related_type, string $reference, string $relation_type = 'related' ): ?array {
+		global $wpdb;
+		$table = SC_EI_Database::table( 'support_case_links' );
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE support_case_id = %d AND related_type = %s AND related_reference = %s AND relation_type = %s LIMIT 1", $case_id, sanitize_key( $related_type ), substr( sanitize_text_field( $reference ), 0, 191 ), substr( sanitize_key( $relation_type ), 0, 60 ) ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return $row ?: null;
+	}
+
+	private static function handoff_error( string $code, string $message ): WP_Error {
+		return self::handoff_failure( new WP_Error( $code, $message ) );
+	}
+
+	private static function handoff_failure( WP_Error $error ): WP_Error {
+		update_option( 'sc_ei_support_failed_handoff_count', absint( get_option( 'sc_ei_support_failed_handoff_count', 0 ) ) + 1, false );
+		update_option( 'sc_ei_support_last_handoff_failure_at', current_time( 'mysql', true ), false );
+		self::record_failure( 'support_handoff_rejected', $error, array( 'error_code' => $error->get_error_code() ) );
+		return $error;
+	}
+
+	private static function record_failure( string $event_type, WP_Error $error, array $context = array() ): void {
+		SC_EI_Hardening_Repository::record_event(
+			'database',
+			sanitize_key( $event_type ),
+			'warning',
+			'Support operations encountered a persistence or integration failure.',
+			array_merge( array( 'error_code' => $error->get_error_code(), 'request_id' => SC_EI_Hardening_Repository::request_id() ), $context )
+		);
+	}
+
+	private static function database_error_hash(): string {
+		global $wpdb;
+		$error = isset( $wpdb->last_error ) ? trim( (string) $wpdb->last_error ) : '';
+		return '' === $error ? '' : hash_hmac( 'sha256', $error, wp_salt( 'secure_auth' ) );
+	}
+
+	private static function insert_event( int $case_id, int $inquiry_id, string $event_type, string $from_stage, string $to_stage, int $actor_user_id, array $payload ): bool {
 		global $wpdb;
 		$data = array(
 			'public_id'       => wp_generate_uuid4(),
@@ -461,7 +655,7 @@ final class SC_EI_Support_Repository {
 			'payload_json'    => wp_json_encode( $payload, JSON_UNESCAPED_SLASHES ),
 			'occurred_at'     => current_time( 'mysql', true ),
 		);
-		$wpdb->insert( SC_EI_Database::table( 'support_case_events' ), $data, self::formats( $data, array( 'support_case_id', 'inquiry_id', 'actor_user_id' ) ) );
+		return false !== $wpdb->insert( SC_EI_Database::table( 'support_case_events' ), $data, self::formats( $data, array( 'support_case_id', 'inquiry_id', 'actor_user_id' ) ) );
 	}
 
 	private static function case_number(): string {
