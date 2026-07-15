@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'client_workspaces', 'workspace_members', 'workspace_milestones', 'workspace_deliverables', 'workspace_messages', 'workspace_documents', 'workspace_events', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'client_workspaces', 'workspace_members', 'workspace_milestones', 'workspace_deliverables', 'workspace_messages', 'workspace_documents', 'workspace_events', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'service_intelligence_findings', 'service_intelligence_events', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -60,6 +60,8 @@ final class SC_EI_Database {
 		$engagement_requirements = self::table( 'engagement_requirements' );
 		$engagement_events = self::table( 'engagement_events' );
 		$analytics_snapshots = self::table( 'analytics_snapshots' );
+		$service_intelligence_findings = self::table( 'service_intelligence_findings' );
+		$service_intelligence_events = self::table( 'service_intelligence_events' );
 		$health_events = self::table( 'health_events' );
 		$rate_limits = self::table( 'rate_limits' );
 		$workflow_cases = self::table( 'workflow_cases' );
@@ -1182,6 +1184,66 @@ final class SC_EI_Database {
 		) {$charset_collate};";
 
 
+		$sql_service_intelligence_findings = "CREATE TABLE {$service_intelligence_findings} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			schema varchar(80) NOT NULL DEFAULT 'sc-service-intelligence-finding/1.0',
+			finding_type varchar(60) NOT NULL DEFAULT 'service_demand',
+			severity varchar(20) NOT NULL DEFAULT 'watch',
+			status varchar(20) NOT NULL DEFAULT 'candidate',
+			title varchar(255) NOT NULL DEFAULT '',
+			service_key varchar(120) NOT NULL DEFAULT '',
+			product_key varchar(120) NOT NULL DEFAULT '',
+			component_key varchar(120) NOT NULL DEFAULT '',
+			period_start datetime NOT NULL,
+			period_end datetime NOT NULL,
+			cohort_count bigint(20) unsigned NOT NULL DEFAULT 0,
+			metric_value decimal(20,4) NULL,
+			metric_unit varchar(40) NOT NULL DEFAULT 'count',
+			evidence_json longtext NULL,
+			evidence_hash char(64) NOT NULL DEFAULT '',
+			owner_user_id bigint(20) unsigned NULL,
+			review_due_at datetime NULL,
+			action_summary longtext NULL,
+			decision_note longtext NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_by bigint(20) unsigned NULL,
+			reviewed_by bigint(20) unsigned NULL,
+			reviewed_at datetime NULL,
+			closed_at datetime NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY finding_type (finding_type),
+			KEY severity (severity),
+			KEY status (status),
+			KEY service_key (service_key),
+			KEY product_key (product_key),
+			KEY component_key (component_key),
+			KEY review_due_at (review_due_at),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql_service_intelligence_events = "CREATE TABLE {$service_intelligence_events} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			finding_id bigint(20) unsigned NOT NULL,
+			event_type varchar(80) NOT NULL DEFAULT '',
+			from_status varchar(20) NOT NULL DEFAULT '',
+			to_status varchar(20) NOT NULL DEFAULT '',
+			actor_type varchar(20) NOT NULL DEFAULT 'system',
+			actor_id bigint(20) unsigned NULL,
+			context_json longtext NULL,
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY finding_id (finding_id),
+			KEY event_type (event_type),
+			KEY actor_id (actor_id),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
 		$sql_health_events = "CREATE TABLE {$health_events} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			public_id char(36) NOT NULL,
@@ -1990,6 +2052,8 @@ final class SC_EI_Database {
 		dbDelta( $sql_engagement_requirements );
 		dbDelta( $sql_engagement_events );
 		dbDelta( $sql_analytics_snapshots );
+		dbDelta( $sql_service_intelligence_findings );
+		dbDelta( $sql_service_intelligence_events );
 		dbDelta( $sql_health_events );
 		dbDelta( $sql_rate_limits );
 		dbDelta( $sql_workflow_cases );
@@ -2153,7 +2217,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'client_workspaces', 'workspace_members', 'workspace_milestones', 'workspace_deliverables', 'workspace_messages', 'workspace_documents', 'workspace_events', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'client_workspaces', 'workspace_members', 'workspace_milestones', 'workspace_deliverables', 'workspace_messages', 'workspace_documents', 'workspace_events', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'service_intelligence_findings', 'service_intelligence_events', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -2194,6 +2258,9 @@ final class SC_EI_Database {
 		}
 		foreach ( self::workspace_columns_exist() as $key => $available ) {
 			$result[ 'workspace.' . $key ] = $available;
+		}
+		foreach ( self::service_intelligence_columns_exist() as $key => $available ) {
+			$result[ 'service_intelligence.' . $key ] = $available;
 		}
 		return $result;
 	}
@@ -2338,6 +2405,24 @@ final class SC_EI_Database {
 		);
 		$result=array();
 		foreach($tables as $table_name=>$columns){$table=self::table($table_name);foreach($columns as $column){$found=$wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM {$table} LIKE %s",$column));$result[$table_name.'.'.$column]=($found===$column);}}
+		return $result;
+	}
+
+
+	public static function service_intelligence_columns_exist(): array {
+		global $wpdb;
+		$tables = array(
+			'service_intelligence_findings' => array( 'public_id','schema','finding_type','severity','status','title','service_key','product_key','component_key','period_start','period_end','cohort_count','metric_value','metric_unit','evidence_json','evidence_hash','owner_user_id','review_due_at','action_summary','decision_note','row_version','created_by','reviewed_by','reviewed_at','closed_at','created_at','updated_at' ),
+			'service_intelligence_events' => array( 'public_id','finding_id','event_type','from_status','to_status','actor_type','actor_id','context_json','created_at' ),
+		);
+		$result = array();
+		foreach ( $tables as $table_name => $columns ) {
+			$table = self::table( $table_name );
+			foreach ( $columns as $column ) {
+				$found = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$result[ $table_name . '.' . $column ] = ( $found === $column );
+			}
+		}
 		return $result;
 	}
 
@@ -2874,7 +2959,7 @@ final class SC_EI_Database {
 	public static function drop_all(): void {
 		global $wpdb;
 
-		foreach ( array( 'audit_log', 'workspace_events', 'workspace_documents', 'workspace_messages', 'workspace_deliverables', 'workspace_milestones', 'workspace_members', 'client_workspaces', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'support_signals', 'support_case_links', 'support_case_events', 'support_cases', 'lifecycle_tasks', 'lifecycle_notes', 'lifecycle_events', 'platform_snapshots', 'platform_migrations', 'workflow_outbox', 'workflow_handoffs', 'workflow_commands', 'workflow_cases', 'engagement_events', 'engagement_requirements', 'engagement_snapshots', 'engagements', 'workflow_events', 'proposal_versions', 'proposals', 'graph_operations', 'meeting_reminders', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
+		foreach ( array( 'audit_log', 'workspace_events', 'workspace_documents', 'workspace_messages', 'workspace_deliverables', 'workspace_milestones', 'workspace_members', 'client_workspaces', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'support_signals', 'support_case_links', 'support_case_events', 'support_cases', 'lifecycle_tasks', 'lifecycle_notes', 'lifecycle_events', 'platform_snapshots', 'platform_migrations', 'workflow_outbox', 'workflow_handoffs', 'workflow_commands', 'workflow_cases', 'service_intelligence_events', 'service_intelligence_findings', 'engagement_events', 'engagement_requirements', 'engagement_snapshots', 'engagements', 'workflow_events', 'proposal_versions', 'proposals', 'graph_operations', 'meeting_reminders', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
 			$table = self::table( $name );
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}

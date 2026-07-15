@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0 — Engagement Analytics and Service Intelligence
+
+- Expanded aggregate operational analytics across inquiries, support cases, product signals, meetings, proposals, engagements, client workspaces, milestones, and deliverables.
+- Added minimum-cohort-suppressed product, component, service, weekly, funnel, timing, collaboration, and commercial metrics.
+- Added version-bound SHA-256-hashed aggregate snapshots and a unified Analytics & Intelligence workspace.
+- Added human-reviewed service-intelligence findings with typed transitions, optimistic locking, immutable evidence hashes, audit events, compensating rollback, and retention for closed findings.
+- Added direct personal-data key and common value-pattern rejection while retaining boundaries against sender ranking, message-body analysis, document-content analysis, and automated decisions.
+- Added two nondestructive service-intelligence tables and advanced plugin, database, and platform versions to `1.6.0`, Analytics schema to `1.1.0`, and Service Intelligence schema to `1.0.0`.
+
 ## 1.5.0 — Secure Client Workspace and Collaboration
 
 - Added engagement-linked secure client workspaces with explicit sender and staff membership.

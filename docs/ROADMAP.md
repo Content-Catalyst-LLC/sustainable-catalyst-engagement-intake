@@ -2,25 +2,21 @@
 
 ## Current release
 
+### v1.6.0 — Engagement Analytics and Service Intelligence
+
+Privacy-safe aggregate demand, routing, cycle-time, support-friction, proposal, engagement, workspace, milestone, deliverable, and completion metrics with minimum-cohort suppression, hashed snapshots, and human-reviewed service-intelligence findings.
+
+## Previous release
+
 ### v1.5.0 — Secure Client Workspace and Collaboration
 
-Engagement-linked workspaces, explicit membership, sender-safe milestones and deliverables, protected-document relationships, workspace collaboration updates, Sender Portal responses, privacy, audit history, and production validation.
-
-## Previous reliability release
-
-### v1.4.1 — Proposal Versioning, Approval, and Engagement Conversion Reliability Patch
-
-Atomic proposal-response receipts, replay-safe approvals, current-version SOW enforcement, bounded revision retries, conversion repair, immutable-hash verification, and stronger Production Readiness and Live Validation.
+Engagement-linked workspaces, explicit membership, sender-safe milestones and deliverables, protected-document relationships, workspace collaboration, Sender Portal responses, privacy, and audit history.
 
 ## Planned engagement releases
 
-### v1.5.1 — Client Workspace Isolation and Deliverable Reliability Patch
+### v1.6.1 — Analytics Integrity and Cohort Reliability Patch
 
-Live-host findings, membership isolation, deliverable version and decision reliability, protected-document access checks, collaboration replay safety, and workspace cleanup hardening.
-
-### v1.6.0 — Engagement Analytics and Service Intelligence
-
-Aggregate demand, routing, response, qualification, proposal, acceptance, support friction, workspace delivery, workload, and completion metrics with privacy protections and no sender ranking.
+Live-host findings, query consistency, cohort suppression, snapshot integrity, review-state compensation, retention, and operational dashboard reliability.
 
 ### v1.7.0 — Billing, Invoicing, and Payment Handoffs
 

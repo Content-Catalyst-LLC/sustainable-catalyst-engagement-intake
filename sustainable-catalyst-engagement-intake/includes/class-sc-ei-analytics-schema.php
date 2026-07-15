@@ -7,6 +7,11 @@ final class SC_EI_Analytics_Schema {
   'analytics_snapshot_retention_days'=>365,'analytics_daily_snapshots'=>1,
   'analytics_include_financial_totals'=>1,'analytics_no_automated_decisions'=>1,
   'analytics_no_sender_ranking'=>1,'analytics_no_personal_data'=>1,
+  'analytics_intelligence_enabled'=>1,'analytics_auto_candidate_findings'=>0,
+  'analytics_finding_review_days'=>14,'analytics_snapshot_fresh_days'=>7,
+  'analytics_intelligence_retention_days'=>730,'analytics_include_support_intelligence'=>1,
+  'analytics_include_workspace_intelligence'=>1,'analytics_include_proposal_intelligence'=>1,
+  'analytics_human_review_required'=>1,
  ); }
  public static function ranges(): array { return array(7=>'7 days',30=>'30 days',90=>'90 days',180=>'180 days',365=>'365 days'); }
  public static function sanitize_days($v): int { $v=absint($v); return in_array($v,array_keys(self::ranges()),true)?$v:90; }

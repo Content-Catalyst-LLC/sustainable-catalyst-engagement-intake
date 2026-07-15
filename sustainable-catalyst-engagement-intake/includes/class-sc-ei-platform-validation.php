@@ -88,6 +88,7 @@ final class SC_EI_Platform_Validation {
 		$engagement_id = 0;
 		$workspace_id = 0;
 		$workspace_deliverable_id = 0;
+		$service_intelligence_finding_id = 0;
 		$relative_path = '';
 		$temp_path = '';
 		$cleanup_ok = true;
@@ -101,7 +102,8 @@ final class SC_EI_Platform_Validation {
 		$calendar_columns = SC_EI_Database::calendar_columns_exist();
 		$proposal_columns = SC_EI_Database::proposal_governance_columns_exist();
 		$workspace_columns = SC_EI_Database::workspace_columns_exist();
-		self::add( $checks, 'database_contract', __( 'Database tables, platform, lifecycle, support, calendar, proposal-governance, and client-workspace schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ) && ! in_array( false, $inquiry_columns, true ) && ! in_array( false, $lifecycle_columns, true ) && ! in_array( false, $support_columns, true ) && ! in_array( false, $calendar_columns, true ) && ! in_array( false, $proposal_columns, true ) && ! in_array( false, $workspace_columns, true ), sprintf( '%d/%d tables; %d/%d platform columns; %d/%d inquiry columns; %d/%d lifecycle columns; %d/%d support columns; %d/%d calendar columns; %d/%d proposal-governance columns; %d/%d workspace columns', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ), count( array_filter( $inquiry_columns ) ), count( $inquiry_columns ), count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ), count( array_filter( $support_columns ) ), count( $support_columns ), count( array_filter( $calendar_columns ) ), count( $calendar_columns ), count( array_filter( $proposal_columns ) ), count( $proposal_columns ), count( array_filter( $workspace_columns ) ), count( $workspace_columns ) ) );
+		$service_intelligence_columns = SC_EI_Database::service_intelligence_columns_exist();
+		self::add( $checks, 'database_contract', __( 'Database tables, platform, lifecycle, support, calendar, proposal-governance, client-workspace, and service-intelligence schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ) && ! in_array( false, $inquiry_columns, true ) && ! in_array( false, $lifecycle_columns, true ) && ! in_array( false, $support_columns, true ) && ! in_array( false, $calendar_columns, true ) && ! in_array( false, $proposal_columns, true ) && ! in_array( false, $workspace_columns, true ) && ! in_array( false, $service_intelligence_columns, true ), sprintf( '%d/%d tables; %d/%d platform columns; %d/%d inquiry columns; %d/%d lifecycle columns; %d/%d support columns; %d/%d calendar columns; %d/%d proposal-governance columns; %d/%d workspace columns; %d/%d service-intelligence columns', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ), count( array_filter( $inquiry_columns ) ), count( $inquiry_columns ), count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ), count( array_filter( $support_columns ) ), count( $support_columns ), count( array_filter( $calendar_columns ) ), count( $calendar_columns ), count( array_filter( $proposal_columns ) ), count( $proposal_columns ), count( array_filter( $workspace_columns ) ), count( $workspace_columns ), count( array_filter( $service_intelligence_columns ) ), count( $service_intelligence_columns ) ) );
 		$lifecycle_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Lifecycle_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		self::add( $checks, 'lifecycle_migration', __( 'v1.1.0 advisory lifecycle migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $lifecycle_migration, (string) ( $lifecycle_migration ?: 'missing' ) );
 		$support_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Support_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -117,6 +119,8 @@ final class SC_EI_Platform_Validation {
 		$proposal_patch_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Proposal_Governance_Repository::PATCH_MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$workspace_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Workspace_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		self::add( $checks, 'workspace_migration', __( 'v1.5.0 secure client workspace and collaboration migration', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $workspace_migration && SC_EI_WORKSPACE_SCHEMA_VERSION === (string) get_option( 'sc_ei_workspace_schema_version', '' ), (string) ( $workspace_migration ?: 'missing' ) . ' / ' . (string) get_option( 'sc_ei_workspace_schema_version', 'missing' ) );
+		$service_intelligence_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Service_Intelligence_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::add( $checks, 'service_intelligence_migration', __( 'v1.6.0 engagement analytics and service-intelligence migration', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $service_intelligence_migration && SC_EI_SERVICE_INTELLIGENCE_SCHEMA_VERSION === (string) get_option( 'sc_ei_service_intelligence_schema_version', '' ), (string) ( $service_intelligence_migration ?: 'missing' ) . ' / ' . (string) get_option( 'sc_ei_service_intelligence_schema_version', 'missing' ) );
 		self::add( $checks, 'proposal_reliability_patch', __( 'v1.4.1 proposal-versioning, approval, and engagement-conversion reliability journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $proposal_patch_migration, (string) ( $proposal_patch_migration ?: 'missing' ) );
 		$timezone_runtime = SC_EI_Calendar_Repository::timezone_runtime_evidence();
 		self::add( $checks, 'calendar_timezone_runtime', __( 'Strict daylight-saving time validation', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $timezone_runtime, true ), wp_json_encode( $timezone_runtime ) );
@@ -157,7 +161,7 @@ final class SC_EI_Platform_Validation {
 					'inquiry_type'    => 'general',
 					'contact_name'    => 'Platform Validation',
 					'contact_email'   => $validation_email,
-					'subject'         => '[TEST] v1.5.0 live validation',
+					'subject'         => '[TEST] v1.6.0 live validation',
 					'message'         => 'Temporary administrator-generated validation record. Safe to remove.',
 					'form_variant'    => 'advanced',
 					'source_page'     => 'platform-validation',
@@ -475,6 +479,55 @@ final class SC_EI_Platform_Validation {
 				self::add( $checks, 'calendar_coordination', __( 'Microsoft Teams scheduling, rescheduling, reminder idempotency, cancellation safety, and Sender Portal isolation', 'sustainable-catalyst-engagement-intake' ), false, 'Sender Portal access was unavailable for the temporary meeting record.' );
 			}
 
+			$minimum_cohort = max( 5, absint( SC_EI_Analytics_Repository::settings()['analytics_minimum_cohort'] ?? 5 ) );
+			$unsafe_finding = SC_EI_Service_Intelligence_Repository::create_finding(
+				array(
+					'finding_type' => 'service_demand',
+					'title' => '[TEST] Personal data rejection',
+					'cohort_count' => $minimum_cohort,
+					'evidence' => array( 'email' => 'private@example.com', 'count' => $minimum_cohort ),
+				),
+				$actor_user_id
+			);
+			$finding = SC_EI_Service_Intelligence_Repository::create_finding(
+				array(
+					'finding_type' => 'service_demand',
+					'severity' => 'watch',
+					'title' => '[TEST] v1.6.0 live validation aggregate finding',
+					'service_key' => 'advisory',
+					'product_key' => 'contact-engagement-platform',
+					'component_key' => 'service-intelligence',
+					'cohort_count' => $minimum_cohort,
+					'metric_value' => $minimum_cohort,
+					'metric_unit' => 'count',
+					'period_start' => gmdate( 'Y-m-d H:i:s', time() - DAY_IN_SECONDS ),
+					'period_end' => current_time( 'mysql', true ),
+					'evidence' => array( 'metric' => 'validation_cohort', 'count' => $minimum_cohort, 'schema' => SC_EI_Service_Intelligence_Schema::SNAPSHOT_SCHEMA ),
+				),
+				$actor_user_id
+			);
+			$finding_transition = $finding;
+			$finding_events = array();
+			$finding_hash_ok = false;
+			if ( ! is_wp_error( $finding ) ) {
+				$service_intelligence_finding_id = absint( $finding['id'] ?? 0 );
+				$finding_transition = SC_EI_Service_Intelligence_Repository::transition_finding( $service_intelligence_finding_id, 'reviewing', 'REVIEWING ' . strtoupper( (string) $finding['public_id'] ), 'Administrator validation review.', 'No service action is created automatically.', $actor_user_id );
+				$finding_events = SC_EI_Service_Intelligence_Repository::events( $service_intelligence_finding_id );
+				$evidence_json = (string) ( $finding['evidence_json'] ?? '' );
+				$finding_hash_ok = hash_equals( (string) ( $finding['evidence_hash'] ?? '' ), hash( 'sha256', $evidence_json ) );
+			}
+			$snapshot = SC_EI_Service_Intelligence_Repository::create_snapshot( 30, $actor_user_id );
+			$intelligence_ok = is_wp_error( $unsafe_finding )
+				&& 'service_intelligence_personal_data_rejected' === $unsafe_finding->get_error_code()
+				&& ! is_wp_error( $finding )
+				&& ! is_wp_error( $finding_transition )
+				&& 'reviewing' === (string) ( $finding_transition['status'] ?? '' )
+				&& count( $finding_events ) >= 2
+				&& $finding_hash_ok
+				&& ! is_wp_error( $snapshot );
+			self::add( $checks, 'engagement_analytics_service_intelligence', __( 'Aggregate analytics, minimum-cohort privacy, immutable evidence, human-reviewed findings, and auditable snapshot', 'sustainable-catalyst-engagement-intake' ), $intelligence_ok, $intelligence_ok ? 'personal-data payload rejected; aggregate finding created and moved to human review; evidence hash verified; current service-intelligence snapshot recorded' : ( is_wp_error( $finding_transition ) ? $finding_transition->get_error_message() : ( is_wp_error( $snapshot ) ? $snapshot->get_error_message() : 'service-intelligence validation failed' ) ) );
+
+
 			$temp_path = wp_tempnam( 'sc-ei-platform-validation.txt' );
 			if ( $temp_path ) {
 				$content = 'Sustainable Catalyst platform validation ' . wp_generate_uuid4();
@@ -503,6 +556,11 @@ final class SC_EI_Platform_Validation {
 		if ( $temp_path && file_exists( $temp_path ) ) {
 			$cleanup_ok = wp_delete_file( $temp_path ) && $cleanup_ok;
 		}
+		if ( $service_intelligence_finding_id ) {
+			$wpdb->delete( SC_EI_Database::table( 'service_intelligence_events' ), array( 'finding_id' => $service_intelligence_finding_id ), array( '%d' ) );
+			$wpdb->delete( SC_EI_Database::table( 'service_intelligence_findings' ), array( 'id' => $service_intelligence_finding_id ), array( '%d' ) );
+		}
+		SC_EI_Service_Intelligence_Repository::cleanup_validation_records();
 		if ( $support_signal_id ) {
 			$wpdb->delete( SC_EI_Database::table( 'support_signals' ), array( 'id' => $support_signal_id ), array( '%d' ) );
 		}
@@ -553,7 +611,7 @@ final class SC_EI_Platform_Validation {
 
 		$failures = array_values( array_filter( $checks, static fn( array $check ): bool => 'pass' !== $check['status'] ) );
 		$result = array(
-			'schema'         => 'sc-contact-engagement-live-validation/1.8',
+			'schema'         => 'sc-contact-engagement-live-validation/1.9',
 			'plugin_version' => SC_EI_VERSION,
 			'passed'         => empty( $failures ),
 			'score'          => $checks ? (int) round( 100 * ( count( $checks ) - count( $failures ) ) / count( $checks ) ) : 0,

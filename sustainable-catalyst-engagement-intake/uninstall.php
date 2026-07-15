@@ -66,6 +66,9 @@ if ( $delete ) {
 	delete_option( 'sc_ei_workflow_core_last_outbox' );
 	delete_option( 'sc_ei_last_hardening_watchdog' );
 	delete_option( 'sc_ei_analytics_schema_version' );
+	delete_option( 'sc_ei_service_intelligence_schema_version' );
+	delete_option( 'sc_ei_service_intelligence_schema_version_previous' );
+	delete_option( 'sc_ei_service_intelligence_last_snapshot' );
 	delete_option( 'sc_ei_engagement_schema_version' );
 	delete_option( 'sc_ei_lifecycle_schema_version' );
 	delete_option( 'sc_ei_lifecycle_schema_version_previous' );

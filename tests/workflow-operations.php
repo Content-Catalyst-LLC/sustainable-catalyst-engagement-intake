@@ -19,8 +19,8 @@ $caps       = file_get_contents( $plugin . '/includes/class-sc-ei-capabilities.p
 $admin_view = file_get_contents( $plugin . '/admin/views/teams-proposals.php' );
 
 $checks = array(
-	'v1.1.1 release markers' => strpos( $main, 'Version:     1.5.0' ) !== false
-		&& strpos( $main, "SC_EI_DB_VERSION', '1.5.0'" ) !== false
+	'v1.1.1 release markers' => strpos( $main, 'Version:     1.6.0' ) !== false
+		&& strpos( $main, "SC_EI_DB_VERSION', '1.6.0'" ) !== false
 		&& strpos( $main, "SC_EI_PORTAL_SCHEMA_VERSION', '1.7.0'" ) !== false
 		&& strpos( $main, "SC_EI_WORKFLOW_SCHEMA_VERSION', '1.3.0'" ) !== false
 		&& strpos( $main, "SC_EI_GRAPH_SCHEMA_VERSION', '1.0.0'" ) !== false,

@@ -26,6 +26,7 @@ final class SC_EI_Diagnostics {
 		$lifecycle_columns     = SC_EI_Database::lifecycle_columns_exist();
 		$proposal_governance_columns = SC_EI_Database::proposal_governance_columns_exist();
 		$workspace_columns = SC_EI_Database::workspace_columns_exist();
+		$service_intelligence_columns = SC_EI_Database::service_intelligence_columns_exist();
 		$admin              = get_role( 'administrator' );
 		$settings           = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
@@ -63,6 +64,9 @@ final class SC_EI_Diagnostics {
 		$proposal_governance_blockers = SC_EI_Proposal_Governance_Repository::operational_blockers();
 		$workspace_metrics = SC_EI_Workspace_Repository::metrics();
 		$workspace_blockers = SC_EI_Workspace_Repository::operational_blockers();
+		$service_intelligence_metrics = SC_EI_Service_Intelligence_Repository::metrics();
+		$service_intelligence_blockers = SC_EI_Service_Intelligence_Repository::operational_blockers();
+		$service_intelligence_snapshot = SC_EI_Service_Intelligence_Repository::latest_snapshot_evidence();
 		$hardening_metrics = SC_EI_Hardening_Repository::metrics();
 		$hardening_watchdog = SC_EI_Hardening_Repository::last_watchdog();
 		$workflow_core_metrics = SC_EI_Workflow_Core_Repository::metrics();
@@ -198,6 +202,20 @@ final class SC_EI_Diagnostics {
 			'proposal_governance_schema_version' => SC_EI_PROPOSAL_SCHEMA_VERSION,
 			'workspace_schema_version' => SC_EI_WORKSPACE_SCHEMA_VERSION,
 			'workspace_columns' => $workspace_columns,
+			'service_intelligence_schema_version' => SC_EI_SERVICE_INTELLIGENCE_SCHEMA_VERSION,
+			'service_intelligence_columns' => $service_intelligence_columns,
+			'service_intelligence' => array(
+				'metrics' => $service_intelligence_metrics,
+				'blockers' => $service_intelligence_blockers,
+				'latest_snapshot' => $service_intelligence_snapshot,
+				'migration_key' => SC_EI_Service_Intelligence_Repository::MIGRATION_KEY,
+				'aggregate_only' => true,
+				'minimum_cohort_suppression' => true,
+				'human_review_required' => true,
+				'personal_data' => false,
+				'sender_ranking' => false,
+				'automated_decisions' => false,
+			),
 			'workspace' => array(
 				'metrics' => $workspace_metrics,
 				'blockers' => $workspace_blockers,

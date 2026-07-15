@@ -3,15 +3,17 @@ Contributors: content-catalyst
 Tags: contact, support, help desk, product support, advisory, engagement, sender portal, known issues, privacy
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A governed contact-to-engagement platform with adaptive intake, advisory lifecycle operations, secure sender collaboration, Teams coordination, proposals, privacy, reliability, and launch governance.
+A governed contact-to-engagement platform with adaptive intake, advisory lifecycle operations, secure sender collaboration, Teams coordination, proposals, privacy-safe analytics, service intelligence, reliability, and launch governance.
 
 == Description ==
 
-Version 1.5.0 is Secure Client Workspace and Collaboration. It adds engagement-linked workspaces, explicit sender and staff membership, sender-safe milestones and deliverables, protected-document relationships, controlled collaboration updates, workspace-specific Sender Portal replies, privacy coverage, readiness checks, and live validation.
+Version 1.6.0 is Engagement Analytics and Service Intelligence. It expands the aggregate operational dashboard across inquiry, support, scheduling, proposal, engagement, client-workspace, milestone, deliverable, and product-intelligence activity while preserving minimum-cohort suppression and excluding sender ranking, message bodies, document contents, and automated decisions.
+
+Authorized administrators can save hashed aggregate snapshots and create human-reviewed service-intelligence findings. Findings require aggregate evidence, reject direct personal-data fields and common personal-data value patterns, preserve an event history, and never create proposals, tasks, communications, support commitments, or service decisions automatically.
 
 The platform connects:
 
@@ -19,10 +21,11 @@ The platform connects:
 * Focused product-support intake and private support-case operations
 * Advisory lifecycle, Microsoft Teams scheduling, proposals, Statements of Work, approvals, and governed engagement conversion
 * Secure client workspaces for deliberately published milestones, deliverables, document metadata, updates, and next steps
+* Privacy-safe aggregate engagement analytics and human-reviewed service-intelligence findings
 * Secure Sender Portal status, messages, uploads, meetings, proposal decisions, approved Statements of Work, and workspace collaboration
 * Protected documents, privacy, retention, reliability, and launch governance
 
-A Sender Portal response is an auditable workflow record, not an electronic signature, payment authorization, or automatic expansion of engagement scope.
+Aggregate analytics are operational evidence, not automated recommendations or individual performance scoring.
 
 == Recommended public entry ==
 
@@ -61,12 +64,12 @@ Production requires:
 
 * 100% readiness
 * zero required failures and zero warnings
-* current database, workspace, proposal, calendar, support, lifecycle, and patch migration evidence
+* current database, service-intelligence, workspace, proposal, calendar, support, lifecycle, and patch migration evidence
 * recent successful live validation
 * externally confirmed inbox evidence
 * completed controlled-pilot evidence
 * current database and protected-storage backup evidence
-* no critical events, workspace blockers, overdue lifecycle work, or unresolved high-priority support cases
+* no critical events, overdue service-intelligence reviews, workspace blockers, overdue lifecycle work, or unresolved high-priority support cases
 * typed human promotion to Production
 
 Repository validation does not replace live WordPress-host testing.
@@ -74,18 +77,27 @@ Repository validation does not replace live WordPress-host testing.
 == Installation ==
 
 1. Back up the WordPress database and protected storage.
-2. Upgrade the existing plugin or install v1.5.0.
+2. Upgrade the existing plugin or install v1.6.0.
 3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
 4. Open Contact & Engagement → Platform Overview.
-5. Complete database and v1.5.0 workspace migration repairs if shown.
-6. Inspect Client Workspace, Proposal Governance, Calendar Coordination, Support Cases, and Advisory Lifecycle.
+5. Complete database and v1.6.0 service-intelligence migration repairs if shown.
+6. Inspect Analytics & Intelligence, Client Workspace, Proposal Governance, Calendar Coordination, Support Cases, and Advisory Lifecycle.
 7. Run Live Validation with a monitored recipient.
-8. Test one controlled engagement workspace through the Sender Portal.
+8. Save one controlled aggregate snapshot and review one test service-intelligence finding without creating an automatic service action.
 9. Resolve workspace and public-launch operational blockers.
 10. Record current database and protected-storage backup evidence.
 11. Require 100%, zero failures, and zero warnings before Production.
 
 == Changelog ==
+
+= 1.6.0 =
+* Expanded privacy-safe analytics across inquiries, support cases, meetings, proposals, engagements, client workspaces, milestones, deliverables, and product-intelligence signals.
+* Added minimum-cohort-suppressed product, component, service, weekly, funnel, timing, collaboration, and operational metrics.
+* Added SHA-256-hashed aggregate snapshots and version-bound freshness evidence.
+* Added human-reviewed service-intelligence findings with typed confirmation, optimistic locking, event history, retention, and compensating rollback.
+* Added direct personal-data key and value rejection, no sender ranking, no content-body analytics, and no automated decisions.
+* Added two nondestructive service-intelligence tables; advanced plugin, database, and platform versions to 1.6.0 and Analytics schema to 1.1.0.
+
 
 = 1.5.0 =
 * Added engagement-linked secure client workspaces with explicit sender and staff membership.
