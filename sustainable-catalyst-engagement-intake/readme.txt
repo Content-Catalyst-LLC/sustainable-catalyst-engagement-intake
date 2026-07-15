@@ -3,7 +3,7 @@ Contributors: content-catalyst
 Tags: contact, support, help desk, product support, advisory, engagement, sender portal, known issues, privacy
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,7 +11,7 @@ A governed contact-to-engagement platform with adaptive intake, advisory lifecyc
 
 == Description ==
 
-Version 1.4.0 is Proposals, Statements of Work, and Engagement Approvals. It adds governed proposal versions, immutable sender-action evidence, versioned Statements of Work, deliberate engagement conversion, typed change control, and sender-safe approval views while preserving the existing advisory, support, Teams, privacy, and production-readiness boundaries.
+Version 1.4.1 is the Proposal Versioning, Approval, and Engagement Conversion Reliability Patch. It makes proposal decisions and immutable receipts commit together, adds replay-safe approvals, keeps SOWs tied to the current proposal version, and repairs partial engagement-conversion evidence without creating duplicate engagements.
 
 The platform connects:
 
@@ -103,6 +103,14 @@ Repository validation does not replace live WordPress-host testing.
 11. Require 100%, zero failures, and zero warnings before Production.
 
 == Changelog ==
+
+= 1.4.1 =
+* Added synchronous proposal-response receipt commits with rollback.
+* Added replay-safe proposal and SOW approvals.
+* Added current-version SOW checks and publication reconciliation.
+* Added bounded version insert retries and conversion repair.
+* Added approval-integrity and conversion-consistency readiness evidence.
+* Database remains 1.4.0; platform schema advances to 1.4.1 and proposal schema to 1.0.1.
 
 = 1.4.0 =
 * Added governed proposal status, current-version enforcement, immutable sender actions, and deliberate proposal decisions.

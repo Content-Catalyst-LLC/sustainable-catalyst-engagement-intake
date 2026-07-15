@@ -18,6 +18,7 @@ final class SC_EI_Activator {
 		$previous_version = (string) get_option( 'sc_ei_version', '' );
 		$previous_lifecycle_schema = (string) get_option( 'sc_ei_lifecycle_schema_version', '' );
 		$previous_calendar_schema = (string) get_option( 'sc_ei_calendar_schema_version', '' );
+		$previous_proposal_schema = (string) get_option( 'sc_ei_proposal_governance_schema_version', '' );
 		SC_EI_Database::install();
 		SC_EI_Capabilities::install();
 		SC_EI_Storage::ensure();
@@ -52,6 +53,8 @@ final class SC_EI_Activator {
 		update_option( 'sc_ei_hardening_schema_version', SC_EI_HARDENING_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_workflow_core_schema_version', SC_EI_WORKFLOW_CORE_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_platform_schema_version', SC_EI_PLATFORM_SCHEMA_VERSION, false );
+		update_option( 'sc_ei_proposal_governance_schema_version_previous', $previous_proposal_schema, false );
+		update_option( 'sc_ei_proposal_governance_schema_version', SC_EI_PROPOSAL_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_version_previous', $previous_version, false );
 		SC_EI_Platform_Repository::run_migrations( $previous_version );
 		SC_EI_Analytics_Repository::schedule();
@@ -63,10 +66,13 @@ final class SC_EI_Activator {
 		SC_EI_Support_Repository::record_migration( $previous_version );
 		SC_EI_Support_Repository::record_patch_migration( $previous_version );
 		SC_EI_Calendar_Repository::record_migration( $previous_calendar_schema );
+		SC_EI_Calendar_Repository::record_patch_migration( $previous_calendar_schema );
+		SC_EI_Proposal_Governance_Repository::record_migration( $previous_proposal_schema );
+		SC_EI_Proposal_Governance_Repository::record_patch_migration( $previous_proposal_schema );
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Sustainable Catalyst Contact and Engagement Platform v1.3.0 activated with governed Microsoft Teams scheduling, explicit calendar coordination, reminder evidence, rescheduling history, sender-safe meeting views, post-meeting follow-up, and the established support, advisory, and production gates.',
+			'Sustainable Catalyst Contact and Engagement Platform v1.4.1 activated with replay-safe proposal responses, immutable approval verification, current-version Statement of Work controls, recoverable engagement conversion, and the established calendar, support, advisory, and production gates.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}

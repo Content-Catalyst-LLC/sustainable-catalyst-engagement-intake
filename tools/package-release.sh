@@ -2,11 +2,11 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-VERSION="1.4.0"
+VERSION="1.4.1"
 SLUG="sustainable-catalyst-engagement-intake"
 REPO_ROOT="${SLUG}-v${VERSION}-repo"
 DIST="$ROOT/dist"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v140-package.XXXXXX")"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v141-package.XXXXXX")"
 TEST_LOG="$WORK/tests.log"
 cleanup(){ rm -rf "$WORK"; }
 trap cleanup EXIT
@@ -20,7 +20,7 @@ printf 'Running release suites...\n'
 for t in tests/*.php; do printf '=== %s ===\n' "$t" >> "$TEST_LOG"; php "$t" >> "$TEST_LOG"; done
 if command -v node >/dev/null; then while IFS= read -r f; do node --check "$f"; done < <(find "$SLUG" -type f -name '*.js' | sort); fi
 bash -n "$0"
-bash -n PUSH_ENGAGEMENT_INTAKE_V140_CLEAN.sh
+bash -n PUSH_ENGAGEMENT_INTAKE_V141_CLEAN.sh
 python3 -m json.tool composer.json >/dev/null
 printf 'Scanning for common secret material...\n'
 if grep -RInE --exclude-dir=.git --exclude-dir=dist --exclude='release-manifest.json' '(AIza[0-9A-Za-z_-]{20,}|sk-[0-9A-Za-z]{20,}|ghp_[0-9A-Za-z]{20,}|github_pat_[0-9A-Za-z_]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' .; then echo 'Potential secret material detected.' >&2; exit 1; fi
@@ -41,20 +41,20 @@ for block in '\n'.join(log).split('=== '):
         if m: passes += int(m[-1])
 manifest={
  'name':'Sustainable Catalyst Contact and Engagement Platform','version':version,
- 'release':'Proposals, Statements of Work, and Engagement Approvals','plugin_slug':'sustainable-catalyst-engagement-intake',
+ 'release':'Proposal Versioning, Approval, and Engagement Conversion Reliability Patch','plugin_slug':'sustainable-catalyst-engagement-intake',
  'requires_wordpress':'6.5','requires_php':'8.1','database_version':'1.4.0',
- 'schemas':{'review':'1.0.0','communication':'1.0.0','privacy':'1.0.0','fit':'1.0.0','portal':'1.6.0','workflow':'1.3.0','graph':'1.0.0','engagement':'1.2.0','analytics':'1.0.0','hardening':'1.0.0','workflow_core':'1.0.0','platform':'1.4.0','lifecycle':'1.0.0','support':'1.0.1','calendar':'1.0.1','proposal_governance':'1.0.0'},
- 'migration_keys':['v1_0_0_unified_contact_engagement_platform','v1_0_2_production_readiness_live_validation','v1_0_3_pilot_findings_public_launch_hardening','v1_1_0_advisory_operations_engagement_lifecycle','v1_1_1_inquiry_persistence_lifecycle_reliability','v1_2_0_support_operations_product_intelligence','v1_2_1_support_operations_cross_product_reliability','v1_3_0_microsoft_teams_calendar_coordination','v1_3_1_scheduling_reminder_timezone_reliability','v1_4_0_proposals_statements_of_work_engagement_approvals'],
+ 'schemas':{'review':'1.0.0','communication':'1.0.0','privacy':'1.0.0','fit':'1.0.0','portal':'1.6.0','workflow':'1.3.0','graph':'1.0.0','engagement':'1.2.0','analytics':'1.0.0','hardening':'1.0.0','workflow_core':'1.0.0','platform':'1.4.1','lifecycle':'1.0.0','support':'1.0.1','calendar':'1.0.1','proposal_governance':'1.0.1'},
+ 'migration_keys':['v1_0_0_unified_contact_engagement_platform','v1_0_2_production_readiness_live_validation','v1_0_3_pilot_findings_public_launch_hardening','v1_1_0_advisory_operations_engagement_lifecycle','v1_1_1_inquiry_persistence_lifecycle_reliability','v1_2_0_support_operations_product_intelligence','v1_2_1_support_operations_cross_product_reliability','v1_3_0_microsoft_teams_calendar_coordination','v1_3_1_scheduling_reminder_timezone_reliability','v1_4_0_proposals_statements_of_work_engagement_approvals','v1_4_1_proposal_versioning_approval_reliability'],
  'recommended_shortcode':'[sc_contact_engagement_platform]','support_shortcode':'[sc_support_request]',
  'proposal_governance':{
    'approval_schema':'sc-proposal-approval/1.0','sow_schema':'sc-statement-of-work/1.0','change_schema':'sc-engagement-change-request/1.0',
    'tables':['proposal_approvals','statements_of_work','statement_of_work_versions','change_requests'],
    'immutable_sender_actions':True,'current_version_only':True,'sender_safe_projection':True,'versioned_sow':True,
-   'contracted_proposal_required_for_conversion':True,'sender_approved_sow_required_for_conversion':True,'idempotent_engagement_conversion':True,
+   'contracted_proposal_required_for_conversion':True,'sender_approved_sow_required_for_conversion':True,'idempotent_engagement_conversion':True,'atomic_sender_response_receipts':True,'replay_safe_sender_approvals':True,'current_version_sow_enforcement':True,'approval_integrity_verification':True,'conversion_evidence_repair':True,
    'automatic_contract':False,'electronic_signature':False,'automatic_payment':False,'automatic_activation':False
  },
  'production_gate':{'required_score':100,'required_failures':0,'warnings':0,'live_validation_max_age_days':7,'backup_attestation_max_age_days':7,'external_mail_evidence_max_age_days':14,'pilot_evidence_max_age_days':14,'minimum_controlled_inquiries':5,'operational_blockers':0,'typed_human_launch_action':True},
- 'live_validation':['database and proposal-governance migration contract','temporary current proposal version','request changes and immutable approval evidence','revised proposal publication','versioned Statement of Work approval','sender-safe SOW projection','sender SOW approval','proposal acceptance','external contract evidence','idempotent engagement conversion','governed change request creation and application','complete proposal-governance artifact cleanup'],
+ 'live_validation':['database and v1.4.0/v1.4.1 migration contract','temporary current proposal version','request changes and immutable approval evidence','revised proposal publication','versioned Statement of Work approval','sender-safe SOW projection','replay-safe sender SOW approval','replay-safe proposal acceptance','external contract evidence','idempotent engagement conversion and evidence repair','immutable approval hash verification','converted proposal status verification','governed change request creation and application','complete proposal-governance artifact cleanup'],
  'boundaries':{'automatic_launch':False,'automatic_acceptance':False,'automatic_proposal':False,'automatic_contract':False,'electronic_signature':False,'automatic_activation':False,'automatic_payment':False,'automatic_meeting_booking':False,'automatic_meeting_reminders':False},
  'validation':{'plugin_php_files_linted':sum(1 for p in (root/'sustainable-catalyst-engagement-intake').rglob('*.php')),'php_files_including_tests_linted':sum(1 for base in [root/'sustainable-catalyst-engagement-intake',root/'tests'] for p in base.rglob('*.php')),'javascript_bundles_checked':sum(1 for p in (root/'sustainable-catalyst-engagement-intake').rglob('*.js')),'test_suites':sum(1 for p in (root/'tests').glob('*.php')),'explicit_pass_assertions':passes,'secret_scan':True,'push_script_bash_syntax':True,'zip_crc_verified':True},
  'files':files

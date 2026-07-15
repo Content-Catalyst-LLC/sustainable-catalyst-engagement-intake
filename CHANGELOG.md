@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.4.1 — Proposal Versioning, Approval, and Engagement Conversion Reliability Patch
+
+- Made Sender Portal proposal responses commit with an immutable approval receipt or compensate by restoring the previous proposal state.
+- Added replay-safe sender proposal and Statement of Work approvals with conflict detection.
+- Bound SOW approval and sender approval to the current published proposal version.
+- Added safe reconciliation and rollback when a proposal revision would leave stale approved SOW evidence.
+- Added bounded retry for concurrent proposal-version and SOW-version creation.
+- Made engagement conversion idempotent and recoverable when an engagement exists but conversion receipt or proposal status evidence is incomplete.
+- Added immutable-approval integrity checks and proposal-conversion consistency metrics to Production Readiness.
+- Expanded Live Validation to replay approvals and conversion, verify immutable hashes, and confirm the converted proposal state.
+- Added a nondestructive v1.4.1 patch migration journal; database version remains `1.4.0`.
+- Advanced Platform evidence schema to `1.4.1` and Proposal Governance schema to `1.0.1`.
+
 ## 1.4.0 — Proposals, Statements of Work, and Engagement Approvals
 
 - Added governed proposal states, current-version enforcement, immutable sender-action receipts, and human-controlled proposal decisions.

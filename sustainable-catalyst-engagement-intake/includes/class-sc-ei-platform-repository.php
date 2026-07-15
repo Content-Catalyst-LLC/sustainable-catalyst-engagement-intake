@@ -31,6 +31,7 @@ final class SC_EI_Platform_Repository {
 		SC_EI_Support_Repository::record_migration( $stored_version );
 		SC_EI_Calendar_Repository::record_migration( (string) get_option( 'sc_ei_calendar_schema_version_previous', '' ) );
 		SC_EI_Proposal_Governance_Repository::record_migration( (string) get_option( 'sc_ei_proposal_governance_schema_version_previous', '' ) );
+		SC_EI_Proposal_Governance_Repository::record_patch_migration( (string) get_option( 'sc_ei_proposal_governance_schema_version_previous', '' ) );
 		self::schedule_all();
 	}
 
@@ -349,6 +350,7 @@ final class SC_EI_Platform_Repository {
 		$checks[] = self::check( 'calendar_migration_journal', 'data', __( 'v1.3.0 Teams and calendar-coordination migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Calendar_Repository::MIGRATION_KEY ), true, SC_EI_Calendar_Repository::MIGRATION_KEY, 'verify_calendar_migration' );
 		$checks[] = self::check( 'calendar_reliability_patch_journal', 'data', __( 'v1.3.1 scheduling and time-zone reliability journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Calendar_Repository::PATCH_MIGRATION_KEY ), true, SC_EI_Calendar_Repository::PATCH_MIGRATION_KEY, 'verify_calendar_reliability_patch' );
 		$checks[] = self::check( 'proposal_governance_migration_journal', 'data', __( 'v1.4.0 proposal-governance migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Proposal_Governance_Repository::MIGRATION_KEY ), true, SC_EI_Proposal_Governance_Repository::MIGRATION_KEY, 'verify_proposal_governance_migration' );
+		$checks[] = self::check( 'proposal_reliability_patch_journal', 'data', __( 'v1.4.1 proposal reliability migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Proposal_Governance_Repository::PATCH_MIGRATION_KEY ), true, SC_EI_Proposal_Governance_Repository::PATCH_MIGRATION_KEY, 'verify_proposal_reliability_patch' );
 		$approval_contract_ok = SC_EI_Proposal_Governance_Schema::APPROVAL_SCHEMA === 'sc-proposal-approval/1.0' && ! empty( $proposal_columns['proposal_approvals.immutable_hash'] ) && ! in_array( 'immutable_hash', SC_EI_Proposal_Governance_Schema::sender_projection_keys(), true );
 		$checks[] = self::check( 'proposal_approval_contract', 'integrations', __( 'Immutable proposal and Statement of Work approval contract', 'sustainable-catalyst-engagement-intake' ), $approval_contract_ok, true, SC_EI_Proposal_Governance_Schema::APPROVAL_SCHEMA, 'review_proposals' );
 		$checks[] = self::check( 'support_handoff_contract', 'integrations', __( 'Product-support handoff privacy contract', 'sustainable-catalyst-engagement-intake' ), SC_EI_Support_Schema::HANDOFF_SCHEMA === 'sc-product-support-handoff/1.0' && is_wp_error( SC_EI_Support_Schema::signal_payload( array( 'product' => 'workbench', 'email' => 'private@example.com' ) ) ), true, SC_EI_Support_Schema::HANDOFF_SCHEMA, 'review_support' );
@@ -380,8 +382,8 @@ final class SC_EI_Platform_Repository {
 		$checks[] = self::check( 'pilot_launch_evidence', 'operations', __( 'Completed controlled pilot and launch checklist', 'sustainable-catalyst-engagement-intake' ), SC_EI_Pilot_Operations::pilot_complete_and_fresh(), true, ! empty( $pilot_evidence['recorded_at'] ) ? sprintf( '%s · %d controlled inquiries', (string) $pilot_evidence['recorded_at'], absint( $pilot_evidence['controlled_inquiry_count'] ?? 0 ) ) : 'not recorded', 'record_pilot_evidence' );
 		$checks[] = self::check( 'lifecycle_operations', 'operations', __( 'Advisory lifecycle operational queue', 'sustainable-catalyst-engagement-intake' ), 0 === absint( $lifecycle_metrics['overdue_tasks'] ?? 0 ) && 0 === absint( $lifecycle_metrics['next_actions_due'] ?? 0 ), true, sprintf( '%d overdue task(s); %d next action(s) due', absint( $lifecycle_metrics['overdue_tasks'] ?? 0 ), absint( $lifecycle_metrics['next_actions_due'] ?? 0 ) ), 'review_lifecycle' );
 		$checks[] = self::check( 'support_operations', 'operations', __( 'Product support operational queue', 'sustainable-catalyst-engagement-intake' ), 0 === absint( $support_metrics['high_priority'] ?? 0 ), true, sprintf( '%d untriaged; %d high-priority unresolved; %d awaiting sender; %d open intelligence signal(s)', absint( $support_metrics['untriaged'] ?? 0 ), absint( $support_metrics['high_priority'] ?? 0 ), absint( $support_metrics['awaiting_sender'] ?? 0 ), absint( $support_metrics['signals_open'] ?? 0 ) ), 'review_support' );
-		$proposal_operations_ok = 0 === absint( $proposal_blockers['approved_change_requests_not_applied'] ?? 0 );
-		$checks[] = self::check( 'proposal_governance_operations', 'operations', __( 'Proposal and change-control operational queue', 'sustainable-catalyst-engagement-intake' ), $proposal_operations_ok, true, sprintf( '%d draft/internal-review SOW(s); %d sender-approved SOW(s); %d open change request(s); %d approved change request(s) awaiting application', absint( $proposal_metrics['draft_sows'] ?? 0 ), absint( $proposal_metrics['sender_approved_sows'] ?? 0 ), absint( $proposal_metrics['open_change_requests'] ?? 0 ), absint( $proposal_blockers['approved_change_requests_not_applied'] ?? 0 ) ), 'review_proposals' );
+		$proposal_operations_ok = 0 === array_sum( array_map( 'absint', $proposal_blockers ) );
+		$checks[] = self::check( 'proposal_governance_operations', 'operations', __( 'Proposal, approval, conversion, and change-control integrity', 'sustainable-catalyst-engagement-intake' ), $proposal_operations_ok, true, sprintf( '%d unapplied change request(s); %d invalid approval hash(es); %d proposal response(s) without receipt; %d SOW approval(s) without receipt; %d stale active SOW(s); %d conversion receipt gap(s); %d converted-status mismatch(es)', absint( $proposal_blockers['approved_change_requests_not_applied'] ?? 0 ), absint( $proposal_blockers['invalid_approval_hashes'] ?? 0 ), absint( $proposal_blockers['missing_sender_receipts'] ?? 0 ), absint( $proposal_blockers['missing_sow_receipts'] ?? 0 ), absint( $proposal_blockers['stale_active_sows'] ?? 0 ), absint( $proposal_blockers['missing_conversion_receipts'] ?? 0 ), absint( $proposal_blockers['converted_status_mismatch'] ?? 0 ) ), 'review_proposals' );
 		$checks[] = self::check( 'operational_attention', 'operations', __( 'No unresolved public-launch operational blockers', 'sustainable-catalyst-engagement-intake' ), ! empty( $operations['clear'] ), true, ! empty( $operations['blockers'] ) ? implode( '; ', (array) $operations['blockers'] ) : 'no failed communications, overdue follow-ups, quarantine or file-integrity issues, portal lockouts or failures, or critical events', 'review_operations' );
 
 		$required_failures = array_values( array_filter( $checks, static fn( array $check ): bool => ! empty( $check['required'] ) && 'fail' === $check['status'] ) );
@@ -710,6 +712,9 @@ final class SC_EI_Platform_Repository {
 			case 'verify_proposal_governance_migration':
 				$result = SC_EI_Proposal_Governance_Repository::record_migration( (string) get_option( 'sc_ei_proposal_governance_schema_version_previous', '' ) );
 				break;
+			case 'verify_proposal_reliability_patch':
+				$result = SC_EI_Proposal_Governance_Repository::record_patch_migration( (string) get_option( 'sc_ei_proposal_governance_schema_version_previous', '' ) );
+				break;
 			case 'repair_calendar_reliability':
 				$result = SC_EI_Calendar_Repository::repair_reminder_state();
 				break;
@@ -881,6 +886,7 @@ final class SC_EI_Platform_Repository {
 			'verify_calendar_migration' => __( 'Verify v1.3.0 calendar migration', 'sustainable-catalyst-engagement-intake' ),
 			'verify_calendar_reliability_patch' => __( 'Verify v1.3.1 calendar reliability patch', 'sustainable-catalyst-engagement-intake' ),
 			'verify_proposal_governance_migration' => __( 'Verify v1.4.0 proposal-governance migration', 'sustainable-catalyst-engagement-intake' ),
+			'verify_proposal_reliability_patch' => __( 'Verify v1.4.1 proposal reliability patch', 'sustainable-catalyst-engagement-intake' ),
 			'review_proposals'      => __( 'Open Proposal Governance', 'sustainable-catalyst-engagement-intake' ),
 			'repair_calendar_reliability' => __( 'Repair calendar reminder state', 'sustainable-catalyst-engagement-intake' ),
 			'review_calendar'       => __( 'Open Calendar Coordination', 'sustainable-catalyst-engagement-intake' ),

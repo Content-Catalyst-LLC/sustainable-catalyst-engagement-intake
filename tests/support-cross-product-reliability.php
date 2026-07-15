@@ -11,7 +11,7 @@ $platform = file_get_contents( $plugin . '/includes/class-sc-ei-platform-reposit
 $validation = file_get_contents( $plugin . '/includes/class-sc-ei-platform-validation.php' );
 $view = file_get_contents( $plugin . '/admin/views/support-cases.php' );
 $checks = array(
-    'patch identity with unchanged database schema' => false !== strpos( $main, 'Version:     1.4.0' ) && false !== strpos( $main, "SC_EI_VERSION', '1.4.0'" ) && false !== strpos( $main, "SC_EI_DB_VERSION', '1.4.0'" ) && false !== strpos( $main, "SC_EI_SUPPORT_SCHEMA_VERSION', '1.0.1'" ),
+    'patch identity with unchanged database schema' => false !== strpos( $main, 'Version:     1.4.1' ) && false !== strpos( $main, "SC_EI_VERSION', '1.4.1'" ) && false !== strpos( $main, "SC_EI_DB_VERSION', '1.4.0'" ) && false !== strpos( $main, "SC_EI_SUPPORT_SCHEMA_VERSION', '1.0.1'" ),
     'nondestructive patch migration' => false !== strpos( $repo, "PATCH_MIGRATION_KEY = 'v1_2_1_support_operations_cross_product_reliability'" ) && false !== strpos( $repo, "'database_schema_changed' => false" ) && false !== strpos( $repo, 'record_patch_migration' ),
     'atomic public support persistence' => false !== strpos( $form, 'SC_EI_Support_Repository::ensure_public_case' ) && false !== strpos( $form, 'SC_EI_Inquiry_Repository::rollback_public_create' ) && false !== strpos( $inquiries, 'public static function rollback_public_create' ) && false !== strpos( $form, "'support_storage_error'" ),
     'recoverable case and audit persistence' => false !== strpos( $repo, 'for ( $attempt = 1; $attempt <= 3; $attempt++ )' ) && false !== strpos( $repo, "'support_case_event_create_failed'" ) && false !== strpos( $repo, 'database_error_hash' ),

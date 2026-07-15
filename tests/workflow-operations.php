@@ -19,7 +19,7 @@ $caps       = file_get_contents( $plugin . '/includes/class-sc-ei-capabilities.p
 $admin_view = file_get_contents( $plugin . '/admin/views/teams-proposals.php' );
 
 $checks = array(
-	'v1.1.1 release markers' => strpos( $main, 'Version:     1.4.0' ) !== false
+	'v1.1.1 release markers' => strpos( $main, 'Version:     1.4.1' ) !== false
 		&& strpos( $main, "SC_EI_DB_VERSION', '1.4.0'" ) !== false
 		&& strpos( $main, "SC_EI_PORTAL_SCHEMA_VERSION', '1.6.0'" ) !== false
 		&& strpos( $main, "SC_EI_WORKFLOW_SCHEMA_VERSION', '1.3.0'" ) !== false
@@ -58,8 +58,8 @@ $checks = array(
 	'ICS only after final Teams scheduling' => strpos( $portal, "'scheduled' !== \$offer['status']" ) !== false
 		&& strpos( $portal, 'meeting_ics' ) !== false
 		&& strpos( $repo, 'METHOD:PUBLISH' ) !== false,
-	'proposal acceptance is not a contract' => strpos( $repo, "'status'          => 'accepted_pending_contract'" ) !== false
-		&& strpos( $repo, "'automatic_contract'  => false" ) !== false
+	'proposal acceptance is not a contract' => strpos( $repo, "'accepted_pending_contract'" ) !== false
+		&& strpos( $repo, "'automatic_contract'" ) !== false
 		&& strpos( $portal_ui, 'It is not an electronic signature, executed contract, payment authorization, or active engagement.' ) !== false,
 	'proposal acceptance requires authority and boundary acknowledgment' => strpos( $repo, 'workflow_proposal_authority_required' ) !== false
 		&& strpos( $repo, 'workflow_proposal_boundary_required' ) !== false

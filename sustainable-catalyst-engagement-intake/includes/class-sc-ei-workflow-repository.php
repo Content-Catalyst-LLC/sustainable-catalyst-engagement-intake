@@ -644,8 +644,12 @@ final class SC_EI_Workflow_Repository {
 			return new WP_Error( 'workflow_proposal_not_draft', __( 'A complete unpublished proposal version is required before publication.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 		$version = self::find_proposal_version( absint( $proposal['pending_version_id'] ) );
-		if ( ! $version ) {
-			return new WP_Error( 'workflow_proposal_version_missing', __( 'The proposal version could not be found.', 'sustainable-catalyst-engagement-intake' ) );
+		if ( ! $version || absint( $version['proposal_id'] ) !== $id || empty( $version['content_hash'] ) ) {
+			return new WP_Error( 'workflow_proposal_version_missing', __( 'The proposal version could not be found or failed its integrity check.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		$publication_guard = SC_EI_Proposal_Governance_Repository::validate_proposal_publication( $proposal, absint( $proposal['pending_version_id'] ) );
+		if ( is_wp_error( $publication_guard ) ) {
+			return $publication_guard;
 		}
 		$now = current_time( 'mysql', true );
 		$previous_status = $proposal['status'];
@@ -667,6 +671,19 @@ final class SC_EI_Workflow_Repository {
 		);
 		if ( 1 !== $updated ) {
 			return new WP_Error( 'workflow_proposal_conflict', __( 'The proposal changed before publication.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		$reconciled = SC_EI_Proposal_Governance_Repository::reconcile_after_proposal_publication( $id, absint( $version['id'] ), $actor_user_id );
+		if ( is_wp_error( $reconciled ) ) {
+			$fresh = self::find_proposal( $id );
+			$rollback = self::rollback_proposal_publication( $proposal, $fresh );
+			SC_EI_Hardening_Repository::record_event(
+				'proposal_governance',
+				'proposal_publication_sow_reconciliation_failed',
+				is_wp_error( $rollback ) ? 'critical' : 'error',
+				'Proposal publication was compensated because the related Statement of Work could not be reconciled.',
+				array( 'proposal_id' => $id, 'reconciliation_error' => $reconciled->get_error_code(), 'rollback_error' => is_wp_error( $rollback ) ? $rollback->get_error_code() : '', 'request_id' => SC_EI_Hardening_Repository::request_id() )
+			);
+			return new WP_Error( 'workflow_proposal_sow_reconciliation_failed', __( 'The proposal could not be published because its Statement of Work state could not be reconciled safely.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 		self::supersede_other_proposals( absint( $proposal['inquiry_id'] ), $id );
 		self::record_event(
@@ -725,16 +742,43 @@ final class SC_EI_Workflow_Repository {
 		global $wpdb;
 
 		$proposal = self::find_proposal( $id, true );
-		if ( ! $proposal || 'published' !== $proposal['status'] ) {
+		if ( ! $proposal ) {
+			return new WP_Error( 'workflow_proposal_unavailable', __( 'This proposal is no longer available for response.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		$response = sanitize_key( $response );
+		$note = sanitize_textarea_field( $note );
+		$confirmation = strtoupper( trim( sanitize_text_field( $confirmation ) ) );
+		$action = SC_EI_Proposal_Governance_Repository::action_for_workflow_response( $response );
+		$status_for_response = array(
+			'confirm_receipt' => 'published',
+			'request_changes' => 'changes_requested',
+			'accept'          => 'accepted_pending_contract',
+			'decline'         => 'declined',
+		);
+		if ( 'published' !== (string) $proposal['status'] ) {
+			if ( '' !== $action && ( $status_for_response[ $response ] ?? '' ) === (string) $proposal['status'] && $response === (string) $proposal['sender_response'] ) {
+				$receipt = SC_EI_Proposal_Governance_Repository::record_sender_action(
+					$id,
+					absint( $proposal['current_version_id'] ),
+					$action,
+					$note,
+					$authority_attested,
+					$boundary_acknowledged,
+					$confirmation,
+					$session_id
+				);
+				if ( ! is_wp_error( $receipt ) ) {
+					$proposal['_idempotent'] = true;
+					$proposal['_approval_id'] = absint( $receipt['id'] ?? 0 );
+					return $proposal;
+				}
+			}
 			return new WP_Error( 'workflow_proposal_unavailable', __( 'This proposal is no longer available for response.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 		if ( strtotime( $proposal['expires_at'] . ' UTC' ) < time() ) {
 			self::expire_proposal( $proposal );
 			return new WP_Error( 'workflow_proposal_expired', __( 'This proposal expired.', 'sustainable-catalyst-engagement-intake' ) );
 		}
-		$response = sanitize_key( $response );
-		$note = sanitize_textarea_field( $note );
-		$confirmation = strtoupper( trim( sanitize_text_field( $confirmation ) ) );
 		$settings = self::settings();
 		$now = current_time( 'mysql', true );
 		$data = array(
@@ -750,10 +794,7 @@ final class SC_EI_Workflow_Repository {
 			if ( ! hash_equals( $expected, $confirmation ) ) {
 				return new WP_Error( 'workflow_proposal_confirmation_failed', __( 'The proposal receipt confirmation did not match.', 'sustainable-catalyst-engagement-intake' ) );
 			}
-			$data += array(
-				'status'          => 'published',
-				'sender_response' => 'confirm_receipt',
-			);
+			$data += array( 'status' => 'published', 'sender_response' => 'confirm_receipt' );
 			$event = 'proposal_receipt_confirmed';
 		} elseif ( 'request_changes' === $response ) {
 			$expected = 'REQUEST CHANGES ' . strtoupper( $proposal['proposal_number'] );
@@ -763,10 +804,7 @@ final class SC_EI_Workflow_Repository {
 			if ( mb_strlen( $note ) < 5 ) {
 				return new WP_Error( 'workflow_proposal_note_required', __( 'Describe the requested proposal changes.', 'sustainable-catalyst-engagement-intake' ) );
 			}
-			$data += array(
-				'status'          => 'changes_requested',
-				'sender_response' => 'request_changes',
-			);
+			$data += array( 'status' => 'changes_requested', 'sender_response' => 'request_changes' );
 			$event = 'proposal_changes_requested';
 		} elseif ( 'accept' === $response ) {
 			$expected = 'ACCEPT ' . strtoupper( $proposal['proposal_number'] );
@@ -779,11 +817,7 @@ final class SC_EI_Workflow_Repository {
 			if ( ! empty( $settings['workflow_require_boundary_acknowledgment'] ) && ! $boundary_acknowledged ) {
 				return new WP_Error( 'workflow_proposal_boundary_required', __( 'Acknowledge that portal acceptance is not an executed contract.', 'sustainable-catalyst-engagement-intake' ) );
 			}
-			$data += array(
-				'status'          => 'accepted_pending_contract',
-				'sender_response' => 'accept',
-				'accepted_at'     => $now,
-			);
+			$data += array( 'status' => 'accepted_pending_contract', 'sender_response' => 'accept', 'accepted_at' => $now );
 			$event = 'proposal_accepted';
 		} elseif ( 'decline' === $response ) {
 			$expected = 'DECLINE ' . strtoupper( $proposal['proposal_number'] );
@@ -793,11 +827,7 @@ final class SC_EI_Workflow_Repository {
 			if ( mb_strlen( $note ) < 3 ) {
 				return new WP_Error( 'workflow_proposal_note_required', __( 'Add a brief decline note.', 'sustainable-catalyst-engagement-intake' ) );
 			}
-			$data += array(
-				'status'          => 'declined',
-				'sender_response' => 'decline',
-				'declined_at'     => $now,
-			);
+			$data += array( 'status' => 'declined', 'sender_response' => 'decline', 'declined_at' => $now );
 			$event = 'proposal_declined';
 		} else {
 			return new WP_Error( 'workflow_proposal_response_invalid', __( 'Choose a valid proposal response.', 'sustainable-catalyst-engagement-intake' ) );
@@ -814,6 +844,28 @@ final class SC_EI_Workflow_Repository {
 			return new WP_Error( 'workflow_proposal_conflict', __( 'The proposal changed before your response was saved.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 		$new = self::find_proposal( $id, true );
+		$receipt = SC_EI_Proposal_Governance_Repository::record_sender_action(
+			$id,
+			absint( $proposal['current_version_id'] ),
+			$action,
+			$note,
+			$authority_attested,
+			$boundary_acknowledged,
+			$confirmation,
+			$session_id
+		);
+		if ( is_wp_error( $receipt ) ) {
+			$rollback = self::rollback_proposal_sender_response( $proposal, $new );
+			SC_EI_Hardening_Repository::record_event(
+				'proposal_governance',
+				'proposal_sender_response_receipt_failed',
+				is_wp_error( $rollback ) ? 'critical' : 'error',
+				'Proposal response was compensated because immutable approval evidence could not be committed.',
+				array( 'proposal_id' => $id, 'response' => $response, 'receipt_error' => $receipt->get_error_code(), 'rollback_error' => is_wp_error( $rollback ) ? $rollback->get_error_code() : '', 'request_id' => SC_EI_Hardening_Repository::request_id() )
+			);
+			return new WP_Error( 'workflow_proposal_approval_receipt_failed', __( 'The response could not be committed with its approval receipt. The proposal was restored for retry.', 'sustainable-catalyst-engagement-intake' ), array( 'cause' => $receipt->get_error_code(), 'rollback' => is_wp_error( $rollback ) ? $rollback->get_error_code() : 'restored' ) );
+		}
+		$new = self::find_proposal( $id, true );
 		self::record_event(
 			absint( $proposal['inquiry_id'] ),
 			'sender',
@@ -823,39 +875,20 @@ final class SC_EI_Workflow_Repository {
 			$event,
 			'published',
 			$new['status'],
-			array(
-				'authority_attested'  => $authority_attested,
-				'boundary_acknowledged'=> $boundary_acknowledged,
-				'automatic_contract'  => false,
-				'automatic_payment'   => false,
-			)
+			array( 'authority_attested' => $authority_attested, 'boundary_acknowledged' => $boundary_acknowledged, 'approval_id' => absint( $receipt['id'] ?? 0 ), 'automatic_contract' => false, 'automatic_payment' => false )
 		);
 		if ( 'accept' === $response ) {
 			self::update_inquiry_status( absint( $proposal['inquiry_id'] ), 'proposal_sent' );
 		}
 		SC_EI_Audit_Log::record(
 			'workflow_' . $event,
-			'Sender recorded a proposal response through the secure portal.',
-			array(
-				'proposal_id'       => $id,
-				'response'          => $response,
-				'automatic_contract'=> false,
-				'automatic_payment' => false,
-			),
+			'Sender recorded a proposal response through the secure portal with immutable approval evidence.',
+			array( 'proposal_id' => $id, 'response' => $response, 'approval_id' => absint( $receipt['id'] ?? 0 ), 'automatic_contract' => false, 'automatic_payment' => false ),
 			absint( $proposal['inquiry_id'] )
 		);
-		do_action(
-			'sc_ei_proposal_sender_response_recorded',
-			$new,
-			array(
-				'action'                  => $response,
-				'note'                    => $note,
-				'authority_attested'      => $authority_attested,
-				'boundary_acknowledged'   => $boundary_acknowledged,
-				'confirmation'            => $confirmation,
-				'session_id'              => $session_id,
-			)
-		);
+		do_action( 'sc_ei_proposal_sender_response_committed', $new, array( 'action' => $response, 'note' => $note, 'authority_attested' => $authority_attested, 'boundary_acknowledged' => $boundary_acknowledged, 'session_id' => $session_id ), $receipt );
+		$new['_approval_id'] = absint( $receipt['id'] ?? 0 );
+		$new['_idempotent'] = false;
 		return $new;
 	}
 
@@ -1167,6 +1200,57 @@ final class SC_EI_Workflow_Repository {
 		return implode( "\r\n", $lines ) . "\r\n";
 	}
 
+	private static function rollback_proposal_publication( array $before, ?array $after ) {
+		global $wpdb;
+		if ( ! $after ) {
+			return new WP_Error( 'workflow_proposal_publication_rollback_read_failed', __( 'The proposal could not be reloaded for publication compensation.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		$rollback = array(
+			'status'             => (string) $before['status'],
+			'current_version_id' => absint( $before['current_version_id'] ) ?: null,
+			'pending_version_id' => absint( $before['pending_version_id'] ) ?: null,
+			'published_by'       => absint( $before['published_by'] ) ?: null,
+			'published_at'       => $before['published_at'],
+			'row_version'        => absint( $after['row_version'] ) + 1,
+			'updated_at'         => current_time( 'mysql', true ),
+		);
+		$updated = $wpdb->update(
+			SC_EI_Database::table( 'proposals' ),
+			$rollback,
+			array( 'id' => absint( $before['id'] ), 'row_version' => absint( $after['row_version'] ) ),
+			self::formats( $rollback, self::proposal_integer_fields() ),
+			array( '%d', '%d' )
+		);
+		return 1 === $updated ? true : new WP_Error( 'workflow_proposal_publication_rollback_failed', __( 'The proposal publication could not be compensated automatically.', 'sustainable-catalyst-engagement-intake' ) );
+	}
+
+	private static function rollback_proposal_sender_response( array $before, ?array $after ) {
+		global $wpdb;
+		if ( ! $after ) {
+			return new WP_Error( 'workflow_proposal_rollback_read_failed', __( 'The proposal could not be reloaded for compensation.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		$rollback = array(
+			'status'                     => (string) $before['status'],
+			'sender_response'            => (string) $before['sender_response'],
+			'sender_response_note'       => (string) $before['sender_response_note'],
+			'sender_authority_attested'  => absint( $before['sender_authority_attested'] ),
+			'boundary_acknowledged'      => absint( $before['boundary_acknowledged'] ),
+			'responded_at'               => $before['responded_at'],
+			'accepted_at'                => $before['accepted_at'],
+			'declined_at'                => $before['declined_at'],
+			'row_version'                => absint( $after['row_version'] ) + 1,
+			'updated_at'                 => current_time( 'mysql', true ),
+		);
+		$updated = $wpdb->update(
+			SC_EI_Database::table( 'proposals' ),
+			$rollback,
+			array( 'id' => absint( $before['id'] ), 'row_version' => absint( $after['row_version'] ) ),
+			self::formats( $rollback, self::proposal_integer_fields() ),
+			array( '%d', '%d' )
+		);
+		return 1 === $updated ? true : new WP_Error( 'workflow_proposal_rollback_failed', __( 'The proposal response could not be compensated automatically.', 'sustainable-catalyst-engagement-intake' ) );
+	}
+
 	private static function create_proposal_version( int $proposal_id, array $input, int $actor_user_id ) {
 		global $wpdb;
 
@@ -1178,9 +1262,6 @@ final class SC_EI_Workflow_Repository {
 			return new WP_Error( 'workflow_proposal_content_required', __( 'Proposal title, summary, scope, and deliverables are required.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 		$table = SC_EI_Database::table( 'proposal_versions' );
-		$version_number = 1 + (int) $wpdb->get_var(
-			$wpdb->prepare( "SELECT COALESCE(MAX(version_number), 0) FROM {$table} WHERE proposal_id = %d", $proposal_id ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		);
 		$content = array(
 			'title'             => $title,
 			'executive_summary' => $summary,
@@ -1194,30 +1275,34 @@ final class SC_EI_Workflow_Repository {
 			'legal_terms'       => sanitize_textarea_field( (string) ( $input['legal_terms'] ?? '' ) ),
 			'version_note'      => sanitize_textarea_field( (string) ( $input['version_note'] ?? '' ) ),
 		);
-		$now = current_time( 'mysql', true );
-		$data = array(
-			'public_id'          => wp_generate_uuid4(),
-			'proposal_id'        => $proposal_id,
-			'version_number'     => $version_number,
-			'title'              => $content['title'],
-			'executive_summary'  => $content['executive_summary'],
-			'scope_json'         => wp_json_encode( $content['scope'] ),
-			'deliverables_json'  => wp_json_encode( $content['deliverables'] ),
-			'exclusions_json'    => wp_json_encode( $content['exclusions'] ),
-			'assumptions_json'   => wp_json_encode( $content['assumptions'] ),
-			'timeline_text'      => $content['timeline_text'],
-			'fee_summary'        => $content['fee_summary'],
-			'payment_terms'      => $content['payment_terms'],
-			'legal_terms'        => $content['legal_terms'],
-			'version_note'       => $content['version_note'],
-			'content_hash'       => hash( 'sha256', wp_json_encode( $content ) ),
-			'created_by'         => $actor_user_id,
-			'created_at'         => $now,
-		);
-		if ( false === $wpdb->insert( $table, $data, self::formats( $data, array( 'proposal_id', 'version_number', 'created_by' ) ) ) ) {
-			return new WP_Error( 'workflow_proposal_version_failed', __( 'The proposal version could not be saved.', 'sustainable-catalyst-engagement-intake' ) );
+		for ( $attempt = 1; $attempt <= 3; $attempt++ ) {
+			$version_number = 1 + (int) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(MAX(version_number), 0) FROM {$table} WHERE proposal_id = %d", $proposal_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$now = current_time( 'mysql', true );
+			$data = array(
+				'public_id'          => wp_generate_uuid4(),
+				'proposal_id'        => $proposal_id,
+				'version_number'     => $version_number,
+				'title'              => $content['title'],
+				'executive_summary'  => $content['executive_summary'],
+				'scope_json'         => wp_json_encode( $content['scope'] ),
+				'deliverables_json'  => wp_json_encode( $content['deliverables'] ),
+				'exclusions_json'    => wp_json_encode( $content['exclusions'] ),
+				'assumptions_json'   => wp_json_encode( $content['assumptions'] ),
+				'timeline_text'      => $content['timeline_text'],
+				'fee_summary'        => $content['fee_summary'],
+				'payment_terms'      => $content['payment_terms'],
+				'legal_terms'        => $content['legal_terms'],
+				'version_note'       => $content['version_note'],
+				'content_hash'       => hash( 'sha256', wp_json_encode( $content ) ),
+				'created_by'         => $actor_user_id,
+				'created_at'         => $now,
+			);
+			if ( false !== $wpdb->insert( $table, $data, self::formats( $data, array( 'proposal_id', 'version_number', 'created_by' ) ) ) ) {
+				return self::find_proposal_version( (int) $wpdb->insert_id );
+			}
 		}
-		return self::find_proposal_version( (int) $wpdb->insert_id );
+		SC_EI_Hardening_Repository::record_event( 'proposal_governance', 'proposal_version_insert_failed', 'error', 'Proposal version creation failed after bounded retry.', array( 'proposal_id' => $proposal_id, 'attempts' => 3, 'request_id' => SC_EI_Hardening_Repository::request_id() ) );
+		return new WP_Error( 'workflow_proposal_version_failed', __( 'The proposal version could not be saved after bounded retry.', 'sustainable-catalyst-engagement-intake' ) );
 	}
 
 	private static function find_slot( array $offer, string $slot_key ): ?array {

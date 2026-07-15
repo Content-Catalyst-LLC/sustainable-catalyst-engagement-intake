@@ -2,29 +2,29 @@
 
 ## Current release
 
-### v1.3.1 — Scheduling, Reminder, and Time-Zone Reliability Patch
+### v1.4.1 — Proposal Versioning, Approval, and Engagement Conversion Reliability Patch
 
-Strict daylight-saving handling, review-state reminder correctness, communication-linked sent evidence, compensating reschedule and completion behavior, bounded reminder repair, and stronger Production Readiness and Live Validation.
+Atomic proposal-response receipts, replay-safe approvals, current-version SOW enforcement, bounded revision retries, conversion repair, immutable-hash verification, and stronger Production Readiness and Live Validation.
 
 ## Previous feature release
 
-### v1.3.0 — Microsoft Teams and Calendar Coordination
+### v1.4.0 — Proposals, Statements of Work, and Engagement Approvals
 
-Governed Teams meeting records, explicit time zones, calendar references, rescheduling, cancellation, reviewable reminders, Sender Portal projection, and post-meeting follow-up.
+Governed proposal versions, Statements of Work, sender decisions, external contract evidence, change requests, and deliberate engagement conversion.
 
 ## Planned engagement releases
 
-### v1.4.0 — Proposals, Statements of Work, and Engagement Approvals
-
-Governed scope, deliverables, assumptions, pricing, expiration, approval, and external-contract evidence without automatic acceptance, signatures, invoicing, or payment collection.
-
 ### v1.5.0 — Secure Client Workspace and Collaboration
 
-Deliberately published engagement milestones, secure document exchange, requested-information workflows, proposal notices, meeting context, and sender follow-up.
+Deliberately published engagement milestones, secure document exchange, requested-information workflows, deliverable review, meeting context, and sender follow-up.
 
 ### v1.6.0 — Engagement Analytics and Service Intelligence
 
 Aggregate demand, routing, response, qualification, proposal, acceptance, support friction, workload, and delivery metrics with privacy protections and no sender ranking.
+
+### v1.7.0 — Billing, Invoicing, and Payment Handoffs
+
+Typed handoffs to external accounting and payment systems without storing payment credentials or treating the engagement platform as an accounting ledger.
 
 ### v2.0.0 — Integrated Advisory, Support, and Institutional Engagement Platform
 

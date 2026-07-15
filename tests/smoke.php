@@ -28,7 +28,7 @@ $required = array(
 $failures = array();
 foreach ( $required as $file ) if ( ! is_file( $file ) ) $failures[] = 'Missing: ' . $file;
 foreach ( array(
-	'Version:     1.4.0' => $main,
+	'Version:     1.4.1' => $main,
 	"SC_EI_DB_VERSION', '1.4.0'" => $main,
 	"SC_EI_PORTAL_SCHEMA_VERSION', '1.6.0'" => $main,
 	"SC_EI_ENGAGEMENT_SCHEMA_VERSION', '1.2.0'" => $main,
