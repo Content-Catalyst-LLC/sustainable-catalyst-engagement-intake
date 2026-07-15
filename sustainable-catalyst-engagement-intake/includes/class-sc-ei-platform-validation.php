@@ -81,6 +81,7 @@ final class SC_EI_Platform_Validation {
 		$support_case_id = 0;
 		$support_signal_id = 0;
 		$support_link_ids = array();
+		$meeting_id = 0;
 		$relative_path = '';
 		$temp_path = '';
 		$cleanup_ok = true;
@@ -91,13 +92,16 @@ final class SC_EI_Platform_Validation {
 		$inquiry_columns = SC_EI_Database::inquiry_columns_exist();
 		$lifecycle_columns = SC_EI_Database::lifecycle_columns_exist();
 		$support_columns = SC_EI_Database::support_columns_exist();
-		self::add( $checks, 'database_contract', __( 'Database tables, platform, lifecycle, and support schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ) && ! in_array( false, $inquiry_columns, true ) && ! in_array( false, $lifecycle_columns, true ) && ! in_array( false, $support_columns, true ), sprintf( '%d/%d tables; %d/%d platform columns; %d/%d inquiry columns; %d/%d lifecycle columns; %d/%d support columns', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ), count( array_filter( $inquiry_columns ) ), count( $inquiry_columns ), count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ), count( array_filter( $support_columns ) ), count( $support_columns ) ) );
+		$calendar_columns = SC_EI_Database::calendar_columns_exist();
+		self::add( $checks, 'database_contract', __( 'Database tables, platform, lifecycle, support, and calendar schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ) && ! in_array( false, $inquiry_columns, true ) && ! in_array( false, $lifecycle_columns, true ) && ! in_array( false, $support_columns, true ) && ! in_array( false, $calendar_columns, true ), sprintf( '%d/%d tables; %d/%d platform columns; %d/%d inquiry columns; %d/%d lifecycle columns; %d/%d support columns; %d/%d calendar columns', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ), count( array_filter( $inquiry_columns ) ), count( $inquiry_columns ), count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ), count( array_filter( $support_columns ) ), count( $support_columns ), count( array_filter( $calendar_columns ) ), count( $calendar_columns ) ) );
 		$lifecycle_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Lifecycle_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		self::add( $checks, 'lifecycle_migration', __( 'v1.1.0 advisory lifecycle migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $lifecycle_migration, (string) ( $lifecycle_migration ?: 'missing' ) );
 		$support_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Support_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		self::add( $checks, 'support_migration', __( 'v1.2.0 support operations migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $support_migration, (string) ( $support_migration ?: 'missing' ) );
 		$support_patch_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Support_Repository::PATCH_MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		self::add( $checks, 'support_reliability_patch', __( 'v1.2.1 support reliability migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $support_patch_migration, (string) ( $support_patch_migration ?: 'missing' ) );
+		$calendar_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Calendar_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::add( $checks, 'calendar_migration', __( 'v1.3.0 Microsoft Teams and calendar coordination migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $calendar_migration, (string) ( $calendar_migration ?: 'missing' ) );
 
 		$page_evidence = SC_EI_Platform_Repository::page_contract_evidence();
 		self::add( $checks, 'public_page_contracts', __( 'Published public-entry and portal page contracts', 'sustainable-catalyst-engagement-intake' ), ! empty( $page_evidence['public_entry']['passed'] ) && ! empty( $page_evidence['portal']['passed'] ), (string) ( $page_evidence['summary'] ?? '' ) );
@@ -135,7 +139,7 @@ final class SC_EI_Platform_Validation {
 					'inquiry_type'    => 'general',
 					'contact_name'    => 'Platform Validation',
 					'contact_email'   => $validation_email,
-					'subject'         => '[TEST] v1.2.1 live validation',
+					'subject'         => '[TEST] v1.3.0 live validation',
 					'message'         => 'Temporary administrator-generated validation record. Safe to remove.',
 					'form_variant'    => 'advanced',
 					'source_page'     => 'platform-validation',
@@ -256,6 +260,58 @@ final class SC_EI_Platform_Validation {
 			}
 			self::add( $checks, 'portal_invitation', __( 'Sender portal token issue and verification', 'sustainable-catalyst-engagement-intake' ), $portal_ok, $portal_ok ? 'temporary invitation verified without storing the raw token' : ( is_wp_error( $portal_result ) ? $portal_result->get_error_message() : 'portal token verification failed' ) );
 
+
+			if ( $portal_ok ) {
+				$timezone = SC_EI_Teams::valid_timezone( wp_timezone_string() ) ? wp_timezone_string() : 'America/Chicago';
+				$zone = new DateTimeZone( $timezone );
+				$slot = new DateTime( '+3 days 10:00', $zone );
+				$meeting = SC_EI_Workflow_Repository::create_meeting_offer(
+					$inquiry_id,
+					array(
+						'title'                => '[TEST] Teams coordination',
+						'meeting_type'         => 'support_troubleshooting',
+						'purpose'              => 'Temporary Microsoft Teams and calendar-coordination validation.',
+						'duration_minutes'     => 30,
+						'timezone'             => $timezone,
+						'slots'                => array( $slot->format( 'Y-m-d\TH:i' ) ),
+						'teams_url'            => 'https://teams.microsoft.com/l/meetup-join/sc-validation',
+						'agenda'               => 'Validate scheduling, rescheduling, cancellation, reminders, and portal isolation.',
+						'preparation_requests' => 'No preparation is required for this temporary validation.',
+						'sender_summary'       => 'Temporary sender-visible validation summary.',
+						'sender_next_step'     => 'Choose the offered time.',
+					),
+					$actor_user_id,
+					true
+				);
+				if ( ! is_wp_error( $meeting ) ) {
+					$meeting_id = absint( $meeting['id'] ?? 0 );
+					$accepted = SC_EI_Workflow_Repository::respond_to_meeting( $meeting_id, 'accept', 'slot_1', 'Temporary validation acceptance.', 0 );
+					$coordination = ! is_wp_error( $accepted ) ? SC_EI_Calendar_Repository::save_coordination( $meeting_id, array( 'organizer_name' => 'Sustainable Catalyst', 'organizer_email' => $validation_email, 'participant_emails' => array( $validation_email ), 'calendar_provider' => 'manual' ), $actor_user_id ) : $accepted;
+					$new_start = new DateTime( '+4 days 11:00', $zone );
+					$new_end = clone $new_start;
+					$new_end->modify( '+30 minutes' );
+					$rescheduled = ! is_wp_error( $coordination ) ? SC_EI_Calendar_Repository::reschedule( $meeting_id, $new_start->format( 'Y-m-d\TH:i' ), $new_end->format( 'Y-m-d\TH:i' ), $timezone, 'Temporary validation reschedule.', $actor_user_id ) : $coordination;
+					$snapshot_rows = ! is_wp_error( $rescheduled ) ? SC_EI_Calendar_Repository::sender_snapshot( $inquiry_id ) : array();
+					$snapshot = array();
+					foreach ( $snapshot_rows as $candidate ) {
+						if ( absint( $candidate['id'] ?? 0 ) === $meeting_id ) { $snapshot = $candidate; break; }
+					}
+					$unsafe = array_intersect( array_keys( $snapshot ), array( 'organizer_email', 'participant_emails_json', 'post_meeting_internal_notes', 'decisions', 'open_questions', 'created_by' ) );
+					$canceled = ! is_wp_error( $rescheduled ) ? SC_EI_Calendar_Repository::cancel( $meeting_id, 'Temporary validation cancellation.', $actor_user_id ) : $rescheduled;
+					$reminders = $meeting_id ? SC_EI_Calendar_Repository::reminders_for_meeting( $meeting_id ) : array();
+					$calendar_ok = ! is_wp_error( $accepted ) && 'scheduled' === (string) ( $accepted['status'] ?? '' )
+						&& ! is_wp_error( $coordination ) && ! is_wp_error( $rescheduled ) && absint( $rescheduled['reschedule_count'] ?? 0 ) === 1
+						&& ! empty( $snapshot['agenda'] ) && empty( $unsafe )
+						&& ! is_wp_error( $canceled ) && 'canceled' === (string) ( $canceled['status'] ?? '' ) && empty( $canceled['teams_url'] )
+						&& count( $reminders ) >= 3;
+				} else {
+					$calendar_ok = false;
+				}
+				self::add( $checks, 'calendar_coordination', __( 'Microsoft Teams scheduling, rescheduling, reminder idempotency, cancellation safety, and Sender Portal isolation', 'sustainable-catalyst-engagement-intake' ), $calendar_ok, $calendar_ok ? 'temporary Teams meeting scheduled, rescheduled with history, projected through a sender allowlist, canceled with join link revoked, and reminder records retained for review' : ( is_wp_error( $meeting ) ? $meeting->get_error_message() : 'calendar coordination validation failed' ) );
+			} else {
+				self::add( $checks, 'calendar_coordination', __( 'Microsoft Teams scheduling, rescheduling, reminder idempotency, cancellation safety, and Sender Portal isolation', 'sustainable-catalyst-engagement-intake' ), false, 'Sender Portal access was unavailable for the temporary meeting record.' );
+			}
+
 			$temp_path = wp_tempnam( 'sc-ei-platform-validation.txt' );
 			if ( $temp_path ) {
 				$content = 'Sustainable Catalyst platform validation ' . wp_generate_uuid4();
@@ -287,6 +343,11 @@ final class SC_EI_Platform_Validation {
 		if ( $support_signal_id ) {
 			$wpdb->delete( SC_EI_Database::table( 'support_signals' ), array( 'id' => $support_signal_id ), array( '%d' ) );
 		}
+		if ( $meeting_id ) {
+			$wpdb->delete( SC_EI_Database::table( 'meeting_reminders' ), array( 'meeting_offer_id' => $meeting_id ), array( '%d' ) );
+			$wpdb->delete( SC_EI_Database::table( 'workflow_events' ), array( 'object_type' => 'meeting', 'object_id' => $meeting_id ), array( '%s', '%d' ) );
+			$wpdb->delete( SC_EI_Database::table( 'meeting_offers' ), array( 'id' => $meeting_id ), array( '%d' ) );
+		}
 		if ( $inquiry_id ) {
 			$wpdb->delete( SC_EI_Database::table( 'support_case_links' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
 			$wpdb->delete( SC_EI_Database::table( 'support_case_events' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
@@ -308,7 +369,7 @@ final class SC_EI_Platform_Validation {
 
 		$failures = array_values( array_filter( $checks, static fn( array $check ): bool => 'pass' !== $check['status'] ) );
 		$result = array(
-			'schema'         => 'sc-contact-engagement-live-validation/1.4',
+			'schema'         => 'sc-contact-engagement-live-validation/1.5',
 			'plugin_version' => SC_EI_VERSION,
 			'passed'         => empty( $failures ),
 			'score'          => $checks ? (int) round( 100 * ( count( $checks ) - count( $failures ) ) / count( $checks ) ) : 0,

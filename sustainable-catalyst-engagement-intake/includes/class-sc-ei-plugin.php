@@ -34,6 +34,7 @@ final class SC_EI_Plugin {
 		SC_EI_Database::maybe_upgrade();
 		SC_EI_Lifecycle_Repository::maybe_upgrade();
 		SC_EI_Support_Repository::maybe_upgrade();
+		SC_EI_Calendar_Repository::maybe_upgrade();
 		SC_EI_Platform_Repository::maybe_upgrade();
 		SC_EI_Capabilities::install();
 		SC_EI_Upload_Environment::register();
@@ -45,6 +46,7 @@ final class SC_EI_Plugin {
 		SC_EI_Portal_Public::register();
 		SC_EI_Portal_Repository::register();
 		SC_EI_Workflow_Repository::register();
+		SC_EI_Calendar_Repository::register();
 		SC_EI_Graph_Repository::register();
 		SC_EI_Lifecycle_Repository::register();
 		SC_EI_Support_Repository::register();
@@ -66,6 +68,7 @@ final class SC_EI_Plugin {
 			SC_EI_Fit_Admin::register();
 			SC_EI_Portal_Admin::register();
 			SC_EI_Workflow_Admin::register();
+			SC_EI_Calendar_Admin::register();
 			SC_EI_Graph_Admin::register();
 			SC_EI_Engagement_Admin::register();
 			SC_EI_Lifecycle_Admin::register();

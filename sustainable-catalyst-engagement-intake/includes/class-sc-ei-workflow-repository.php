@@ -81,6 +81,15 @@ final class SC_EI_Workflow_Repository {
 			'status'             => $publish ? 'offered' : 'draft',
 			'title'              => sanitize_text_field( (string) ( $input['title'] ?? 'Microsoft Teams conversation' ) ),
 			'purpose'            => sanitize_textarea_field( (string) ( $input['purpose'] ?? '' ) ),
+			'meeting_type'       => SC_EI_Calendar_Schema::sanitize_meeting_type( (string) ( $input['meeting_type'] ?? 'other' ) ),
+			'organizer_name'     => sanitize_text_field( (string) ( $input['organizer_name'] ?? '' ) ),
+			'organizer_email'    => strtolower( sanitize_email( (string) ( $input['organizer_email'] ?? '' ) ) ),
+			'participant_emails_json' => wp_json_encode( SC_EI_Teams::sanitize_participant_emails( $input['participant_emails'] ?? array() ) ),
+			'agenda'             => sanitize_textarea_field( (string) ( $input['agenda'] ?? '' ) ),
+			'preparation_requests'=> sanitize_textarea_field( (string) ( $input['preparation_requests'] ?? '' ) ),
+			'sender_summary'     => sanitize_textarea_field( (string) ( $input['sender_summary'] ?? '' ) ),
+			'sender_next_step'   => sanitize_textarea_field( (string) ( $input['sender_next_step'] ?? '' ) ),
+			'related_document_ids_json' => wp_json_encode( SC_EI_Calendar_Schema::sanitize_document_ids( $input['related_document_ids'] ?? array() ) ),
 			'duration_minutes'   => $duration,
 			'timezone'           => $timezone,
 			'slots_json'         => wp_json_encode( $slots ),
@@ -88,6 +97,14 @@ final class SC_EI_Workflow_Repository {
 			'selected_start_utc' => null,
 			'selected_end_utc'   => null,
 			'teams_url'          => $teams_url,
+			'calendar_provider'  => SC_EI_Calendar_Schema::sanitize_provider( (string) ( $input['calendar_provider'] ?? 'manual' ) ),
+			'external_calendar_reference' => sanitize_text_field( (string) ( $input['external_calendar_reference'] ?? '' ) ),
+			'previous_start_utc' => null,
+			'previous_end_utc'   => null,
+			'reschedule_count'   => 0,
+			'last_rescheduled_at'=> null,
+			'last_rescheduled_by'=> null,
+			'join_url_revoked_at'=> null,
 			'graph_sync_status'  => 'not_requested',
 			'graph_transaction_id'=> '',
 			'graph_event_id'     => '',
@@ -123,6 +140,14 @@ final class SC_EI_Workflow_Repository {
 			'completed_at'       => null,
 			'canceled_at'        => null,
 			'cancellation_reason'=> '',
+			'post_meeting_internal_notes' => '',
+			'post_meeting_sender_summary' => '',
+			'decisions'          => '',
+			'open_questions'     => '',
+			'follow_up_owner_user_id' => null,
+			'follow_up_due_at'   => null,
+			'follow_up_task_id'  => null,
+			'no_show_at'         => null,
 			'row_version'        => 0,
 			'created_by'         => $actor_user_id,
 			'created_at'         => $now,
@@ -318,6 +343,9 @@ final class SC_EI_Workflow_Repository {
 		}
 
 		$new = self::find_meeting_offer( $id );
+		if ( $new && 'scheduled' === (string) $new['status'] && class_exists( 'SC_EI_Calendar_Repository' ) ) {
+			SC_EI_Calendar_Repository::schedule_reminders( $id );
+		}
 		$inquiry = SC_EI_Inquiry_Repository::find( absint( $offer['inquiry_id'] ) );
 		if ( $inquiry ) {
 			$inquiry_data = array();
@@ -409,6 +437,9 @@ final class SC_EI_Workflow_Repository {
 			);
 		}
 		self::record_event( absint( $offer['inquiry_id'] ), 'staff', $actor_user_id, 'meeting', $id, 'meeting_finalized', $offer['status'], 'scheduled', array( 'automatic_calendar' => false ) );
+		if ( class_exists( 'SC_EI_Calendar_Repository' ) ) {
+			SC_EI_Calendar_Repository::schedule_reminders( $id );
+		}
 		SC_EI_Portal_Repository::create_portal_message(
 			absint( $offer['inquiry_id'] ),
 			'outbound',
@@ -441,6 +472,9 @@ final class SC_EI_Workflow_Repository {
 		$data = array(
 			'status'              => $status,
 			'cancellation_reason' => 'canceled' === $status ? $reason : $offer['cancellation_reason'],
+			'teams_url'           => 'canceled' === $status ? '' : $offer['teams_url'],
+			'graph_join_url'      => 'canceled' === $status ? '' : $offer['graph_join_url'],
+			'join_url_revoked_at' => 'canceled' === $status ? $now : $offer['join_url_revoked_at'],
 			'graph_sync_status'   => ( 'canceled' === $status && ! empty( $offer['graph_event_id'] ) && empty( $offer['graph_deleted_at'] ) )
 				? 'cancel_required'
 				: $offer['graph_sync_status'],
@@ -1001,6 +1035,7 @@ final class SC_EI_Workflow_Repository {
 			),
 			'events'           => self::events_for_inquiry( $inquiry_id, 2000 ),
 			'microsoft_graph'  => SC_EI_Graph_Repository::export_for_inquiry( $inquiry_id ),
+			'calendar_coordination' => class_exists( 'SC_EI_Calendar_Repository' ) ? SC_EI_Calendar_Repository::export_for_inquiry( $inquiry_id ) : array(),
 		);
 	}
 
@@ -1035,7 +1070,8 @@ final class SC_EI_Workflow_Repository {
 			)
 		);
 		$graph = SC_EI_Graph_Repository::redact_for_privacy( $inquiry_id, $now );
-		return false !== $meetings && false !== $proposals && false !== $events && $graph;
+		$calendar = ! class_exists( 'SC_EI_Calendar_Repository' ) || SC_EI_Calendar_Repository::redact_for_privacy( $inquiry_id, $now );
+		return false !== $meetings && false !== $proposals && false !== $events && $graph && $calendar;
 	}
 
 	public static function expire_stale(): array {
@@ -1312,7 +1348,7 @@ final class SC_EI_Workflow_Repository {
 	}
 
 	private static function meeting_integer_fields(): array {
-		return array( 'inquiry_id', 'access_id', 'duration_minutes', 'graph_attempt_count', 'published_by', 'finalized_by', 'row_version', 'created_by' );
+		return array( 'inquiry_id', 'access_id', 'duration_minutes', 'graph_attempt_count', 'published_by', 'finalized_by', 'reschedule_count', 'last_rescheduled_by', 'follow_up_owner_user_id', 'follow_up_task_id', 'row_version', 'created_by' );
 	}
 
 	private static function proposal_integer_fields(): array {

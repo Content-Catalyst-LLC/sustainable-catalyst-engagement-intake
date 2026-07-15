@@ -3,11 +3,11 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-VERSION="1.2.1"
+VERSION="1.3.0"
 SLUG="sustainable-catalyst-engagement-intake"
 REPO_ROOT="${SLUG}-v${VERSION}-repo"
 DIST="${ROOT}/dist"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v121-package.XXXXXX")"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v130-package.XXXXXX")"
 TEST_LOG="${WORK}/tests.log"
 
 cleanup() { rm -rf "$WORK"; }
@@ -32,7 +32,7 @@ if command -v node >/dev/null 2>&1; then
 fi
 
 bash -n "$0"
-bash -n PUSH_ENGAGEMENT_INTAKE_V121_CLEAN.sh
+bash -n PUSH_ENGAGEMENT_INTAKE_V130_CLEAN.sh
 python3 -m json.tool composer.json >/dev/null
 
 printf 'Scanning for common secret material...\n'
@@ -59,17 +59,17 @@ for path in sorted(root.rglob('*')):
 manifest = {
     'name': 'Sustainable Catalyst Contact and Engagement Platform',
     'version': version,
-    'release': 'Support Operations and Cross-Product Reliability Patch',
+    'release': 'Microsoft Teams and Calendar Coordination',
     'plugin_slug': 'sustainable-catalyst-engagement-intake',
     'text_domain': 'sustainable-catalyst-engagement-intake',
     'requires_wordpress': '6.5',
     'requires_php': '8.1',
-    'database_version': '1.2.0',
+    'database_version': '1.3.0',
     'schemas': {
         'review': '1.0.0', 'communication': '1.0.0', 'privacy': '1.0.0', 'fit': '1.0.0',
-        'portal': '1.4.0', 'workflow': '1.1.0', 'graph': '1.0.0', 'engagement': '1.1.0',
-        'analytics': '1.0.0', 'hardening': '1.0.0', 'workflow_core': '1.0.0', 'platform': '1.2.1',
-        'lifecycle': '1.0.0', 'support': '1.0.1'
+        'portal': '1.5.0', 'workflow': '1.2.0', 'graph': '1.0.0', 'engagement': '1.1.0',
+        'analytics': '1.0.0', 'hardening': '1.0.0', 'workflow_core': '1.0.0', 'platform': '1.3.0',
+        'lifecycle': '1.0.0', 'support': '1.0.1', 'calendar': '1.0.0'
     },
     'migration_keys': [
         'v1_0_0_unified_contact_engagement_platform',
@@ -78,7 +78,8 @@ manifest = {
         'v1_1_0_advisory_operations_engagement_lifecycle',
         'v1_1_1_inquiry_persistence_lifecycle_reliability',
         'v1_2_0_support_operations_product_intelligence',
-        'v1_2_1_support_operations_cross_product_reliability'
+        'v1_2_1_support_operations_cross_product_reliability',
+        'v1_3_0_microsoft_teams_calendar_coordination'
     ],
     'recommended_shortcode': '[sc_contact_engagement_platform]',
     'routed_entries': [
@@ -113,7 +114,10 @@ manifest = {
         'stable typed handoff creation and replay idempotency',
         'Knowledge Base, known-issue, Feature Suggestion, release, and receipt relationships',
         'Sender Portal support allowlist isolation',
-        'support reliability artifact cleanup'
+        'support reliability artifact cleanup',
+        'calendar schema and migration contract', 'real Teams meeting invitation and slot acceptance',
+        'sender-safe calendar projection', 'rescheduling history and reminder idempotency',
+        'meeting cancellation and join-link revocation', 'calendar artifact cleanup'
     ],
     'lifecycle': {
         'stages': ['new_inquiry', 'under_review', 'needs_information', 'qualified', 'meeting_requested',
@@ -146,6 +150,22 @@ manifest = {
         'registered_source_systems': True,
         'recoverable_public_case_persistence': True
     },
+    'calendar_coordination': {
+        'schema': 'sc-calendar-coordination/1.0',
+        'tables': ['meeting_offers', 'meeting_reminders'],
+        'meeting_types': ['advisory_discovery', 'ai_assurance_review', 'support_troubleshooting',
+            'research_collaboration', 'institutional', 'media_interview', 'workshop_planning',
+            'proposal_review', 'engagement_review', 'project_closeout', 'other'],
+        'provider': ['manual', 'microsoft_graph'],
+        'public_booking': False,
+        'automatic_reminder_sending': False,
+        'sender_safe_projection': True,
+        'explicit_timezone_required': True,
+        'canceled_links_revoked': True,
+        'reschedule_history': True,
+        'reminder_idempotency': True,
+        'post_meeting_follow_up': True
+    },
     'pilot_checklist': [
         'general inquiry', 'advisory inquiry', 'AI Assurance inquiry', 'private upload',
         'administrative notification', 'sender acknowledgment', 'portal isolation',
@@ -154,7 +174,7 @@ manifest = {
     'boundaries': {
         'automatic_launch': False, 'automatic_acceptance': False, 'automatic_fit_decision': False,
         'automatic_proposal': False, 'automatic_contract': False, 'automatic_activation': False,
-        'automatic_payment': False, 'arbitrary_webhook_delivery': False,
+        'automatic_payment': False, 'automatic_meeting_booking': False, 'automatic_meeting_reminders': False, 'arbitrary_webhook_delivery': False,
         'unverified_inbound_commands': False
     },
     'validation': {

@@ -203,6 +203,7 @@ final class SC_EI_Pilot_Operations {
 		$hardening = SC_EI_Hardening_Repository::metrics();
 		$lifecycle = SC_EI_Lifecycle_Repository::metrics();
 		$support = SC_EI_Support_Repository::metrics();
+		$calendar = SC_EI_Calendar_Repository::metrics();
 		$blockers = array();
 		if ( absint( $communications['failed'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d failed communication(s)', absint( $communications['failed'] ) );
 		if ( absint( $communications['follow_up_due'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d overdue follow-up(s)', absint( $communications['follow_up_due'] ) );
@@ -218,6 +219,10 @@ final class SC_EI_Pilot_Operations {
 		if ( absint( $lifecycle['overdue_tasks'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d overdue lifecycle task(s)', absint( $lifecycle['overdue_tasks'] ) );
 		if ( absint( $lifecycle['next_actions_due'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d lifecycle next action(s) due', absint( $lifecycle['next_actions_due'] ) );
 		if ( absint( $support['high_priority'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d high-priority product support case(s) unresolved', absint( $support['high_priority'] ) );
+		if ( absint( $calendar['follow_up_overdue'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d overdue meeting follow-up(s) without a task', absint( $calendar['follow_up_overdue'] ) );
+		if ( absint( $calendar['graph_reconcile_due'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d Microsoft Graph meeting reconciliation action(s) due', absint( $calendar['graph_reconcile_due'] ) );
+		if ( absint( $calendar['missing_timezone'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d scheduled meeting(s) missing an explicit timezone', absint( $calendar['missing_timezone'] ) );
+		if ( absint( $calendar['canceled_active_link'] ?? 0 ) > 0 ) $blockers[] = sprintf( '%d canceled meeting(s) retain an active join link', absint( $calendar['canceled_active_link'] ) );
 		return array(
 			'inquiries' => $inquiry,
 			'communications' => $communications,
@@ -226,6 +231,7 @@ final class SC_EI_Pilot_Operations {
 			'hardening' => $hardening,
 			'lifecycle' => $lifecycle,
 			'support' => $support,
+			'calendar' => $calendar,
 			'blockers' => $blockers,
 			'clear' => empty( $blockers ),
 			'generated_at' => current_time( 'mysql', true ),

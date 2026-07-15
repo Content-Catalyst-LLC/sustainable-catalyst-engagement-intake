@@ -29,6 +29,7 @@ final class SC_EI_Platform_Repository {
 		self::record_launch_migration( $stored_version );
 		self::record_persistence_patch_migration( $stored_version );
 		SC_EI_Support_Repository::record_migration( $stored_version );
+		SC_EI_Calendar_Repository::record_migration( (string) get_option( 'sc_ei_calendar_schema_version_previous', '' ) );
 		self::schedule_all();
 	}
 
@@ -299,8 +300,10 @@ final class SC_EI_Platform_Repository {
 		$inquiry_columns = SC_EI_Database::inquiry_columns_exist();
 		$lifecycle_columns = SC_EI_Database::lifecycle_columns_exist();
 		$support_columns = SC_EI_Database::support_columns_exist();
+		$calendar_columns = SC_EI_Database::calendar_columns_exist();
 		$lifecycle_metrics = SC_EI_Lifecycle_Repository::metrics();
 		$support_metrics = SC_EI_Support_Repository::metrics();
+		$calendar_metrics = SC_EI_Calendar_Repository::metrics();
 		$hardening = SC_EI_Hardening_Repository::metrics();
 		$core = SC_EI_Workflow_Core_Repository::metrics();
 		$portal_url = self::effective_url( 'platform_portal_page_url', 'portal_page_url' );
@@ -330,6 +333,7 @@ final class SC_EI_Platform_Repository {
 		$checks[] = self::check( 'inquiry_columns', 'data', __( 'Inquiry persistence schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $inquiry_columns, true ), true, sprintf( '%d/%d', count( array_filter( $inquiry_columns ) ), count( $inquiry_columns ) ), 'repair_database' );
 		$checks[] = self::check( 'lifecycle_columns', 'data', __( 'Advisory lifecycle schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $lifecycle_columns, true ), true, sprintf( '%d/%d', count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ) ), 'repair_database' );
 		$checks[] = self::check( 'support_columns', 'data', __( 'Product support operations schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $support_columns, true ), true, sprintf( '%d/%d', count( array_filter( $support_columns ) ), count( $support_columns ) ), 'repair_database' );
+		$checks[] = self::check( 'calendar_columns', 'data', __( 'Microsoft Teams and calendar-coordination schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $calendar_columns, true ), true, sprintf( '%d/%d', count( array_filter( $calendar_columns ) ), count( $calendar_columns ) ), 'repair_database' );
 		$checks[] = self::check( 'migration_journal', 'data', __( 'v1.0 base migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::MIGRATION_KEY ), true, self::MIGRATION_KEY, 'verify_migration' );
 		$checks[] = self::check( 'patch_migration_journal', 'data', __( 'v1.0.2 upgrade journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::PATCH_MIGRATION_KEY ), true, self::PATCH_MIGRATION_KEY, 'verify_patch_migration' );
 		$checks[] = self::check( 'launch_migration_journal', 'data', __( 'v1.0.3 launch-hardening journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::LAUNCH_MIGRATION_KEY ), true, self::LAUNCH_MIGRATION_KEY, 'verify_launch_migration' );
@@ -337,9 +341,12 @@ final class SC_EI_Platform_Repository {
 		$checks[] = self::check( 'persistence_patch_migration_journal', 'data', __( 'v1.1.1 inquiry-persistence reliability journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::PERSISTENCE_PATCH_MIGRATION_KEY ), true, self::PERSISTENCE_PATCH_MIGRATION_KEY, 'verify_persistence_patch_migration' );
 		$checks[] = self::check( 'support_migration_journal', 'data', __( 'v1.2.0 support-operations migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Support_Repository::MIGRATION_KEY ), true, SC_EI_Support_Repository::MIGRATION_KEY, 'verify_support_migration' );
 		$checks[] = self::check( 'support_reliability_patch', 'data', __( 'v1.2.1 support reliability migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Support_Repository::PATCH_MIGRATION_KEY ), true, SC_EI_Support_Repository::PATCH_MIGRATION_KEY, 'verify_support_reliability_patch' );
+		$checks[] = self::check( 'calendar_migration_journal', 'data', __( 'v1.3.0 Teams and calendar-coordination migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Calendar_Repository::MIGRATION_KEY ), true, SC_EI_Calendar_Repository::MIGRATION_KEY, 'verify_calendar_migration' );
 		$checks[] = self::check( 'support_handoff_contract', 'integrations', __( 'Product-support handoff privacy contract', 'sustainable-catalyst-engagement-intake' ), SC_EI_Support_Schema::HANDOFF_SCHEMA === 'sc-product-support-handoff/1.0' && is_wp_error( SC_EI_Support_Schema::signal_payload( array( 'product' => 'workbench', 'email' => 'private@example.com' ) ) ), true, SC_EI_Support_Schema::HANDOFF_SCHEMA, 'review_support' );
 		$checks[] = self::check( 'support_handoff_reliability', 'integrations', __( 'Cross-product handoff reliability', 'sustainable-catalyst-engagement-intake' ), 0 === absint( $support_metrics['handoff_reliability_open'] ?? 0 ), true, sprintf( '%d historical failure(s); last failure %s; last success %s', absint( $support_metrics['failed_handoffs'] ?? 0 ), (string) get_option( 'sc_ei_support_last_handoff_failure_at', 'not recorded' ), (string) get_option( 'sc_ei_support_last_handoff_at', 'not recorded' ) ), 'review_support' );
 		$checks[] = self::check( 'support_product_context', 'operations', __( 'Open support product context', 'sustainable-catalyst-engagement-intake' ), 0 === absint( $support_metrics['missing_product'] ?? 0 ), true, sprintf( '%d missing product; %d missing version; %d missing component', absint( $support_metrics['missing_product'] ?? 0 ), absint( $support_metrics['missing_version'] ?? 0 ), absint( $support_metrics['missing_component'] ?? 0 ) ), 'review_support' );
+		$calendar_integrity_ok = 0 === absint( $calendar_metrics['missing_timezone'] ?? 0 ) && 0 === absint( $calendar_metrics['canceled_active_link'] ?? 0 );
+		$checks[] = self::check( 'calendar_integrity', 'integrations', __( 'Calendar timezone and canceled-link integrity', 'sustainable-catalyst-engagement-intake' ), $calendar_integrity_ok, true, sprintf( '%d scheduled meeting(s) missing timezone; %d canceled meeting(s) retaining an active join link', absint( $calendar_metrics['missing_timezone'] ?? 0 ), absint( $calendar_metrics['canceled_active_link'] ?? 0 ) ), 'review_calendar' );
 		$storage_ok = ! empty( $storage['exists'] ) && ! empty( $storage['writable'] ) && ! empty( $storage['marker'] ) && ! empty( $storage['protection_files'] ) && empty( $storage['base_is_symlink'] );
 		$checks[] = self::check( 'protected_storage', 'security', __( 'Protected document storage', 'sustainable-catalyst-engagement-intake' ), $storage_ok, ! empty( $settings['platform_require_protected_storage'] ), (string) ( $storage['path'] ?? '' ), 'repair_storage' );
 		$https_ok = is_ssl() || SC_EI_Portal_Schema::secure_transport_available();
@@ -370,7 +377,7 @@ final class SC_EI_Platform_Repository {
 		$ready_for_production = 100 === $score && empty( $required_failures ) && empty( $warnings );
 
 		return array(
-			'schema'               => 'sc-unified-contact-engagement-platform-readiness/1.4',
+			'schema'               => 'sc-unified-contact-engagement-platform-readiness/1.5',
 			'generated_at'         => current_time( 'mysql', true ),
 			'plugin_version'       => SC_EI_VERSION,
 			'database_version'     => (string) get_option( 'sc_ei_db_version', '' ),
@@ -570,6 +577,7 @@ final class SC_EI_Platform_Repository {
 			'fit'           => SC_EI_FIT_SCHEMA_VERSION,
 			'portal'        => SC_EI_PORTAL_SCHEMA_VERSION,
 			'workflow'      => SC_EI_WORKFLOW_SCHEMA_VERSION,
+			'calendar'      => SC_EI_CALENDAR_SCHEMA_VERSION,
 			'graph'         => SC_EI_GRAPH_SCHEMA_VERSION,
 			'engagement'    => SC_EI_ENGAGEMENT_SCHEMA_VERSION,
 			'analytics'     => SC_EI_ANALYTICS_SCHEMA_VERSION,
@@ -592,6 +600,8 @@ final class SC_EI_Platform_Repository {
 			'automatic_engagement_activation'=> false,
 			'automatic_project_provisioning' => false,
 			'automatic_payment'              => false,
+			'public_calendar_booking'         => false,
+			'automatic_meeting_reminders'     => false,
 			'unverified_external_commands'   => false,
 			'arbitrary_webhook_delivery'     => false,
 		);
@@ -634,6 +644,7 @@ final class SC_EI_Platform_Repository {
 		SC_EI_Notification_Service::schedule();
 		SC_EI_Portal_Repository::schedule();
 		SC_EI_Workflow_Repository::schedule();
+		SC_EI_Calendar_Repository::schedule();
 		SC_EI_Graph_Repository::schedule();
 		SC_EI_Analytics_Repository::schedule();
 		SC_EI_Hardening_Repository::schedule();
@@ -653,7 +664,7 @@ final class SC_EI_Platform_Repository {
 				break;
 			case 'repair_database':
 				SC_EI_Database::maybe_upgrade();
-				$result = ! in_array( false, SC_EI_Database::tables_exist(), true ) && ! in_array( false, SC_EI_Database::platform_columns_exist(), true ) && ! in_array( false, SC_EI_Database::inquiry_columns_exist(), true ) && ! in_array( false, SC_EI_Database::lifecycle_columns_exist(), true ) && ! in_array( false, SC_EI_Database::support_columns_exist(), true );
+				$result = ! in_array( false, SC_EI_Database::tables_exist(), true ) && ! in_array( false, SC_EI_Database::platform_columns_exist(), true ) && ! in_array( false, SC_EI_Database::inquiry_columns_exist(), true ) && ! in_array( false, SC_EI_Database::lifecycle_columns_exist(), true ) && ! in_array( false, SC_EI_Database::support_columns_exist(), true ) && ! in_array( false, SC_EI_Database::calendar_columns_exist(), true );
 				break;
 			case 'verify_migration':
 				$result = self::run_migrations( (string) get_option( 'sc_ei_version_previous', '' ) );
@@ -673,6 +684,9 @@ final class SC_EI_Platform_Repository {
 				break;
 			case 'verify_support_reliability_patch':
 				$result = SC_EI_Support_Repository::record_patch_migration( (string) get_option( 'sc_ei_version_previous', '' ) );
+				break;
+			case 'verify_calendar_migration':
+				$result = SC_EI_Calendar_Repository::record_migration( (string) get_option( 'sc_ei_calendar_schema_version_previous', '' ) );
 				break;
 			case 'repair_storage':
 				$result = SC_EI_Storage::repair();
@@ -698,6 +712,7 @@ final class SC_EI_Platform_Repository {
 		$jobs = array(
 			'portal_cleanup'       => array( 'hook' => 'sc_ei_portal_cleanup', 'callback' => array( 'SC_EI_Portal_Repository', 'handle_cleanup' ) ),
 			'workflow_cleanup'     => array( 'hook' => 'sc_ei_workflow_cleanup', 'callback' => array( 'SC_EI_Workflow_Repository', 'handle_cleanup' ) ),
+			'calendar_reminders'    => array( 'hook' => SC_EI_Calendar_Repository::REMINDER_HOOK, 'callback' => array( 'SC_EI_Calendar_Repository', 'process_due_reminders' ) ),
 			'retention'            => array( 'hook' => SC_EI_Retention::CRON_HOOK, 'callback' => array( 'SC_EI_Retention', 'cleanup' ) ),
 			'notifications'        => array( 'hook' => SC_EI_Notification_Service::CRON_HOOK, 'callback' => array( 'SC_EI_Notification_Service', 'run_reminders' ) ),
 			'graph_catchup'        => array( 'hook' => 'sc_ei_graph_catchup', 'callback' => array( 'SC_EI_Graph_Repository', 'handle_catchup' ) ),
@@ -838,6 +853,8 @@ final class SC_EI_Platform_Repository {
 			'verify_lifecycle_migration' => __( 'Verify v1.1.0 lifecycle migration', 'sustainable-catalyst-engagement-intake' ),
 			'verify_support_migration' => __( 'Verify v1.2.0 support migration', 'sustainable-catalyst-engagement-intake' ),
 			'verify_support_reliability_patch' => __( 'Verify v1.2.1 support reliability patch', 'sustainable-catalyst-engagement-intake' ),
+			'verify_calendar_migration' => __( 'Verify v1.3.0 calendar migration', 'sustainable-catalyst-engagement-intake' ),
+			'review_calendar'       => __( 'Open Calendar Coordination', 'sustainable-catalyst-engagement-intake' ),
 			'review_support'        => __( 'Open Support Cases', 'sustainable-catalyst-engagement-intake' ),
 			'review_lifecycle'      => __( 'Open Advisory Lifecycle', 'sustainable-catalyst-engagement-intake' ),
 			'configure_pages'       => __( 'Configure public pages', 'sustainable-catalyst-engagement-intake' ),

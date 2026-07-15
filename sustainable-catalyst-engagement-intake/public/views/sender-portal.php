@@ -247,6 +247,10 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 							<span class="sc-ei-portal-workflow-state"><?php echo esc_html( SC_EI_Workflow_Schema::label( SC_EI_Workflow_Schema::meeting_statuses(), $meeting['status'] ) ); ?></span>
 						</header>
 						<p><?php echo nl2br( esc_html( $meeting['purpose'] ) ); ?></p>
+						<?php if ( ! empty( $meeting['meeting_type'] ) ) : ?><p class="sc-ei-portal__eyebrow"><?php echo esc_html( SC_EI_Calendar_Schema::label( SC_EI_Calendar_Schema::meeting_types(), (string) $meeting['meeting_type'] ) ); ?></p><?php endif; ?>
+						<?php if ( ! empty( $meeting['agenda'] ) ) : ?><div class="sc-ei-portal-notice"><strong><?php esc_html_e( 'Agenda', 'sustainable-catalyst-engagement-intake' ); ?></strong><p><?php echo nl2br( esc_html( $meeting['agenda'] ) ); ?></p></div><?php endif; ?>
+						<?php if ( ! empty( $meeting['preparation_requests'] ) ) : ?><div class="sc-ei-portal-notice sc-ei-portal-notice--warning"><strong><?php esc_html_e( 'Preparation requested', 'sustainable-catalyst-engagement-intake' ); ?></strong><p><?php echo nl2br( esc_html( $meeting['preparation_requests'] ) ); ?></p></div><?php endif; ?>
+						<?php if ( ! empty( $meeting['sender_summary'] ) ) : ?><p><?php echo nl2br( esc_html( $meeting['sender_summary'] ) ); ?></p><?php endif; ?>
 						<dl class="sc-ei-portal-details">
 							<dt><?php esc_html_e( 'Duration', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( absint( $meeting['duration_minutes'] ) . ' minutes' ); ?></dd>
 							<dt><?php esc_html_e( 'Timezone', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $meeting['timezone'] ); ?></dd>
@@ -279,9 +283,14 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 							<?php endif; ?>
 						<?php elseif ( 'alternative_requested' === $meeting['status'] ) : ?>
 							<div class="sc-ei-portal-notice sc-ei-portal-notice--warning"><strong><?php esc_html_e( 'Alternative requested.', 'sustainable-catalyst-engagement-intake' ); ?></strong> <?php echo nl2br( esc_html( $meeting['alternative_request'] ) ); ?></div>
+						<?php elseif ( 'completed' === $meeting['status'] ) : ?>
+							<div class="sc-ei-portal-notice sc-ei-portal-notice--success"><strong><?php esc_html_e( 'Meeting completed.', 'sustainable-catalyst-engagement-intake' ); ?></strong><?php if ( ! empty( $meeting['post_meeting_sender_summary'] ) ) : ?><p><?php echo nl2br( esc_html( $meeting['post_meeting_sender_summary'] ) ); ?></p><?php endif; ?></div>
+						<?php elseif ( 'canceled' === $meeting['status'] ) : ?>
+							<div class="sc-ei-portal-notice sc-ei-portal-notice--warning"><strong><?php esc_html_e( 'Meeting canceled.', 'sustainable-catalyst-engagement-intake' ); ?></strong></div>
 						<?php elseif ( 'declined' === $meeting['status'] ) : ?>
 							<p><?php esc_html_e( 'You declined this meeting offer.', 'sustainable-catalyst-engagement-intake' ); ?></p>
 						<?php endif; ?>
+						<?php if ( ! empty( $meeting['sender_next_step'] ) ) : ?><div class="sc-ei-portal-notice"><strong><?php esc_html_e( 'Next step', 'sustainable-catalyst-engagement-intake' ); ?></strong><p><?php echo nl2br( esc_html( $meeting['sender_next_step'] ) ); ?></p></div><?php endif; ?>
 					</article>
 				<?php endforeach; ?>
 			</div>

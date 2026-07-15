@@ -390,6 +390,23 @@ final class SC_EI_Privacy {
 							'status'             => 'Meeting state',
 							'title'              => 'Meeting title',
 							'purpose'            => 'Meeting purpose',
+							'meeting_type'       => 'Meeting type',
+							'organizer_name'     => 'Organizer name',
+							'organizer_email'    => 'Organizer email',
+							'participant_emails_json' => 'Participant emails',
+							'agenda'             => 'Meeting agenda',
+							'preparation_requests' => 'Preparation requests',
+							'sender_summary'     => 'Approved sender summary',
+							'sender_next_step'   => 'Approved sender next step',
+							'calendar_provider'  => 'Calendar provider',
+							'external_calendar_reference' => 'External calendar reference',
+							'previous_start_utc' => 'Previous start UTC',
+							'previous_end_utc'   => 'Previous end UTC',
+							'reschedule_count'   => 'Reschedule count',
+							'last_rescheduled_at'=> 'Last rescheduled at',
+							'join_url_revoked_at'=> 'Join URL revoked at',
+							'post_meeting_sender_summary' => 'Approved post-meeting summary',
+							'follow_up_due_at'   => 'Follow-up due at',
 							'duration_minutes'   => 'Duration in minutes',
 							'timezone'           => 'Timezone',
 							'slots_json'         => 'Proposed times',
@@ -419,6 +436,27 @@ final class SC_EI_Privacy {
 						)
 					),
 				);
+			}
+			$calendar = SC_EI_Calendar_Repository::export_for_inquiry( $inquiry_id );
+			foreach ( (array) ( $calendar['meetings'] ?? array() ) as $calendar_meeting ) {
+				foreach ( (array) ( $calendar_meeting['reminders'] ?? array() ) as $reminder ) {
+					$data[] = array(
+						'group_id'    => 'sc-engagement-intake-meeting-reminders',
+						'group_label' => __( 'Engagement Intake Meeting Reminder Records', 'sustainable-catalyst-engagement-intake' ),
+						'item_id'     => 'sc-ei-meeting-reminder-' . $reminder['id'],
+						'data'        => self::export_fields(
+							$reminder,
+							array(
+								'reminder_type' => 'Reminder type',
+								'status' => 'Reminder state',
+								'due_at' => 'Due at',
+								'sent_at' => 'Sent at',
+								'canceled_at' => 'Canceled at',
+								'created_at' => 'Created at',
+							),
+						),
+					);
+				}
 			}
 			foreach ( (array) ( $workflow['proposals'] ?? array() ) as $proposal ) {
 				$data[] = array(

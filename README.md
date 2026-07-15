@@ -1,132 +1,88 @@
 # Sustainable Catalyst Contact and Engagement Platform
 
-**Version:** 1.2.1  
-**Release:** Support Operations and Cross-Product Reliability Patch
+**Version:** 1.3.0
+**Release:** Microsoft Teams and Calendar Coordination
 
-v1.2.1 hardens the private support layer introduced in v1.2.0. Public support intake now creates the canonical inquiry and linked support case as one recoverable operation; failed case persistence rolls back only the newly created inquiry. Cross-product handoffs validate registered products and sources, use stable handoff identifiers, replay safely, preserve typed Knowledge Base, known-issue, Feature Suggestion, and release relationships, and reject personal or private signal fields.
+v1.3.0 adds a governed scheduling and meeting-operations layer over the platform's existing inquiry, advisory, support, Sender Portal, and Microsoft Graph foundations. Meetings remain review-first: the public site does not expose unrestricted calendar availability, and no meeting, reminder, Graph event, lifecycle transition, or follow-up is created without an authorized workflow action.
 
-The public Knowledge Base and feature-feedback system remain in Feature Suggestions. Contact and Engagement owns private cases, sender communication, diagnostic files, internal reasoning, resolution, and Sender Portal continuity. The integration contract is `sc-product-support-handoff/1.0`.
-
-## Product support model
+## Calendar coordination model
 
 ```text
-New Support Request
-→ Triage / Needs Information
-→ Reproducing / Known Issue
-→ Workaround Provided / Fix Planned
-→ Resolved
-→ Closed
+Meeting considered
+→ availability requested
+→ time proposed
+→ sender accepts
+→ Teams meeting confirmed
+→ reviewed reminders
+→ meeting completed or canceled
+→ follow-up recorded
 ```
 
-Every transition is a deliberate administrator action with authorization, current-state validation, typed confirmation, and an audit event. The support repository does not send mail, publish a fix, promise a release date, or mutate a Feature Suggestion automatically.
+The release supports advisory discovery, Sustainable AI Assurance review, product-support troubleshooting, research collaboration, institutional discussion, media interviews, workshops, proposal review, engagement review, project closeout, and other approved meeting types.
 
-## Support workspace
-
-```text
-Contact & Engagement → Support Cases
-```
-
-The workspace includes product and version context, environment details, reproduction evidence, severity, assignment, sender-safe updates, governed stages, typed product relationships, privacy-safe intelligence signals, and an audit timeline.
-
-## Public support entry
+## Administration
 
 ```text
-[sc_support_request]
-```
-
-or:
-
-```text
-/contact/?engagement=support
-```
-
-## Lifecycle model
-
-```text
-New Inquiry
-→ Under Review
-→ Needs Information / Qualified
-→ Meeting Requested / Meeting Scheduled
-→ Proposal in Preparation / Proposal Sent
-→ Accepted
-→ Active Engagement
-→ Completed / Declined / Archived
-```
-
-All stage changes are explicit administrator actions. They require authorization, a nonce, current-state validation, a typed confirmation, and—when configured—a reason and assigned owner. The platform does not automatically accept, reject, qualify, schedule, publish, contract, or activate an engagement.
-
-## Preserved v1.1.0 records
-
-The nondestructive database upgrade adds:
-
-```text
-{prefix}sc_ei_lifecycle_events
-{prefix}sc_ei_lifecycle_notes
-{prefix}sc_ei_lifecycle_tasks
-```
-
-Existing inquiries receive lifecycle fields and are backfilled from their current legacy status. Existing inquiry, review, portal, meeting, proposal, document, privacy, analytics, and engagement records remain intact.
-
-## Advisory Lifecycle workspace
-
-```text
-Contact & Engagement → Advisory Lifecycle
+Contact & Engagement → Calendar Coordination
 ```
 
 The workspace provides:
 
-- stage, owner, priority, next action, and due-date management
-- structured qualification and readiness context
-- internal-only notes, including sensitive-note marking
-- assigned follow-up tasks with idempotent due reminders
-- linked Microsoft Teams offers, proposals, and engagements
-- audited transition and activity history
-- sender-facing summary and next-step controls
-- stage, source, service, timing, qualification, proposal, and acceptance metrics
+- meeting type, purpose, organizer, and participant context
+- explicit IANA time zones and UTC scheduling
+- proposed, accepted, scheduled, completed, canceled, expired, and superseded states
+- agenda and preparation requests
+- Microsoft Teams join URLs and Microsoft Graph calendar references
+- rescheduling history and duplicate-event safeguards
+- reviewable invitation, 24-hour, one-hour, reschedule, cancellation, and follow-up reminders
+- post-meeting internal notes, sender-visible summary, decisions, open questions, and follow-up tasks
+- sender-safe status and next-step controls
+
+## Human-control boundary
+
+The platform does not expose an unrestricted public booking calendar. It does not automatically create or delete Microsoft Graph events, send meeting reminders, schedule a sender, accept an engagement, resolve a support case, or publish internal meeting notes. Background processing only marks due reminder records for authorized review.
 
 ## Sender Portal boundary
 
-Portal users can see only deliberately published information:
+Authorized senders can see only approved meeting information:
 
-- a safe public stage label
-- an approved sender-facing summary
-- an approved next step
-- existing authorized meetings, proposals, documents, and messages
+- meeting number, type, title, purpose, and status
+- confirmed date, time, and time zone
+- active approved Microsoft Teams link
+- approved agenda and preparation requests
+- approved sender summary and next step
+- approved post-meeting summary
+- cancellation or rescheduling state
 
-Internal notes, qualification rationale, assignments, task details, scores, decision-authority assessments, and transition reasons are not rendered in the Sender Portal.
+Organizer email, participant lists, internal notes, decisions, open questions, Graph credentials, internal event references, and unreleased information remain private.
 
-## Advisory routes
+## Microsoft Graph boundary
 
-The canonical Contact page supports routed entry links without creating separate submission systems:
+Microsoft Graph remains optional. The local WordPress record is canonical for engagement context. Credentials remain encrypted in the existing connector layer, not in inquiry or meeting metadata. Human-confirmed operations use stable transaction identifiers, retry controls, reconciliation, and explicit cancellation handling.
 
-```text
-/contact/?engagement=advisory
-/contact/?engagement=ai-assurance
-/contact/?engagement=evidence-systems
-/contact/?engagement=knowledge-architecture
-/contact/?engagement=technical-storytelling
-/contact/?engagement=responsible-ai
-/contact/?engagement=collaboration
-/contact/?engagement=media
-/contact/?engagement=technical
-/contact/?engagement=partnership
-/contact/?engagement=workshop
-/contact/?engagement=monthly-advisory
-```
+## Database migration
+
+The nondestructive v1.3.0 migration:
+
+- expands the existing `{prefix}sc_ei_meeting_offers` table with calendar-coordination fields
+- adds `{prefix}sc_ei_meeting_reminders`
+- records `v1_3_0_microsoft_teams_calendar_coordination`
+- preserves inquiries, support cases, lifecycle records, portal records, documents, proposals, engagements, communications, and previous meeting offers
+
+Database version advances to `1.3.0`. Existing meetings receive safe defaults and remain available for review.
 
 ## Production gate
 
-v1.2.1 retains the v1.2.0 support model and adds patch-migration, atomic persistence, cross-product handoff-recovery, product-context, and historical failure-recovery evidence to the production gate. Production requires:
+Production requires:
 
-- 100% readiness
-- zero required failures and zero warnings
-- current v1.2.1 support-reliability patch, v1.2.0 support, v1.1.1 persistence-patch, and v1.1.0 lifecycle migration evidence
-- recent successful live validation
-- externally confirmed inbox delivery
-- completed controlled-pilot evidence
-- current database and protected-storage backup evidence
-- no critical events or operational blockers
-- no overdue lifecycle tasks or next actions
+- 100% readiness, zero required failures, and zero warnings
+- verified v1.3.0 database columns and migration evidence
+- scheduled calendar reminder job with its registered callback
+- no scheduled meeting without an explicit time zone
+- no canceled meeting retaining an active Teams or Graph join URL
+- no overdue calendar follow-up without a task
+- no unresolved Microsoft Graph reconciliation requirement
+- recent live validation, external inbox confirmation, backup attestation, and controlled-pilot evidence
 - typed human promotion to Production
 
 Repository tests do not replace validation on the live WordPress host.
@@ -134,14 +90,14 @@ Repository tests do not replace validation on the live WordPress host.
 ## Upgrade
 
 1. Back up the database and protected storage.
-2. Install the v1.2.1 ZIP over the existing plugin.
+2. Install the v1.3.0 ZIP over the existing plugin.
 3. Clear WordPress, object, host, CDN, browser, and PHP opcode caches.
 4. Open **Contact & Engagement → Platform Overview**.
-5. Complete database, v1.0–v1.1, and v1.2.0 support migration and v1.2.1 reliability-patch repairs if shown.
-6. Open **Contact & Engagement → Advisory Lifecycle** and **Support Cases** and inspect migrated records.
-7. Assign owners and resolve overdue next actions or tasks.
-8. Run Live Validation and repeat the controlled pilot where required.
-9. Record fresh backup, inbox, live-validation, and pilot evidence for v1.2.1.
+5. Run database and v1.3.0 calendar migration repairs if shown.
+6. Open **Calendar Coordination** and inspect existing meeting records.
+7. Run Live Validation and confirm the temporary meeting is created, scheduled, rescheduled, canceled, and cleaned up.
+8. Complete controlled advisory and support scheduling tests in the Sender Portal.
+9. Re-record version-bound backup, inbox, live-validation, and pilot evidence.
 10. Promote only after the gate returns 100%, zero failures, and zero warnings.
 
-See `docs/PRODUCT-SUPPORT-INTEGRATION.md`, `docs/MIGRATION-v1.2.0.md`, `docs/MIGRATION-v1.2.1.md`, `docs/ADVISORY-LIFECYCLE.md`, and `docs/RELEASE.md`.
+See `docs/MICROSOFT-TEAMS-CALENDAR-COORDINATION.md`, `docs/MIGRATION-v1.3.0.md`, `docs/MICROSOFT-GRAPH-RELIABILITY.md`, `docs/SENDER-PORTAL.md`, and `docs/RELEASE.md`.

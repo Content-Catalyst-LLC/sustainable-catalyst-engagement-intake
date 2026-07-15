@@ -12,6 +12,7 @@ $reviews    = file_get_contents( $plugin . '/includes/class-sc-ei-review-reposit
 $fit_repository = file_get_contents( $plugin . '/includes/class-sc-ei-fit-repository.php' );
 $portal_repository = file_get_contents( $plugin . '/includes/class-sc-ei-portal-repository.php' );
 $workflow_repository = file_get_contents( $plugin . '/includes/class-sc-ei-workflow-repository.php' );
+$calendar_repository = file_get_contents( $plugin . '/includes/class-sc-ei-calendar-repository.php' );
 $graph_repository = file_get_contents( $plugin . '/includes/class-sc-ei-graph-repository.php' );
 $engagement_repository = file_get_contents( $plugin . '/includes/class-sc-ei-engagement-repository.php' );
 $hardening_repository = file_get_contents( $plugin . '/includes/class-sc-ei-hardening-repository.php' );
@@ -178,6 +179,7 @@ foreach ( array(
 
 foreach ( array(
 	'sql_meeting_offers' => 'Meeting offer',
+	'sql_meeting_reminders' => 'Meeting reminder',
 	'sql_graph_operations' => 'Graph operation',
 	'sql_proposals' => 'Proposal',
 	'sql_proposal_versions' => 'Proposal version',
@@ -186,7 +188,7 @@ foreach ( array(
 	$columns = array_values( array_diff( schema_columns( $database, $variable ), array( 'id' ) ) );
 	$missing = array();
 	foreach ( $columns as $column ) {
-		$workflow_coverage = $workflow_repository . $graph_repository;
+		$workflow_coverage = $workflow_repository . $calendar_repository . $graph_repository;
 		if ( false === strpos( $workflow_coverage, "'" . $column . "'" ) ) {
 			$missing[] = $column;
 		}
@@ -281,7 +283,7 @@ if ( $missing_communication ) {
 }
 echo 'PASS: Communication schema operational coverage (' . count( $communication_columns ) . " fields)\n";
 
-foreach ( array( $inquiries, $attachments, $reviews, $fit_repository, $portal_repository, $workflow_repository, $graph_repository, $engagement_repository, $hardening_repository, $workflow_core_repository, $platform_repository, $communications, $templates, $privacy_repository, $policy_repository ) as $source ) {
+foreach ( array( $inquiries, $attachments, $reviews, $fit_repository, $portal_repository, $workflow_repository, $calendar_repository, $graph_repository, $engagement_repository, $hardening_repository, $workflow_core_repository, $platform_repository, $communications, $templates, $privacy_repository, $policy_repository ) as $source ) {
 	if ( false === strpos( $source, 'array_keys( $data )' ) && false === strpos( $source, 'array_keys( $fields )' ) ) {
 		fwrite( STDERR, "Repository insert/update formats are not key-derived.\n" );
 		exit( 1 );

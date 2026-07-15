@@ -78,6 +78,7 @@ final class SC_EI_Workflow_Admin {
 			$inquiry_id,
 			array(
 				'title'            => wp_unslash( $_POST['meeting_title'] ?? '' ),
+				'meeting_type'     => wp_unslash( $_POST['meeting_type'] ?? 'other' ),
 				'purpose'          => wp_unslash( $_POST['meeting_purpose'] ?? '' ),
 				'duration_minutes' => absint( $_POST['duration_minutes'] ?? 30 ),
 				'timezone'         => wp_unslash( $_POST['meeting_timezone'] ?? '' ),

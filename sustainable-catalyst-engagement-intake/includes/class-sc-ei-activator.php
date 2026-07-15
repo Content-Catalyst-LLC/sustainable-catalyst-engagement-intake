@@ -17,6 +17,7 @@ final class SC_EI_Activator {
 
 		$previous_version = (string) get_option( 'sc_ei_version', '' );
 		$previous_lifecycle_schema = (string) get_option( 'sc_ei_lifecycle_schema_version', '' );
+		$previous_calendar_schema = (string) get_option( 'sc_ei_calendar_schema_version', '' );
 		SC_EI_Database::install();
 		SC_EI_Capabilities::install();
 		SC_EI_Storage::ensure();
@@ -24,6 +25,7 @@ final class SC_EI_Activator {
 		SC_EI_Notification_Service::schedule();
 		SC_EI_Portal_Repository::schedule();
 		SC_EI_Workflow_Repository::schedule();
+		SC_EI_Calendar_Repository::schedule();
 		SC_EI_Graph_Repository::schedule();
 		SC_EI_Lifecycle_Repository::schedule();
 		SC_EI_Support_Repository::schedule();
@@ -39,6 +41,8 @@ final class SC_EI_Activator {
 		update_option( 'sc_ei_fit_schema_version', SC_EI_FIT_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_portal_schema_version', SC_EI_PORTAL_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_workflow_schema_version', SC_EI_WORKFLOW_SCHEMA_VERSION, false );
+		update_option( 'sc_ei_calendar_schema_version_previous', $previous_calendar_schema, false );
+		update_option( 'sc_ei_calendar_schema_version', SC_EI_CALENDAR_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_graph_schema_version', SC_EI_GRAPH_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_engagement_schema_version', SC_EI_ENGAGEMENT_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_lifecycle_schema_version_previous', $previous_lifecycle_schema, false );
@@ -58,10 +62,11 @@ final class SC_EI_Activator {
 		SC_EI_Lifecycle_Repository::record_migration( $previous_lifecycle_schema );
 		SC_EI_Support_Repository::record_migration( $previous_version );
 		SC_EI_Support_Repository::record_patch_migration( $previous_version );
+		SC_EI_Calendar_Repository::record_migration( $previous_calendar_schema );
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Sustainable Catalyst Contact and Engagement Platform v1.2.1 activated with atomic support intake, strict cross-product handoff validation, idempotent relationship and signal processing, expanded live validation, and the established advisory and production gates.',
+			'Sustainable Catalyst Contact and Engagement Platform v1.3.0 activated with governed Microsoft Teams scheduling, explicit calendar coordination, reminder evidence, rescheduling history, sender-safe meeting views, post-meeting follow-up, and the established support, advisory, and production gates.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}
@@ -71,6 +76,7 @@ final class SC_EI_Activator {
 		SC_EI_Notification_Service::unschedule();
 		SC_EI_Portal_Repository::unschedule();
 		SC_EI_Workflow_Repository::unschedule();
+		SC_EI_Calendar_Repository::unschedule();
 		SC_EI_Graph_Repository::unschedule();
 		SC_EI_Lifecycle_Repository::unschedule();
 		SC_EI_Support_Repository::unschedule();

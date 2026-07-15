@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.0 — Microsoft Teams and Calendar Coordination
+
+- Added a governed calendar-coordination layer over the existing meeting-offer and Microsoft Graph foundations.
+- Added explicit meeting types, organizers, participant lists, agendas, preparation requests, sender-safe summaries, related-document identifiers, and external calendar references.
+- Added explicit IANA time-zone handling, UTC storage, rescheduling history, duplicate-event protections, and cancellation link revocation.
+- Added reviewable, idempotent invitation, 24-hour, one-hour, reschedule, cancellation, and post-meeting reminders without automatic sender delivery.
+- Added post-meeting internal notes, sender-visible summaries, decisions, open questions, no-show state, and linked follow-up tasks.
+- Added Calendar Coordination administration and Sender Portal allowlist projection while excluding organizer details, participants, private notes, decisions, and Graph internals.
+- Added calendar records to privacy export, approved redaction, data inventory, readiness, cron, migration, uninstall, and operational-blocker handling.
+- Expanded Live Validation to exercise invitation, sender acceptance, scheduling, rescheduling, reminder idempotency, sender projection, cancellation, join-link revocation, and cleanup.
+- Advanced database version to 1.3.0, Portal schema to 1.5.0, Workflow schema to 1.2.0, Platform schema to 1.3.0, and Calendar schema to 1.0.0.
+
 ## 1.2.1 — Support Operations and Cross-Product Reliability Patch
 
 - Made public support intake persist the canonical inquiry and linked support case as a recoverable operation, with bounded rollback of only the newly created inquiry when case creation fails.

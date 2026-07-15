@@ -80,6 +80,7 @@ final class SC_EI_Admin {
 		SC_EI_Fit_Admin::submenu();
 		SC_EI_Portal_Admin::submenu();
 		SC_EI_Workflow_Admin::submenu();
+		SC_EI_Calendar_Admin::submenu();
 		SC_EI_Graph_Admin::submenu();
 		SC_EI_Lifecycle_Admin::submenu();
 		SC_EI_Support_Admin::submenu();
@@ -212,6 +213,7 @@ final class SC_EI_Admin {
 			SC_EI_Fit_Schema::default_settings(),
 			SC_EI_Portal_Schema::default_settings(),
 			SC_EI_Workflow_Schema::default_settings(),
+			SC_EI_Calendar_Schema::default_settings(),
 			SC_EI_Graph_Credentials::defaults(),
 			SC_EI_Engagement_Schema::default_settings(),
 			SC_EI_Lifecycle_Schema::default_settings(),
@@ -334,6 +336,17 @@ final class SC_EI_Admin {
 			'workflow_no_auto_calendar'          => 1,
 			'workflow_no_auto_contract'          => 1,
 			'workflow_no_auto_payment'           => 1,
+			'calendar_coordination_enabled'       => 1,
+			'calendar_default_timezone'           => SC_EI_Teams::valid_timezone( sanitize_text_field( (string) ( $value['calendar_default_timezone'] ?? $current['calendar_default_timezone'] ) ) ) ? sanitize_text_field( (string) ( $value['calendar_default_timezone'] ?? $current['calendar_default_timezone'] ) ) : ( wp_timezone_string() ?: 'America/Chicago' ),
+			'calendar_create_confirmation_record' => empty( $value['calendar_create_confirmation_record'] ) ? 0 : 1,
+			'calendar_create_24_hour_reminder'    => empty( $value['calendar_create_24_hour_reminder'] ) ? 0 : 1,
+			'calendar_create_1_hour_reminder'     => empty( $value['calendar_create_1_hour_reminder'] ) ? 0 : 1,
+			'calendar_sender_portal_enabled'      => empty( $value['calendar_sender_portal_enabled'] ) ? 0 : 1,
+			'calendar_auto_send_reminders'        => 0,
+			'calendar_followup_default_days'      => max( 1, min( 30, absint( $value['calendar_followup_default_days'] ?? $current['calendar_followup_default_days'] ) ) ),
+			'calendar_no_public_booking'          => 1,
+			'calendar_require_explicit_timezone' => 1,
+			'calendar_require_teams_url_host'     => 1,
 			'graph_enabled'                     => empty( $value['graph_enabled'] ) ? 0 : 1,
 			'graph_tenant_id'                   => sanitize_text_field( (string) ( $value['graph_tenant_id'] ?? $current['graph_tenant_id'] ) ),
 			'graph_client_id'                   => sanitize_text_field( (string) ( $value['graph_client_id'] ?? $current['graph_client_id'] ) ),

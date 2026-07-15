@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -39,6 +39,7 @@ final class SC_EI_Database {
 		$portal_events = self::table( 'portal_events' );
 		$portal_recovery_requests = self::table( 'portal_recovery_requests' );
 		$meeting_offers = self::table( 'meeting_offers' );
+		$meeting_reminders = self::table( 'meeting_reminders' );
 		$graph_operations = self::table( 'graph_operations' );
 		$proposals = self::table( 'proposals' );
 		$proposal_versions = self::table( 'proposal_versions' );
@@ -597,6 +598,15 @@ final class SC_EI_Database {
 			status varchar(40) NOT NULL DEFAULT 'draft',
 			title varchar(255) NOT NULL DEFAULT '',
 			purpose longtext NULL,
+			meeting_type varchar(60) NOT NULL DEFAULT 'other',
+			organizer_name varchar(191) NOT NULL DEFAULT '',
+			organizer_email varchar(191) NOT NULL DEFAULT '',
+			participant_emails_json longtext NULL,
+			agenda longtext NULL,
+			preparation_requests longtext NULL,
+			sender_summary longtext NULL,
+			sender_next_step longtext NULL,
+			related_document_ids_json longtext NULL,
 			duration_minutes smallint(5) unsigned NOT NULL DEFAULT 30,
 			timezone varchar(120) NOT NULL DEFAULT '',
 			slots_json longtext NULL,
@@ -604,6 +614,14 @@ final class SC_EI_Database {
 			selected_start_utc datetime NULL,
 			selected_end_utc datetime NULL,
 			teams_url text NULL,
+			calendar_provider varchar(40) NOT NULL DEFAULT 'manual',
+			external_calendar_reference varchar(255) NOT NULL DEFAULT '',
+			previous_start_utc datetime NULL,
+			previous_end_utc datetime NULL,
+			reschedule_count smallint(5) unsigned NOT NULL DEFAULT 0,
+			last_rescheduled_at datetime NULL,
+			last_rescheduled_by bigint(20) unsigned NULL,
+			join_url_revoked_at datetime NULL,
 			graph_sync_status varchar(40) NOT NULL DEFAULT 'not_requested',
 			graph_transaction_id char(36) NOT NULL DEFAULT '',
 			graph_event_id text NULL,
@@ -639,6 +657,14 @@ final class SC_EI_Database {
 			completed_at datetime NULL,
 			canceled_at datetime NULL,
 			cancellation_reason longtext NULL,
+			post_meeting_internal_notes longtext NULL,
+			post_meeting_sender_summary longtext NULL,
+			decisions longtext NULL,
+			open_questions longtext NULL,
+			follow_up_owner_user_id bigint(20) unsigned NULL,
+			follow_up_due_at datetime NULL,
+			follow_up_task_id bigint(20) unsigned NULL,
+			no_show_at datetime NULL,
 			row_version int(10) unsigned NOT NULL DEFAULT 0,
 			created_by bigint(20) unsigned NULL,
 			created_at datetime NOT NULL,
@@ -651,12 +677,45 @@ final class SC_EI_Database {
 			KEY status (status),
 			KEY expires_at (expires_at),
 			KEY selected_start_utc (selected_start_utc),
+			KEY meeting_type (meeting_type),
+			KEY organizer_email (organizer_email),
+			KEY follow_up_due_at (follow_up_due_at),
 			KEY graph_sync_status (graph_sync_status),
 			KEY graph_transaction_id (graph_transaction_id),
 			KEY graph_last_success_at (graph_last_success_at),
 			KEY graph_next_retry_at (graph_next_retry_at),
 			KEY published_by (published_by),
 			KEY finalized_by (finalized_by),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+
+		$sql_meeting_reminders = "CREATE TABLE {$meeting_reminders} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			meeting_offer_id bigint(20) unsigned NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			reminder_type varchar(40) NOT NULL DEFAULT 'invitation',
+			audience varchar(30) NOT NULL DEFAULT 'sender',
+			status varchar(30) NOT NULL DEFAULT 'pending',
+			due_at datetime NOT NULL,
+			idempotency_key char(64) NOT NULL,
+			communication_id bigint(20) unsigned NULL,
+			attempt_count smallint(5) unsigned NOT NULL DEFAULT 0,
+			last_error_code varchar(120) NOT NULL DEFAULT '',
+			last_error_message longtext NULL,
+			ready_at datetime NULL,
+			sent_at datetime NULL,
+			canceled_at datetime NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY idempotency_key (idempotency_key),
+			KEY meeting_offer_id (meeting_offer_id),
+			KEY inquiry_id (inquiry_id),
+			KEY status_due_at (status,due_at),
+			KEY communication_id (communication_id),
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
@@ -1698,6 +1757,7 @@ final class SC_EI_Database {
 		dbDelta( $sql_portal_events );
 		dbDelta( $sql_portal_recovery_requests );
 		dbDelta( $sql_meeting_offers );
+		dbDelta( $sql_meeting_reminders );
 		dbDelta( $sql_graph_operations );
 		dbDelta( $sql_proposals );
 		dbDelta( $sql_proposal_versions );
@@ -1870,7 +1930,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -1902,6 +1962,9 @@ final class SC_EI_Database {
 		}
 		foreach ( self::support_columns_exist() as $key => $available ) {
 			$result[ 'support.' . $key ] = $available;
+		}
+		foreach ( self::calendar_columns_exist() as $key => $available ) {
+			$result[ 'calendar.' . $key ] = $available;
 		}
 		return $result;
 	}
@@ -2177,8 +2240,13 @@ final class SC_EI_Database {
 		$tables = array(
 			'meeting_offers' => array(
 				'public_id', 'inquiry_id', 'access_id', 'offer_number', 'status', 'title',
-				'purpose', 'duration_minutes', 'timezone', 'slots_json', 'selected_slot_key',
-				'selected_start_utc', 'selected_end_utc', 'teams_url', 'graph_sync_status',
+				'purpose', 'meeting_type', 'organizer_name', 'organizer_email',
+				'participant_emails_json', 'agenda', 'preparation_requests', 'sender_summary',
+				'sender_next_step', 'related_document_ids_json', 'duration_minutes', 'timezone',
+				'slots_json', 'selected_slot_key', 'selected_start_utc', 'selected_end_utc',
+				'teams_url', 'calendar_provider', 'external_calendar_reference',
+				'previous_start_utc', 'previous_end_utc', 'reschedule_count',
+				'last_rescheduled_at', 'last_rescheduled_by', 'join_url_revoked_at', 'graph_sync_status',
 				'graph_transaction_id', 'graph_event_id', 'graph_i_cal_uid', 'graph_change_key',
 				'graph_etag', 'graph_web_link', 'graph_join_url', 'graph_organizer',
 				'graph_calendar_id', 'graph_payload_hash', 'graph_remote_start_utc',
@@ -2188,8 +2256,17 @@ final class SC_EI_Database {
 				'graph_reconciled_at', 'graph_deleted_at', 'sender_note',
 				'alternative_request', 'admin_note', 'expires_at', 'published_by',
 				'published_at', 'responded_at', 'finalized_by', 'finalized_at',
-				'completed_at', 'canceled_at', 'cancellation_reason', 'row_version',
-				'created_by', 'created_at', 'updated_at',
+				'completed_at', 'canceled_at', 'cancellation_reason',
+				'post_meeting_internal_notes', 'post_meeting_sender_summary', 'decisions',
+				'open_questions', 'follow_up_owner_user_id', 'follow_up_due_at',
+				'follow_up_task_id', 'no_show_at', 'row_version', 'created_by',
+				'created_at', 'updated_at',
+			),
+			'meeting_reminders' => array(
+				'public_id', 'meeting_offer_id', 'inquiry_id', 'reminder_type', 'audience',
+				'status', 'due_at', 'idempotency_key', 'communication_id', 'attempt_count',
+				'last_error_code', 'last_error_message', 'ready_at', 'sent_at',
+				'canceled_at', 'created_at', 'updated_at',
 			),
 			'graph_operations' => array(
 				'public_id', 'inquiry_id', 'meeting_offer_id', 'operation_type', 'status',
@@ -2220,6 +2297,37 @@ final class SC_EI_Database {
 				'public_id', 'inquiry_id', 'actor_type', 'actor_id', 'object_type',
 				'object_id', 'event_type', 'from_status', 'to_status', 'context_json',
 				'created_at',
+			),
+		);
+		$result = array();
+		foreach ( $tables as $table_name => $columns ) {
+			$table = self::table( $table_name );
+			foreach ( $columns as $column ) {
+				$found = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$result[ $table_name . '.' . $column ] = ( $found === $column );
+			}
+		}
+		return $result;
+	}
+
+	public static function calendar_columns_exist(): array {
+		global $wpdb;
+		$tables = array(
+			'meeting_offers' => array(
+				'meeting_type', 'organizer_name', 'organizer_email', 'participant_emails_json',
+				'agenda', 'preparation_requests', 'sender_summary', 'sender_next_step',
+				'related_document_ids_json', 'calendar_provider', 'external_calendar_reference',
+				'previous_start_utc', 'previous_end_utc', 'reschedule_count',
+				'last_rescheduled_at', 'last_rescheduled_by', 'join_url_revoked_at',
+				'post_meeting_internal_notes', 'post_meeting_sender_summary', 'decisions',
+				'open_questions', 'follow_up_owner_user_id', 'follow_up_due_at',
+				'follow_up_task_id', 'no_show_at',
+			),
+			'meeting_reminders' => array(
+				'public_id', 'meeting_offer_id', 'inquiry_id', 'reminder_type', 'audience',
+				'status', 'due_at', 'idempotency_key', 'communication_id', 'attempt_count',
+				'last_error_code', 'last_error_message', 'ready_at', 'sent_at',
+				'canceled_at', 'created_at', 'updated_at',
 			),
 		);
 		$result = array();
@@ -2500,7 +2608,7 @@ final class SC_EI_Database {
 	public static function drop_all(): void {
 		global $wpdb;
 
-		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'support_signals', 'support_case_links', 'support_case_events', 'support_cases', 'lifecycle_tasks', 'lifecycle_notes', 'lifecycle_events', 'platform_snapshots', 'platform_migrations', 'workflow_outbox', 'workflow_handoffs', 'workflow_commands', 'workflow_cases', 'engagement_events', 'engagement_requirements', 'engagement_snapshots', 'engagements', 'workflow_events', 'proposal_versions', 'proposals', 'graph_operations', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
+		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'support_signals', 'support_case_links', 'support_case_events', 'support_cases', 'lifecycle_tasks', 'lifecycle_notes', 'lifecycle_events', 'platform_snapshots', 'platform_migrations', 'workflow_outbox', 'workflow_handoffs', 'workflow_commands', 'workflow_cases', 'engagement_events', 'engagement_requirements', 'engagement_snapshots', 'engagements', 'workflow_events', 'proposal_versions', 'proposals', 'graph_operations', 'meeting_reminders', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
 			$table = self::table( $name );
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}

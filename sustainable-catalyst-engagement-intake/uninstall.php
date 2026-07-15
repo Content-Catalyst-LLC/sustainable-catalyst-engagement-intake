@@ -29,6 +29,7 @@ wp_clear_scheduled_hook( 'sc_ei_workflow_core_sync_inquiry' );
 wp_clear_scheduled_hook( 'sc_ei_platform_readiness_snapshot' );
 wp_clear_scheduled_hook( 'sc_ei_lifecycle_task_reminders' );
 wp_clear_scheduled_hook( 'sc_ei_support_signal_digest' );
+wp_clear_scheduled_hook( 'sc_ei_calendar_process_reminders' );
 SC_EI_Capabilities::uninstall();
 
 if ( $delete ) {
@@ -69,6 +70,9 @@ if ( $delete ) {
 	delete_option( 'sc_ei_lifecycle_schema_version' );
 	delete_option( 'sc_ei_lifecycle_schema_version_previous' );
 	delete_option( 'sc_ei_support_schema_version' );
+	delete_option( 'sc_ei_calendar_schema_version' );
+	delete_option( 'sc_ei_calendar_schema_version_previous' );
+	delete_option( 'sc_ei_last_calendar_reminder_run' );
 	delete_option( 'sc_ei_last_support_signal_digest' );
 	delete_option( 'sc_ei_lifecycle_reminder_lock' );
 	delete_option( 'sc_ei_last_lifecycle_reminder_run' );

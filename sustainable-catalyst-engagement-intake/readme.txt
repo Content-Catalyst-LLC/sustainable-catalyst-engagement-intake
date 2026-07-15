@@ -3,7 +3,7 @@ Contributors: content-catalyst
 Tags: contact, support, help desk, product support, advisory, engagement, sender portal, known issues, privacy
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 1.2.1
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,7 +11,7 @@ A governed contact-to-engagement platform with adaptive intake, advisory lifecyc
 
 == Description ==
 
-Version 1.2.1 is the Support Operations and Cross-Product Reliability Patch. It makes public support intake recoverable, hardens support-case and relationship persistence, validates cross-product source and product identities, makes typed handoffs replay-safe, preserves privacy-safe product intelligence, strengthens Sender Portal isolation, and expands live validation without changing the v1.2.0 database schema.
+Version 1.3.0 is Microsoft Teams and Calendar Coordination. It adds governed meeting records, explicit meeting types, agendas and preparation requests, organizer and participant context, time-zone-safe scheduling, rescheduling history, reviewable idempotent reminders, cancellation safety, post-meeting follow-up, and sender-safe calendar views while preserving the existing advisory, support, privacy, and production-readiness boundaries.
 
 The platform connects:
 
@@ -24,7 +24,7 @@ The platform connects:
 * Governed lifecycle stages from inquiry through active engagement and completion
 * Private internal notes, ownership, priority, next actions, and assigned tasks
 * Secure Sender Portal status, messages, uploads, meetings, and proposal notices
-* Human-approved Microsoft Teams scheduling and optional Microsoft Graph calendar creation
+* Human-approved Microsoft Teams scheduling, calendar coordination, reminders, rescheduling, cancellation, and optional Microsoft Graph event creation
 * Versioned proposals and controlled engagement handoff
 * Aggregate lifecycle, response, qualification, proposal, acceptance, and workload metrics
 * Reliability, accessibility, abuse protection, privacy, retention, and incident controls
@@ -86,7 +86,7 @@ Production requires:
 
 * 100% readiness
 * zero required failures and zero warnings
-* current v1.2.1 reliability-patch, v1.2.0 support, v1.1.1 persistence-patch, v1.1.0 lifecycle, and database evidence
+* current v1.3.0 calendar, v1.2.1 reliability-patch, v1.2.0 support, v1.1.1 persistence-patch, v1.1.0 lifecycle, and database evidence
 * recent successful live validation
 * externally confirmed inbox evidence
 * completed controlled-pilot evidence
@@ -99,18 +99,26 @@ Repository validation does not replace live WordPress-host testing.
 == Installation ==
 
 1. Back up the WordPress database and protected storage.
-2. Upgrade the existing plugin or install v1.2.1.
+2. Upgrade the existing plugin or install v1.3.0.
 3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
 4. Open Contact & Engagement → Platform Overview.
-5. Complete database, lifecycle, persistence-patch, and v1.2.0 support migration and v1.2.1 reliability-patch repairs if shown.
-6. Inspect Advisory Lifecycle and Contact & Engagement → Support Cases.
+5. Complete database, lifecycle, support, reliability-patch, and v1.3.0 calendar migration repairs if shown.
+6. Inspect Advisory Lifecycle, Support Cases, and Calendar Coordination.
 7. Run Live Validation with a monitored recipient.
-8. Confirm inbox delivery and repeat controlled support and advisory pilot checks for v1.2.1.
+8. Confirm inbox delivery and repeat controlled advisory, support, and calendar pilot checks for v1.3.0.
 9. Resolve public-launch and lifecycle operational blockers.
 10. Record current database and protected-storage backup evidence.
 11. Require 100%, zero failures, and zero warnings before Production.
 
 == Changelog ==
+
+= 1.3.0 =
+* Added governed Microsoft Teams and calendar coordination over the existing meeting-offer and Microsoft Graph foundation.
+* Added explicit meeting types, organizers, participant lists, agendas, preparation requests, sender-safe summaries, calendar references, and related-document identifiers.
+* Added time-zone-safe rescheduling history, duplicate-event safeguards, canceled-link revocation, post-meeting notes, decisions, open questions, and follow-up tasks.
+* Added idempotent invitation, 24-hour, one-hour, reschedule, cancellation, and post-meeting reminder records; reminders remain reviewable and are not sent automatically.
+* Added Calendar Coordination administration, Sender Portal allowlist projection, privacy export/redaction, readiness, cron, migration, uninstall, and Live Validation coverage.
+* Advanced the database version to 1.3.0, Portal schema to 1.5.0, Workflow schema to 1.2.0, Platform schema to 1.3.0, and introduced Calendar schema 1.0.0.
 
 = 1.2.1 =
 * Made public support intake and linked support-case creation recoverable.

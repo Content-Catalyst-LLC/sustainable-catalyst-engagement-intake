@@ -37,7 +37,7 @@ $is_error = $message && ! isset( $messages[ $message ] );
 $metrics = $summary['metrics'];
 $live_validation = is_array( $readiness['live_validation'] ?? null ) ? $readiness['live_validation'] : array();
 $backup_attestation = is_array( $readiness['backup_attestation'] ?? null ) ? $readiness['backup_attestation'] : array();
-$auto_repairs = array( 'refresh_version', 'repair_database', 'verify_migration', 'verify_patch_migration', 'verify_launch_migration', 'verify_lifecycle_migration', 'repair_storage', 'repair_crons' );
+$auto_repairs = array( 'refresh_version', 'repair_database', 'verify_migration', 'verify_patch_migration', 'verify_launch_migration', 'verify_lifecycle_migration', 'verify_support_migration', 'verify_support_reliability_patch', 'verify_calendar_migration', 'repair_storage', 'repair_crons' );
 ?>
 <div class="wrap sc-ei-admin sc-ei-platform-admin" id="sc-ei-primary-content">
 	<header class="sc-ei-admin__header sc-ei-platform-admin__header">
@@ -91,6 +91,8 @@ $auto_repairs = array( 'refresh_version', 'repair_database', 'verify_migration',
 							<a class="button" href="#sc-ei-pilot-evidence"><?php echo esc_html( $check['repair_label'] ); ?></a>
 						<?php elseif ( 'review_operations' === $check['repair'] ) : ?>
 							<a class="button" href="#sc-ei-launch-operations"><?php echo esc_html( $check['repair_label'] ); ?></a>
+						<?php elseif ( 'review_calendar' === $check['repair'] ) : ?>
+							<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-calendar' ) ); ?>"><?php echo esc_html( $check['repair_label'] ); ?></a>
 						<?php elseif ( 'review_lifecycle' === $check['repair'] ) : ?>
 							<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=sc-engagement-intake-lifecycle' ) ); ?>"><?php echo esc_html( $check['repair_label'] ); ?></a>
 						<?php elseif ( 'review_routed_entries' === $check['repair'] ) : ?>

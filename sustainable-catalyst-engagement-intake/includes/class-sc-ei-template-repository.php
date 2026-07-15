@@ -202,6 +202,8 @@ final class SC_EI_Template_Repository {
 		$first_name = $contact_name ? preg_split( '/\s+/', $contact_name )[0] : '';
 		$timezone = (string) ( $inquiry['scheduled_timezone'] ?: $inquiry['timezone'] ?? '' );
 		$support_case = ! empty( $inquiry['id'] ) ? SC_EI_Support_Repository::for_inquiry( absint( $inquiry['id'] ) ) : null;
+		$calendar_meetings = ! empty( $inquiry['id'] ) ? SC_EI_Workflow_Repository::meeting_offers_for_inquiry( absint( $inquiry['id'] ), false ) : array();
+		$calendar_meeting = $calendar_meetings ? reset( $calendar_meetings ) : array();
 		$scheduled_start = '';
 		if ( ! empty( $inquiry['scheduled_start_utc'] ) ) {
 			try {
@@ -231,6 +233,10 @@ final class SC_EI_Template_Repository {
 			'{teams_meeting_url}'     => (string) ( $inquiry['teams_meeting_url'] ?? '' ),
 			'{scheduled_start}'       => $scheduled_start,
 			'{scheduled_timezone}'    => $timezone,
+			'{meeting_type}'          => $calendar_meeting ? SC_EI_Calendar_Schema::label( SC_EI_Calendar_Schema::meeting_types(), (string) ( $calendar_meeting['meeting_type'] ?? 'other' ) ) : '',
+			'{meeting_agenda}'        => (string) ( $calendar_meeting['agenda'] ?? '' ),
+			'{meeting_preparation}'   => (string) ( $calendar_meeting['preparation_requests'] ?? '' ),
+			'{meeting_next_step}'     => (string) ( $calendar_meeting['sender_next_step'] ?? '' ),
 			'{site_name}'             => wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
 			'{site_url}'              => home_url( '/' ),
 			'{sender_name}'           => (string) ( $settings['communication_sender_name'] ?: get_bloginfo( 'name' ) ),
