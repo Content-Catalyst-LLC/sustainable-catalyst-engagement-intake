@@ -38,6 +38,7 @@ final class SC_EI_Plugin {
 		SC_EI_Proposal_Governance_Repository::maybe_upgrade();
 		SC_EI_Workspace_Repository::maybe_upgrade();
 		SC_EI_Service_Intelligence_Repository::maybe_upgrade();
+		SC_EI_Billing_Repository::maybe_upgrade();
 		SC_EI_Platform_Repository::maybe_upgrade();
 		SC_EI_Capabilities::install();
 		SC_EI_Upload_Environment::register();
@@ -57,6 +58,7 @@ final class SC_EI_Plugin {
 		SC_EI_Support_Repository::register();
 		SC_EI_Analytics_Repository::register();
 		SC_EI_Service_Intelligence_Repository::register();
+		SC_EI_Billing_Repository::register();
 		SC_EI_Hardening_Repository::register();
 		SC_EI_Workflow_Core_Repository::register();
 		SC_EI_Workflow_Core_Service::register();
@@ -83,6 +85,7 @@ final class SC_EI_Plugin {
 			SC_EI_Support_Admin::register();
 			SC_EI_Analytics_Admin::register();
 			SC_EI_Service_Intelligence_Admin::register();
+			SC_EI_Billing_Admin::register();
 			SC_EI_Hardening_Admin::register();
 			SC_EI_Workflow_Core_Admin::register();
 			SC_EI_Platform_Admin::register();

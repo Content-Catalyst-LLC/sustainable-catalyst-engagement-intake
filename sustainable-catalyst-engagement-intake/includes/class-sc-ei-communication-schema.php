@@ -62,6 +62,10 @@ final class SC_EI_Communication_Schema {
 			'workspace_deliverable'     => __( 'Workspace Deliverable Available', 'sustainable-catalyst-engagement-intake' ),
 			'workspace_changes'         => __( 'Workspace Deliverable Changes Requested', 'sustainable-catalyst-engagement-intake' ),
 			'workspace_accepted'        => __( 'Workspace Deliverable Accepted', 'sustainable-catalyst-engagement-intake' ),
+			'invoice_issued'            => __( 'Invoice Issued', 'sustainable-catalyst-engagement-intake' ),
+			'payment_reminder'          => __( 'Payment Reminder', 'sustainable-catalyst-engagement-intake' ),
+			'payment_received'          => __( 'Payment Received', 'sustainable-catalyst-engagement-intake' ),
+			'invoice_voided'            => __( 'Invoice Voided', 'sustainable-catalyst-engagement-intake' ),
 			'proposal_handoff'          => __( 'Proposal Handoff', 'sustainable-catalyst-engagement-intake' ),
 			'referral'                  => __( 'Referral', 'sustainable-catalyst-engagement-intake' ),
 			'decline'                   => __( 'Decline', 'sustainable-catalyst-engagement-intake' ),
@@ -158,6 +162,13 @@ final class SC_EI_Communication_Schema {
 			'{workspace_title}'       => __( 'Client workspace title', 'sustainable-catalyst-engagement-intake' ),
 			'{workspace_status}'      => __( 'Client workspace status', 'sustainable-catalyst-engagement-intake' ),
 			'{workspace_next_step}'   => __( 'Approved workspace next step', 'sustainable-catalyst-engagement-intake' ),
+			'{invoice_number}'        => __( 'Invoice number', 'sustainable-catalyst-engagement-intake' ),
+			'{invoice_status}'        => __( 'Invoice status', 'sustainable-catalyst-engagement-intake' ),
+			'{invoice_total}'         => __( 'Invoice total', 'sustainable-catalyst-engagement-intake' ),
+			'{invoice_balance}'       => __( 'Invoice balance due', 'sustainable-catalyst-engagement-intake' ),
+			'{invoice_due}'           => __( 'Invoice due date', 'sustainable-catalyst-engagement-intake' ),
+			'{payment_provider}'      => __( 'External payment provider', 'sustainable-catalyst-engagement-intake' ),
+			'{payment_url}'           => __( 'Approved external payment URL', 'sustainable-catalyst-engagement-intake' ),
 		);
 	}
 
@@ -500,6 +511,36 @@ Open the private Client Workspace administration screen to verify the recorded d
 				'body' => __( "Hello {first_name},\n\nSupport case {support_case_number} has been closed.\n\n[Approved closure summary]\n\nA new request can be submitted if a separate issue appears.\n\nRegards,\n{sender_name}\n{reply_email}", 'sustainable-catalyst-engagement-intake' ),
 				'is_system' => 0,
 			),
+
+			'invoice_issued' => array(
+				'name' => __( 'Invoice issued', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'invoice_issued',
+				'subject' => __( 'Invoice {invoice_number} is available — {reference}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "Hello {first_name},\n\nInvoice {invoice_number} is available in the Secure Sender Portal.\n\nTotal: {invoice_total}\nBalance due: {invoice_balance}\nDue: {invoice_due}\n\nExternal payment provider: {payment_provider}\nApproved payment link: {payment_url}\n\nSustainable Catalyst does not collect or store card or bank-account details in the engagement platform.\n\nRegards,\n{sender_name}\n{reply_email}", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 0,
+			),
+			'payment_reminder' => array(
+				'name' => __( 'Payment reminder', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'payment_reminder',
+				'subject' => __( 'Payment reminder — invoice {invoice_number}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "Hello {first_name},\n\nThis is a reviewed reminder regarding invoice {invoice_number}.\n\nBalance due: {invoice_balance}\nDue: {invoice_due}\nStatus: {invoice_status}\n\nUse only the approved external payment link shown in the Secure Sender Portal. Never send payment credentials by email.\n\nRegards,\n{sender_name}\n{reply_email}", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 0,
+			),
+			'payment_received' => array(
+				'name' => __( 'Payment received', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'payment_received',
+				'subject' => __( 'Payment recorded — invoice {invoice_number}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "Hello {first_name},\n\nAn external payment status has been recorded for invoice {invoice_number}.\n\nCurrent status: {invoice_status}\nBalance due: {invoice_balance}\n\nThis operational notice is not a bank receipt or tax document.\n\nRegards,\n{sender_name}\n{reply_email}", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 0,
+			),
+			'invoice_voided' => array(
+				'name' => __( 'Invoice voided', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'invoice_voided',
+				'subject' => __( 'Invoice {invoice_number} voided — {reference}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "Hello {first_name},\n\nInvoice {invoice_number} has been voided and is no longer payable. Any prior payment link associated with it should not be used.\n\n[Approved replacement or next-step guidance]\n\nRegards,\n{sender_name}\n{reply_email}", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 0,
+			),
+
 			'internal_lifecycle_task_due' => array(
 				'name' => __( 'Internal lifecycle task due', 'sustainable-catalyst-engagement-intake' ),
 				'communication_type' => 'internal_lifecycle_task_due',

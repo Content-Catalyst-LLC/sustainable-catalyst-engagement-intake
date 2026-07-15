@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Sustainable Catalyst Contact and Engagement Platform
  * Plugin URI:  https://sustainablecatalyst.com/
- * Description: Unified contact, advisory, support, scheduling, proposal, secure client-workspace, engagement analytics, and service-intelligence platform with governed intake, controlled collaboration, protected documents, Sender Portal access, reliability, and privacy.
- * Version:     1.6.0
+ * Description: Unified contact, advisory, support, scheduling, proposal, secure client-workspace, engagement analytics, billing, invoicing, and external payment-handoff platform with governed intake, controlled collaboration, protected documents, Sender Portal access, reliability, and privacy.
+ * Version:     1.7.0
  * Author:      Content Catalyst LLC
  * Author URI:  https://sustainablecatalyst.com/
  * Text Domain: sustainable-catalyst-engagement-intake
@@ -18,27 +18,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SC_EI_VERSION', '1.6.0' );
-define( 'SC_EI_DB_VERSION', '1.6.0' );
+define( 'SC_EI_VERSION', '1.7.0' );
+define( 'SC_EI_DB_VERSION', '1.7.0' );
 define( 'SC_EI_VALIDATOR_VERSION', '1.3.0' );
 define( 'SC_EI_REVIEW_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_COMMUNICATION_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_PRIVACY_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_FIT_SCHEMA_VERSION', '1.0.0' );
-define( 'SC_EI_PORTAL_SCHEMA_VERSION', '1.7.0' );
+define( 'SC_EI_PORTAL_SCHEMA_VERSION', '1.8.0' );
 define( 'SC_EI_WORKFLOW_SCHEMA_VERSION', '1.3.0' );
 define( 'SC_EI_GRAPH_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_ENGAGEMENT_SCHEMA_VERSION', '1.2.0' );
 define( 'SC_EI_ANALYTICS_SCHEMA_VERSION', '1.1.0' );
 define( 'SC_EI_HARDENING_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_WORKFLOW_CORE_SCHEMA_VERSION', '1.0.0' );
-define( 'SC_EI_PLATFORM_SCHEMA_VERSION', '1.6.0' );
+define( 'SC_EI_PLATFORM_SCHEMA_VERSION', '1.7.0' );
 define( 'SC_EI_LIFECYCLE_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_SUPPORT_SCHEMA_VERSION', '1.0.1' );
 define( 'SC_EI_CALENDAR_SCHEMA_VERSION', '1.0.1' );
 define( 'SC_EI_PROPOSAL_SCHEMA_VERSION', '1.0.1' );
 define( 'SC_EI_WORKSPACE_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_SERVICE_INTELLIGENCE_SCHEMA_VERSION', '1.0.0' );
+define( 'SC_EI_BILLING_SCHEMA_VERSION', '1.0.0' );
 define( 'SC_EI_FILE', __FILE__ );
 define( 'SC_EI_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SC_EI_URL', plugin_dir_url( __FILE__ ) );
@@ -101,8 +102,10 @@ require_once SC_EI_DIR . 'includes/class-sc-ei-portal-public.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-privacy.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-analytics-schema.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-service-intelligence-schema.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-billing-schema.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-analytics-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-service-intelligence-repository.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-billing-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-hardening-schema.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-hardening-repository.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-workflow-core-schema.php';
@@ -135,6 +138,7 @@ require_once SC_EI_DIR . 'includes/class-sc-ei-lifecycle-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-support-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-analytics-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-service-intelligence-admin.php';
+require_once SC_EI_DIR . 'includes/class-sc-ei-billing-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-hardening-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-workflow-core-admin.php';
 require_once SC_EI_DIR . 'includes/class-sc-ei-platform-admin.php';

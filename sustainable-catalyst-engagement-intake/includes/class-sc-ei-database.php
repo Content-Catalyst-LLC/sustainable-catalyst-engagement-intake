@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'client_workspaces', 'workspace_members', 'workspace_milestones', 'workspace_deliverables', 'workspace_messages', 'workspace_documents', 'workspace_events', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'service_intelligence_findings', 'service_intelligence_events', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'client_workspaces', 'workspace_members', 'workspace_milestones', 'workspace_deliverables', 'workspace_messages', 'workspace_documents', 'workspace_events', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'service_intelligence_findings', 'service_intelligence_events', 'billing_profiles', 'invoices', 'invoice_items', 'invoice_versions', 'payment_handoffs', 'billing_events', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -62,6 +62,12 @@ final class SC_EI_Database {
 		$analytics_snapshots = self::table( 'analytics_snapshots' );
 		$service_intelligence_findings = self::table( 'service_intelligence_findings' );
 		$service_intelligence_events = self::table( 'service_intelligence_events' );
+		$billing_profiles = self::table( 'billing_profiles' );
+		$invoices = self::table( 'invoices' );
+		$invoice_items = self::table( 'invoice_items' );
+		$invoice_versions = self::table( 'invoice_versions' );
+		$payment_handoffs = self::table( 'payment_handoffs' );
+		$billing_events = self::table( 'billing_events' );
 		$health_events = self::table( 'health_events' );
 		$rate_limits = self::table( 'rate_limits' );
 		$workflow_cases = self::table( 'workflow_cases' );
@@ -1244,6 +1250,85 @@ final class SC_EI_Database {
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
+
+		$sql_billing_profiles = "CREATE TABLE {$billing_profiles} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			engagement_id bigint(20) unsigned NOT NULL,
+			organization_name varchar(191) NOT NULL DEFAULT '',
+			billing_contact_name varchar(191) NOT NULL DEFAULT '',
+			billing_contact_email varchar(191) NOT NULL DEFAULT '',
+			billing_address_json longtext NULL,
+			tax_identifier_reference varchar(191) NOT NULL DEFAULT '',
+			currency char(3) NOT NULL DEFAULT 'USD',
+			payment_terms_days smallint(5) unsigned NOT NULL DEFAULT 30,
+			status varchar(30) NOT NULL DEFAULT 'active',
+			sender_visible tinyint(1) unsigned NOT NULL DEFAULT 0,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id), UNIQUE KEY public_id (public_id), KEY inquiry_id (inquiry_id), KEY engagement_id (engagement_id), KEY status (status)
+		) {$charset_collate};";
+
+		$sql_invoices = "CREATE TABLE {$invoices} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			invoice_number varchar(60) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			engagement_id bigint(20) unsigned NOT NULL,
+			billing_profile_id bigint(20) unsigned NOT NULL,
+			proposal_id bigint(20) unsigned NULL,
+			sow_id bigint(20) unsigned NULL,
+			status varchar(30) NOT NULL DEFAULT 'draft',
+			currency char(3) NOT NULL DEFAULT 'USD',
+			subtotal_minor bigint(20) unsigned NOT NULL DEFAULT 0,
+			tax_minor bigint(20) unsigned NOT NULL DEFAULT 0,
+			total_minor bigint(20) unsigned NOT NULL DEFAULT 0,
+			amount_paid_minor bigint(20) unsigned NOT NULL DEFAULT 0,
+			balance_due_minor bigint(20) unsigned NOT NULL DEFAULT 0,
+			issued_at datetime NULL, due_at datetime NULL, paid_at datetime NULL, voided_at datetime NULL,
+			sender_visible tinyint(1) unsigned NOT NULL DEFAULT 0,
+			memo longtext NULL, internal_note longtext NULL,
+			current_version int(10) unsigned NOT NULL DEFAULT 0,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL, updated_at datetime NOT NULL,
+			PRIMARY KEY  (id), UNIQUE KEY public_id (public_id), UNIQUE KEY invoice_number (invoice_number), KEY inquiry_id (inquiry_id), KEY engagement_id (engagement_id), KEY billing_profile_id (billing_profile_id), KEY status (status), KEY due_at (due_at)
+		) {$charset_collate};";
+
+		$sql_invoice_items = "CREATE TABLE {$invoice_items} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT, public_id char(36) NOT NULL, invoice_id bigint(20) unsigned NOT NULL,
+			line_number int(10) unsigned NOT NULL, item_type varchar(40) NOT NULL DEFAULT 'service', description longtext NOT NULL,
+			quantity decimal(12,4) NOT NULL DEFAULT 1.0000, unit_amount_minor bigint(20) unsigned NOT NULL DEFAULT 0, amount_minor bigint(20) unsigned NOT NULL DEFAULT 0,
+			tax_code varchar(80) NOT NULL DEFAULT '', metadata_json longtext NULL, created_by bigint(20) unsigned NULL, created_at datetime NOT NULL, updated_at datetime NOT NULL,
+			PRIMARY KEY  (id), UNIQUE KEY public_id (public_id), UNIQUE KEY invoice_line (invoice_id,line_number), KEY invoice_id (invoice_id)
+		) {$charset_collate};";
+
+		$sql_invoice_versions = "CREATE TABLE {$invoice_versions} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT, public_id char(36) NOT NULL, invoice_id bigint(20) unsigned NOT NULL, version_number int(10) unsigned NOT NULL,
+			snapshot_json longtext NOT NULL, content_hash char(64) NOT NULL, status varchar(30) NOT NULL DEFAULT 'issued', created_by bigint(20) unsigned NULL, created_at datetime NOT NULL,
+			PRIMARY KEY  (id), UNIQUE KEY public_id (public_id), UNIQUE KEY invoice_version (invoice_id,version_number), KEY content_hash (content_hash)
+		) {$charset_collate};";
+
+		$sql_payment_handoffs = "CREATE TABLE {$payment_handoffs} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT, public_id char(36) NOT NULL, schema varchar(80) NOT NULL DEFAULT 'sc-payment-handoff/1.0', invoice_id bigint(20) unsigned NOT NULL, inquiry_id bigint(20) unsigned NOT NULL,
+			provider varchar(40) NOT NULL DEFAULT 'manual', provider_reference varchar(191) NOT NULL DEFAULT '', checkout_url text NULL, status varchar(30) NOT NULL DEFAULT 'pending',
+			amount_minor bigint(20) unsigned NOT NULL DEFAULT 0, currency char(3) NOT NULL DEFAULT 'USD', idempotency_key char(64) NOT NULL,
+			expires_at datetime NULL, authorized_at datetime NULL, settled_at datetime NULL, failed_at datetime NULL, refunded_at datetime NULL, last_event_at datetime NULL,
+			sender_visible tinyint(1) unsigned NOT NULL DEFAULT 0, metadata_json longtext NULL, created_by bigint(20) unsigned NULL, created_at datetime NOT NULL, updated_at datetime NOT NULL,
+			PRIMARY KEY  (id), UNIQUE KEY public_id (public_id), UNIQUE KEY idempotency_key (idempotency_key), KEY invoice_id (invoice_id), KEY inquiry_id (inquiry_id), KEY status (status), KEY provider_reference (provider_reference)
+		) {$charset_collate};";
+
+		$sql_billing_events = "CREATE TABLE {$billing_events} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT, public_id char(36) NOT NULL, invoice_id bigint(20) unsigned NULL, payment_handoff_id bigint(20) unsigned NULL, inquiry_id bigint(20) unsigned NOT NULL,
+			event_type varchar(80) NOT NULL, from_status varchar(30) NOT NULL DEFAULT '', to_status varchar(30) NOT NULL DEFAULT '', actor_type varchar(20) NOT NULL DEFAULT 'system', actor_id bigint(20) unsigned NULL,
+			context_json longtext NULL, immutable_hash char(64) NOT NULL, created_at datetime NOT NULL,
+			PRIMARY KEY  (id), UNIQUE KEY public_id (public_id), UNIQUE KEY immutable_hash (immutable_hash), KEY invoice_id (invoice_id), KEY payment_handoff_id (payment_handoff_id), KEY inquiry_id (inquiry_id), KEY event_type (event_type), KEY created_at (created_at)
+		) {$charset_collate};";
+
+
 		$sql_health_events = "CREATE TABLE {$health_events} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			public_id char(36) NOT NULL,
@@ -2054,6 +2139,12 @@ final class SC_EI_Database {
 		dbDelta( $sql_analytics_snapshots );
 		dbDelta( $sql_service_intelligence_findings );
 		dbDelta( $sql_service_intelligence_events );
+		dbDelta( $sql_billing_profiles );
+		dbDelta( $sql_invoices );
+		dbDelta( $sql_invoice_items );
+		dbDelta( $sql_invoice_versions );
+		dbDelta( $sql_payment_handoffs );
+		dbDelta( $sql_billing_events );
 		dbDelta( $sql_health_events );
 		dbDelta( $sql_rate_limits );
 		dbDelta( $sql_workflow_cases );
@@ -2217,7 +2308,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'client_workspaces', 'workspace_members', 'workspace_milestones', 'workspace_deliverables', 'workspace_messages', 'workspace_documents', 'workspace_events', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'service_intelligence_findings', 'service_intelligence_events', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'client_workspaces', 'workspace_members', 'workspace_milestones', 'workspace_deliverables', 'workspace_messages', 'workspace_documents', 'workspace_events', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'service_intelligence_findings', 'service_intelligence_events', 'billing_profiles', 'invoices', 'invoice_items', 'invoice_versions', 'payment_handoffs', 'billing_events', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -2261,6 +2352,9 @@ final class SC_EI_Database {
 		}
 		foreach ( self::service_intelligence_columns_exist() as $key => $available ) {
 			$result[ 'service_intelligence.' . $key ] = $available;
+		}
+		foreach ( self::billing_columns_exist() as $key => $available ) {
+			$result[ 'billing.' . $key ] = $available;
 		}
 		return $result;
 	}
@@ -2414,6 +2508,28 @@ final class SC_EI_Database {
 		$tables = array(
 			'service_intelligence_findings' => array( 'public_id','schema','finding_type','severity','status','title','service_key','product_key','component_key','period_start','period_end','cohort_count','metric_value','metric_unit','evidence_json','evidence_hash','owner_user_id','review_due_at','action_summary','decision_note','row_version','created_by','reviewed_by','reviewed_at','closed_at','created_at','updated_at' ),
 			'service_intelligence_events' => array( 'public_id','finding_id','event_type','from_status','to_status','actor_type','actor_id','context_json','created_at' ),
+		);
+		$result = array();
+		foreach ( $tables as $table_name => $columns ) {
+			$table = self::table( $table_name );
+			foreach ( $columns as $column ) {
+				$found = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$result[ $table_name . '.' . $column ] = ( $found === $column );
+			}
+		}
+		return $result;
+	}
+
+
+	public static function billing_columns_exist(): array {
+		global $wpdb;
+		$tables = array(
+			'billing_profiles' => array( 'public_id','inquiry_id','engagement_id','organization_name','billing_contact_name','billing_contact_email','billing_address_json','tax_identifier_reference','currency','payment_terms_days','status','sender_visible','row_version','created_by','created_at','updated_at' ),
+			'invoices' => array( 'public_id','invoice_number','inquiry_id','engagement_id','billing_profile_id','proposal_id','sow_id','status','currency','subtotal_minor','tax_minor','total_minor','amount_paid_minor','balance_due_minor','issued_at','due_at','paid_at','voided_at','sender_visible','memo','internal_note','current_version','row_version','created_by','created_at','updated_at' ),
+			'invoice_items' => array( 'public_id','invoice_id','line_number','item_type','description','quantity','unit_amount_minor','amount_minor','tax_code','metadata_json','created_by','created_at','updated_at' ),
+			'invoice_versions' => array( 'public_id','invoice_id','version_number','snapshot_json','content_hash','status','created_by','created_at' ),
+			'payment_handoffs' => array( 'public_id','schema','invoice_id','inquiry_id','provider','provider_reference','checkout_url','status','amount_minor','currency','idempotency_key','expires_at','authorized_at','settled_at','failed_at','refunded_at','last_event_at','sender_visible','metadata_json','created_by','created_at','updated_at' ),
+			'billing_events' => array( 'public_id','invoice_id','payment_handoff_id','inquiry_id','event_type','from_status','to_status','actor_type','actor_id','context_json','immutable_hash','created_at' ),
 		);
 		$result = array();
 		foreach ( $tables as $table_name => $columns ) {
@@ -2959,7 +3075,7 @@ final class SC_EI_Database {
 	public static function drop_all(): void {
 		global $wpdb;
 
-		foreach ( array( 'audit_log', 'workspace_events', 'workspace_documents', 'workspace_messages', 'workspace_deliverables', 'workspace_milestones', 'workspace_members', 'client_workspaces', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'support_signals', 'support_case_links', 'support_case_events', 'support_cases', 'lifecycle_tasks', 'lifecycle_notes', 'lifecycle_events', 'platform_snapshots', 'platform_migrations', 'workflow_outbox', 'workflow_handoffs', 'workflow_commands', 'workflow_cases', 'service_intelligence_events', 'service_intelligence_findings', 'engagement_events', 'engagement_requirements', 'engagement_snapshots', 'engagements', 'workflow_events', 'proposal_versions', 'proposals', 'graph_operations', 'meeting_reminders', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
+		foreach ( array( 'audit_log', 'workspace_events', 'workspace_documents', 'workspace_messages', 'workspace_deliverables', 'workspace_milestones', 'workspace_members', 'client_workspaces', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'support_signals', 'support_case_links', 'support_case_events', 'support_cases', 'lifecycle_tasks', 'lifecycle_notes', 'lifecycle_events', 'platform_snapshots', 'platform_migrations', 'workflow_outbox', 'workflow_handoffs', 'workflow_commands', 'workflow_cases', 'billing_events', 'payment_handoffs', 'invoice_versions', 'invoice_items', 'invoices', 'billing_profiles', 'service_intelligence_events', 'service_intelligence_findings', 'engagement_events', 'engagement_requirements', 'engagement_snapshots', 'engagements', 'workflow_events', 'proposal_versions', 'proposals', 'graph_operations', 'meeting_reminders', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
 			$table = self::table( $name );
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}

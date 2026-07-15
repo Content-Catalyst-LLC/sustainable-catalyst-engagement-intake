@@ -27,6 +27,7 @@ final class SC_EI_Diagnostics {
 		$proposal_governance_columns = SC_EI_Database::proposal_governance_columns_exist();
 		$workspace_columns = SC_EI_Database::workspace_columns_exist();
 		$service_intelligence_columns = SC_EI_Database::service_intelligence_columns_exist();
+		$billing_columns = SC_EI_Database::billing_columns_exist();
 		$admin              = get_role( 'administrator' );
 		$settings           = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
@@ -67,6 +68,8 @@ final class SC_EI_Diagnostics {
 		$service_intelligence_metrics = SC_EI_Service_Intelligence_Repository::metrics();
 		$service_intelligence_blockers = SC_EI_Service_Intelligence_Repository::operational_blockers();
 		$service_intelligence_snapshot = SC_EI_Service_Intelligence_Repository::latest_snapshot_evidence();
+		$billing_metrics = SC_EI_Billing_Repository::metrics();
+		$billing_blockers = SC_EI_Billing_Repository::operational_blockers();
 		$hardening_metrics = SC_EI_Hardening_Repository::metrics();
 		$hardening_watchdog = SC_EI_Hardening_Repository::last_watchdog();
 		$workflow_core_metrics = SC_EI_Workflow_Core_Repository::metrics();
@@ -204,6 +207,9 @@ final class SC_EI_Diagnostics {
 			'workspace_columns' => $workspace_columns,
 			'service_intelligence_schema_version' => SC_EI_SERVICE_INTELLIGENCE_SCHEMA_VERSION,
 			'service_intelligence_columns' => $service_intelligence_columns,
+			'billing_schema_version' => SC_EI_BILLING_SCHEMA_VERSION,
+			'billing_columns' => $billing_columns,
+			'billing' => array( 'metrics' => $billing_metrics, 'blockers' => $billing_blockers ),
 			'service_intelligence' => array(
 				'metrics' => $service_intelligence_metrics,
 				'blockers' => $service_intelligence_blockers,

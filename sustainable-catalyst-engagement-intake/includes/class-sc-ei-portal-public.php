@@ -118,6 +118,7 @@ final class SC_EI_Portal_Public {
 		$lifecycle_snapshot = SC_EI_Lifecycle_Repository::sender_snapshot( absint( $inquiry['id'] ) );
 		$support_snapshot = SC_EI_Support_Repository::sender_snapshot( absint( $inquiry['id'] ) );
 		$workspace_snapshot = SC_EI_Workspace_Repository::sender_snapshot( absint( $inquiry['id'] ) );
+		$billing_snapshot = SC_EI_Billing_Repository::sender_snapshot( absint( $inquiry['id'] ) );
 		$engagement_settings = SC_EI_Engagement_Repository::settings();
 		$engagements = ! empty( $engagement_settings['engagement_sender_portal_enabled'] )
 			? SC_EI_Engagement_Repository::for_inquiry( absint( $inquiry['id'] ), true )

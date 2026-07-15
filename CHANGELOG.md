@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.0 — Billing, Invoicing, and Payment Handoffs
+
+- Added engagement-linked billing profiles, versioned invoices, line items, immutable invoice snapshots, and governed invoice transitions.
+- Added external HTTPS payment-provider handoffs with idempotency keys, replay-safe status events, and bounded privacy-safe metadata.
+- Added explicit rejection of card, bank, credential, token, contact, and IP-address data in provider metadata.
+- Added Sender Portal invoice and payment-status views through a strict allowlist.
+- Added Billing & Payments administration, communication templates, privacy export, diagnostics, readiness, operational metrics, and Live Validation.
+- Added six nondestructive billing tables and advanced plugin, database, and platform versions to `1.7.0`, Portal schema to `1.8.0`, and Billing schema to `1.0.0`.
+
 ## 1.6.0 — Engagement Analytics and Service Intelligence
 
 - Expanded aggregate operational analytics across inquiries, support cases, product signals, meetings, proposals, engagements, client workspaces, milestones, and deliverables.

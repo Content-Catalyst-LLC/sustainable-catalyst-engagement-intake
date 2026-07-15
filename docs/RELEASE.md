@@ -1,13 +1,13 @@
-# Release Procedure — v1.6.0
+# Release Procedure — v1.7.0
 
 ## Identity
 
-- Plugin version: `1.6.0`
-- Database version: `1.6.0`
-- Platform evidence schema: `1.6.0`
-- Analytics schema: `1.1.0`
-- Service Intelligence schema: `1.0.0`
-- Release: Engagement Analytics and Service Intelligence
+- Plugin version: `1.7.0`
+- Database version: `1.7.0`
+- Platform evidence schema: `1.7.0`
+- Portal schema: `1.8.0`
+- Billing schema: `1.0.0`
+- Release: Billing, Invoicing, and Payment Handoffs
 
 ## Release gate
 
@@ -24,13 +24,14 @@
 
 ## Live rollout
 
-1. Retain the v1.5.0 ZIP and current database and protected-storage backups.
-2. Install v1.6.0 and clear all caches.
-3. Verify the database and service-intelligence migration journals.
+1. Retain the v1.6.0 ZIP and current database and protected-storage backups.
+2. Install v1.7.0 and clear all caches.
+3. Verify the database and billing migration journals.
 4. Run Live Validation.
-5. Verify personal-data evidence rejection, aggregate finding creation, human review, event history, evidence hash, snapshot storage, and cleanup.
-6. Save one controlled aggregate snapshot and review one controlled finding.
-7. Re-record version-bound validation, inbox, backup, and pilot evidence.
-8. Require 100%, zero required failures, and zero warnings before Production.
+5. Confirm sensitive payment metadata is rejected, invoice issue is versioned, handoff replay is idempotent, settlement updates the invoice, and Sender Portal projection excludes internal metadata.
+6. Create one controlled billing profile and invoice linked to a test engagement.
+7. Verify the external HTTPS handoff and sender-safe invoice view.
+8. Re-record version-bound validation, inbox, backup, and pilot evidence.
+9. Require 100%, zero required failures, and zero warnings before Production.
 
-Code rollback does not remove migrated aggregate-intelligence tables or records.
+Code rollback does not remove migrated billing tables or records.

@@ -3,7 +3,7 @@ Contributors: content-catalyst
 Tags: contact, support, help desk, product support, advisory, engagement, sender portal, known issues, privacy
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,21 +11,11 @@ A governed contact-to-engagement platform with adaptive intake, advisory lifecyc
 
 == Description ==
 
-Version 1.6.0 is Engagement Analytics and Service Intelligence. It expands the aggregate operational dashboard across inquiry, support, scheduling, proposal, engagement, client-workspace, milestone, deliverable, and product-intelligence activity while preserving minimum-cohort suppression and excluding sender ranking, message bodies, document contents, and automated decisions.
+Version 1.7.0 is Billing, Invoicing, and Payment Handoffs. It adds engagement-linked billing profiles, versioned invoices, line items, governed issue and void transitions, external HTTPS payment-provider handoffs, replay-safe provider status events, and a sender-safe invoice view.
 
-Authorized administrators can save hashed aggregate snapshots and create human-reviewed service-intelligence findings. Findings require aggregate evidence, reject direct personal-data fields and common personal-data value patterns, preserve an event history, and never create proposals, tasks, communications, support commitments, or service decisions automatically.
+The platform does not collect or store card numbers, CVV/CVC values, bank-account numbers, routing numbers, payment credentials, provider secrets, or payment tokens. Payment collection remains with approved external providers. Invoice and payment records are operational engagement records and do not replace accounting, tax, legal, or banking systems.
 
-The platform connects:
-
-* Adaptive general contact and service-specific engagement inquiry experiences
-* Focused product-support intake and private support-case operations
-* Advisory lifecycle, Microsoft Teams scheduling, proposals, Statements of Work, approvals, and governed engagement conversion
-* Secure client workspaces for deliberately published milestones, deliverables, document metadata, updates, and next steps
-* Privacy-safe aggregate engagement analytics and human-reviewed service-intelligence findings
-* Secure Sender Portal status, messages, uploads, meetings, proposal decisions, approved Statements of Work, and workspace collaboration
-* Protected documents, privacy, retention, reliability, and launch governance
-
-Aggregate analytics are operational evidence, not automated recommendations or individual performance scoring.
+The platform retains its contact, advisory, support, scheduling, proposal, secure workspace, analytics, privacy, and reliability layers.
 
 == Recommended public entry ==
 
@@ -77,10 +67,10 @@ Repository validation does not replace live WordPress-host testing.
 == Installation ==
 
 1. Back up the WordPress database and protected storage.
-2. Upgrade the existing plugin or install v1.6.0.
+2. Upgrade the existing plugin or install v1.7.0.
 3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
 4. Open Contact & Engagement → Platform Overview.
-5. Complete database and v1.6.0 service-intelligence migration repairs if shown.
+5. Complete database and v1.7.0 billing migration repairs if shown.
 6. Inspect Analytics & Intelligence, Client Workspace, Proposal Governance, Calendar Coordination, Support Cases, and Advisory Lifecycle.
 7. Run Live Validation with a monitored recipient.
 8. Save one controlled aggregate snapshot and review one test service-intelligence finding without creating an automatic service action.
@@ -89,6 +79,13 @@ Repository validation does not replace live WordPress-host testing.
 11. Require 100%, zero failures, and zero warnings before Production.
 
 == Changelog ==
+
+= 1.7.0 =
+* Added engagement-linked billing profiles, versioned invoices, line items, human-reviewed invoice transitions, and immutable invoice snapshots.
+* Added privacy-safe HTTPS handoffs to external payment providers with idempotent creation and replay-safe status events.
+* Added Sender Portal invoices and payment links through an explicit public allowlist.
+* Added billing administration, reviewable communication templates, privacy export, readiness, diagnostics, Live Validation, and operational metrics.
+* Added six nondestructive billing tables; advanced plugin, database, and platform versions to 1.7.0, Portal schema to 1.8.0, and introduced Billing schema 1.0.0.
 
 = 1.6.0 =
 * Expanded privacy-safe analytics across inquiries, support cases, meetings, proposals, engagements, client workspaces, milestones, deliverables, and product-intelligence signals.

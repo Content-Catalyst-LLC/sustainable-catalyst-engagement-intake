@@ -306,6 +306,7 @@ final class SC_EI_Platform_Repository {
 		$proposal_columns = SC_EI_Database::proposal_governance_columns_exist();
 		$workspace_columns = SC_EI_Database::workspace_columns_exist();
 		$service_intelligence_columns = SC_EI_Database::service_intelligence_columns_exist();
+		$billing_columns = SC_EI_Database::billing_columns_exist();
 		$lifecycle_metrics = SC_EI_Lifecycle_Repository::metrics();
 		$support_metrics = SC_EI_Support_Repository::metrics();
 		$calendar_metrics = SC_EI_Calendar_Repository::metrics();
@@ -316,6 +317,8 @@ final class SC_EI_Platform_Repository {
 		$service_intelligence_metrics = SC_EI_Service_Intelligence_Repository::metrics();
 		$service_intelligence_blockers = SC_EI_Service_Intelligence_Repository::operational_blockers();
 		$service_intelligence_snapshot = SC_EI_Service_Intelligence_Repository::latest_snapshot_evidence();
+		$billing_metrics = SC_EI_Billing_Repository::metrics();
+		$billing_blockers = SC_EI_Billing_Repository::operational_blockers();
 		$hardening = SC_EI_Hardening_Repository::metrics();
 		$core = SC_EI_Workflow_Core_Repository::metrics();
 		$portal_url = self::effective_url( 'platform_portal_page_url', 'portal_page_url' );
@@ -349,6 +352,7 @@ final class SC_EI_Platform_Repository {
 		$checks[] = self::check( 'workspace_columns', 'data', __( 'Secure client workspace and collaboration schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $workspace_columns, true ), true, sprintf( '%d/%d', count( array_filter( $workspace_columns ) ), count( $workspace_columns ) ), 'repair_database' );
 		$checks[] = self::check( 'proposal_governance_columns', 'data', __( 'Proposal, Statement of Work, approval, and change-request schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $proposal_columns, true ), true, sprintf( '%d/%d', count( array_filter( $proposal_columns ) ), count( $proposal_columns ) ), 'repair_database' );
 		$checks[] = self::check( 'service_intelligence_columns', 'data', __( 'Engagement analytics and service-intelligence schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $service_intelligence_columns, true ), true, sprintf( '%d/%d', count( array_filter( $service_intelligence_columns ) ), count( $service_intelligence_columns ) ), 'repair_database' );
+		$checks[] = self::check( 'billing_columns', 'data', __( 'Billing, invoicing, and payment-handoff schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $billing_columns, true ), true, sprintf( '%d/%d', count( array_filter( $billing_columns ) ), count( $billing_columns ) ), 'repair_database' );
 		$checks[] = self::check( 'migration_journal', 'data', __( 'v1.0 base migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::MIGRATION_KEY ), true, self::MIGRATION_KEY, 'verify_migration' );
 		$checks[] = self::check( 'patch_migration_journal', 'data', __( 'v1.0.2 upgrade journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::PATCH_MIGRATION_KEY ), true, self::PATCH_MIGRATION_KEY, 'verify_patch_migration' );
 		$checks[] = self::check( 'launch_migration_journal', 'data', __( 'v1.0.3 launch-hardening journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::LAUNCH_MIGRATION_KEY ), true, self::LAUNCH_MIGRATION_KEY, 'verify_launch_migration' );
@@ -361,6 +365,7 @@ final class SC_EI_Platform_Repository {
 		$checks[] = self::check( 'proposal_governance_migration_journal', 'data', __( 'v1.4.0 proposal-governance migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Proposal_Governance_Repository::MIGRATION_KEY ), true, SC_EI_Proposal_Governance_Repository::MIGRATION_KEY, 'verify_proposal_governance_migration' );
 		$checks[] = self::check( 'workspace_migration_journal', 'data', __( 'v1.5.0 secure client workspace migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Workspace_Repository::MIGRATION_KEY ), true, SC_EI_Workspace_Repository::MIGRATION_KEY, 'verify_workspace_migration' );
 		$checks[] = self::check( 'service_intelligence_migration_journal', 'data', __( 'v1.6.0 engagement analytics and service-intelligence migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Service_Intelligence_Repository::MIGRATION_KEY ), true, SC_EI_Service_Intelligence_Repository::MIGRATION_KEY, 'verify_service_intelligence_migration' );
+		$checks[] = self::check( 'billing_migration_journal', 'data', __( 'v1.7.0 billing, invoicing, and payment-handoff migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Billing_Repository::MIGRATION_KEY ), true, SC_EI_Billing_Repository::MIGRATION_KEY, 'verify_billing_migration' );
 		$checks[] = self::check( 'proposal_reliability_patch_journal', 'data', __( 'v1.4.1 proposal reliability migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Proposal_Governance_Repository::PATCH_MIGRATION_KEY ), true, SC_EI_Proposal_Governance_Repository::PATCH_MIGRATION_KEY, 'verify_proposal_reliability_patch' );
 		$approval_contract_ok = SC_EI_Proposal_Governance_Schema::APPROVAL_SCHEMA === 'sc-proposal-approval/1.0' && ! empty( $proposal_columns['proposal_approvals.immutable_hash'] ) && ! in_array( 'immutable_hash', SC_EI_Proposal_Governance_Schema::sender_projection_keys(), true );
 		$checks[] = self::check( 'proposal_approval_contract', 'integrations', __( 'Immutable proposal and Statement of Work approval contract', 'sustainable-catalyst-engagement-intake' ), $approval_contract_ok, true, SC_EI_Proposal_Governance_Schema::APPROVAL_SCHEMA, 'review_proposals' );
@@ -371,6 +376,9 @@ final class SC_EI_Platform_Repository {
 		$checks[] = self::check( 'service_intelligence_privacy_contract', 'integrations', __( 'Aggregate service-intelligence privacy and decision contract', 'sustainable-catalyst-engagement-intake' ), $intelligence_contract_ok, true, SC_EI_Service_Intelligence_Schema::SNAPSHOT_SCHEMA, 'review_service_intelligence' );
 		$checks[] = self::check( 'service_intelligence_operational_blockers', 'operations', __( 'Service-intelligence review blockers', 'sustainable-catalyst-engagement-intake' ), 0 === count( $service_intelligence_blockers ), true, wp_json_encode( $service_intelligence_blockers ), 'review_service_intelligence' );
 		$checks[] = self::check( 'service_intelligence_snapshot_freshness', 'operations', __( 'Recent aggregate service-intelligence snapshot', 'sustainable-catalyst-engagement-intake' ), ! empty( $service_intelligence_snapshot['passed'] ), false, (string) $service_intelligence_snapshot['detail'], 'review_service_intelligence' );
+		$billing_contract_ok = SC_EI_Billing_Schema::INVOICE_SCHEMA === 'sc-engagement-invoice/1.0' && SC_EI_Billing_Schema::PAYMENT_HANDOFF_SCHEMA === 'sc-payment-handoff/1.0' && 0 === absint( $settings['billing_store_payment_instruments'] ?? 0 ) && ! in_array( 'metadata_json', SC_EI_Billing_Schema::sender_projection_keys(), true );
+		$checks[] = self::check( 'billing_privacy_contract', 'integrations', __( 'External payment handoff and no-payment-instrument contract', 'sustainable-catalyst-engagement-intake' ), $billing_contract_ok, true, SC_EI_Billing_Schema::PAYMENT_HANDOFF_SCHEMA, 'review_billing' );
+		$checks[] = self::check( 'billing_operational_blockers', 'operations', __( 'Billing and payment-handoff operational blockers', 'sustainable-catalyst-engagement-intake' ), 0 === array_sum( array_map( 'absint', $billing_blockers ) ), true, wp_json_encode( $billing_blockers ), 'review_billing' );
 		$checks[] = self::check( 'support_handoff_contract', 'integrations', __( 'Product-support handoff privacy contract', 'sustainable-catalyst-engagement-intake' ), SC_EI_Support_Schema::HANDOFF_SCHEMA === 'sc-product-support-handoff/1.0' && is_wp_error( SC_EI_Support_Schema::signal_payload( array( 'product' => 'workbench', 'email' => 'private@example.com' ) ) ), true, SC_EI_Support_Schema::HANDOFF_SCHEMA, 'review_support' );
 		$checks[] = self::check( 'support_handoff_reliability', 'integrations', __( 'Cross-product handoff reliability', 'sustainable-catalyst-engagement-intake' ), 0 === absint( $support_metrics['handoff_reliability_open'] ?? 0 ), true, sprintf( '%d historical failure(s); last failure %s; last success %s', absint( $support_metrics['failed_handoffs'] ?? 0 ), (string) get_option( 'sc_ei_support_last_handoff_failure_at', 'not recorded' ), (string) get_option( 'sc_ei_support_last_handoff_at', 'not recorded' ) ), 'review_support' );
 		$checks[] = self::check( 'support_product_context', 'operations', __( 'Open support product context', 'sustainable-catalyst-engagement-intake' ), 0 === absint( $support_metrics['missing_product'] ?? 0 ), true, sprintf( '%d missing product; %d missing version; %d missing component', absint( $support_metrics['missing_product'] ?? 0 ), absint( $support_metrics['missing_version'] ?? 0 ), absint( $support_metrics['missing_component'] ?? 0 ) ), 'review_support' );
@@ -411,7 +419,7 @@ final class SC_EI_Platform_Repository {
 		$ready_for_production = 100 === $score && empty( $required_failures ) && empty( $warnings );
 
 		return array(
-			'schema'               => 'sc-unified-contact-engagement-platform-readiness/1.8',
+			'schema'               => 'sc-unified-contact-engagement-platform-readiness/1.9',
 			'generated_at'         => current_time( 'mysql', true ),
 			'plugin_version'       => SC_EI_VERSION,
 			'database_version'     => (string) get_option( 'sc_ei_db_version', '' ),
@@ -437,6 +445,8 @@ final class SC_EI_Platform_Repository {
 			'proposal_metrics'      => $proposal_metrics,
 			'service_intelligence_metrics' => $service_intelligence_metrics,
 			'service_intelligence_snapshot' => $service_intelligence_snapshot,
+			'billing_metrics' => $billing_metrics,
+			'billing_blockers' => $billing_blockers,
 			'route_evidence'        => $route_evidence,
 			'boundaries'           => self::boundaries(),
 		);
@@ -703,7 +713,7 @@ final class SC_EI_Platform_Repository {
 				break;
 			case 'repair_database':
 				SC_EI_Database::maybe_upgrade();
-				$result = ! in_array( false, SC_EI_Database::tables_exist(), true ) && ! in_array( false, SC_EI_Database::platform_columns_exist(), true ) && ! in_array( false, SC_EI_Database::inquiry_columns_exist(), true ) && ! in_array( false, SC_EI_Database::lifecycle_columns_exist(), true ) && ! in_array( false, SC_EI_Database::support_columns_exist(), true ) && ! in_array( false, SC_EI_Database::calendar_columns_exist(), true ) && ! in_array( false, SC_EI_Database::proposal_governance_columns_exist(), true ) && ! in_array( false, SC_EI_Database::workspace_columns_exist(), true ) && ! in_array( false, SC_EI_Database::service_intelligence_columns_exist(), true );
+				$result = ! in_array( false, SC_EI_Database::tables_exist(), true ) && ! in_array( false, SC_EI_Database::platform_columns_exist(), true ) && ! in_array( false, SC_EI_Database::inquiry_columns_exist(), true ) && ! in_array( false, SC_EI_Database::lifecycle_columns_exist(), true ) && ! in_array( false, SC_EI_Database::support_columns_exist(), true ) && ! in_array( false, SC_EI_Database::calendar_columns_exist(), true ) && ! in_array( false, SC_EI_Database::proposal_governance_columns_exist(), true ) && ! in_array( false, SC_EI_Database::workspace_columns_exist(), true ) && ! in_array( false, SC_EI_Database::service_intelligence_columns_exist(), true ) && ! in_array( false, SC_EI_Database::billing_columns_exist(), true );
 				break;
 			case 'verify_migration':
 				$result = self::run_migrations( (string) get_option( 'sc_ei_version_previous', '' ) );
@@ -741,6 +751,9 @@ final class SC_EI_Platform_Repository {
 				break;
 			case 'verify_service_intelligence_migration':
 				$result = SC_EI_Service_Intelligence_Repository::record_migration( (string) get_option( 'sc_ei_service_intelligence_schema_version_previous', '' ) );
+				break;
+			case 'verify_billing_migration':
+				$result = SC_EI_Billing_Repository::record_migration( (string) get_option( 'sc_ei_billing_schema_version_previous', '' ) );
 				break;
 			case 'repair_calendar_reliability':
 				$result = SC_EI_Calendar_Repository::repair_reminder_state();
@@ -915,6 +928,8 @@ final class SC_EI_Platform_Repository {
 			'verify_proposal_governance_migration' => __( 'Verify v1.4.0 proposal-governance migration', 'sustainable-catalyst-engagement-intake' ),
 			'verify_workspace_migration' => __( 'Verify v1.5.0 client workspace migration', 'sustainable-catalyst-engagement-intake' ),
 			'verify_service_intelligence_migration' => __( 'Verify v1.6.0 analytics and service-intelligence migration', 'sustainable-catalyst-engagement-intake' ),
+			'verify_billing_migration' => __( 'Verify v1.7.0 billing and payment-handoff migration', 'sustainable-catalyst-engagement-intake' ),
+			'review_billing' => __( 'Open Billing & Payments', 'sustainable-catalyst-engagement-intake' ),
 			'review_service_intelligence' => __( 'Open Analytics & Intelligence', 'sustainable-catalyst-engagement-intake' ),
 			'review_client_workspaces' => __( 'Review secure client workspaces', 'sustainable-catalyst-engagement-intake' ),
 			'verify_proposal_reliability_patch' => __( 'Verify v1.4.1 proposal reliability patch', 'sustainable-catalyst-engagement-intake' ),

@@ -1,13 +1,16 @@
 # Sustainable Catalyst Contact and Engagement Platform
 
-**Version:** 1.6.0  
-**Release:** Engagement Analytics and Service Intelligence
+**Version:** 1.7.0  
+**Release:** Billing, Invoicing, and Payment Handoffs
 
-v1.6.0 adds a privacy-safe service-intelligence layer over the governed inquiry, support, scheduling, proposal, engagement, and client-workspace system. Authorized staff can inspect aggregate demand, cycle time, resolution, collaboration, proposal, and delivery patterns without ranking senders or processing private message and document contents.
+v1.7.0 adds governed billing records to the engagement lifecycle while keeping payment collection outside WordPress. It supports versioned invoices, external HTTPS payment handoffs, sender-safe invoice status, replay-safe provider events, and privacy controls without storing card or bank credentials.
 
 ## Major capabilities
 
-- Aggregate inquiry, support, scheduling, proposal, engagement, workspace, milestone, deliverable, and signal metrics
+- Engagement-linked billing profiles, versioned invoices, line items, and immutable invoice snapshots
+- Human-reviewed invoice issue, dispute, overdue, payment, and void states
+- HTTPS external payment-provider handoffs with idempotent replay and bounded metadata
+- Sender Portal invoice and payment-status projections that exclude internal and sensitive fields
 - Minimum-cohort suppression for grouped and rate metrics
 - Product, component, service, weekly, funnel, timing, workload, and completion views
 - SHA-256-hashed aggregate snapshots with version-bound freshness evidence
@@ -37,28 +40,29 @@ Client workspaces are not a separate public registration system. A workspace is 
 
 ## Release identity
 
-- Plugin version: `1.6.0`
-- Database version: `1.6.0`
-- Platform evidence schema: `1.6.0`
-- Portal schema: `1.7.0`
+- Plugin version: `1.7.0`
+- Database version: `1.7.0`
+- Platform evidence schema: `1.7.0`
+- Portal schema: `1.8.0`
 - Workspace schema: `1.0.0`
 - Analytics schema: `1.1.0`
 - Service Intelligence schema: `1.0.0`
-- Migration: `v1_6_0_engagement_analytics_service_intelligence`
+- Billing schema: `1.0.0`
+- Migration: `v1_7_0_billing_invoicing_payment_handoffs`
 
 ## Installation and validation
 
 1. Back up the WordPress database and protected engagement-document storage.
-2. Install the v1.6.0 ZIP over the current plugin.
+2. Install the v1.7.0 ZIP over the current plugin.
 3. Clear WordPress, object, host, CDN, browser, and PHP opcode caches.
 4. Open **Contact & Engagement → Platform Overview**.
-5. Repair the database contract and verify the v1.6.0 service-intelligence migration if requested.
-6. Open **Contact & Engagement → Analytics & Intelligence**.
-7. Run Live Validation and confirm the aggregate privacy rejection, human-reviewed finding, evidence hash, snapshot, and cleanup checks pass.
-8. Save one controlled aggregate snapshot and review one controlled finding.
+5. Repair the database contract and verify the v1.7.0 billing migration if requested.
+6. Open **Contact & Engagement → Billing & Payments**.
+7. Run Live Validation and confirm invoice issue is versioned, sensitive payment metadata is rejected, payment-handoff replay is idempotent, settlement updates the invoice, and cleanup succeeds.
+8. Create one controlled billing profile and invoice, then verify the external HTTPS handoff and Sender Portal projection.
 9. Re-record version-bound inbox, backup, validation, and pilot evidence.
 10. Require 100%, zero required failures, and zero warnings before Production.
 
 Repository tests and archive verification do not replace live validation on the WordPress host.
 
-See `docs/ENGAGEMENT-ANALYTICS-SERVICE-INTELLIGENCE.md`, `docs/MIGRATION-v1.6.0.md`, and `docs/RELEASE.md`.
+See `docs/BILLING-INVOICING-PAYMENT-HANDOFFS.md`, `docs/MIGRATION-v1.7.0.md`, and `docs/RELEASE.md`.

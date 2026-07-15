@@ -100,6 +100,7 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 				'proposals' => 'view_proposals',
 				'engagement' => 'view_engagements',
 				'workspace' => 'view_workspace',
+				'billing' => 'view_billing',
 				'preferences' => 'update_contact',
 				'privacy' => 'privacy_requests',
 				'access' => 'revoke_access',
@@ -129,6 +130,7 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 						<dt><?php esc_html_e( 'Meeting records', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $meeting_offers ) ) ); ?></dd>
 						<dt><?php esc_html_e( 'Proposal records', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $proposals ) ) ); ?></dd>
 						<dt><?php esc_html_e( 'Client workspaces', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $workspace_snapshot ) ) ); ?></dd>
+						<dt><?php esc_html_e( 'Invoices' , 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $billing_snapshot ) ) ); ?></dd>
 						<dt><?php esc_html_e( 'Withdrawal state', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( SC_EI_Portal_Schema::label( SC_EI_Portal_Schema::withdrawal_statuses(), $inquiry['sender_withdrawal_status'] ) ); ?></dd>
 					</dl>
 					<?php if ( ! empty( $lifecycle_snapshot['summary'] ) ) : ?>
@@ -397,6 +399,23 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 					</article>
 				<?php endforeach; ?>
 			</div>
+		</section>
+
+
+	<?php elseif ( 'billing' === $view ) : ?>
+		<section class="sc-ei-portal-card">
+			<h3><?php esc_html_e( 'Invoices and external payment handoffs', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<p><?php esc_html_e( 'This portal shows issued invoice records and reviewed links to external payment providers. Sustainable Catalyst does not store card numbers, bank credentials, or provider secrets here.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<?php if ( ! $billing_snapshot ) : ?><p><?php esc_html_e( 'No sender-visible invoice is available.', 'sustainable-catalyst-engagement-intake' ); ?></p><?php endif; ?>
+			<?php foreach ( $billing_snapshot as $invoice_record ) : ?>
+				<article class="sc-ei-portal-notice">
+					<header class="sc-ei-portal-workflow-header"><div><p class="sc-ei-portal__eyebrow"><?php echo esc_html( $invoice_record['invoice_number'] ); ?></p><h4><?php echo esc_html( $invoice_record['currency'] . ' ' . number_format( absint( $invoice_record['total_minor'] ) / 100, 2 ) ); ?></h4></div><span class="sc-ei-portal-workflow-state"><?php echo esc_html( ucwords( str_replace( '_', ' ', $invoice_record['status'] ) ) ); ?></span></header>
+					<dl class="sc-ei-portal-details"><dt><?php esc_html_e( 'Issued', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $invoice_record['issued_at'] ? get_date_from_gmt( $invoice_record['issued_at'], 'M j, Y' ) : '—' ); ?></dd><dt><?php esc_html_e( 'Due', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $invoice_record['due_at'] ? get_date_from_gmt( $invoice_record['due_at'], 'M j, Y' ) : '—' ); ?></dd><dt><?php esc_html_e( 'Balance', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( $invoice_record['currency'] . ' ' . number_format( absint( $invoice_record['balance_due_minor'] ) / 100, 2 ) ); ?></dd></dl>
+					<?php if ( $invoice_record['memo'] ) : ?><p><?php echo nl2br( esc_html( $invoice_record['memo'] ) ); ?></p><?php endif; ?>
+					<?php if ( $invoice_record['line_items'] ) : ?><h5><?php esc_html_e( 'Line items', 'sustainable-catalyst-engagement-intake' ); ?></h5><ul><?php foreach ( $invoice_record['line_items'] as $line_item ) : ?><li><?php echo esc_html( $line_item['description'] . ' — ' . $invoice_record['currency'] . ' ' . number_format( absint( $line_item['amount_minor'] ) / 100, 2 ) ); ?></li><?php endforeach; ?></ul><?php endif; ?>
+					<?php foreach ( $invoice_record['payment_handoffs'] as $payment_handoff ) : ?><?php if ( ! empty( $payment_handoff['checkout_url'] ) ) : ?><p><a class="sc-ei-button sc-ei-button--primary" href="<?php echo esc_url( $payment_handoff['checkout_url'] ); ?>" target="_blank" rel="noopener noreferrer nofollow"><?php esc_html_e( 'Open external payment page', 'sustainable-catalyst-engagement-intake' ); ?></a></p><?php endif; ?><?php endforeach; ?>
+				</article>
+			<?php endforeach; ?>
 		</section>
 
 	<?php elseif ( 'workspace' === $view ) : ?>

@@ -160,6 +160,27 @@ final class SC_EI_Privacy {
 				);
 			}
 
+
+			$billing = SC_EI_Billing_Repository::export_for_inquiry( $inquiry_id );
+			foreach ( (array) ( $billing['profiles'] ?? array() ) as $record ) {
+				$data[] = array( 'group_id' => 'sc-engagement-intake-billing-profiles', 'group_label' => __( 'Billing Profiles', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-billing-profile-' . $record['id'], 'data' => self::export_fields( $record, array( 'organization_name' => 'Organization', 'billing_contact_name' => 'Billing contact name', 'billing_contact_email' => 'Billing contact email', 'billing_address_json' => 'Billing address', 'tax_identifier_reference' => 'Tax reference', 'currency' => 'Currency', 'payment_terms_days' => 'Payment terms', 'status' => 'Status', 'created_at' => 'Created at', 'updated_at' => 'Updated at' ) ) );
+			}
+			foreach ( (array) ( $billing['invoices'] ?? array() ) as $record ) {
+				$data[] = array( 'group_id' => 'sc-engagement-intake-invoices', 'group_label' => __( 'Invoices', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-invoice-' . $record['id'], 'data' => self::export_fields( $record, array( 'invoice_number' => 'Invoice number', 'status' => 'Status', 'currency' => 'Currency', 'subtotal_minor' => 'Subtotal minor units', 'tax_minor' => 'Tax minor units', 'total_minor' => 'Total minor units', 'amount_paid_minor' => 'Amount paid minor units', 'balance_due_minor' => 'Balance due minor units', 'issued_at' => 'Issued at', 'due_at' => 'Due at', 'paid_at' => 'Paid at', 'memo' => 'Memo', 'current_version' => 'Current version', 'created_at' => 'Created at', 'updated_at' => 'Updated at' ) ) );
+			}
+			foreach ( (array) ( $billing['items'] ?? array() ) as $record ) {
+				$data[] = array( 'group_id' => 'sc-engagement-intake-invoice-items', 'group_label' => __( 'Invoice Line Items', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-invoice-item-' . $record['id'], 'data' => self::export_fields( $record, array( 'invoice_id' => 'Invoice ID', 'line_number' => 'Line number', 'item_type' => 'Item type', 'description' => 'Description', 'quantity' => 'Quantity', 'unit_amount_minor' => 'Unit amount minor units', 'amount_minor' => 'Amount minor units', 'tax_code' => 'Tax code', 'created_at' => 'Created at' ) ) );
+			}
+			foreach ( (array) ( $billing['versions'] ?? array() ) as $record ) {
+				$data[] = array( 'group_id' => 'sc-engagement-intake-invoice-versions', 'group_label' => __( 'Invoice Versions', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-invoice-version-' . $record['id'], 'data' => self::export_fields( $record, array( 'invoice_id' => 'Invoice ID', 'version_number' => 'Version', 'snapshot_json' => 'Invoice snapshot', 'content_hash' => 'Content hash', 'created_at' => 'Created at' ) ) );
+			}
+			foreach ( (array) ( $billing['handoffs'] ?? array() ) as $record ) {
+				$data[] = array( 'group_id' => 'sc-engagement-intake-payment-handoffs', 'group_label' => __( 'External Payment Handoffs', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-payment-handoff-' . $record['id'], 'data' => self::export_fields( $record, array( 'schema' => 'Schema', 'invoice_id' => 'Invoice ID', 'provider' => 'Provider', 'provider_reference' => 'Provider reference', 'checkout_url' => 'External payment URL', 'status' => 'Status', 'amount_minor' => 'Amount minor units', 'currency' => 'Currency', 'expires_at' => 'Expires at', 'authorized_at' => 'Authorized at', 'settled_at' => 'Settled at', 'failed_at' => 'Failed at', 'refunded_at' => 'Refunded at', 'created_at' => 'Created at', 'updated_at' => 'Updated at' ) ) );
+			}
+			foreach ( (array) ( $billing['events'] ?? array() ) as $record ) {
+				$data[] = array( 'group_id' => 'sc-engagement-intake-billing-events', 'group_label' => __( 'Billing Audit Events', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-billing-event-' . $record['id'], 'data' => self::export_fields( $record, array( 'event_type' => 'Event type', 'from_status' => 'Previous status', 'to_status' => 'New status', 'actor_type' => 'Actor type', 'context_json' => 'Event context', 'immutable_hash' => 'Immutable hash', 'created_at' => 'Created at' ) ) );
+			}
+
 			foreach ( SC_EI_Review_Repository::history( $inquiry_id, 500 ) as $review ) {
 				$data[] = array(
 					'group_id'    => 'sc-engagement-intake-reviews',

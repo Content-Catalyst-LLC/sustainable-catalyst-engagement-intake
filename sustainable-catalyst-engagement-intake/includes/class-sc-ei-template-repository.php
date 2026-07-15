@@ -204,6 +204,12 @@ final class SC_EI_Template_Repository {
 		$support_case = ! empty( $inquiry['id'] ) ? SC_EI_Support_Repository::for_inquiry( absint( $inquiry['id'] ) ) : null;
 		$workspace_records = ! empty( $inquiry['id'] ) ? SC_EI_Workspace_Repository::sender_snapshot( absint( $inquiry['id'] ) ) : array();
 		$workspace_record = $workspace_records ? reset( $workspace_records ) : array();
+		$billing_records = ! empty( $inquiry['id'] ) ? SC_EI_Billing_Repository::sender_snapshot( absint( $inquiry['id'] ) ) : array();
+		$billing_record = $billing_records ? reset( $billing_records ) : array();
+		$payment_handoff = ! empty( $billing_record['payment_handoffs'] ) ? reset( $billing_record['payment_handoffs'] ) : array();
+		$billing_currency = (string) ( $billing_record['currency'] ?? 'USD' );
+		$billing_total = isset( $billing_record['total_minor'] ) ? $billing_currency . ' ' . number_format( absint( $billing_record['total_minor'] ) / 100, 2 ) : '';
+		$billing_balance = isset( $billing_record['balance_due_minor'] ) ? $billing_currency . ' ' . number_format( absint( $billing_record['balance_due_minor'] ) / 100, 2 ) : '';
 		$calendar_meetings = ! empty( $inquiry['id'] ) ? SC_EI_Workflow_Repository::meeting_offers_for_inquiry( absint( $inquiry['id'] ), false ) : array();
 		$calendar_meeting = $calendar_meetings ? reset( $calendar_meetings ) : array();
 		$scheduled_start = '';
@@ -260,6 +266,13 @@ final class SC_EI_Template_Repository {
 			'{workspace_title}'       => (string) ( $workspace_record['title'] ?? '' ),
 			'{workspace_status}'      => isset( $workspace_record['status'] ) ? ucwords( str_replace( '_', ' ', (string) $workspace_record['status'] ) ) : '',
 			'{workspace_next_step}'   => (string) ( $workspace_record['next_step'] ?? '' ),
+			'{invoice_number}'        => (string) ( $billing_record['invoice_number'] ?? '' ),
+			'{invoice_status}'        => isset( $billing_record['status'] ) ? ucwords( str_replace( '_', ' ', (string) $billing_record['status'] ) ) : '',
+			'{invoice_total}'         => $billing_total,
+			'{invoice_balance}'       => $billing_balance,
+			'{invoice_due}'           => (string) ( $billing_record['due_at'] ?? '' ),
+			'{payment_provider}'      => isset( $payment_handoff['provider'] ) ? ucwords( str_replace( '_', ' ', (string) $payment_handoff['provider'] ) ) : '',
+			'{payment_url}'           => (string) ( $payment_handoff['checkout_url'] ?? '' ),
 		);
 
 		$subject = strtr( (string) $template['subject_template'], $variables );
