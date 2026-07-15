@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.0 — Proposals, Statements of Work, and Engagement Approvals
+
+- Added governed proposal states, current-version enforcement, immutable sender-action receipts, and human-controlled proposal decisions.
+- Added versioned Statements of Work with internal approval, sender-safe review, and explicit sender approval evidence.
+- Added typed change requests with scope, timeline, and fee impact plus governed requested, review, approval, decline, application, and withdrawal states.
+- Added idempotent conversion from a contracted proposal and sender-approved SOW into an engagement handoff.
+- Added a Proposal Governance administration workspace, Sender Portal SOW view, reviewable communication templates, privacy export/redaction, REST export, readiness, and Live Validation.
+- Added four nondestructive governance tables and advanced database and platform evidence versions to 1.4.0.
+- Preserved the boundary against automatic contracts, electronic signatures, payments, proposal decisions, and engagement activation.
+
 ## 1.3.1 — Scheduling, Reminder, and Time-Zone Reliability Patch
 
 - Rejects nonexistent and ambiguous daylight-saving local times instead of silently normalizing meeting times.

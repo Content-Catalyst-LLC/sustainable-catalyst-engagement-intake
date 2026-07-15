@@ -22,9 +22,9 @@ $capabilities = file_get_contents( $plugin . '/includes/class-sc-ei-capabilities
 $uninstall = file_get_contents( $plugin . '/uninstall.php' );
 
 $checks = array(
-	'v1.2.0 identity and support schema' => false !== strpos( $main, 'Version:     1.3.1' )
-		&& false !== strpos( $main, "SC_EI_DB_VERSION', '1.3.0'" )
-		&& false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '1.3.1'" )
+	'v1.2.0 identity and support schema' => false !== strpos( $main, 'Version:     1.4.0' )
+		&& false !== strpos( $main, "SC_EI_DB_VERSION', '1.4.0'" )
+		&& false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '1.4.0'" )
 		&& false !== strpos( $main, "SC_EI_SUPPORT_SCHEMA_VERSION', '1.0.1'" ),
 	'four support tables installed' => false !== strpos( $db, '$sql_support_cases' )
 		&& false !== strpos( $db, '$sql_support_case_events' )

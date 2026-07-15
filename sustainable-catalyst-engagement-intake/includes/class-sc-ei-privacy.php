@@ -105,6 +105,32 @@ final class SC_EI_Privacy {
 				);
 			}
 
+			$proposal_governance = SC_EI_Proposal_Governance_Repository::export_for_inquiry( $inquiry_id );
+			foreach ( (array) ( $proposal_governance['statements_of_work'] ?? array() ) as $sow ) {
+				$data[] = array(
+					'group_id' => 'sc-engagement-intake-statements-of-work',
+					'group_label' => __( 'Engagement Intake Statements of Work', 'sustainable-catalyst-engagement-intake' ),
+					'item_id' => 'sc-ei-sow-' . $sow['id'],
+					'data' => self::export_fields( $sow, array( 'sow_number' => 'Statement of Work number', 'proposal_number' => 'Proposal number', 'status' => 'Statement of Work status', 'version_number' => 'Current version', 'title' => 'Title', 'purpose_background' => 'Purpose and background', 'scope_json' => 'Scope', 'deliverables_json' => 'Deliverables', 'milestones_json' => 'Milestones', 'responsibilities_json' => 'Responsibilities', 'dependencies_json' => 'Dependencies', 'acceptance_criteria' => 'Acceptance criteria', 'change_control' => 'Change-control process', 'communication_expectations' => 'Communication expectations', 'data_handling' => 'Data handling', 'ip_terms' => 'Intellectual-property terms', 'open_source_boundaries' => 'Open-source boundaries', 'fees_payment' => 'Fees and payment', 'start_date' => 'Start date', 'target_end_date' => 'Target end date', 'termination_conditions' => 'Termination conditions', 'approved_at' => 'Approved at', 'sender_approved_at' => 'Sender approved at', 'created_at' => 'Created at', 'updated_at' => 'Updated at' ) ),
+				);
+			}
+			foreach ( (array) ( $proposal_governance['change_requests'] ?? array() ) as $change ) {
+				$data[] = array(
+					'group_id' => 'sc-engagement-intake-change-requests',
+					'group_label' => __( 'Engagement Intake Change Requests', 'sustainable-catalyst-engagement-intake' ),
+					'item_id' => 'sc-ei-change-' . $change['id'],
+					'data' => self::export_fields( $change, array( 'change_number' => 'Change request number', 'status' => 'Change request status', 'requester_type' => 'Requester type', 'request_summary' => 'Requested change', 'reason' => 'Reason', 'scope_impact' => 'Scope impact', 'timeline_impact' => 'Timeline impact', 'fee_impact_minor' => 'Fee impact minor units', 'currency' => 'Currency', 'decision_note' => 'Decision note', 'decided_at' => 'Decision time', 'applied_at' => 'Applied time', 'created_at' => 'Created at', 'updated_at' => 'Updated at' ) ),
+				);
+			}
+			foreach ( (array) ( $proposal_governance['approvals'] ?? array() ) as $approval ) {
+				$data[] = array(
+					'group_id' => 'sc-engagement-intake-proposal-approvals',
+					'group_label' => __( 'Engagement Intake Proposal Approval Records', 'sustainable-catalyst-engagement-intake' ),
+					'item_id' => 'sc-ei-proposal-approval-' . $approval['id'],
+					'data' => self::export_fields( $approval, array( 'schema' => 'Approval schema', 'proposal_id' => 'Proposal ID', 'proposal_version_id' => 'Proposal version ID', 'sow_id' => 'Statement of Work ID', 'action' => 'Approval action', 'actor_type' => 'Actor type', 'note' => 'Approval note', 'authority_attested' => 'Authority attested', 'boundary_acknowledged' => 'Boundary acknowledged', 'immutable_hash' => 'Immutable record hash', 'created_at' => 'Created at' ) ),
+				);
+			}
+
 			foreach ( SC_EI_Review_Repository::history( $inquiry_id, 500 ) as $review ) {
 				$data[] = array(
 					'group_id'    => 'sc-engagement-intake-reviews',

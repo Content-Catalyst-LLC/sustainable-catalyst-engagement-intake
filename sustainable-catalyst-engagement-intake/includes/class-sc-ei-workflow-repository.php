@@ -598,7 +598,7 @@ final class SC_EI_Workflow_Repository {
 		global $wpdb;
 
 		$proposal = self::find_proposal( $proposal_id );
-		if ( ! $proposal || ! in_array( $proposal['status'], array( 'draft', 'published' ), true ) ) {
+		if ( ! $proposal || ! in_array( $proposal['status'], array( 'draft', 'published', 'changes_requested' ), true ) ) {
 			return new WP_Error( 'workflow_proposal_not_editable', __( 'This proposal cannot receive another version.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 		$version = self::create_proposal_version( $proposal_id, $input, $actor_user_id );
@@ -638,7 +638,7 @@ final class SC_EI_Workflow_Repository {
 		$proposal = self::find_proposal( $id );
 		if (
 			! $proposal
-			|| ! in_array( $proposal['status'], array( 'draft', 'published' ), true )
+			|| ! in_array( $proposal['status'], array( 'draft', 'published', 'changes_requested' ), true )
 			|| empty( $proposal['pending_version_id'] )
 		) {
 			return new WP_Error( 'workflow_proposal_not_draft', __( 'A complete unpublished proposal version is required before publication.', 'sustainable-catalyst-engagement-intake' ) );
@@ -745,7 +745,30 @@ final class SC_EI_Workflow_Repository {
 			'row_version'               => absint( $proposal['row_version'] ) + 1,
 			'updated_at'                => $now,
 		);
-		if ( 'accept' === $response ) {
+		if ( 'confirm_receipt' === $response ) {
+			$expected = 'CONFIRM ' . strtoupper( $proposal['proposal_number'] );
+			if ( ! hash_equals( $expected, $confirmation ) ) {
+				return new WP_Error( 'workflow_proposal_confirmation_failed', __( 'The proposal receipt confirmation did not match.', 'sustainable-catalyst-engagement-intake' ) );
+			}
+			$data += array(
+				'status'          => 'published',
+				'sender_response' => 'confirm_receipt',
+			);
+			$event = 'proposal_receipt_confirmed';
+		} elseif ( 'request_changes' === $response ) {
+			$expected = 'REQUEST CHANGES ' . strtoupper( $proposal['proposal_number'] );
+			if ( ! hash_equals( $expected, $confirmation ) ) {
+				return new WP_Error( 'workflow_proposal_confirmation_failed', __( 'The proposal change-request confirmation did not match.', 'sustainable-catalyst-engagement-intake' ) );
+			}
+			if ( mb_strlen( $note ) < 5 ) {
+				return new WP_Error( 'workflow_proposal_note_required', __( 'Describe the requested proposal changes.', 'sustainable-catalyst-engagement-intake' ) );
+			}
+			$data += array(
+				'status'          => 'changes_requested',
+				'sender_response' => 'request_changes',
+			);
+			$event = 'proposal_changes_requested';
+		} elseif ( 'accept' === $response ) {
 			$expected = 'ACCEPT ' . strtoupper( $proposal['proposal_number'] );
 			if ( ! hash_equals( $expected, $confirmation ) ) {
 				return new WP_Error( 'workflow_proposal_confirmation_failed', __( 'The proposal acceptance confirmation did not match.', 'sustainable-catalyst-engagement-intake' ) );
@@ -820,6 +843,18 @@ final class SC_EI_Workflow_Repository {
 				'automatic_payment' => false,
 			),
 			absint( $proposal['inquiry_id'] )
+		);
+		do_action(
+			'sc_ei_proposal_sender_response_recorded',
+			$new,
+			array(
+				'action'                  => $response,
+				'note'                    => $note,
+				'authority_attested'      => $authority_attested,
+				'boundary_acknowledged'   => $boundary_acknowledged,
+				'confirmation'            => $confirmation,
+				'session_id'              => $session_id,
+			)
 		);
 		return $new;
 	}
@@ -904,7 +939,7 @@ final class SC_EI_Workflow_Repository {
 		$version_join = $portal_visible
 			? 'p.current_version_id'
 			: "CASE
-				WHEN p.status IN ('draft','published') THEN COALESCE(p.pending_version_id, p.current_version_id)
+				WHEN p.status IN ('draft','published','changes_requested','internal_review','approved_to_send') THEN COALESCE(p.pending_version_id, p.current_version_id)
 				ELSE p.current_version_id
 			END";
 		$row = $wpdb->get_row(
@@ -927,12 +962,12 @@ final class SC_EI_Workflow_Repository {
 		$table = SC_EI_Database::table( 'proposals' );
 		$versions = SC_EI_Database::table( 'proposal_versions' );
 		$where = $portal_visible
-			? "AND p.status IN ('published','accepted_pending_contract','declined','contracted','withdrawn','expired','superseded')"
+			? "AND p.status IN ('published','viewed','changes_requested','accepted_pending_contract','declined','contracted','withdrawn','expired','superseded','converted_to_engagement')"
 			: '';
 		$version_join = $portal_visible
 			? 'p.current_version_id'
 			: "CASE
-				WHEN p.status IN ('draft','published') THEN COALESCE(p.pending_version_id, p.current_version_id)
+				WHEN p.status IN ('draft','published','changes_requested','internal_review','approved_to_send') THEN COALESCE(p.pending_version_id, p.current_version_id)
 				ELSE p.current_version_id
 			END";
 		return (array) $wpdb->get_results(

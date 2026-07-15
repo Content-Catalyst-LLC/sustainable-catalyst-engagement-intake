@@ -82,6 +82,10 @@ final class SC_EI_Platform_Validation {
 		$support_signal_id = 0;
 		$support_link_ids = array();
 		$meeting_id = 0;
+		$proposal_id = 0;
+		$sow_id = 0;
+		$change_request_id = 0;
+		$engagement_id = 0;
 		$relative_path = '';
 		$temp_path = '';
 		$cleanup_ok = true;
@@ -93,7 +97,8 @@ final class SC_EI_Platform_Validation {
 		$lifecycle_columns = SC_EI_Database::lifecycle_columns_exist();
 		$support_columns = SC_EI_Database::support_columns_exist();
 		$calendar_columns = SC_EI_Database::calendar_columns_exist();
-		self::add( $checks, 'database_contract', __( 'Database tables, platform, lifecycle, support, and calendar schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ) && ! in_array( false, $inquiry_columns, true ) && ! in_array( false, $lifecycle_columns, true ) && ! in_array( false, $support_columns, true ) && ! in_array( false, $calendar_columns, true ), sprintf( '%d/%d tables; %d/%d platform columns; %d/%d inquiry columns; %d/%d lifecycle columns; %d/%d support columns; %d/%d calendar columns', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ), count( array_filter( $inquiry_columns ) ), count( $inquiry_columns ), count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ), count( array_filter( $support_columns ) ), count( $support_columns ), count( array_filter( $calendar_columns ) ), count( $calendar_columns ) ) );
+		$proposal_columns = SC_EI_Database::proposal_governance_columns_exist();
+		self::add( $checks, 'database_contract', __( 'Database tables, platform, lifecycle, support, calendar, and proposal-governance schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ) && ! in_array( false, $inquiry_columns, true ) && ! in_array( false, $lifecycle_columns, true ) && ! in_array( false, $support_columns, true ) && ! in_array( false, $calendar_columns, true ) && ! in_array( false, $proposal_columns, true ), sprintf( '%d/%d tables; %d/%d platform columns; %d/%d inquiry columns; %d/%d lifecycle columns; %d/%d support columns; %d/%d calendar columns; %d/%d proposal-governance columns', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ), count( array_filter( $inquiry_columns ) ), count( $inquiry_columns ), count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ), count( array_filter( $support_columns ) ), count( $support_columns ), count( array_filter( $calendar_columns ) ), count( $calendar_columns ), count( array_filter( $proposal_columns ) ), count( $proposal_columns ) ) );
 		$lifecycle_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Lifecycle_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		self::add( $checks, 'lifecycle_migration', __( 'v1.1.0 advisory lifecycle migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $lifecycle_migration, (string) ( $lifecycle_migration ?: 'missing' ) );
 		$support_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Support_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -104,6 +109,8 @@ final class SC_EI_Platform_Validation {
 		self::add( $checks, 'calendar_migration', __( 'v1.3.0 Microsoft Teams and calendar coordination migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $calendar_migration, (string) ( $calendar_migration ?: 'missing' ) );
 		$calendar_patch_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Calendar_Repository::PATCH_MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		self::add( $checks, 'calendar_reliability_patch', __( 'v1.3.1 scheduling, reminder, and time-zone reliability journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $calendar_patch_migration, (string) ( $calendar_patch_migration ?: 'missing' ) );
+		$proposal_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Proposal_Governance_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::add( $checks, 'proposal_governance_migration', __( 'v1.4.0 proposal, Statement of Work, approval, and change-request migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $proposal_migration, (string) ( $proposal_migration ?: 'missing' ) );
 		$timezone_runtime = SC_EI_Calendar_Repository::timezone_runtime_evidence();
 		self::add( $checks, 'calendar_timezone_runtime', __( 'Strict daylight-saving time validation', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $timezone_runtime, true ), wp_json_encode( $timezone_runtime ) );
 
@@ -143,7 +150,7 @@ final class SC_EI_Platform_Validation {
 					'inquiry_type'    => 'general',
 					'contact_name'    => 'Platform Validation',
 					'contact_email'   => $validation_email,
-					'subject'         => '[TEST] v1.3.1 live validation',
+					'subject'         => '[TEST] v1.4.0 live validation',
 					'message'         => 'Temporary administrator-generated validation record. Safe to remove.',
 					'form_variant'    => 'advanced',
 					'source_page'     => 'platform-validation',
@@ -264,6 +271,82 @@ final class SC_EI_Platform_Validation {
 			}
 			self::add( $checks, 'portal_invitation', __( 'Sender portal token issue and verification', 'sustainable-catalyst-engagement-intake' ), $portal_ok, $portal_ok ? 'temporary invitation verified without storing the raw token' : ( is_wp_error( $portal_result ) ? $portal_result->get_error_message() : 'portal token verification failed' ) );
 
+			if ( $portal_ok ) {
+				$proposal_input = array(
+					'title'             => '[TEST] Governed advisory proposal',
+					'executive_summary' => 'Temporary proposal created by administrator Live Validation.',
+					'scope'             => array( 'Validate governed proposal revisions', 'Validate Statement of Work approvals' ),
+					'deliverables'      => array( 'Temporary validation record', 'Complete cleanup evidence' ),
+					'exclusions'        => array( 'No real services are authorized' ),
+					'assumptions'       => array( 'This record is temporary' ),
+					'timeline_text'     => 'Temporary validation only.',
+					'fee_summary'       => '$0 validation fixture.',
+					'payment_terms'     => 'No payment is due.',
+					'legal_terms'       => 'Not a contract.',
+					'version_note'      => 'Initial validation version.',
+					'currency'          => 'USD',
+					'total'             => 0,
+					'expires_at'        => gmdate( 'Y-m-d H:i:s', time() + DAY_IN_SECONDS ),
+				);
+				$proposal = SC_EI_Workflow_Repository::create_proposal( $inquiry_id, $proposal_input, $actor_user_id, true );
+				if ( ! is_wp_error( $proposal ) ) {
+					$proposal_id = absint( $proposal['id'] ?? 0 );
+					$changes_requested = SC_EI_Workflow_Repository::respond_to_proposal( $proposal_id, 'request_changes', 'Please publish a temporary revised version.', true, true, 'REQUEST CHANGES ' . strtoupper( (string) $proposal['proposal_number'] ), $access_id );
+					$revised_input = $proposal_input;
+					$revised_input['executive_summary'] = 'Revised temporary proposal created by administrator Live Validation.';
+					$revised_input['version_note'] = 'Revision preserves the initial proposal version.';
+					$revised = ! is_wp_error( $changes_requested ) ? SC_EI_Workflow_Repository::add_proposal_version( $proposal_id, $revised_input, $actor_user_id ) : $changes_requested;
+					$published = ! is_wp_error( $revised ) ? SC_EI_Workflow_Repository::publish_proposal( $proposal_id, $actor_user_id ) : $revised;
+					$sow_input = array(
+						'title' => '[TEST] Statement of Work',
+						'purpose_background' => 'Temporary SOW for Live Validation.',
+						'scope' => array( 'Validate SOW versioning and sender projection' ),
+						'deliverables' => array( 'Temporary SOW record' ),
+						'milestones' => array( 'Create', 'Approve', 'Clean up' ),
+						'responsibilities' => array( 'Administrator removes all temporary records' ),
+						'dependencies' => array( 'Published proposal version' ),
+						'acceptance_criteria' => 'The current version is approved, sender-visible, immutable after sender approval, and removed during cleanup.',
+						'change_control' => 'Changes require a new version or governed change request.',
+						'communication_expectations' => 'No external communication is sent.',
+						'data_handling' => 'Temporary validation data only.',
+						'ip_terms' => 'No intellectual-property transfer.',
+						'open_source_boundaries' => 'Open-source software remains under its existing license.',
+						'fees_payment' => 'No fee or payment.',
+						'start_date' => gmdate( 'Y-m-d' ),
+						'target_end_date' => gmdate( 'Y-m-d', time() + DAY_IN_SECONDS ),
+						'termination_conditions' => 'Removed automatically after validation.',
+						'version_note' => 'Initial validation SOW.',
+					);
+					$sow = ! is_wp_error( $published ) ? SC_EI_Proposal_Governance_Repository::create_sow_from_proposal( $proposal_id, $sow_input, $actor_user_id ) : $published;
+					if ( ! is_wp_error( $sow ) ) { $sow_id = absint( $sow['id'] ?? 0 ); }
+					$sow_approved = $sow_id ? SC_EI_Proposal_Governance_Repository::approve_sow( $sow_id, 'APPROVE ' . strtoupper( (string) $sow['sow_number'] ), $actor_user_id ) : $sow;
+					$current_proposal = SC_EI_Workflow_Repository::find_proposal( $proposal_id, true );
+					$sender_sow_approval = ! is_wp_error( $sow_approved ) && $current_proposal ? SC_EI_Proposal_Governance_Repository::record_sender_action( $proposal_id, absint( $current_proposal['current_version_id'] ), 'sow_approved', 'Temporary sender SOW approval.', true, true, 'APPROVE ' . strtoupper( (string) $sow_approved['sow_number'] ), $access_id, $sow_id ) : $sow_approved;
+					$accepted = ! is_wp_error( $sender_sow_approval ) ? SC_EI_Workflow_Repository::respond_to_proposal( $proposal_id, 'accept', 'Temporary acceptance for validation.', true, true, 'ACCEPT ' . strtoupper( (string) $current_proposal['proposal_number'] ), $access_id ) : $sender_sow_approval;
+					$contracted = ! is_wp_error( $accepted ) ? SC_EI_Workflow_Repository::change_proposal_status( $proposal_id, 'contracted', 'Temporary external contract evidence for validation.', 'VALIDATION-CONTRACT-' . $proposal_id, $actor_user_id ) : $accepted;
+					$conversion = ! is_wp_error( $contracted ) ? SC_EI_Proposal_Governance_Repository::convert_to_engagement( $proposal_id, array( 'engagement_title' => '[TEST] Validation engagement', 'proposed_start_date' => gmdate( 'Y-m-d' ), 'target_end_date' => gmdate( 'Y-m-d', time() + DAY_IN_SECONDS ), 'sender_summary' => 'Temporary sender-visible validation engagement.' ), 'CONVERT ' . strtoupper( (string) $current_proposal['proposal_number'] ), $actor_user_id ) : $contracted;
+					if ( ! is_wp_error( $conversion ) ) { $engagement_id = absint( $conversion['engagement']['id'] ?? 0 ); }
+					$change = ! is_wp_error( $conversion ) ? SC_EI_Proposal_Governance_Repository::create_change_request( $inquiry_id, array( 'proposal_id' => $proposal_id, 'proposal_version_id' => absint( $current_proposal['current_version_id'] ), 'sow_id' => $sow_id, 'sow_version_id' => absint( $sow_approved['current_version_id'] ?? 0 ), 'engagement_id' => $engagement_id, 'request_summary' => 'Apply a temporary validation change.', 'reason' => 'Exercise governed change control.', 'scope_impact' => 'No real scope impact.', 'timeline_impact' => 'No real timeline impact.', 'fee_impact' => 0, 'currency' => 'USD' ), 'staff', $actor_user_id ) : $conversion;
+					if ( ! is_wp_error( $change ) ) { $change_request_id = absint( $change['id'] ?? 0 ); }
+					$change_review = $change_request_id ? SC_EI_Proposal_Governance_Repository::transition_change_request( $change_request_id, 'under_review', 'Temporary validation review.', 'UNDER_REVIEW ' . strtoupper( (string) $change['change_number'] ), $actor_user_id ) : $change;
+					$change_approved = ! is_wp_error( $change_review ) ? SC_EI_Proposal_Governance_Repository::transition_change_request( $change_request_id, 'approved', 'Temporary validation approval.', 'APPROVED ' . strtoupper( (string) $change['change_number'] ), $actor_user_id ) : $change_review;
+					$change_applied = ! is_wp_error( $change_approved ) ? SC_EI_Proposal_Governance_Repository::transition_change_request( $change_request_id, 'applied', 'Temporary validation application.', 'APPLIED ' . strtoupper( (string) $change['change_number'] ), $actor_user_id ) : $change_approved;
+					$sender_sows = SC_EI_Proposal_Governance_Repository::sender_snapshot( $inquiry_id );
+					$unsafe_sow_keys = $sender_sows ? array_intersect( array_keys( $sender_sows[0] ), array( 'approved_by', 'created_by', 'row_version', 'immutable_hash', 'actor_id', 'decision_note' ) ) : array( 'missing_snapshot' );
+					$approval_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM " . SC_EI_Database::table( 'proposal_approvals' ) . " WHERE inquiry_id = %d", $inquiry_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+					$version_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM " . SC_EI_Database::table( 'proposal_versions' ) . " WHERE proposal_id = %d", $proposal_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+					$proposal_governance_ok = ! is_wp_error( $changes_requested ) && ! is_wp_error( $revised ) && ! is_wp_error( $published ) && $version_count >= 2
+						&& ! is_wp_error( $sow_approved ) && ! is_wp_error( $sender_sow_approval ) && ! is_wp_error( $accepted ) && ! is_wp_error( $contracted )
+						&& ! is_wp_error( $conversion ) && ! empty( $engagement_id ) && ! is_wp_error( $change_applied ) && 'applied' === (string) ( $change_applied['status'] ?? '' )
+						&& $approval_count >= 3 && ! empty( $sender_sows ) && empty( $unsafe_sow_keys );
+				} else {
+					$proposal_governance_ok = false;
+				}
+				self::add( $checks, 'proposal_governance', __( 'Proposal revisions, Statement of Work approval, immutable sender decisions, engagement conversion, and governed change control', 'sustainable-catalyst-engagement-intake' ), $proposal_governance_ok, $proposal_governance_ok ? 'temporary proposal revised without overwriting version one; SOW approved and sender-projected through an allowlist; immutable approvals recorded; engagement conversion completed; change request applied' : ( is_wp_error( $proposal ) ? $proposal->get_error_message() : 'proposal governance validation failed' ) );
+			} else {
+				self::add( $checks, 'proposal_governance', __( 'Proposal revisions, Statement of Work approval, immutable sender decisions, engagement conversion, and governed change control', 'sustainable-catalyst-engagement-intake' ), false, 'Sender Portal access was unavailable for proposal-governance validation.' );
+			}
+
 
 			if ( $portal_ok ) {
 				$timezone = SC_EI_Teams::valid_timezone( wp_timezone_string() ) ? wp_timezone_string() : 'America/Chicago';
@@ -359,6 +442,26 @@ final class SC_EI_Platform_Validation {
 			$wpdb->delete( SC_EI_Database::table( 'meeting_offers' ), array( 'id' => $meeting_id ), array( '%d' ) );
 		}
 		if ( $inquiry_id ) {
+			$wpdb->delete( SC_EI_Database::table( 'change_requests' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
+			$wpdb->delete( SC_EI_Database::table( 'proposal_approvals' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
+			$sow_ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM " . SC_EI_Database::table( 'statements_of_work' ) . " WHERE inquiry_id = %d", $inquiry_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			foreach ( (array) $sow_ids as $temporary_sow_id ) {
+				$wpdb->delete( SC_EI_Database::table( 'statement_of_work_versions' ), array( 'sow_id' => absint( $temporary_sow_id ) ), array( '%d' ) );
+			}
+			$wpdb->delete( SC_EI_Database::table( 'statements_of_work' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
+			$engagement_ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM " . SC_EI_Database::table( 'engagements' ) . " WHERE inquiry_id = %d", $inquiry_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			foreach ( (array) $engagement_ids as $temporary_engagement_id ) {
+				$wpdb->delete( SC_EI_Database::table( 'engagement_requirements' ), array( 'engagement_id' => absint( $temporary_engagement_id ) ), array( '%d' ) );
+				$wpdb->delete( SC_EI_Database::table( 'engagement_events' ), array( 'engagement_id' => absint( $temporary_engagement_id ) ), array( '%d' ) );
+				$wpdb->delete( SC_EI_Database::table( 'engagement_snapshots' ), array( 'engagement_id' => absint( $temporary_engagement_id ) ), array( '%d' ) );
+			}
+			$wpdb->delete( SC_EI_Database::table( 'engagements' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
+			$proposal_ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM " . SC_EI_Database::table( 'proposals' ) . " WHERE inquiry_id = %d", $inquiry_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			foreach ( (array) $proposal_ids as $temporary_proposal_id ) {
+				$wpdb->delete( SC_EI_Database::table( 'proposal_versions' ), array( 'proposal_id' => absint( $temporary_proposal_id ) ), array( '%d' ) );
+			}
+			$wpdb->delete( SC_EI_Database::table( 'proposals' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
+			$wpdb->query( $wpdb->prepare( "DELETE FROM " . SC_EI_Database::table( 'workflow_events' ) . " WHERE inquiry_id = %d AND object_type IN ('proposal','sow','change_request','engagement')", $inquiry_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			$wpdb->delete( SC_EI_Database::table( 'support_case_links' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
 			$wpdb->delete( SC_EI_Database::table( 'support_case_events' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
 			$wpdb->delete( SC_EI_Database::table( 'support_cases' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
@@ -379,7 +482,7 @@ final class SC_EI_Platform_Validation {
 
 		$failures = array_values( array_filter( $checks, static fn( array $check ): bool => 'pass' !== $check['status'] ) );
 		$result = array(
-			'schema'         => 'sc-contact-engagement-live-validation/1.6',
+			'schema'         => 'sc-contact-engagement-live-validation/1.7',
 			'plugin_version' => SC_EI_VERSION,
 			'passed'         => empty( $failures ),
 			'score'          => $checks ? (int) round( 100 * ( count( $checks ) - count( $failures ) ) / count( $checks ) ) : 0,

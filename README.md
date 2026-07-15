@@ -1,49 +1,48 @@
 # Sustainable Catalyst Contact and Engagement Platform
 
-**Version:** 1.3.1  
-**Release:** Scheduling, Reminder, and Time-Zone Reliability Patch
+**Version:** 1.4.0  
+**Release:** Proposals, Statements of Work, and Engagement Approvals
 
-v1.3.1 stabilizes the Microsoft Teams and Calendar Coordination layer introduced in v1.3.0. It keeps the platform review-first: no public booking calendar is exposed, reminder jobs prepare records for human review rather than sending automatically, and the local WordPress meeting record remains canonical.
+v1.4.0 adds a governed proposal-to-engagement layer without turning the Sender Portal into an electronic-signature, payment, or autonomous contracting system. Proposal versions, Statements of Work, sender decisions, external contract evidence, change requests, and engagement conversion remain deliberate and auditable.
 
-## Reliability improvements
+## Major capabilities
 
-- rejects nonexistent spring-forward local times
-- rejects ambiguous fall-back local times
-- stores accepted meeting and follow-up times in UTC with an explicit IANA time zone
-- keeps cancellation and post-meeting notices eligible after the meeting enters its terminal state
-- closes orphaned and stale reminder records through a bounded repair
-- requires an accepted or recorded outbound communication before a reminder can be marked sent
-- rolls back rescheduling when reminder regeneration fails
-- stages post-meeting context and requested follow-up tasks before completion becomes canonical
-- exposes reminder, terminal-notice, time-zone, canceled-link, and follow-up blockers in Production Readiness
+- governed proposal lifecycle with current-version enforcement
+- immutable sender action receipts with integrity hashes
+- versioned Statements of Work with internal approval and sender review
+- typed change requests with scope, schedule, and fee impact
+- sender-safe proposal and SOW projection
+- idempotent conversion from a contracted proposal and sender-approved SOW into an engagement
+- reviewable proposal and engagement communication templates
+- privacy export, approved redaction, retention, REST export, readiness, and Live Validation coverage
 
 ## Human-control boundary
 
-Background work may identify due reminders and mark them ready for review. It does not send them. Microsoft Graph remains optional, and no meeting, calendar event, communication, lifecycle transition, or follow-up is created without an authorized action.
+The platform does not create contracts, electronic signatures, invoices, payments, proposal acceptances, or engagement activations automatically. A Sender Portal response is an auditable workflow record. Any legally operative contract or signature remains external and must be recorded separately before conversion.
 
 ## Migration
 
-The v1.3.1 patch is nondestructive:
+The v1.4.0 migration is nondestructive:
 
-- plugin version: `1.3.1`
-- database version: `1.3.0` (unchanged)
-- platform evidence schema: `1.3.1`
-- calendar schema: `1.0.1`
-- migration journal: `v1_3_1_scheduling_reminder_timezone_reliability`
+- plugin version: `1.4.0`
+- database version: `1.4.0`
+- platform evidence schema: `1.4.0`
+- proposal-governance schema: `1.0.0`
+- migration journal: `v1_4_0_proposals_statements_of_work_engagement_approvals`
 
-Activation verifies the existing v1.3.0 calendar schema and performs bounded reminder-state repair. It does not drop, rewrite, or merge inquiries, support cases, meetings, communications, private files, or Sender Portal records.
+It adds proposal approval, Statement of Work, SOW version, and change-request records while preserving all existing inquiries, support cases, meetings, proposals, engagements, documents, communications, and portal access.
 
 ## Upgrade
 
 1. Back up the WordPress database and protected engagement storage.
-2. Install the v1.3.1 ZIP over the existing plugin.
+2. Install the v1.4.0 ZIP over the existing plugin.
 3. Clear WordPress, object, host, CDN, browser, and PHP opcode caches.
 4. Open **Contact & Engagement → Platform Overview**.
-5. Run the v1.3.1 calendar reliability repair if shown.
-6. Run Live Validation.
-7. Confirm the test email externally.
-8. Test one advisory meeting and one support troubleshooting meeting.
+5. Run the v1.4.0 proposal-governance migration repair if shown.
+6. Open **Contact & Engagement → Proposal Governance**.
+7. Run Live Validation.
+8. Test a proposal revision, SOW approval, sender decision, external-contract record, engagement conversion, and change request.
 9. Re-record version-bound backup, inbox, validation, and pilot evidence.
 10. Promote only at 100%, zero required failures, and zero warnings.
 
-See `docs/SCHEDULING-REMINDER-TIMEZONE-RELIABILITY.md`, `docs/MIGRATION-v1.3.1.md`, and `docs/RELEASE.md`.
+See `docs/PROPOSALS-SOW-ENGAGEMENT-APPROVALS.md`, `docs/MIGRATION-v1.4.0.md`, and `docs/RELEASE.md`.

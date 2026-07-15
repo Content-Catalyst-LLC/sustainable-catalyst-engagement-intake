@@ -72,6 +72,8 @@ if ( $delete ) {
 	delete_option( 'sc_ei_support_schema_version' );
 	delete_option( 'sc_ei_calendar_schema_version' );
 	delete_option( 'sc_ei_calendar_schema_version_previous' );
+	delete_option( 'sc_ei_proposal_governance_schema_version' );
+	delete_option( 'sc_ei_proposal_governance_schema_version_previous' );
 	delete_option( 'sc_ei_last_calendar_reminder_run' );
 	delete_option( 'sc_ei_last_support_signal_digest' );
 	delete_option( 'sc_ei_lifecycle_reminder_lock' );

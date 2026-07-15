@@ -203,6 +203,9 @@ final class SC_EI_REST {
 		if ( current_user_can( 'sc_intake_view_support' ) ) {
 			$record['product_support'] = SC_EI_Support_Repository::export_for_inquiry( absint( $request['id'] ) );
 		}
+		if ( current_user_can( 'sc_intake_view_proposal_governance' ) ) {
+			$record['proposal_governance'] = SC_EI_Proposal_Governance_Repository::export_for_inquiry( absint( $request['id'] ) );
+		}
 		if ( current_user_can( 'sc_intake_view_fit_assessments' ) ) {
 			$record['fit_assessment'] = ! empty( $record['current_fit_assessment_id'] )
 				? SC_EI_Fit_Repository::find( absint( $record['current_fit_assessment_id'] ) )

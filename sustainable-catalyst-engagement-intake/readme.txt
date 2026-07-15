@@ -3,7 +3,7 @@ Contributors: content-catalyst
 Tags: contact, support, help desk, product support, advisory, engagement, sender portal, known issues, privacy
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 1.3.1
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,27 +11,19 @@ A governed contact-to-engagement platform with adaptive intake, advisory lifecyc
 
 == Description ==
 
-Version 1.3.0 is Microsoft Teams and Calendar Coordination. It adds governed meeting records, explicit meeting types, agendas and preparation requests, organizer and participant context, time-zone-safe scheduling, rescheduling history, reviewable idempotent reminders, cancellation safety, post-meeting follow-up, and sender-safe calendar views while preserving the existing advisory, support, privacy, and production-readiness boundaries.
+Version 1.4.0 is Proposals, Statements of Work, and Engagement Approvals. It adds governed proposal versions, immutable sender-action evidence, versioned Statements of Work, deliberate engagement conversion, typed change control, and sender-safe approval views while preserving the existing advisory, support, Teams, privacy, and production-readiness boundaries.
 
 The platform connects:
 
 * Adaptive general contact and service-specific engagement inquiry experiences
 * Focused product-support intake and private support-case operations
-* Typed integration with public Knowledge Base, known issues, Feature Suggestions, and releases
-* Privacy-safe, nonpersonal documentation-gap and product-friction signals
-* Protected document intake and quarantine
-* Human review, fit assessment, and structured advisory qualification
-* Governed lifecycle stages from inquiry through active engagement and completion
-* Private internal notes, ownership, priority, next actions, and assigned tasks
-* Secure Sender Portal status, messages, uploads, meetings, and proposal notices
-* Human-approved Microsoft Teams scheduling, calendar coordination, reminders, rescheduling, cancellation, and optional Microsoft Graph event creation
-* Versioned proposals and controlled engagement handoff
-* Aggregate lifecycle, response, qualification, proposal, acceptance, and workload metrics
-* Reliability, accessibility, abuse protection, privacy, retention, and incident controls
-* Canonical Workflow Core projections and signed internal handoffs
-* Runtime readiness, live validation, pilot evidence, backups, and typed launch governance
+* Secure Sender Portal status, messages, uploads, meetings, proposal decisions, and approved Statements of Work
+* Human-approved Microsoft Teams scheduling and calendar coordination
+* Governed proposal revisions, external contract evidence, and engagement conversion
+* Typed change requests and immutable approval records
+* Protected documents, privacy, retention, reliability, and launch governance
 
-The plugin slug, text domain, existing tables, public URLs, and existing shortcodes remain compatible.
+A Sender Portal response is an auditable workflow record, not an electronic signature or automatic authorization to begin work.
 
 == Recommended public entry ==
 
@@ -111,6 +103,14 @@ Repository validation does not replace live WordPress-host testing.
 11. Require 100%, zero failures, and zero warnings before Production.
 
 == Changelog ==
+
+= 1.4.0 =
+* Added governed proposal status, current-version enforcement, immutable sender actions, and deliberate proposal decisions.
+* Added versioned Statements of Work with internal approval and sender review.
+* Added typed change requests with scope, schedule, and fee impacts.
+* Added idempotent engagement conversion requiring a contracted proposal and sender-approved SOW.
+* Added Proposal Governance administration, Sender Portal SOW views, reviewable templates, privacy, readiness, and Live Validation coverage.
+* Advanced database and platform evidence versions to 1.4.0 and introduced proposal schema 1.0.0.
 
 = 1.3.1 =
 * Rejects nonexistent and ambiguous daylight-saving local times instead of silently normalizing meetings.

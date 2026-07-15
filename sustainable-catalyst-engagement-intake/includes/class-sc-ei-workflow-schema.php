@@ -27,13 +27,18 @@ final class SC_EI_Workflow_Schema {
 	public static function proposal_statuses(): array {
 		return array(
 			'draft'                     => __( 'Draft', 'sustainable-catalyst-engagement-intake' ),
+			'internal_review'           => __( 'Internal Review', 'sustainable-catalyst-engagement-intake' ),
+			'approved_to_send'          => __( 'Approved to Send', 'sustainable-catalyst-engagement-intake' ),
 			'published'                 => __( 'Published to Portal', 'sustainable-catalyst-engagement-intake' ),
+			'viewed'                    => __( 'Viewed', 'sustainable-catalyst-engagement-intake' ),
+			'changes_requested'         => __( 'Changes Requested', 'sustainable-catalyst-engagement-intake' ),
 			'accepted_pending_contract' => __( 'Accepted — Contract Pending', 'sustainable-catalyst-engagement-intake' ),
 			'declined'                  => __( 'Declined', 'sustainable-catalyst-engagement-intake' ),
 			'contracted'                => __( 'External Contract Recorded', 'sustainable-catalyst-engagement-intake' ),
 			'withdrawn'                 => __( 'Withdrawn', 'sustainable-catalyst-engagement-intake' ),
 			'expired'                   => __( 'Expired', 'sustainable-catalyst-engagement-intake' ),
 			'superseded'                => __( 'Superseded', 'sustainable-catalyst-engagement-intake' ),
+			'converted_to_engagement'   => __( 'Converted to Engagement', 'sustainable-catalyst-engagement-intake' ),
 		);
 	}
 
@@ -47,6 +52,8 @@ final class SC_EI_Workflow_Schema {
 
 	public static function sender_proposal_responses(): array {
 		return array(
+			'confirm_receipt' => __( 'Confirm receipt', 'sustainable-catalyst-engagement-intake' ),
+			'request_changes' => __( 'Request changes', 'sustainable-catalyst-engagement-intake' ),
 			'accept'  => __( 'Accept for contracting', 'sustainable-catalyst-engagement-intake' ),
 			'decline' => __( 'Decline proposal', 'sustainable-catalyst-engagement-intake' ),
 		);
@@ -74,7 +81,11 @@ final class SC_EI_Workflow_Schema {
 			'graph_linkage_reset'          => __( 'Graph Linkage Reset', 'sustainable-catalyst-engagement-intake' ),
 			'proposal_draft_created'       => __( 'Proposal Draft Created', 'sustainable-catalyst-engagement-intake' ),
 			'proposal_version_created'     => __( 'Proposal Version Created', 'sustainable-catalyst-engagement-intake' ),
+			'proposal_internal_review'     => __( 'Proposal Entered Internal Review', 'sustainable-catalyst-engagement-intake' ),
+			'proposal_approved_to_send'    => __( 'Proposal Approved to Send', 'sustainable-catalyst-engagement-intake' ),
 			'proposal_published'           => __( 'Proposal Published', 'sustainable-catalyst-engagement-intake' ),
+			'proposal_receipt_confirmed'   => __( 'Proposal Receipt Confirmed', 'sustainable-catalyst-engagement-intake' ),
+			'proposal_changes_requested'   => __( 'Proposal Changes Requested', 'sustainable-catalyst-engagement-intake' ),
 			'proposal_accepted'            => __( 'Proposal Accepted for Contracting', 'sustainable-catalyst-engagement-intake' ),
 			'proposal_declined'            => __( 'Proposal Declined', 'sustainable-catalyst-engagement-intake' ),
 			'proposal_withdrawn'           => __( 'Proposal Withdrawn', 'sustainable-catalyst-engagement-intake' ),

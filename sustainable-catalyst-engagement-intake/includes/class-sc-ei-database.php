@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -43,6 +43,10 @@ final class SC_EI_Database {
 		$graph_operations = self::table( 'graph_operations' );
 		$proposals = self::table( 'proposals' );
 		$proposal_versions = self::table( 'proposal_versions' );
+		$proposal_approvals = self::table( 'proposal_approvals' );
+		$statements_of_work = self::table( 'statements_of_work' );
+		$statement_of_work_versions = self::table( 'statement_of_work_versions' );
+		$change_requests = self::table( 'change_requests' );
 		$workflow_events = self::table( 'workflow_events' );
 		$engagements = self::table( 'engagements' );
 		$engagement_snapshots = self::table( 'engagement_snapshots' );
@@ -838,6 +842,138 @@ final class SC_EI_Database {
 			KEY version_number (version_number),
 			KEY content_hash (content_hash),
 			KEY created_by (created_by),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+
+		$sql_proposal_approvals = "CREATE TABLE {$proposal_approvals} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			schema varchar(80) NOT NULL DEFAULT 'sc-proposal-approval/1.0',
+			inquiry_id bigint(20) unsigned NOT NULL,
+			proposal_id bigint(20) unsigned NOT NULL,
+			proposal_version_id bigint(20) unsigned NOT NULL,
+			sow_id bigint(20) unsigned NULL,
+			action varchar(50) NOT NULL DEFAULT '',
+			actor_type varchar(20) NOT NULL DEFAULT 'sender',
+			actor_id bigint(20) unsigned NULL,
+			note longtext NULL,
+			authority_attested tinyint(1) unsigned NOT NULL DEFAULT 0,
+			boundary_acknowledged tinyint(1) unsigned NOT NULL DEFAULT 0,
+			confirmation_hash char(64) NOT NULL DEFAULT '',
+			immutable_hash char(64) NOT NULL DEFAULT '',
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			KEY inquiry_id (inquiry_id),
+			KEY proposal_version (proposal_id, proposal_version_id),
+			KEY sow_id (sow_id),
+			KEY action (action),
+			KEY actor_type (actor_type),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql_statements_of_work = "CREATE TABLE {$statements_of_work} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			sow_number varchar(40) NOT NULL DEFAULT '',
+			inquiry_id bigint(20) unsigned NOT NULL,
+			proposal_id bigint(20) unsigned NOT NULL,
+			proposal_version_id bigint(20) unsigned NOT NULL,
+			current_version_id bigint(20) unsigned NULL,
+			pending_version_id bigint(20) unsigned NULL,
+			status varchar(40) NOT NULL DEFAULT 'draft',
+			sender_visible tinyint(1) unsigned NOT NULL DEFAULT 0,
+			approved_by bigint(20) unsigned NULL,
+			approved_at datetime NULL,
+			sender_approved_at datetime NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY sow_number (sow_number),
+			UNIQUE KEY proposal_id (proposal_id),
+			KEY inquiry_id (inquiry_id),
+			KEY proposal_version_id (proposal_version_id),
+			KEY current_version_id (current_version_id),
+			KEY pending_version_id (pending_version_id),
+			KEY status (status),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql_statement_of_work_versions = "CREATE TABLE {$statement_of_work_versions} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			sow_id bigint(20) unsigned NOT NULL,
+			version_number int(10) unsigned NOT NULL DEFAULT 1,
+			title varchar(255) NOT NULL DEFAULT '',
+			purpose_background longtext NULL,
+			scope_json longtext NULL,
+			deliverables_json longtext NULL,
+			milestones_json longtext NULL,
+			responsibilities_json longtext NULL,
+			dependencies_json longtext NULL,
+			acceptance_criteria longtext NULL,
+			change_control longtext NULL,
+			communication_expectations longtext NULL,
+			data_handling longtext NULL,
+			ip_terms longtext NULL,
+			open_source_boundaries longtext NULL,
+			fees_payment longtext NULL,
+			start_date date NULL,
+			target_end_date date NULL,
+			termination_conditions longtext NULL,
+			attachment_ids_json longtext NULL,
+			version_note longtext NULL,
+			content_hash char(64) NOT NULL DEFAULT '',
+			created_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY sow_version (sow_id, version_number),
+			KEY sow_id (sow_id),
+			KEY version_number (version_number),
+			KEY content_hash (content_hash),
+			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql_change_requests = "CREATE TABLE {$change_requests} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			change_number varchar(40) NOT NULL DEFAULT '',
+			inquiry_id bigint(20) unsigned NOT NULL,
+			proposal_id bigint(20) unsigned NULL,
+			proposal_version_id bigint(20) unsigned NULL,
+			sow_id bigint(20) unsigned NULL,
+			sow_version_id bigint(20) unsigned NULL,
+			engagement_id bigint(20) unsigned NULL,
+			status varchar(40) NOT NULL DEFAULT 'requested',
+			requester_type varchar(20) NOT NULL DEFAULT 'staff',
+			requester_id bigint(20) unsigned NULL,
+			request_summary longtext NULL,
+			reason longtext NULL,
+			scope_impact longtext NULL,
+			timeline_impact longtext NULL,
+			fee_impact_minor bigint(20) unsigned NOT NULL DEFAULT 0,
+			currency char(3) NOT NULL DEFAULT 'USD',
+			decision_note longtext NULL,
+			decided_by bigint(20) unsigned NULL,
+			decided_at datetime NULL,
+			applied_by bigint(20) unsigned NULL,
+			applied_at datetime NULL,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY public_id (public_id),
+			UNIQUE KEY change_number (change_number),
+			KEY inquiry_id (inquiry_id),
+			KEY proposal_id (proposal_id),
+			KEY sow_id (sow_id),
+			KEY engagement_id (engagement_id),
+			KEY status (status),
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
@@ -1761,6 +1897,10 @@ final class SC_EI_Database {
 		dbDelta( $sql_graph_operations );
 		dbDelta( $sql_proposals );
 		dbDelta( $sql_proposal_versions );
+		dbDelta( $sql_proposal_approvals );
+		dbDelta( $sql_statements_of_work );
+		dbDelta( $sql_statement_of_work_versions );
+		dbDelta( $sql_change_requests );
 		dbDelta( $sql_workflow_events );
 		dbDelta( $sql_engagements );
 		dbDelta( $sql_engagement_snapshots );
@@ -1930,7 +2070,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -1965,6 +2105,9 @@ final class SC_EI_Database {
 		}
 		foreach ( self::calendar_columns_exist() as $key => $available ) {
 			$result[ 'calendar.' . $key ] = $available;
+		}
+		foreach ( self::proposal_governance_columns_exist() as $key => $available ) {
+			$result[ 'proposal_governance.' . $key ] = $available;
 		}
 		return $result;
 	}
@@ -2072,6 +2215,26 @@ final class SC_EI_Database {
 			$result[ $column ] = ( $found === $column );
 		}
 
+		return $result;
+	}
+
+
+	public static function proposal_governance_columns_exist(): array {
+		global $wpdb;
+		$tables = array(
+			'proposal_approvals' => array( 'public_id', 'schema', 'inquiry_id', 'proposal_id', 'proposal_version_id', 'sow_id', 'action', 'actor_type', 'actor_id', 'note', 'authority_attested', 'boundary_acknowledged', 'confirmation_hash', 'immutable_hash', 'created_at' ),
+			'statements_of_work' => array( 'public_id', 'sow_number', 'inquiry_id', 'proposal_id', 'proposal_version_id', 'current_version_id', 'pending_version_id', 'status', 'sender_visible', 'approved_by', 'approved_at', 'sender_approved_at', 'row_version', 'created_by', 'created_at', 'updated_at' ),
+			'statement_of_work_versions' => array( 'public_id', 'sow_id', 'version_number', 'title', 'purpose_background', 'scope_json', 'deliverables_json', 'milestones_json', 'responsibilities_json', 'dependencies_json', 'acceptance_criteria', 'change_control', 'communication_expectations', 'data_handling', 'ip_terms', 'open_source_boundaries', 'fees_payment', 'start_date', 'target_end_date', 'termination_conditions', 'attachment_ids_json', 'version_note', 'content_hash', 'created_by', 'created_at' ),
+			'change_requests' => array( 'public_id', 'change_number', 'inquiry_id', 'proposal_id', 'proposal_version_id', 'sow_id', 'sow_version_id', 'engagement_id', 'status', 'requester_type', 'requester_id', 'request_summary', 'reason', 'scope_impact', 'timeline_impact', 'fee_impact_minor', 'currency', 'decision_note', 'decided_by', 'decided_at', 'applied_by', 'applied_at', 'row_version', 'created_at', 'updated_at' ),
+		);
+		$result = array();
+		foreach ( $tables as $table_name => $columns ) {
+			$table = self::table( $table_name );
+			foreach ( $columns as $column ) {
+				$found = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$result[ $table_name . '.' . $column ] = ( $found === $column );
+			}
+		}
 		return $result;
 	}
 

@@ -27,6 +27,7 @@ final class SC_EI_Portal_Public {
 				'sc_ei_portal_respond_meeting'   => 'handle_meeting_response',
 				'sc_ei_portal_download_meeting_ics' => 'handle_meeting_ics',
 				'sc_ei_portal_respond_proposal'  => 'handle_proposal_response',
+				'sc_ei_portal_approve_sow'        => 'handle_sow_approval',
 				'sc_ei_portal_print_proposal'    => 'handle_proposal_print',
 				'sc_ei_portal_privacy_request'   => 'handle_privacy_request',
 				'sc_ei_portal_withdrawal'        => 'handle_withdrawal',
@@ -111,6 +112,7 @@ final class SC_EI_Portal_Public {
 		$workflow_settings = SC_EI_Workflow_Repository::settings();
 		$meeting_offers = SC_EI_Workflow_Repository::meeting_offers_for_inquiry( absint( $inquiry['id'] ), true );
 		$proposals = SC_EI_Workflow_Repository::proposals_for_inquiry( absint( $inquiry['id'] ), true );
+		$statements_of_work = SC_EI_Proposal_Governance_Repository::sender_snapshot( absint( $inquiry['id'] ) );
 		$lifecycle_snapshot = SC_EI_Lifecycle_Repository::sender_snapshot( absint( $inquiry['id'] ) );
 		$support_snapshot = SC_EI_Support_Repository::sender_snapshot( absint( $inquiry['id'] ) );
 		$engagement_settings = SC_EI_Engagement_Repository::settings();
@@ -443,6 +445,42 @@ final class SC_EI_Portal_Public {
 			);
 		}
 		self::redirect( 'proposals', is_wp_error( $result ) ? '' : 'portal_proposal_response_saved', is_wp_error( $result ) ? $result->get_error_code() : '' );
+	}
+
+
+	public static function handle_sow_approval(): void {
+		$context = self::require_context( 'respond_proposals' );
+		if ( is_wp_error( $context ) ) { self::redirect( 'proposals', '', $context->get_error_code() ); }
+		if ( ! self::valid_csrf( $context ) ) { self::redirect( 'proposals', '', 'portal_csrf_failed' ); }
+		if ( self::update_rate_limited( $context ) ) { self::redirect( 'proposals', '', 'portal_rate_limited' ); }
+		$sow_id = absint( $_POST['sow_id'] ?? 0 );
+		$sow = SC_EI_Proposal_Governance_Repository::find_sow( $sow_id, true );
+		if ( ! $sow || absint( $sow['inquiry_id'] ) !== absint( $context['inquiry']['id'] ) || 'approved' !== (string) $sow['status'] ) {
+			self::redirect( 'proposals', '', 'proposal_sow_unavailable' );
+		}
+		$confirmation = sanitize_text_field( wp_unslash( $_POST['sow_confirmation'] ?? '' ) );
+		$expected = 'APPROVE ' . strtoupper( (string) $sow['sow_number'] );
+		if ( ! hash_equals( $expected, strtoupper( trim( $confirmation ) ) ) ) {
+			self::redirect( 'proposals', '', 'proposal_sow_confirmation_failed' );
+		}
+		if ( empty( $_POST['proposal_authority_attested'] ) || empty( $_POST['proposal_boundary_acknowledged'] ) ) {
+			self::redirect( 'proposals', '', 'proposal_sow_attestation_required' );
+		}
+		$result = SC_EI_Proposal_Governance_Repository::record_sender_action(
+			absint( $sow['proposal_id'] ),
+			absint( $sow['proposal_version_id'] ),
+			'sow_approved',
+			sanitize_textarea_field( wp_unslash( $_POST['sow_response_note'] ?? '' ) ),
+			true,
+			true,
+			$confirmation,
+			absint( $context['session']['id'] ),
+			$sow_id
+		);
+		if ( ! is_wp_error( $result ) ) {
+			SC_EI_Portal_Repository::record_event( 'proposal_response_recorded', absint( $context['inquiry']['id'] ), absint( $context['access']['id'] ), absint( $context['session']['id'] ), 'statement_of_work', $sow_id, 'success', array( 'action' => 'sow_approved', 'automatic_contract' => false ) );
+		}
+		self::redirect( 'proposals', is_wp_error( $result ) ? '' : 'portal_sow_approval_saved', is_wp_error( $result ) ? $result->get_error_code() : '' );
 	}
 
 	public static function handle_proposal_print(): void {

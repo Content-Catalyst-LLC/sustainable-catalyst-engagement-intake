@@ -24,6 +24,7 @@ final class SC_EI_Diagnostics {
 		$workflow_core_columns = SC_EI_Database::workflow_core_columns_exist();
 		$platform_columns      = SC_EI_Database::platform_columns_exist();
 		$lifecycle_columns     = SC_EI_Database::lifecycle_columns_exist();
+		$proposal_governance_columns = SC_EI_Database::proposal_governance_columns_exist();
 		$admin              = get_role( 'administrator' );
 		$settings           = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
@@ -57,6 +58,8 @@ final class SC_EI_Diagnostics {
 		$graph_metrics = SC_EI_Graph_Repository::metrics();
 		$engagement_metrics = SC_EI_Engagement_Repository::metrics();
 		$lifecycle_metrics = SC_EI_Lifecycle_Repository::metrics();
+		$proposal_governance_metrics = SC_EI_Proposal_Governance_Repository::metrics();
+		$proposal_governance_blockers = SC_EI_Proposal_Governance_Repository::operational_blockers();
 		$hardening_metrics = SC_EI_Hardening_Repository::metrics();
 		$hardening_watchdog = SC_EI_Hardening_Repository::last_watchdog();
 		$workflow_core_metrics = SC_EI_Workflow_Core_Repository::metrics();
@@ -188,6 +191,18 @@ final class SC_EI_Diagnostics {
 				'automatic_commitment' => false,
 				'human_transition_reason' => ! empty( $settings['lifecycle_require_transition_reason'] ),
 				'owner_required_for_qualified' => ! empty( $settings['lifecycle_require_owner_for_qualified'] ),
+			),
+			'proposal_governance_schema_version' => SC_EI_PROPOSAL_SCHEMA_VERSION,
+			'proposal_governance_columns' => $proposal_governance_columns,
+			'proposal_governance' => array(
+				'metrics' => $proposal_governance_metrics,
+				'blockers' => $proposal_governance_blockers,
+				'migration_key' => SC_EI_Proposal_Governance_Repository::MIGRATION_KEY,
+				'sender_projection_allowlisted' => true,
+				'immutable_approval_hashes' => true,
+				'automatic_contract' => false,
+				'electronic_signature' => false,
+				'automatic_payment' => false,
 			),
 			'platform_schema_version' => SC_EI_PLATFORM_SCHEMA_VERSION,
 			'platform_columns'        => $platform_columns,

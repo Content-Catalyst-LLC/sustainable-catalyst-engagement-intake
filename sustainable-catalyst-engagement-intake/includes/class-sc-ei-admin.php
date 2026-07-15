@@ -80,6 +80,7 @@ final class SC_EI_Admin {
 		SC_EI_Fit_Admin::submenu();
 		SC_EI_Portal_Admin::submenu();
 		SC_EI_Workflow_Admin::submenu();
+		SC_EI_Proposal_Governance_Admin::submenu();
 		SC_EI_Calendar_Admin::submenu();
 		SC_EI_Graph_Admin::submenu();
 		SC_EI_Lifecycle_Admin::submenu();

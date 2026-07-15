@@ -739,30 +739,39 @@
     const authority = form.querySelector("input[name='proposal_authority_attested']");
     const boundary = form.querySelector("input[name='proposal_boundary_acknowledged']");
     const note = form.querySelector("textarea[name='proposal_response_note']");
+    const responseContract = () => {
+      const action = response?.value || "accept";
+      if (action === "confirm_receipt") {
+        return { verb: "CONFIRM", noteRequired: false, attestationsRequired: false, message: "Confirm that you received this proposal?" };
+      }
+      if (action === "request_changes") {
+        return { verb: "REQUEST CHANGES", noteRequired: true, attestationsRequired: false, message: "Submit this proposal change request?" };
+      }
+      if (action === "decline") {
+        return { verb: "DECLINE", noteRequired: true, attestationsRequired: false, message: "Record that you decline this proposal?" };
+      }
+      return { verb: "ACCEPT", noteRequired: false, attestationsRequired: true, message: "Record acceptance for external contracting? This is not an electronic signature or executed contract." };
+    };
     const sync = () => {
-      const accepting = response?.value === "accept";
-      const verb = accepting ? "ACCEPT" : "DECLINE";
-      const expected = `${verb} ${proposalNumber}`;
+      const contract = responseContract();
+      const expected = `${contract.verb} ${proposalNumber}`;
       if (label) label.textContent = `Type ${expected}`;
       if (input) input.placeholder = expected;
-      if (authority) authority.required = accepting;
-      if (boundary) boundary.required = accepting;
-      if (note) note.required = !accepting;
+      if (authority) authority.required = contract.attestationsRequired;
+      if (boundary) boundary.required = contract.attestationsRequired;
+      if (note) note.required = contract.noteRequired;
     };
     response?.addEventListener("change", sync);
     form.addEventListener("submit", (event) => {
-      const verb = response?.value === "decline" ? "DECLINE" : "ACCEPT";
-      const expected = `${verb} ${proposalNumber}`;
+      const contract = responseContract();
+      const expected = `${contract.verb} ${proposalNumber}`;
       if (!input || input.value.trim().toUpperCase() !== expected) {
         event.preventDefault();
         window.alert(`Type ${expected} exactly.`);
         input?.focus();
         return;
       }
-      const message = verb === "ACCEPT"
-        ? "Record acceptance for external contracting? This is not an electronic signature or executed contract."
-        : "Record that you decline this proposal?";
-      if (!window.confirm(message)) event.preventDefault();
+      if (!window.confirm(contract.message)) event.preventDefault();
     });
     sync();
   });
