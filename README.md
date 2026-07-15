@@ -1,32 +1,37 @@
 # Sustainable Catalyst Contact and Engagement Platform
 
-**Version:** 1.7.0  
-**Release:** Billing, Invoicing, and Payment Handoffs
+**Version:** 2.0.0  
+**Release:** Integrated Advisory, Support, and Institutional Engagement Platform
 
-v1.7.0 adds governed billing records to the engagement lifecycle while keeping payment collection outside WordPress. It supports versioned invoices, external HTTPS payment handoffs, sender-safe invoice status, replay-safe provider events, and privacy controls without storing card or bank credentials.
+v2.0.0 unifies the platform’s mature contact, advisory, support, scheduling, proposal, secure workspace, billing, analytics, privacy, and Sender Portal capabilities behind a canonical engagement dossier and a stable v2 integration contract.
 
-## Major capabilities
+## v2.0.0 capabilities
 
-- Engagement-linked billing profiles, versioned invoices, line items, and immutable invoice snapshots
-- Human-reviewed invoice issue, dispute, overdue, payment, and void states
-- HTTPS external payment-provider handoffs with idempotent replay and bounded metadata
-- Sender Portal invoice and payment-status projections that exclude internal and sensitive fields
-- Minimum-cohort suppression for grouped and rate metrics
-- Product, component, service, weekly, funnel, timing, workload, and completion views
-- SHA-256-hashed aggregate snapshots with version-bound freshness evidence
-- Human-reviewed service-intelligence findings with typed confirmation and optimistic locking
-- Direct personal-data key and value rejection for finding evidence
-- Compensating rollback when a finding event cannot be written
-- Retention limited to closed or dismissed aggregate findings
-- Production Readiness, diagnostics, privacy inventory, and Live Validation coverage
+- Canonical engagement dossier for each non-erased inquiry
+- Route, phase, health, owner, sender-safe summary, next step, and integrity hash
+- Typed relationships to support cases, meetings, proposals, Statements of Work, engagements, client workspaces, invoices, protected files, communications, and lifecycle tasks
+- Unified activity timeline assembled from governed subsystem events
+- Integrated Engagement Command Center with bounded backfill and repair
+- Privacy-safe and idempotent `sc-engagement-platform-handoff/2.0` receipts
+- Authorized REST endpoints for platform status, dossier lists, dossier detail, and typed handoffs
+- WordPress privacy export, approved redaction, retention, diagnostics, and Live Validation coverage
+- Compatibility with the existing v1 REST resources and public shortcodes
+
+## Governance boundaries
+
+The dossier is an index and coordination record. It does not replace or overwrite subsystem records. The platform does not automatically merge unrelated cases, make support or advisory decisions, schedule meetings, approve proposals, activate engagements, collect payments, or send communications.
 
 ## Existing platform layers retained
 
-- Public contact and product-support intake
-- Advisory lifecycle and private support cases
+- Public contact and focused product-support intake
+- Advisory qualification and lifecycle operations
+- Private support cases and product-intelligence handoffs
 - Microsoft Teams and calendar coordination
-- Governed proposals, Statements of Work, approvals, and engagement conversion
-- Secure Sender Portal, communications, protected uploads, privacy, retention, reliability, and launch governance
+- Proposals, Statements of Work, approvals, and change requests
+- Secure client workspaces and protected document exchange
+- Billing, invoices, and external payment handoffs
+- Aggregate analytics and human-reviewed service intelligence
+- Sender Portal, privacy, retention, reliability, and Production Readiness
 
 ## Public entry points
 
@@ -36,33 +41,36 @@ v1.7.0 adds governed billing records to the engagement lifecycle while keeping p
 [sc_sender_portal]
 ```
 
-Client workspaces are not a separate public registration system. A workspace is created only from an existing governed engagement and becomes visible only after an authorized administrator activates and publishes it.
+The Command Center and client workspaces are not public registration systems.
 
 ## Release identity
 
-- Plugin version: `1.7.0`
-- Database version: `1.7.0`
-- Platform evidence schema: `1.7.0`
+- Plugin version: `2.0.0`
+- Database version: `2.0.0`
+- Platform evidence schema: `2.0.0`
+- Unified platform schema: `2.0.0`
 - Portal schema: `1.8.0`
+- Support schema: `1.0.1`
+- Calendar schema: `1.0.1`
+- Proposal Governance schema: `1.0.1`
 - Workspace schema: `1.0.0`
 - Analytics schema: `1.1.0`
 - Service Intelligence schema: `1.0.0`
 - Billing schema: `1.0.0`
-- Migration: `v1_7_0_billing_invoicing_payment_handoffs`
+- Migration: `v2_0_0_integrated_advisory_support_institutional_platform`
 
 ## Installation and validation
 
 1. Back up the WordPress database and protected engagement-document storage.
-2. Install the v1.7.0 ZIP over the current plugin.
+2. Install the v2.0.0 ZIP over the current plugin.
 3. Clear WordPress, object, host, CDN, browser, and PHP opcode caches.
 4. Open **Contact & Engagement → Platform Overview**.
-5. Repair the database contract and verify the v1.7.0 billing migration if requested.
-6. Open **Contact & Engagement → Billing & Payments**.
-7. Run Live Validation and confirm invoice issue is versioned, sensitive payment metadata is rejected, payment-handoff replay is idempotent, settlement updates the invoice, and cleanup succeeds.
-8. Create one controlled billing profile and invoice, then verify the external HTTPS handoff and Sender Portal projection.
-9. Re-record version-bound inbox, backup, validation, and pilot evidence.
-10. Require 100%, zero required failures, and zero warnings before Production.
+5. Repair the database contract and verify the v2.0.0 migration if requested.
+6. Open **Contact & Engagement → Command Center** and run the bounded dossier backfill.
+7. Run Live Validation and confirm dossier creation, relationship indexing, timeline aggregation, private handoff rejection, safe replay, and cleanup.
+8. Re-record version-bound inbox, backup, validation, and pilot evidence.
+9. Require 100%, zero required failures, and zero warnings before Production.
 
-Repository tests and archive verification do not replace live validation on the WordPress host.
+Repository validation and archive integrity checks do not replace live validation on the WordPress host.
 
-See `docs/BILLING-INVOICING-PAYMENT-HANDOFFS.md`, `docs/MIGRATION-v1.7.0.md`, and `docs/RELEASE.md`.
+See `docs/INTEGRATED-ENGAGEMENT-PLATFORM.md`, `docs/MIGRATION-v2.0.0.md`, and `docs/RELEASE.md`.

@@ -1,37 +1,26 @@
-# Release Procedure — v1.7.0
+# Release Procedure — v2.0.0
 
 ## Identity
 
-- Plugin version: `1.7.0`
-- Database version: `1.7.0`
-- Platform evidence schema: `1.7.0`
-- Portal schema: `1.8.0`
-- Billing schema: `1.0.0`
-- Release: Billing, Invoicing, and Payment Handoffs
+- Plugin version: `2.0.0`
+- Database version: `2.0.0`
+- Platform evidence schema: `2.0.0`
+- Unified platform schema: `2.0.0`
+- Migration: `v2_0_0_integrated_advisory_support_institutional_platform`
 
-## Release gate
+## Repository gate
 
-1. Lint all plugin and test PHP files.
-2. Run every repository test suite.
-3. Validate JavaScript syntax.
-4. Scan for common secret patterns.
-5. Regenerate and verify `release-manifest.json`.
-6. Package installable and repository archives.
-7. Verify ZIP integrity and SHA-256 checksums.
-8. Re-extract the repository archive and rerun all tests.
-9. Confirm the plugin trees in both archives are identical.
-10. Test the Mac updater against a disposable Git remote.
+Run `tools/package-release.sh`. The gate lints all PHP, runs every repository suite, checks JavaScript syntax, scans for common secrets, regenerates the release manifest, packages both archives, verifies ZIP integrity, and writes SHA-256 checksums.
 
-## Live rollout
+## Live gate
 
-1. Retain the v1.6.0 ZIP and current database and protected-storage backups.
-2. Install v1.7.0 and clear all caches.
-3. Verify the database and billing migration journals.
-4. Run Live Validation.
-5. Confirm sensitive payment metadata is rejected, invoice issue is versioned, handoff replay is idempotent, settlement updates the invoice, and Sender Portal projection excludes internal metadata.
-6. Create one controlled billing profile and invoice linked to a test engagement.
-7. Verify the external HTTPS handoff and sender-safe invoice view.
-8. Re-record version-bound validation, inbox, backup, and pilot evidence.
-9. Require 100%, zero required failures, and zero warnings before Production.
-
-Code rollback does not remove migrated billing tables or records.
+1. Back up the database and protected storage.
+2. Install v2.0.0 and clear all caches.
+3. Verify database and migration readiness.
+4. Backfill canonical dossiers.
+5. Run Live Validation using a monitored external email address.
+6. Confirm dossier relationships and timeline include the temporary support, meeting, proposal, engagement, workspace, billing, and communication records.
+7. Confirm a private handoff is rejected and a safe replay is idempotent.
+8. Confirm all temporary dossier and handoff records are removed.
+9. Re-record inbox, backup, pilot, and validation evidence.
+10. Require 100%, zero failures, and zero warnings before Production.

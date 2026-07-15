@@ -181,6 +181,21 @@ final class SC_EI_Privacy {
 				$data[] = array( 'group_id' => 'sc-engagement-intake-billing-events', 'group_label' => __( 'Billing Audit Events', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-billing-event-' . $record['id'], 'data' => self::export_fields( $record, array( 'event_type' => 'Event type', 'from_status' => 'Previous status', 'to_status' => 'New status', 'actor_type' => 'Actor type', 'context_json' => 'Event context', 'immutable_hash' => 'Immutable hash', 'created_at' => 'Created at' ) ) );
 			}
 
+
+			$integrated = SC_EI_Unified_Platform_Repository::export_for_inquiry( $inquiry_id );
+			if ( ! empty( $integrated['dossier'] ) ) {
+				$data[] = array( 'group_id' => 'sc-engagement-integrated-dossier', 'group_label' => __( 'Integrated Engagement Dossier', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-dossier-' . $integrated['dossier']['id'], 'data' => self::export_fields( $integrated['dossier'], array( 'reference' => 'Dossier reference', 'route_group' => 'Route group', 'phase' => 'Engagement phase', 'health_status' => 'Health status', 'sender_summary' => 'Sender summary', 'sender_next_step' => 'Sender next step', 'relationship_count' => 'Relationship count', 'activity_count' => 'Activity count', 'created_at' => 'Created at', 'updated_at' => 'Updated at' ) ) );
+			}
+			foreach ( (array) ( $integrated['relationships'] ?? array() ) as $record ) {
+				$data[] = array( 'group_id' => 'sc-engagement-dossier-relationships', 'group_label' => __( 'Integrated Engagement Relationships', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-dossier-relationship-' . $record['id'], 'data' => self::export_fields( $record, array( 'entity_type' => 'Related record type', 'entity_id' => 'Related record ID', 'entity_public_id' => 'Related public ID', 'relation_type' => 'Relationship', 'entity_status' => 'Related status', 'sender_visible' => 'Sender visible', 'metadata_json' => 'Relationship metadata', 'created_at' => 'Created at', 'updated_at' => 'Updated at' ) ) );
+			}
+			foreach ( (array) ( $integrated['events'] ?? array() ) as $record ) {
+				$data[] = array( 'group_id' => 'sc-engagement-dossier-events', 'group_label' => __( 'Integrated Engagement Dossier Events', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-dossier-event-' . $record['id'], 'data' => self::export_fields( $record, array( 'event_type' => 'Event type', 'object_type' => 'Object type', 'object_id' => 'Object ID', 'visibility' => 'Visibility', 'summary' => 'Summary', 'context_json' => 'Context', 'occurred_at' => 'Occurred at' ) ) );
+			}
+			foreach ( (array) ( $integrated['handoffs'] ?? array() ) as $record ) {
+				$data[] = array( 'group_id' => 'sc-engagement-platform-handoffs', 'group_label' => __( 'Integrated Platform Handoffs', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-platform-handoff-' . $record['id'], 'data' => self::export_fields( $record, array( 'schema' => 'Schema', 'source_system' => 'Source system', 'target_module' => 'Target module', 'route_group' => 'Route group', 'status' => 'Status', 'payload_json' => 'Privacy-safe payload', 'content_hash' => 'Content hash', 'received_at' => 'Received at', 'processed_at' => 'Processed at', 'error_code' => 'Error code' ) ) );
+			}
+
 			foreach ( SC_EI_Review_Repository::history( $inquiry_id, 500 ) as $review ) {
 				$data[] = array(
 					'group_id'    => 'sc-engagement-intake-reviews',

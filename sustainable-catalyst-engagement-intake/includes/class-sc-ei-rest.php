@@ -203,6 +203,10 @@ final class SC_EI_REST {
 		if ( current_user_can( 'sc_intake_view_support' ) ) {
 			$record['product_support'] = SC_EI_Support_Repository::export_for_inquiry( absint( $request['id'] ) );
 		}
+		if ( current_user_can( 'sc_intake_view_platform' ) ) {
+			$dossier = SC_EI_Unified_Platform_Repository::for_inquiry( absint( $request['id'] ) );
+			$record['integrated_engagement_dossier'] = $dossier ? SC_EI_Unified_Platform_Repository::dossier_export( absint( $dossier['id'] ) ) : null;
+		}
 		if ( current_user_can( 'sc_intake_view_proposal_governance' ) ) {
 			$record['proposal_governance'] = SC_EI_Proposal_Governance_Repository::export_for_inquiry( absint( $request['id'] ) );
 		}

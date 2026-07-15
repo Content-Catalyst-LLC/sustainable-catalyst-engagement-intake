@@ -16,7 +16,7 @@ $uninstall = file_get_contents( $plugin . '/uninstall.php' );
 $analytics = file_get_contents( $plugin . '/includes/class-sc-ei-analytics-repository.php' );
 $readme = file_get_contents( $plugin . '/readme.txt' );
 $checks = array(
-    'v1.6.0 release identity' => false !== strpos( $main, 'Version:     1.7.0' ) && false !== strpos( $main, "SC_EI_DB_VERSION', '1.7.0'" ) && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '1.7.0'" ) && false !== strpos( $main, "SC_EI_ANALYTICS_SCHEMA_VERSION', '1.1.0'" ) && false !== strpos( $main, "SC_EI_SERVICE_INTELLIGENCE_SCHEMA_VERSION', '1.0.0'" ),
+    'v1.6.0 release identity' => false !== strpos( $main, 'Version:     2.0.0' ) && false !== strpos( $main, "SC_EI_DB_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_ANALYTICS_SCHEMA_VERSION', '1.1.0'" ) && false !== strpos( $main, "SC_EI_SERVICE_INTELLIGENCE_SCHEMA_VERSION', '1.0.0'" ),
     'service intelligence modules loaded' => false !== strpos( $main, 'class-sc-ei-service-intelligence-schema.php' ) && false !== strpos( $main, 'class-sc-ei-service-intelligence-repository.php' ) && false !== strpos( $main, 'class-sc-ei-service-intelligence-admin.php' ),
     'two aggregate intelligence tables installed' => false !== strpos( $db, '$sql_service_intelligence_findings' ) && false !== strpos( $db, '$sql_service_intelligence_events' ) && false !== strpos( $db, 'service_intelligence_columns_exist' ),
     'nondestructive v1.6.0 migration journal' => false !== strpos( $repo, "MIGRATION_KEY = 'v1_6_0_engagement_analytics_service_intelligence'" ) && false !== strpos( $repo, "'no_destructive_migration' => true" ),
@@ -39,9 +39,9 @@ $checks = array(
     'aggregate JSON export disclosure' => false !== strpos( $admin, 'service_intelligence_exported' ) && false !== strpos( $admin, "'personal_data' => false" ) && false !== strpos( $view, 'Export aggregate JSON' ),
     'readiness requires schema migration and blocker review' => false !== strpos( $platform, 'service_intelligence_columns' ) && false !== strpos( $platform, 'service_intelligence_migration_journal' ) && false !== strpos( $platform, 'service_intelligence_operational_blockers' ),
     'diagnostics expose aggregate evidence only' => false !== strpos( $diagnostics, 'service_intelligence_schema_version' ) && false !== strpos( $diagnostics, "'metrics' => \$service_intelligence_metrics" ) && false !== strpos( $diagnostics, "'blockers' => \$service_intelligence_blockers" ),
-    'live validation exercises privacy finding audit and snapshot' => false !== strpos( $validation, 'service_intelligence_personal_data_rejected' ) && false !== strpos( $validation, 'transition_finding' ) && false !== strpos( $validation, 'evidence_hash' ) && false !== strpos( $validation, 'create_snapshot' ) && false !== strpos( $validation, 'sc-contact-engagement-live-validation/2.0' ),
+    'live validation exercises privacy finding audit and snapshot' => false !== strpos( $validation, 'service_intelligence_personal_data_rejected' ) && false !== strpos( $validation, 'transition_finding' ) && false !== strpos( $validation, 'evidence_hash' ) && false !== strpos( $validation, 'create_snapshot' ) && false !== strpos( $validation, 'sc-contact-engagement-live-validation/3.0' ),
     'privacy inventory and uninstall cleanup' => false !== strpos( $privacy, "'analytics_snapshots', 'service_intelligence_findings', 'service_intelligence_events'" ) && false !== strpos( $uninstall, "delete_option( 'sc_ei_service_intelligence_schema_version' )" ) && false !== strpos( $uninstall, "delete_option( 'sc_ei_service_intelligence_last_snapshot' )" ),
-    'stable tag advances to v1.6.0' => false !== strpos( $readme, 'Stable tag: 1.7.0' ),
+    'stable tag advances to v1.6.0' => false !== strpos( $readme, 'Stable tag: 2.0.0' ),
 );
 $failed = array_keys( array_filter( $checks, static fn( bool $passed ): bool => ! $passed ) );
 if ( $failed ) {

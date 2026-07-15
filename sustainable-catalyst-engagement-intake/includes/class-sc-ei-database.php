@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'client_workspaces', 'workspace_members', 'workspace_milestones', 'workspace_deliverables', 'workspace_messages', 'workspace_documents', 'workspace_events', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'service_intelligence_findings', 'service_intelligence_events', 'billing_profiles', 'invoices', 'invoice_items', 'invoice_versions', 'payment_handoffs', 'billing_events', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'client_workspaces', 'workspace_members', 'workspace_milestones', 'workspace_deliverables', 'workspace_messages', 'workspace_documents', 'workspace_events', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'service_intelligence_findings', 'service_intelligence_events', 'billing_profiles', 'invoices', 'invoice_items', 'invoice_versions', 'payment_handoffs', 'billing_events', 'engagement_dossiers', 'dossier_relationships', 'dossier_events', 'platform_handoffs', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -68,6 +68,10 @@ final class SC_EI_Database {
 		$invoice_versions = self::table( 'invoice_versions' );
 		$payment_handoffs = self::table( 'payment_handoffs' );
 		$billing_events = self::table( 'billing_events' );
+		$engagement_dossiers = self::table( 'engagement_dossiers' );
+		$dossier_relationships = self::table( 'dossier_relationships' );
+		$dossier_events = self::table( 'dossier_events' );
+		$platform_handoffs = self::table( 'platform_handoffs' );
 		$health_events = self::table( 'health_events' );
 		$rate_limits = self::table( 'rate_limits' );
 		$workflow_cases = self::table( 'workflow_cases' );
@@ -1329,6 +1333,82 @@ final class SC_EI_Database {
 		) {$charset_collate};";
 
 
+		$sql_engagement_dossiers = "CREATE TABLE {$engagement_dossiers} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			reference varchar(40) NOT NULL DEFAULT '',
+			route_group varchar(40) NOT NULL DEFAULT 'general',
+			phase varchar(40) NOT NULL DEFAULT 'intake',
+			health_status varchar(30) NOT NULL DEFAULT 'healthy',
+			owner_user_id bigint(20) unsigned NULL,
+			sender_summary longtext NULL,
+			sender_next_step longtext NULL,
+			relationship_count int(10) unsigned NOT NULL DEFAULT 0,
+			activity_count int(10) unsigned NOT NULL DEFAULT 0,
+			content_hash char(64) NOT NULL DEFAULT '',
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			last_refreshed_at datetime NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY (id), UNIQUE KEY public_id (public_id), UNIQUE KEY inquiry_id (inquiry_id), KEY reference (reference), KEY route_group (route_group), KEY phase (phase), KEY health_status (health_status), KEY owner_user_id (owner_user_id), KEY updated_at (updated_at)
+		) {$charset_collate};";
+
+		$sql_dossier_relationships = "CREATE TABLE {$dossier_relationships} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			dossier_id bigint(20) unsigned NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			entity_type varchar(50) NOT NULL DEFAULT '',
+			entity_id bigint(20) unsigned NOT NULL,
+			entity_public_id varchar(191) NOT NULL DEFAULT '',
+			relation_type varchar(50) NOT NULL DEFAULT 'belongs_to',
+			entity_status varchar(60) NOT NULL DEFAULT '',
+			sender_visible tinyint(1) unsigned NOT NULL DEFAULT 0,
+			metadata_json longtext NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY (id), UNIQUE KEY public_id (public_id), UNIQUE KEY dossier_entity (dossier_id,entity_type,entity_id), KEY inquiry_id (inquiry_id), KEY entity_type (entity_type), KEY entity_public_id (entity_public_id), KEY sender_visible (sender_visible)
+		) {$charset_collate};";
+
+		$sql_dossier_events = "CREATE TABLE {$dossier_events} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			dossier_id bigint(20) unsigned NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			event_type varchar(80) NOT NULL DEFAULT '',
+			object_type varchar(50) NOT NULL DEFAULT '',
+			object_id bigint(20) unsigned NULL,
+			visibility varchar(20) NOT NULL DEFAULT 'internal',
+			summary text NULL,
+			context_json longtext NULL,
+			actor_user_id bigint(20) unsigned NULL,
+			occurred_at datetime NOT NULL,
+			PRIMARY KEY (id), UNIQUE KEY public_id (public_id), KEY dossier_id (dossier_id), KEY inquiry_id (inquiry_id), KEY event_type (event_type), KEY object_type (object_type), KEY object_id (object_id), KEY visibility (visibility), KEY occurred_at (occurred_at)
+		) {$charset_collate};";
+
+		$sql_platform_handoffs = "CREATE TABLE {$platform_handoffs} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			schema varchar(100) NOT NULL DEFAULT 'sc-engagement-platform-handoff/2.0',
+			handoff_key char(64) NOT NULL,
+			source_system varchar(80) NOT NULL DEFAULT 'manual',
+			target_module varchar(80) NOT NULL DEFAULT 'intake',
+			inquiry_id bigint(20) unsigned NULL,
+			route_group varchar(40) NOT NULL DEFAULT 'general',
+			status varchar(30) NOT NULL DEFAULT 'pending',
+			payload_json longtext NULL,
+			content_hash char(64) NOT NULL DEFAULT '',
+			received_by bigint(20) unsigned NULL,
+			received_at datetime NOT NULL,
+			processed_at datetime NULL,
+			error_code varchar(120) NOT NULL DEFAULT '',
+			error_message text NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY (id), UNIQUE KEY public_id (public_id), UNIQUE KEY handoff_key (handoff_key), KEY source_system (source_system), KEY target_module (target_module), KEY inquiry_id (inquiry_id), KEY route_group (route_group), KEY status (status), KEY received_at (received_at)
+		) {$charset_collate};";
+
 		$sql_health_events = "CREATE TABLE {$health_events} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			public_id char(36) NOT NULL,
@@ -2145,6 +2225,10 @@ final class SC_EI_Database {
 		dbDelta( $sql_invoice_versions );
 		dbDelta( $sql_payment_handoffs );
 		dbDelta( $sql_billing_events );
+		dbDelta( $sql_engagement_dossiers );
+		dbDelta( $sql_dossier_relationships );
+		dbDelta( $sql_dossier_events );
+		dbDelta( $sql_platform_handoffs );
 		dbDelta( $sql_health_events );
 		dbDelta( $sql_rate_limits );
 		dbDelta( $sql_workflow_cases );
@@ -2308,7 +2392,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'client_workspaces', 'workspace_members', 'workspace_milestones', 'workspace_deliverables', 'workspace_messages', 'workspace_documents', 'workspace_events', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'service_intelligence_findings', 'service_intelligence_events', 'billing_profiles', 'invoices', 'invoice_items', 'invoice_versions', 'payment_handoffs', 'billing_events', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'client_workspaces', 'workspace_members', 'workspace_milestones', 'workspace_deliverables', 'workspace_messages', 'workspace_documents', 'workspace_events', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'service_intelligence_findings', 'service_intelligence_events', 'billing_profiles', 'invoices', 'invoice_items', 'invoice_versions', 'payment_handoffs', 'billing_events', 'engagement_dossiers', 'dossier_relationships', 'dossier_events', 'platform_handoffs', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -2355,6 +2439,9 @@ final class SC_EI_Database {
 		}
 		foreach ( self::billing_columns_exist() as $key => $available ) {
 			$result[ 'billing.' . $key ] = $available;
+		}
+		foreach ( self::unified_platform_columns_exist() as $key => $available ) {
+			$result[ 'unified_platform.' . $key ] = $available;
 		}
 		return $result;
 	}
@@ -2530,6 +2617,26 @@ final class SC_EI_Database {
 			'invoice_versions' => array( 'public_id','invoice_id','version_number','snapshot_json','content_hash','status','created_by','created_at' ),
 			'payment_handoffs' => array( 'public_id','schema','invoice_id','inquiry_id','provider','provider_reference','checkout_url','status','amount_minor','currency','idempotency_key','expires_at','authorized_at','settled_at','failed_at','refunded_at','last_event_at','sender_visible','metadata_json','created_by','created_at','updated_at' ),
 			'billing_events' => array( 'public_id','invoice_id','payment_handoff_id','inquiry_id','event_type','from_status','to_status','actor_type','actor_id','context_json','immutable_hash','created_at' ),
+		);
+		$result = array();
+		foreach ( $tables as $table_name => $columns ) {
+			$table = self::table( $table_name );
+			foreach ( $columns as $column ) {
+				$found = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$result[ $table_name . '.' . $column ] = ( $found === $column );
+			}
+		}
+		return $result;
+	}
+
+
+	public static function unified_platform_columns_exist(): array {
+		global $wpdb;
+		$tables = array(
+			'engagement_dossiers' => array( 'public_id','inquiry_id','reference','route_group','phase','health_status','owner_user_id','sender_summary','sender_next_step','relationship_count','activity_count','content_hash','row_version','last_refreshed_at','created_at','updated_at' ),
+			'dossier_relationships' => array( 'public_id','dossier_id','inquiry_id','entity_type','entity_id','entity_public_id','relation_type','entity_status','sender_visible','metadata_json','created_at','updated_at' ),
+			'dossier_events' => array( 'public_id','dossier_id','inquiry_id','event_type','object_type','object_id','visibility','summary','context_json','actor_user_id','occurred_at' ),
+			'platform_handoffs' => array( 'public_id','schema','handoff_key','source_system','target_module','inquiry_id','route_group','status','payload_json','content_hash','received_by','received_at','processed_at','error_code','error_message','created_at','updated_at' ),
 		);
 		$result = array();
 		foreach ( $tables as $table_name => $columns ) {
@@ -3075,7 +3182,7 @@ final class SC_EI_Database {
 	public static function drop_all(): void {
 		global $wpdb;
 
-		foreach ( array( 'audit_log', 'workspace_events', 'workspace_documents', 'workspace_messages', 'workspace_deliverables', 'workspace_milestones', 'workspace_members', 'client_workspaces', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'support_signals', 'support_case_links', 'support_case_events', 'support_cases', 'lifecycle_tasks', 'lifecycle_notes', 'lifecycle_events', 'platform_snapshots', 'platform_migrations', 'workflow_outbox', 'workflow_handoffs', 'workflow_commands', 'workflow_cases', 'billing_events', 'payment_handoffs', 'invoice_versions', 'invoice_items', 'invoices', 'billing_profiles', 'service_intelligence_events', 'service_intelligence_findings', 'engagement_events', 'engagement_requirements', 'engagement_snapshots', 'engagements', 'workflow_events', 'proposal_versions', 'proposals', 'graph_operations', 'meeting_reminders', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
+		foreach ( array( 'audit_log', 'dossier_events', 'dossier_relationships', 'platform_handoffs', 'engagement_dossiers', 'workspace_events', 'workspace_documents', 'workspace_messages', 'workspace_deliverables', 'workspace_milestones', 'workspace_members', 'client_workspaces', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'support_signals', 'support_case_links', 'support_case_events', 'support_cases', 'lifecycle_tasks', 'lifecycle_notes', 'lifecycle_events', 'platform_snapshots', 'platform_migrations', 'workflow_outbox', 'workflow_handoffs', 'workflow_commands', 'workflow_cases', 'billing_events', 'payment_handoffs', 'invoice_versions', 'invoice_items', 'invoices', 'billing_profiles', 'service_intelligence_events', 'service_intelligence_findings', 'engagement_events', 'engagement_requirements', 'engagement_snapshots', 'engagements', 'workflow_events', 'proposal_versions', 'proposals', 'graph_operations', 'meeting_reminders', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
 			$table = self::table( $name );
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}

@@ -10,7 +10,7 @@ $platform = file_get_contents( $plugin . '/includes/class-sc-ei-platform-reposit
 $validation = file_get_contents( $plugin . '/includes/class-sc-ei-platform-validation.php' );
 $view = file_get_contents( $plugin . '/admin/views/calendar-coordination.php' );
 $checks = array(
- 'v1.3.1 identity with unchanged database schema' => strpos($main,'Version:     1.7.0')!==false && strpos($main,"SC_EI_VERSION', '1.7.0'")!==false && strpos($main,"SC_EI_DB_VERSION', '1.7.0'")!==false && strpos($main,"SC_EI_CALENDAR_SCHEMA_VERSION', '1.0.1'")!==false && strpos($main,"SC_EI_PLATFORM_SCHEMA_VERSION', '1.7.0'")!==false,
+ 'v1.3.1 identity with unchanged database schema' => strpos($main,'Version:     2.0.0')!==false && strpos($main,"SC_EI_VERSION', '2.0.0'")!==false && strpos($main,"SC_EI_DB_VERSION', '2.0.0'")!==false && strpos($main,"SC_EI_CALENDAR_SCHEMA_VERSION', '1.0.1'")!==false && strpos($main,"SC_EI_PLATFORM_SCHEMA_VERSION', '2.0.0'")!==false,
  'strict civil-time parser rejects gaps and overlaps' => strpos($teams,'parse_local_datetime')!==false && strpos($teams,'calendar_local_datetime_nonexistent')!==false && strpos($teams,'calendar_local_datetime_ambiguous')!==false,
  'patch migration is nondestructive' => strpos($calendar,'v1_3_1_scheduling_reminder_timezone_reliability')!==false && strpos($calendar,"'database_schema_changed'         => false")!==false,
  'reminder eligibility distinguishes terminal messages' => strpos($calendar,'reminder_eligibility')!==false && strpos( $calendar, "'canceled' === \$type" )!==false && strpos( $calendar, "'post_meeting' === \$type" )!==false,

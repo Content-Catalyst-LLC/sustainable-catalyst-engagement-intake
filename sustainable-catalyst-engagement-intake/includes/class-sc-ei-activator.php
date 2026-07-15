@@ -22,6 +22,7 @@ final class SC_EI_Activator {
 		$previous_workspace_schema = (string) get_option( 'sc_ei_workspace_schema_version', '' );
 		$previous_service_intelligence_schema = (string) get_option( 'sc_ei_service_intelligence_schema_version', '' );
 		$previous_billing_schema = (string) get_option( 'sc_ei_billing_schema_version', '' );
+		$previous_unified_platform_schema = (string) get_option( 'sc_ei_unified_platform_schema_version', '' );
 		SC_EI_Database::install();
 		SC_EI_Capabilities::install();
 		SC_EI_Storage::ensure();
@@ -64,6 +65,8 @@ final class SC_EI_Activator {
 		update_option( 'sc_ei_service_intelligence_schema_version', SC_EI_SERVICE_INTELLIGENCE_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_billing_schema_version_previous', $previous_billing_schema, false );
 		update_option( 'sc_ei_billing_schema_version', SC_EI_BILLING_SCHEMA_VERSION, false );
+		update_option( 'sc_ei_unified_platform_schema_version_previous', $previous_unified_platform_schema, false );
+		update_option( 'sc_ei_unified_platform_schema_version', SC_EI_UNIFIED_PLATFORM_SCHEMA_VERSION, false );
 		update_option( 'sc_ei_version_previous', $previous_version, false );
 		SC_EI_Platform_Repository::run_migrations( $previous_version );
 		SC_EI_Analytics_Repository::schedule();
@@ -81,10 +84,11 @@ final class SC_EI_Activator {
 		SC_EI_Workspace_Repository::record_migration( $previous_workspace_schema );
 		SC_EI_Service_Intelligence_Repository::record_migration( $previous_service_intelligence_schema );
 		SC_EI_Billing_Repository::record_migration( $previous_billing_schema );
+		SC_EI_Unified_Platform_Repository::record_migration( $previous_unified_platform_schema );
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Sustainable Catalyst Contact and Engagement Platform v1.7.0 activated with governed billing profiles, immutable invoice versions, external payment handoffs, Sender Portal billing projections, and the established analytics, workspace, proposal, calendar, support, advisory, privacy, and production gates.',
+			'Sustainable Catalyst Contact and Engagement Platform v2.0.0 activated with canonical engagement dossiers, a unified activity timeline, typed cross-product handoffs, and integrated advisory, support, institutional, scheduling, proposal, workspace, billing, analytics, privacy, and production governance.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}

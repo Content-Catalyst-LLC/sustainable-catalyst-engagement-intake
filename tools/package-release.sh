@@ -3,11 +3,11 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-VERSION="1.7.0"
+VERSION="2.0.0"
 SLUG="sustainable-catalyst-engagement-intake"
 REPO_ROOT="${SLUG}-v${VERSION}-repo"
 DIST="$ROOT/dist"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v170-package.XXXXXX")"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v200-package.XXXXXX")"
 TEST_LOG="$WORK/tests.log"
 
 cleanup(){ rm -rf "$WORK"; }
@@ -34,7 +34,7 @@ if command -v node >/dev/null; then
 fi
 
 bash -n "$0"
-bash -n PUSH_ENGAGEMENT_INTAKE_V170_CLEAN.sh
+bash -n PUSH_ENGAGEMENT_INTAKE_V200_CLEAN.sh
 python3 -m json.tool composer.json >/dev/null
 
 printf 'Scanning for common secret material...\n'
@@ -83,11 +83,11 @@ for block in text.split('=== '):
 manifest = {
     'name': 'Sustainable Catalyst Contact and Engagement Platform',
     'version': version,
-    'release': 'Billing, Invoicing, and Payment Handoffs',
+    'release': 'Integrated Advisory, Support, and Institutional Engagement Platform',
     'plugin_slug': 'sustainable-catalyst-engagement-intake',
     'requires_wordpress': '6.5',
     'requires_php': '8.1',
-    'database_version': '1.7.0',
+    'database_version': '2.0.0',
     'schemas': {
         'review': '1.0.0',
         'communication': '1.0.0',
@@ -102,7 +102,8 @@ manifest = {
         'billing': '1.0.0',
         'hardening': '1.0.0',
         'workflow_core': '1.0.0',
-        'platform': '1.7.0',
+        'platform': '2.0.0',
+        'unified_platform': '2.0.0',
         'lifecycle': '1.0.0',
         'support': '1.0.1',
         'calendar': '1.0.1',
@@ -124,10 +125,33 @@ manifest = {
         'v1_5_0_secure_client_workspace_collaboration',
         'v1_6_0_engagement_analytics_service_intelligence',
         'v1_7_0_billing_invoicing_payment_handoffs',
+        'v2_0_0_integrated_advisory_support_institutional_platform',
     ],
     'recommended_shortcode': '[sc_contact_engagement_platform]',
     'support_shortcode': '[sc_support_request]',
     'portal_shortcode': '[sc_sender_portal]',
+    'integrated_platform': {
+        'dossier_schema': 'sc-engagement-dossier/2.0',
+        'handoff_schema': 'sc-engagement-platform-handoff/2.0',
+        'event_schema': 'sc-engagement-dossier-event/2.0',
+        'tables': [
+            'engagement_dossiers',
+            'dossier_relationships',
+            'dossier_events',
+            'platform_handoffs',
+        ],
+        'canonical_inquiry_key': True,
+        'cross_module_relationships': True,
+        'unified_activity_timeline': True,
+        'transactional_dossier_refresh': True,
+        'idempotent_handoffs': True,
+        'privacy_safe_handoffs': True,
+        'command_center': True,
+        'rest_v2': True,
+        'privacy_export_and_redaction': True,
+        'automatic_cross_case_merging': False,
+        'automatic_decisions': False,
+    },
     'billing': {
         'invoice_schema': 'sc-engagement-invoice/1.0',
         'payment_handoff_schema': 'sc-payment-handoff/1.0',
@@ -168,10 +192,11 @@ manifest = {
         'operational_blockers': 0,
         'fresh_service_intelligence_snapshot': True,
         'billing_operational_blockers': 0,
+        'unified_platform_integrity_blockers': 0,
         'typed_human_launch_action': True,
     },
     'live_validation': [
-        'database and v1.7.0 billing migration contract',
+        'database and v2.0.0 integrated-platform migration contract',
         'temporary inquiry and governed lifecycle',
         'support case and cross-product privacy contract',
         'Teams scheduling and reminder workflow',
@@ -184,7 +209,11 @@ manifest = {
         'HTTPS payment handoff and idempotent replay',
         'settlement event and paid invoice reconciliation',
         'sender-safe invoice and handoff projection',
-        'complete cleanup',
+        'canonical engagement dossier and typed relationship index',
+        'unified cross-module timeline',
+        'private platform handoff rejection',
+        'idempotent privacy-safe platform handoff replay',
+        'complete dossier handoff and test-data cleanup',
     ],
     'boundaries': {
         'automatic_launch': False,
@@ -204,6 +233,7 @@ manifest = {
         'automatic_scope_expansion': False,
         'automatic_service_decisions': False,
         'sender_ranking': False,
+        'automatic_cross_case_merging': False,
     },
     'validation': {
         'plugin_php_files_linted': sum(1 for p in (root / 'sustainable-catalyst-engagement-intake').rglob('*.php')),

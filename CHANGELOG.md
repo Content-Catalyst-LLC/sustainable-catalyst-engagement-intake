@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.0 — Integrated Advisory, Support, and Institutional Engagement Platform
+
+- Added canonical engagement dossiers with route, phase, health, ownership, sender-safe summaries, activity counts, relationship counts, and SHA-256 content hashes.
+- Added typed dossier relationships across support, calendar, proposal, SOW, engagement, client workspace, billing, document, communication, and lifecycle-task records without duplicating source data.
+- Added a unified cross-module timeline and an Integrated Engagement Command Center with dossier detail, integrity metrics, bounded backfill, and refresh actions.
+- Added privacy-safe, idempotent `sc-engagement-platform-handoff/2.0` receipts and authorized v2 REST endpoints for status, dossier lists, dossier detail, and handoff ingestion.
+- Added WordPress privacy export, approved redaction, retention, inquiry REST detail, Production Readiness, repair-center, diagnostics, and v3 Live Validation coverage.
+- Added four nondestructive tables and advanced plugin, database, platform evidence, and unified-platform schema versions to `2.0.0`.
+- Preserved the governance boundary against automatic cross-case merging, autonomous decisions, scheduling, proposal acceptance, engagement activation, payment collection, and outbound communication.
+
 ## 1.7.0 — Billing, Invoicing, and Payment Handoffs
 
 - Added engagement-linked billing profiles, versioned invoices, line items, immutable invoice snapshots, and governed invoice transitions.

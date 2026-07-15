@@ -19,8 +19,8 @@ $caps = file_get_contents( $plugin . '/includes/class-sc-ei-capabilities.php' );
 $workflow_view = file_get_contents( $plugin . '/admin/views/teams-proposals.php' );
 
 $checks = array(
-	'v1.1.1 release markers' => strpos( $main, 'Version:     1.7.0' ) !== false
-		&& strpos( $main, "SC_EI_DB_VERSION', '1.7.0'" ) !== false
+	'v1.1.1 release markers' => strpos( $main, 'Version:     2.0.0' ) !== false
+		&& strpos( $main, "SC_EI_DB_VERSION', '2.0.0'" ) !== false
 		&& strpos( $main, "SC_EI_PORTAL_SCHEMA_VERSION', '1.8.0'" ) !== false
 		&& strpos( $main, "SC_EI_ENGAGEMENT_SCHEMA_VERSION', '1.2.0'" ) !== false,
 	'four engagement tables declared' => strpos( $db, '$sql_engagements' ) !== false

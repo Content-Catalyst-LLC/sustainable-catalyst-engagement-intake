@@ -89,6 +89,7 @@ final class SC_EI_Admin {
 		SC_EI_Engagement_Admin::submenu();
 		SC_EI_Workflow_Core_Admin::submenu();
 		SC_EI_Analytics_Admin::submenu();
+		SC_EI_Command_Center_Admin::submenu();
 		SC_EI_Billing_Admin::submenu();
 		SC_EI_Hardening_Admin::submenu();
 		SC_EI_Communication_Admin::submenu();
@@ -224,7 +225,8 @@ final class SC_EI_Admin {
 			SC_EI_Hardening_Schema::default_settings(),
 			SC_EI_Workflow_Core_Schema::default_settings(),
 			SC_EI_Platform_Schema::default_settings(),
-			SC_EI_Billing_Schema::default_settings()
+			SC_EI_Billing_Schema::default_settings(),
+			SC_EI_Unified_Platform_Schema::default_settings()
 		);
 	}
 

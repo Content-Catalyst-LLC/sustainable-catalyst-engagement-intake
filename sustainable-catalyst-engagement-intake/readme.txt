@@ -1,21 +1,21 @@
 === Sustainable Catalyst Contact and Engagement Platform ===
 Contributors: content-catalyst
-Tags: contact, support, help desk, product support, advisory, engagement, sender portal, known issues, privacy
+Tags: contact, support, help desk, advisory, engagement, sender portal, client workspace, billing, analytics
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 1.7.0
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A governed contact-to-engagement platform with adaptive intake, advisory lifecycle operations, secure sender collaboration, Teams coordination, proposals, privacy-safe analytics, service intelligence, reliability, and launch governance.
+An integrated advisory, product-support, and institutional engagement platform with canonical dossiers, secure collaboration, governed approvals, billing handoffs, analytics, privacy, and production controls.
 
 == Description ==
 
-Version 1.7.0 is Billing, Invoicing, and Payment Handoffs. It adds engagement-linked billing profiles, versioned invoices, line items, governed issue and void transitions, external HTTPS payment-provider handoffs, replay-safe provider status events, and a sender-safe invoice view.
+Version 2.0.0 unifies the mature Contact and Engagement subsystems behind a canonical engagement dossier. Each inquiry can be related to its support case, lifecycle, meetings, proposals, Statements of Work, engagement, client workspace, protected files, communications, invoices, and privacy-safe cross-product handoffs without duplicating those underlying records.
 
-The platform does not collect or store card numbers, CVV/CVC values, bank-account numbers, routing numbers, payment credentials, provider secrets, or payment tokens. Payment collection remains with approved external providers. Invoice and payment records are operational engagement records and do not replace accounting, tax, legal, or banking systems.
+The new Integrated Engagement Command Center provides one operational view of route, phase, health, relationships, activity, and typed handoffs. The v2 REST contract exposes authorized dossier and handoff resources while retaining existing v1 endpoints and legacy shortcodes.
 
-The platform retains its contact, advisory, support, scheduling, proposal, secure workspace, analytics, privacy, and reliability layers.
+The platform remains human-governed. It does not merge unrelated cases automatically, make advisory or support decisions, schedule meetings, accept proposals, activate engagements, collect payments, or send external communications without the existing authorized workflows.
 
 == Recommended public entry ==
 
@@ -31,54 +31,51 @@ Use the Sender Portal only for authorized existing senders:
 
 [sc_sender_portal]
 
-Client workspaces are created by authorized staff from existing engagements. They are not open public registrations.
+The Command Center and client workspaces are administrative or invitation-only surfaces, not public registration systems.
 
-== Secure client workspace ==
+== Integrated engagement command center ==
 
-Contact & Engagement → Client Workspace provides:
+Contact & Engagement → Command Center provides:
 
-* Draft, Active, Paused, Completed, and Archived workspace stages
-* Explicit sender and staff membership
-* Sender-safe workspace summary and next step
-* Milestones with due dates and publication control
-* Deliverables with publication, acceptance, and change-request state
-* Protected-document relationships limited to the same inquiry
-* Staff and sender collaboration updates
-* Workspace audit history and privacy controls
-
-Internal assignments, email hashes, event context, private notes, and unpublished records remain excluded from the Sender Portal.
+* Canonical dossier reference, route, phase, health, owner, and sender-safe next step
+* Relationships to support, meetings, proposals, SOWs, engagements, workspaces, invoices, documents, communications, and tasks
+* Unified activity timeline across governed subsystems
+* Privacy-safe, replay-safe typed handoff receipts
+* Integrity metrics for missing or orphaned dossiers and stale or failed handoffs
+* Bounded backfill and individual dossier refresh actions
 
 == Production readiness ==
 
-Production requires:
+Production remains unavailable until the existing gate reaches 100% with zero failures and zero warnings. v2.0.0 adds checks for:
 
-* 100% readiness
-* zero required failures and zero warnings
-* current database, service-intelligence, workspace, proposal, calendar, support, lifecycle, and patch migration evidence
-* recent successful live validation
-* externally confirmed inbox evidence
-* completed controlled-pilot evidence
-* current database and protected-storage backup evidence
-* no critical events, overdue service-intelligence reviews, workspace blockers, overdue lifecycle work, or unresolved high-priority support cases
-* typed human promotion to Production
-
-Repository validation does not replace live WordPress-host testing.
+* Four unified-platform tables and required columns
+* Completed v2.0.0 migration journal
+* Canonical dossier coverage for non-erased inquiries
+* No orphaned dossier relationships
+* No stale or unresolved typed handoffs
+* Successful v3 Live Validation of dossier, timeline, relationships, privacy rejection, handoff replay, and cleanup
 
 == Installation ==
 
-1. Back up the WordPress database and protected storage.
-2. Upgrade the existing plugin or install v1.7.0.
-3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
+1. Back up the WordPress database and protected engagement-document storage.
+2. Upgrade the existing plugin or install v2.0.0.
+3. Clear WordPress, object, hosting, CDN, browser, and PHP opcode caches.
 4. Open Contact & Engagement → Platform Overview.
-5. Complete database and v1.7.0 billing migration repairs if shown.
-6. Inspect Analytics & Intelligence, Client Workspace, Proposal Governance, Calendar Coordination, Support Cases, and Advisory Lifecycle.
-7. Run Live Validation with a monitored recipient.
-8. Save one controlled aggregate snapshot and review one test service-intelligence finding without creating an automatic service action.
-9. Resolve workspace and public-launch operational blockers.
-10. Record current database and protected-storage backup evidence.
-11. Require 100%, zero failures, and zero warnings before Production.
+5. Repair the database contract and verify the v2.0.0 integrated-platform migration if requested.
+6. Open Contact & Engagement → Command Center and run the bounded dossier backfill.
+7. Run Live Validation and confirm the temporary dossier, relationships, timeline, privacy boundary, idempotent handoff, and cleanup all pass.
+8. Re-record version-bound inbox, backup, validation, and pilot evidence.
+9. Require 100%, zero required failures, and zero warnings before Production.
 
 == Changelog ==
+
+= 2.0.0 =
+* Added canonical engagement dossiers with route, phase, health, ownership, sender-safe summaries, and content hashes.
+* Added typed relationships across inquiries, support cases, meetings, proposals, SOWs, engagements, workspaces, invoices, attachments, communications, and lifecycle tasks.
+* Added a unified cross-module activity timeline and Integrated Engagement Command Center.
+* Added privacy-safe, idempotent `sc-engagement-platform-handoff/2.0` receipts and authorized v2 REST resources.
+* Added export, approved redaction, retention, diagnostics, readiness repair, and Live Validation coverage.
+* Added four nondestructive tables and advanced plugin, database, platform evidence, and unified-platform schema versions to 2.0.0.
 
 = 1.7.0 =
 * Added engagement-linked billing profiles, versioned invoices, line items, human-reviewed invoice transitions, and immutable invoice snapshots.

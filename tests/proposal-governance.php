@@ -22,7 +22,7 @@ $uninstall = file_get_contents( $plugin . '/uninstall.php' );
 $public_js = file_get_contents( $plugin . '/assets/js/public.js' );
 
 $checks = array(
-    'v1.4.1 plugin database platform and proposal identities' => false !== strpos( $main, 'Version:     1.7.0' ) && false !== strpos( $main, "SC_EI_DB_VERSION', '1.7.0'" ) && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '1.7.0'" ) && false !== strpos( $main, "SC_EI_PROPOSAL_SCHEMA_VERSION', '1.0.1'" ),
+    'v1.4.1 plugin database platform and proposal identities' => false !== strpos( $main, 'Version:     2.0.0' ) && false !== strpos( $main, "SC_EI_DB_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_PROPOSAL_SCHEMA_VERSION', '1.0.1'" ),
     'proposal governance module loaded and registered' => false !== strpos( $main, 'class-sc-ei-proposal-governance-schema.php' ) && false !== strpos( $main, 'class-sc-ei-proposal-governance-repository.php' ) && false !== strpos( $main, 'class-sc-ei-proposal-governance-admin.php' ),
     'dedicated proposal governance tables are installed' => false !== strpos( $db, "'proposal_approvals'" ) && false !== strpos( $db, "'statements_of_work'" ) && false !== strpos( $db, "'statement_of_work_versions'" ) && false !== strpos( $db, "'change_requests'" ),
     'database contract verifies proposal governance columns' => false !== strpos( $db, 'proposal_governance_columns_exist' ) && false !== strpos( $db, 'immutable_hash char(64)' ) && false !== strpos( $db, 'content_hash char(64)' ),

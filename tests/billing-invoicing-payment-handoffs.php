@@ -17,7 +17,7 @@ $communications = file_get_contents( $plugin . '/includes/class-sc-ei-communicat
 $uninstall = file_get_contents( $plugin . '/uninstall.php' );
 $readme = file_get_contents( $plugin . '/readme.txt' );
 $checks = array(
-    'v1.7.0 identity' => false !== strpos( $main, 'Version:     1.7.0' ) && false !== strpos( $main, "SC_EI_DB_VERSION', '1.7.0'" ) && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '1.7.0'" ) && false !== strpos( $main, "SC_EI_PORTAL_SCHEMA_VERSION', '1.8.0'" ) && false !== strpos( $main, "SC_EI_BILLING_SCHEMA_VERSION', '1.0.0'" ),
+    'v1.7.0 identity' => false !== strpos( $main, 'Version:     2.0.0' ) && false !== strpos( $main, "SC_EI_DB_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_PORTAL_SCHEMA_VERSION', '1.8.0'" ) && false !== strpos( $main, "SC_EI_BILLING_SCHEMA_VERSION', '1.0.0'" ),
     'billing modules loaded' => false !== strpos( $main, 'class-sc-ei-billing-schema.php' ) && false !== strpos( $main, 'class-sc-ei-billing-repository.php' ) && false !== strpos( $main, 'class-sc-ei-billing-admin.php' ),
     'six billing tables' => false !== strpos( $db, '$sql_billing_profiles' ) && false !== strpos( $db, '$sql_invoices' ) && false !== strpos( $db, '$sql_invoice_items' ) && false !== strpos( $db, '$sql_invoice_versions' ) && false !== strpos( $db, '$sql_payment_handoffs' ) && false !== strpos( $db, '$sql_billing_events' ),
     'database contract includes billing' => false !== strpos( $db, 'billing_columns_exist' ) && false !== strpos( $db, "'billing_profiles'" ) && false !== strpos( $db, "'payment_handoffs'" ),
@@ -35,11 +35,11 @@ $checks = array(
     'least privilege billing administration' => false !== strpos( $admin, "sc_intake_view_billing" ) && false !== strpos( $admin, "sc_intake_manage_billing" ) && false !== strpos( $admin, 'check_admin_referer' ),
     'admin human confirmation' => false !== strpos( $view, 'Typed confirmation uses: STATUS INVOICE-NUMBER' ) && false !== strpos( $view, 'Record transition' ) && false !== strpos( $view, 'Billing, Invoicing, and Payment Handoffs' ),
     'production readiness contract' => false !== strpos( $platform, 'billing_columns' ) && false !== strpos( $platform, 'billing_migration_journal' ) && false !== strpos( $platform, 'billing_privacy_contract' ) && false !== strpos( $platform, 'billing_operational_blockers' ),
-    'live validation workflow' => false !== strpos( $validation, 'billing_invoicing_payment_handoffs' ) && false !== strpos( $validation, "'card_number' => '4242424242424242'" ) && false !== strpos( $validation, 'sc-contact-engagement-live-validation/2.0' ),
+    'live validation workflow' => false !== strpos( $validation, 'billing_invoicing_payment_handoffs' ) && false !== strpos( $validation, "'card_number' => '4242424242424242'" ) && false !== strpos( $validation, 'sc-contact-engagement-live-validation/3.0' ),
     'privacy export and inventory' => false !== strpos( $privacy, 'SC_EI_Billing_Repository::export_for_inquiry' ) && false !== strpos( $privacy, 'sc-engagement-intake-invoices' ) && false !== strpos( $privacy_repo, "'billing_profiles'" ),
     'reviewable billing communications' => false !== strpos( $communications, "'invoice_issued'" ) && false !== strpos( $communications, "'payment_reminder'" ) && false !== strpos( $communications, "'payment_received'" ) && false !== strpos( $communications, "'invoice_voided'" ),
     'uninstall option cleanup' => false !== strpos( $uninstall, "delete_option( 'sc_ei_billing_schema_version' )" ),
-    'stable tag advances' => false !== strpos( $readme, 'Stable tag: 1.7.0' ),
+    'stable tag advances' => false !== strpos( $readme, 'Stable tag: 2.0.0' ),
 );
 // The sender projection check above is source-backed; avoid loading WordPress classes in this static contract test.
 $checks['sender projection allowlist'] = false !== strpos( $schema, 'sender_projection_keys' ) && false !== strpos( $repo, 'array_intersect_key' ) && false === strpos( substr( $schema, strpos( $schema, 'sender_projection_keys' ), 900 ), 'metadata_json' );

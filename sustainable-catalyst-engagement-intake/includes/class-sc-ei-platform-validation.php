@@ -92,6 +92,7 @@ final class SC_EI_Platform_Validation {
 		$billing_profile_id = 0;
 		$invoice_id = 0;
 		$payment_handoff_id = 0;
+		$dossier_id = 0;
 		$relative_path = '';
 		$temp_path = '';
 		$cleanup_ok = true;
@@ -107,7 +108,8 @@ final class SC_EI_Platform_Validation {
 		$workspace_columns = SC_EI_Database::workspace_columns_exist();
 		$service_intelligence_columns = SC_EI_Database::service_intelligence_columns_exist();
 		$billing_columns = SC_EI_Database::billing_columns_exist();
-		self::add( $checks, 'database_contract', __( 'Database tables, platform, lifecycle, support, calendar, proposal-governance, client-workspace, service-intelligence, and billing schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ) && ! in_array( false, $inquiry_columns, true ) && ! in_array( false, $lifecycle_columns, true ) && ! in_array( false, $support_columns, true ) && ! in_array( false, $calendar_columns, true ) && ! in_array( false, $proposal_columns, true ) && ! in_array( false, $workspace_columns, true ) && ! in_array( false, $service_intelligence_columns, true ) && ! in_array( false, $billing_columns, true ), sprintf( '%d/%d tables; %d/%d platform columns; %d/%d inquiry columns; %d/%d lifecycle columns; %d/%d support columns; %d/%d calendar columns; %d/%d proposal-governance columns; %d/%d workspace columns; %d/%d service-intelligence columns; %d/%d billing columns', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ), count( array_filter( $inquiry_columns ) ), count( $inquiry_columns ), count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ), count( array_filter( $support_columns ) ), count( $support_columns ), count( array_filter( $calendar_columns ) ), count( $calendar_columns ), count( array_filter( $proposal_columns ) ), count( $proposal_columns ), count( array_filter( $workspace_columns ) ), count( $workspace_columns ), count( array_filter( $service_intelligence_columns ) ), count( $service_intelligence_columns ), count( array_filter( $billing_columns ) ), count( $billing_columns ) ) );
+		$unified_columns = SC_EI_Database::unified_platform_columns_exist();
+		self::add( $checks, 'database_contract', __( 'Database tables, platform, lifecycle, support, calendar, proposal-governance, client-workspace, service-intelligence, billing, and integrated dossier schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ) && ! in_array( false, $inquiry_columns, true ) && ! in_array( false, $lifecycle_columns, true ) && ! in_array( false, $support_columns, true ) && ! in_array( false, $calendar_columns, true ) && ! in_array( false, $proposal_columns, true ) && ! in_array( false, $workspace_columns, true ) && ! in_array( false, $service_intelligence_columns, true ) && ! in_array( false, $billing_columns, true ) && ! in_array( false, $unified_columns, true ), sprintf( '%d/%d tables; %d/%d platform columns; %d/%d inquiry columns; %d/%d lifecycle columns; %d/%d support columns; %d/%d calendar columns; %d/%d proposal-governance columns; %d/%d workspace columns; %d/%d service-intelligence columns; %d/%d billing columns; %d/%d unified columns', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ), count( array_filter( $inquiry_columns ) ), count( $inquiry_columns ), count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ), count( array_filter( $support_columns ) ), count( $support_columns ), count( array_filter( $calendar_columns ) ), count( $calendar_columns ), count( array_filter( $proposal_columns ) ), count( $proposal_columns ), count( array_filter( $workspace_columns ) ), count( $workspace_columns ), count( array_filter( $service_intelligence_columns ) ), count( $service_intelligence_columns ), count( array_filter( $billing_columns ) ), count( $billing_columns ), count( array_filter( $unified_columns ) ), count( $unified_columns ) ) );
 		$lifecycle_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Lifecycle_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		self::add( $checks, 'lifecycle_migration', __( 'v1.1.0 advisory lifecycle migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $lifecycle_migration, (string) ( $lifecycle_migration ?: 'missing' ) );
 		$support_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Support_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -127,6 +129,8 @@ final class SC_EI_Platform_Validation {
 		self::add( $checks, 'service_intelligence_migration', __( 'v1.6.0 engagement analytics and service-intelligence migration', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $service_intelligence_migration && SC_EI_SERVICE_INTELLIGENCE_SCHEMA_VERSION === (string) get_option( 'sc_ei_service_intelligence_schema_version', '' ), (string) ( $service_intelligence_migration ?: 'missing' ) . ' / ' . (string) get_option( 'sc_ei_service_intelligence_schema_version', 'missing' ) );
 		$billing_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Billing_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		self::add( $checks, 'billing_migration', __( 'v1.7.0 billing, invoicing, and payment-handoff migration', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $billing_migration && SC_EI_BILLING_SCHEMA_VERSION === (string) get_option( 'sc_ei_billing_schema_version', '' ), (string) ( $billing_migration ?: 'missing' ) . ' / ' . (string) get_option( 'sc_ei_billing_schema_version', 'missing' ) );
+		$unified_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Unified_Platform_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::add( $checks, 'integrated_platform_migration', __( 'v2.0.0 integrated engagement platform migration', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $unified_migration && SC_EI_UNIFIED_PLATFORM_SCHEMA_VERSION === (string) get_option( SC_EI_Unified_Platform_Repository::SCHEMA_OPTION, '' ), (string) ( $unified_migration ?: 'missing' ) . ' / ' . (string) get_option( SC_EI_Unified_Platform_Repository::SCHEMA_OPTION, 'missing' ) );
 		self::add( $checks, 'proposal_reliability_patch', __( 'v1.4.1 proposal-versioning, approval, and engagement-conversion reliability journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $proposal_patch_migration, (string) ( $proposal_patch_migration ?: 'missing' ) );
 		$timezone_runtime = SC_EI_Calendar_Repository::timezone_runtime_evidence();
 		self::add( $checks, 'calendar_timezone_runtime', __( 'Strict daylight-saving time validation', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $timezone_runtime, true ), wp_json_encode( $timezone_runtime ) );
@@ -564,6 +568,53 @@ final class SC_EI_Platform_Validation {
 			}
 
 
+			$dossier = $created ? SC_EI_Unified_Platform_Repository::refresh_dossier( $inquiry_id, $actor_user_id, 'live_validation' ) : new WP_Error( 'platform_validation_inquiry_missing', 'Validation inquiry unavailable.' );
+			if ( ! is_wp_error( $dossier ) ) {
+				$dossier_id = absint( $dossier['id'] ?? 0 );
+			}
+			$unsafe_platform_handoff = SC_EI_Unified_Platform_Repository::ingest_handoff(
+				array(
+					'schema'        => SC_EI_Unified_Platform_Schema::HANDOFF_SCHEMA,
+					'handoff_key'   => 'validation-private-' . $inquiry_id,
+					'source_system' => 'feature_suggestions',
+					'target_module' => 'support',
+					'inquiry_id'    => $inquiry_id,
+					'route_group'   => 'support',
+					'payload'       => array( 'email' => 'private@example.com', 'product' => 'workbench' ),
+				),
+				$actor_user_id
+			);
+			$platform_handoff_input = array(
+				'schema'        => SC_EI_Unified_Platform_Schema::HANDOFF_SCHEMA,
+				'handoff_key'   => 'validation-safe-' . $inquiry_id,
+				'source_system' => 'feature_suggestions',
+				'target_module' => 'support',
+				'inquiry_id'    => $inquiry_id,
+				'route_group'   => 'support',
+				'payload'       => array(
+					'product'             => 'workbench',
+					'product_version'     => 'validation',
+					'component'           => 'integrated-platform',
+					'issue_type'          => 'validation',
+					'search_query'        => 'temporary integrated platform validation',
+					'resolution_attempted'=> true,
+				),
+			);
+			$platform_handoff = SC_EI_Unified_Platform_Repository::ingest_handoff( $platform_handoff_input, $actor_user_id );
+			$platform_handoff_replay = SC_EI_Unified_Platform_Repository::ingest_handoff( $platform_handoff_input, $actor_user_id );
+			$dossier_export = $dossier_id ? SC_EI_Unified_Platform_Repository::dossier_export( $dossier_id ) : array();
+			$timeline = $inquiry_id ? SC_EI_Unified_Platform_Repository::timeline( $inquiry_id, 500 ) : array();
+			$integrated_ok = ! is_wp_error( $dossier )
+				&& $dossier_id > 0
+				&& count( (array) ( $dossier_export['relationships'] ?? array() ) ) >= 5
+				&& count( $timeline ) >= 5
+				&& is_wp_error( $unsafe_platform_handoff )
+				&& 'platform_handoff_private_data_rejected' === $unsafe_platform_handoff->get_error_code()
+				&& ! is_wp_error( $platform_handoff )
+				&& ! is_wp_error( $platform_handoff_replay )
+				&& absint( $platform_handoff['id'] ?? 0 ) === absint( $platform_handoff_replay['id'] ?? 0 );
+			self::add( $checks, 'integrated_engagement_platform', __( 'Canonical dossier, cross-module relationships, unified timeline, and privacy-safe idempotent handoff', 'sustainable-catalyst-engagement-intake' ), $integrated_ok, $integrated_ok ? 'temporary engagement dossier linked support, calendar, proposal, engagement, workspace, billing, and communication records; unified timeline assembled; private handoff rejected; safe replay reused its receipt' : ( is_wp_error( $dossier ) ? $dossier->get_error_message() : ( is_wp_error( $platform_handoff ) ? $platform_handoff->get_error_message() : 'integrated platform validation failed' ) ) );
+
 			$temp_path = wp_tempnam( 'sc-ei-platform-validation.txt' );
 			if ( $temp_path ) {
 				$content = 'Sustainable Catalyst platform validation ' . wp_generate_uuid4();
@@ -606,6 +657,7 @@ final class SC_EI_Platform_Validation {
 			$wpdb->delete( SC_EI_Database::table( 'meeting_offers' ), array( 'id' => $meeting_id ), array( '%d' ) );
 		}
 		if ( $inquiry_id ) {
+			SC_EI_Unified_Platform_Repository::cleanup_for_inquiry( $inquiry_id );
 			SC_EI_Billing_Repository::cleanup_for_inquiry( $inquiry_id );
 			SC_EI_Workspace_Repository::cleanup_for_inquiry( $inquiry_id );
 			$wpdb->delete( SC_EI_Database::table( 'change_requests' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
@@ -648,7 +700,7 @@ final class SC_EI_Platform_Validation {
 
 		$failures = array_values( array_filter( $checks, static fn( array $check ): bool => 'pass' !== $check['status'] ) );
 		$result = array(
-			'schema'         => 'sc-contact-engagement-live-validation/2.0',
+			'schema'         => 'sc-contact-engagement-live-validation/3.0',
 			'plugin_version' => SC_EI_VERSION,
 			'passed'         => empty( $failures ),
 			'score'          => $checks ? (int) round( 100 * ( count( $checks ) - count( $failures ) ) / count( $checks ) ) : 0,
