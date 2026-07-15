@@ -12,7 +12,7 @@ $activator=file_get_contents($plugin.'/includes/class-sc-ei-activator.php');
 $boot=file_get_contents($plugin.'/includes/class-sc-ei-plugin.php');
 $uninstall=file_get_contents($plugin.'/uninstall.php');
 $checks=array(
- 'v1.1.0 stable markers'=>strpos($main,'Plugin Name: Sustainable Catalyst Contact and Engagement Platform')!==false&&strpos($main,'Version:     1.4.1')!==false&&strpos($main,"SC_EI_DB_VERSION', '1.4.0'")!==false&&strpos($main,"SC_EI_PLATFORM_SCHEMA_VERSION', '1.4.1'")!==false,
+ 'v1.1.0 stable markers'=>strpos($main,'Plugin Name: Sustainable Catalyst Contact and Engagement Platform')!==false&&strpos($main,'Version:     1.5.0')!==false&&strpos($main,"SC_EI_DB_VERSION', '1.5.0'")!==false&&strpos($main,"SC_EI_PLATFORM_SCHEMA_VERSION', '1.5.0'")!==false,
  'platform components loaded'=>strpos($main,'class-sc-ei-platform-schema.php')!==false&&strpos($main,'class-sc-ei-platform-repository.php')!==false&&strpos($main,'class-sc-ei-platform-validation.php')!==false&&strpos($main,'class-sc-ei-platform-public.php')!==false&&strpos($main,'class-sc-ei-platform-admin.php')!==false,
  'readiness snapshot table'=>strpos($db,'$sql_platform_snapshots')!==false&&strpos($db,'readiness_score int')!==false&&strpos($db,'content_hash char(64)')!==false,
  'migration journal table'=>strpos($db,'$sql_platform_migrations')!==false&&strpos($db,'UNIQUE KEY migration_key')!==false&&strpos($db,'schema_hash char(64)')!==false,

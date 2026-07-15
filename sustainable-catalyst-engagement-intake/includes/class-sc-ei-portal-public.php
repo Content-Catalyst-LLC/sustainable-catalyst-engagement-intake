@@ -28,6 +28,8 @@ final class SC_EI_Portal_Public {
 				'sc_ei_portal_download_meeting_ics' => 'handle_meeting_ics',
 				'sc_ei_portal_respond_proposal'  => 'handle_proposal_response',
 				'sc_ei_portal_approve_sow'        => 'handle_sow_approval',
+				'sc_ei_portal_respond_deliverable' => 'handle_deliverable_response',
+				'sc_ei_portal_workspace_message'   => 'handle_workspace_message',
 				'sc_ei_portal_print_proposal'    => 'handle_proposal_print',
 				'sc_ei_portal_privacy_request'   => 'handle_privacy_request',
 				'sc_ei_portal_withdrawal'        => 'handle_withdrawal',
@@ -115,6 +117,7 @@ final class SC_EI_Portal_Public {
 		$statements_of_work = SC_EI_Proposal_Governance_Repository::sender_snapshot( absint( $inquiry['id'] ) );
 		$lifecycle_snapshot = SC_EI_Lifecycle_Repository::sender_snapshot( absint( $inquiry['id'] ) );
 		$support_snapshot = SC_EI_Support_Repository::sender_snapshot( absint( $inquiry['id'] ) );
+		$workspace_snapshot = SC_EI_Workspace_Repository::sender_snapshot( absint( $inquiry['id'] ) );
 		$engagement_settings = SC_EI_Engagement_Repository::settings();
 		$engagements = ! empty( $engagement_settings['engagement_sender_portal_enabled'] )
 			? SC_EI_Engagement_Repository::for_inquiry( absint( $inquiry['id'] ), true )
@@ -527,6 +530,59 @@ final class SC_EI_Portal_Public {
 		exit;
 	}
 
+
+	public static function handle_deliverable_response(): void {
+		$context = self::require_context( 'respond_deliverables' );
+		if ( is_wp_error( $context ) ) { self::redirect( 'workspace', '', $context->get_error_code() ); }
+		if ( ! self::valid_csrf( $context ) ) { self::redirect( 'workspace', '', 'portal_csrf_failed' ); }
+		if ( self::update_rate_limited( $context ) ) { self::redirect( 'workspace', '', 'portal_rate_limited' ); }
+		$result = SC_EI_Workspace_Repository::record_sender_deliverable_decision(
+			absint( $_POST['deliverable_id'] ?? 0 ),
+			isset( $_POST['deliverable_decision'] ) ? sanitize_key( wp_unslash( $_POST['deliverable_decision'] ) ) : '',
+			isset( $_POST['deliverable_note'] ) ? wp_unslash( $_POST['deliverable_note'] ) : '',
+			absint( $context['inquiry']['id'] )
+		);
+		if ( is_wp_error( $result ) ) { self::redirect( 'workspace', '', $result->get_error_code() ); }
+		SC_EI_Portal_Repository::record_event( 'workspace_deliverable_response_recorded', absint( $context['inquiry']['id'] ), absint( $context['access']['id'] ), absint( $context['session']['id'] ), 'deliverable', absint( $result['id'] ), 'recorded', array( 'decision' => $result['sender_decision'] ) );
+		self::redirect( 'workspace', 'workspace_deliverable_response_saved' );
+	}
+
+
+	public static function handle_workspace_message(): void {
+		$context = self::require_context( 'send_messages' );
+		if ( is_wp_error( $context ) ) {
+			self::redirect( 'workspace', '', $context->get_error_code() );
+		}
+		if ( ! self::valid_csrf( $context ) ) {
+			self::redirect( 'workspace', '', 'portal_csrf_failed' );
+		}
+		if ( self::update_rate_limited( $context ) ) {
+			self::redirect( 'workspace', '', 'portal_rate_limited' );
+		}
+		$workspace = SC_EI_Workspace_Repository::find_by_public_id( isset( $_POST['workspace_public_id'] ) ? (string) wp_unslash( $_POST['workspace_public_id'] ) : '' );
+		$result = $workspace
+			? SC_EI_Workspace_Repository::add_sender_message(
+				absint( $workspace['id'] ),
+				absint( $context['inquiry']['id'] ),
+				isset( $_POST['workspace_message'] ) ? (string) wp_unslash( $_POST['workspace_message'] ) : ''
+			)
+			: new WP_Error( 'workspace_message_unavailable', __( 'This workspace is not available for sender collaboration.', 'sustainable-catalyst-engagement-intake' ) );
+		if ( is_wp_error( $result ) ) {
+			self::redirect( 'workspace', '', $result->get_error_code() );
+		}
+		SC_EI_Portal_Repository::record_event(
+			'workspace_message_recorded',
+			absint( $context['inquiry']['id'] ),
+			absint( $context['access']['id'] ),
+			absint( $context['session']['id'] ),
+			'workspace_message',
+			absint( $result['id'] ?? 0 ),
+			'recorded',
+			array( 'workspace_public_id' => sanitize_text_field( (string) ( $_POST['workspace_public_id'] ?? '' ) ) )
+		);
+		self::redirect( 'workspace', 'workspace_message_saved' );
+	}
+
 	public static function handle_privacy_request(): void {
 		$context = self::require_context( 'privacy_requests' );
 		if ( is_wp_error( $context ) ) {
@@ -629,7 +685,7 @@ final class SC_EI_Portal_Public {
 		$settings = SC_EI_Portal_Repository::settings();
 		$limited = SC_EI_Portal_Repository::rate_limited(
 			absint( $context['session']['id'] ),
-			array( 'contact_updated', 'scheduling_updated', 'meeting_response_recorded', 'proposal_response_recorded', 'privacy_request_created', 'withdrawal_requested', 'withdrawal_canceled', 'document_uploaded' ),
+			array( 'contact_updated', 'scheduling_updated', 'meeting_response_recorded', 'proposal_response_recorded', 'workspace_deliverable_response_recorded', 'workspace_message_recorded', 'privacy_request_created', 'withdrawal_requested', 'withdrawal_canceled', 'document_uploaded' ),
 			absint( $settings['portal_update_rate_limit_hour'] )
 		);
 		if ( $limited ) {

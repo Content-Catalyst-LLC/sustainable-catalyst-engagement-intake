@@ -57,6 +57,11 @@ final class SC_EI_Communication_Schema {
 			'proposal_expired'          => __( 'Proposal Expired', 'sustainable-catalyst-engagement-intake' ),
 			'sow_ready'                 => __( 'Statement of Work Ready', 'sustainable-catalyst-engagement-intake' ),
 			'engagement_activated'      => __( 'Engagement Activated', 'sustainable-catalyst-engagement-intake' ),
+			'workspace_activated'       => __( 'Client Workspace Activated', 'sustainable-catalyst-engagement-intake' ),
+			'workspace_update'          => __( 'Client Workspace Update', 'sustainable-catalyst-engagement-intake' ),
+			'workspace_deliverable'     => __( 'Workspace Deliverable Available', 'sustainable-catalyst-engagement-intake' ),
+			'workspace_changes'         => __( 'Workspace Deliverable Changes Requested', 'sustainable-catalyst-engagement-intake' ),
+			'workspace_accepted'        => __( 'Workspace Deliverable Accepted', 'sustainable-catalyst-engagement-intake' ),
 			'proposal_handoff'          => __( 'Proposal Handoff', 'sustainable-catalyst-engagement-intake' ),
 			'referral'                  => __( 'Referral', 'sustainable-catalyst-engagement-intake' ),
 			'decline'                   => __( 'Decline', 'sustainable-catalyst-engagement-intake' ),
@@ -149,6 +154,10 @@ final class SC_EI_Communication_Schema {
 			'{sow_version}'           => __( 'Current approved Statement of Work version', 'sustainable-catalyst-engagement-intake' ),
 			'{change_request_number}'=> __( 'Change request number', 'sustainable-catalyst-engagement-intake' ),
 			'{engagement_number}'     => __( 'Engagement number', 'sustainable-catalyst-engagement-intake' ),
+			'{workspace_number}'      => __( 'Client workspace number', 'sustainable-catalyst-engagement-intake' ),
+			'{workspace_title}'       => __( 'Client workspace title', 'sustainable-catalyst-engagement-intake' ),
+			'{workspace_status}'      => __( 'Client workspace status', 'sustainable-catalyst-engagement-intake' ),
+			'{workspace_next_step}'   => __( 'Approved workspace next step', 'sustainable-catalyst-engagement-intake' ),
 		);
 	}
 
@@ -359,6 +368,81 @@ final class SC_EI_Communication_Schema {
 				'subject' => __( 'Engagement completed — {reference}', 'sustainable-catalyst-engagement-intake' ),
 				'body' => __( "Hello {first_name},\n\nThe engagement associated with {reference} has been marked completed.\n\n[Completion summary and any approved follow-up path.]\n\nRegards,\n{sender_name}\n{reply_email}", 'sustainable-catalyst-engagement-intake' ),
 				'is_system' => 0,
+			),
+			'workspace_activated' => array(
+				'name' => __( 'Client workspace activated', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'workspace_activated',
+				'subject' => __( 'Secure client workspace available — {workspace_number}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "Hello {first_name},
+
+A secure client workspace is now available for engagement {engagement_number}.
+
+Workspace: {workspace_number}
+Title: {workspace_title}
+Status: {workspace_status}
+Next step: {workspace_next_step}
+
+Use the Secure Sender Portal for approved milestones, deliverables, documents, and collaboration updates. Do not email confidential documents or credentials.
+
+Regards,
+{sender_name}
+{reply_email}", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 0,
+			),
+			'workspace_update' => array(
+				'name' => __( 'Client workspace update', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'workspace_update',
+				'subject' => __( 'Workspace update — {workspace_number}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "Hello {first_name},
+
+A reviewed update is available in your secure client workspace.
+
+Workspace: {workspace_number}
+Title: {workspace_title}
+Next step: {workspace_next_step}
+
+Open the Secure Sender Portal to review the approved update.
+
+Regards,
+{sender_name}
+{reply_email}", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 0,
+			),
+			'workspace_deliverable' => array(
+				'name' => __( 'Workspace deliverable available', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'workspace_deliverable',
+				'subject' => __( 'Deliverable available — {workspace_number}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "Hello {first_name},
+
+A reviewed deliverable is available in your secure client workspace.
+
+Workspace: {workspace_number}
+Title: {workspace_title}
+
+Open the Secure Sender Portal to review the current version and record an acceptance or change request when a decision is requested.
+
+Regards,
+{sender_name}
+{reply_email}", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 0,
+			),
+			'workspace_changes' => array(
+				'name' => __( 'Workspace deliverable changes requested', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'workspace_changes',
+				'subject' => __( 'Deliverable changes requested — {workspace_number}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "A sender requested changes to a deliverable in workspace {workspace_number}.
+
+Open the private Client Workspace administration screen to review the sender note and determine the next action. This internal notice does not authorize a revision automatically.", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 1,
+			),
+			'workspace_accepted' => array(
+				'name' => __( 'Workspace deliverable accepted', 'sustainable-catalyst-engagement-intake' ),
+				'communication_type' => 'workspace_accepted',
+				'subject' => __( 'Deliverable accepted — {workspace_number}', 'sustainable-catalyst-engagement-intake' ),
+				'body' => __( "A sender accepted a deliverable in workspace {workspace_number}.
+
+Open the private Client Workspace administration screen to verify the recorded decision and determine the next milestone or closeout action.", 'sustainable-catalyst-engagement-intake' ),
+				'is_system' => 1,
 			),
 			'support_received' => array(
 				'name' => __( 'Support request received', 'sustainable-catalyst-engagement-intake' ),

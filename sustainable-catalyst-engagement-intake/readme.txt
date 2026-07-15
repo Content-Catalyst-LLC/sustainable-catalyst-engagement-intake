@@ -3,7 +3,7 @@ Contributors: content-catalyst
 Tags: contact, support, help desk, product support, advisory, engagement, sender portal, known issues, privacy
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 1.4.1
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,19 +11,18 @@ A governed contact-to-engagement platform with adaptive intake, advisory lifecyc
 
 == Description ==
 
-Version 1.4.1 is the Proposal Versioning, Approval, and Engagement Conversion Reliability Patch. It makes proposal decisions and immutable receipts commit together, adds replay-safe approvals, keeps SOWs tied to the current proposal version, and repairs partial engagement-conversion evidence without creating duplicate engagements.
+Version 1.5.0 is Secure Client Workspace and Collaboration. It adds engagement-linked workspaces, explicit sender and staff membership, sender-safe milestones and deliverables, protected-document relationships, controlled collaboration updates, workspace-specific Sender Portal replies, privacy coverage, readiness checks, and live validation.
 
 The platform connects:
 
 * Adaptive general contact and service-specific engagement inquiry experiences
 * Focused product-support intake and private support-case operations
-* Secure Sender Portal status, messages, uploads, meetings, proposal decisions, and approved Statements of Work
-* Human-approved Microsoft Teams scheduling and calendar coordination
-* Governed proposal revisions, external contract evidence, and engagement conversion
-* Typed change requests and immutable approval records
+* Advisory lifecycle, Microsoft Teams scheduling, proposals, Statements of Work, approvals, and governed engagement conversion
+* Secure client workspaces for deliberately published milestones, deliverables, document metadata, updates, and next steps
+* Secure Sender Portal status, messages, uploads, meetings, proposal decisions, approved Statements of Work, and workspace collaboration
 * Protected documents, privacy, retention, reliability, and launch governance
 
-A Sender Portal response is an auditable workflow record, not an electronic signature or automatic authorization to begin work.
+A Sender Portal response is an auditable workflow record, not an electronic signature, payment authorization, or automatic expansion of engagement scope.
 
 == Recommended public entry ==
 
@@ -35,42 +34,26 @@ Use the focused support entry on `/support/`:
 
 [sc_support_request]
 
-Service-specific links can use the same Contact page:
+Use the Sender Portal only for authorized existing senders:
 
-/contact/?engagement=advisory
-/contact/?engagement=ai-assurance
-/contact/?engagement=evidence-systems
-/contact/?engagement=knowledge-architecture
-/contact/?engagement=technical-storytelling
-/contact/?engagement=responsible-ai
-/contact/?engagement=collaboration
-/contact/?engagement=media
-/contact/?engagement=technical
-/contact/?engagement=partnership
-/contact/?engagement=workshop
-/contact/?engagement=monthly-advisory
+[sc_sender_portal]
 
-Existing shortcodes remain supported:
+Client workspaces are created by authorized staff from existing engagements. They are not open public registrations.
 
-* [sc_contact_hub]
-* [sc_contact_form]
-* [sc_engagement_inquiry]
-* [sc_sender_portal]
+== Secure client workspace ==
 
-== Advisory lifecycle ==
+Contact & Engagement → Client Workspace provides:
 
-Contact & Engagement → Advisory Lifecycle provides:
+* Draft, Active, Paused, Completed, and Archived workspace stages
+* Explicit sender and staff membership
+* Sender-safe workspace summary and next step
+* Milestones with due dates and publication control
+* Deliverables with publication, acceptance, and change-request state
+* Protected-document relationships limited to the same inquiry
+* Staff and sender collaboration updates
+* Workspace audit history and privacy controls
 
-* New Inquiry, Under Review, Needs Information, Qualified, Meeting Requested, Meeting Scheduled, Proposal in Preparation, Proposal Sent, Accepted, Active Engagement, Completed, Declined, and Archived stages
-* Typed human transition confirmation and allowed-transition rules
-* Owner, priority, next action, due date, and qualification context
-* Internal notes and sensitive-note marking
-* Assigned tasks with idempotent reminders
-* Linked Teams meeting offers, proposals, and engagements
-* Deliberately published Sender Portal stage, summary, and next step
-* Lifecycle events, audit history, privacy export, approved erasure, and retention support
-
-The platform does not automatically accept, reject, qualify, schedule, publish, contract, or activate an engagement.
+Internal assignments, email hashes, event context, private notes, and unpublished records remain excluded from the Sender Portal.
 
 == Production readiness ==
 
@@ -78,12 +61,12 @@ Production requires:
 
 * 100% readiness
 * zero required failures and zero warnings
-* current v1.3.0 calendar, v1.2.1 reliability-patch, v1.2.0 support, v1.1.1 persistence-patch, v1.1.0 lifecycle, and database evidence
+* current database, workspace, proposal, calendar, support, lifecycle, and patch migration evidence
 * recent successful live validation
 * externally confirmed inbox evidence
 * completed controlled-pilot evidence
 * current database and protected-storage backup evidence
-* no critical events, public-launch blockers, overdue lifecycle work, or unresolved high-priority support cases
+* no critical events, workspace blockers, overdue lifecycle work, or unresolved high-priority support cases
 * typed human promotion to Production
 
 Repository validation does not replace live WordPress-host testing.
@@ -91,18 +74,25 @@ Repository validation does not replace live WordPress-host testing.
 == Installation ==
 
 1. Back up the WordPress database and protected storage.
-2. Upgrade the existing plugin or install v1.3.0.
+2. Upgrade the existing plugin or install v1.5.0.
 3. Clear WordPress, object, PHP opcode, host, CDN, and browser caches.
 4. Open Contact & Engagement → Platform Overview.
-5. Complete database, lifecycle, support, reliability-patch, and v1.3.0 calendar migration repairs if shown.
-6. Inspect Advisory Lifecycle, Support Cases, and Calendar Coordination.
+5. Complete database and v1.5.0 workspace migration repairs if shown.
+6. Inspect Client Workspace, Proposal Governance, Calendar Coordination, Support Cases, and Advisory Lifecycle.
 7. Run Live Validation with a monitored recipient.
-8. Confirm inbox delivery and repeat controlled advisory, support, and calendar pilot checks for v1.3.0.
-9. Resolve public-launch and lifecycle operational blockers.
+8. Test one controlled engagement workspace through the Sender Portal.
+9. Resolve workspace and public-launch operational blockers.
 10. Record current database and protected-storage backup evidence.
 11. Require 100%, zero failures, and zero warnings before Production.
 
 == Changelog ==
+
+= 1.5.0 =
+* Added engagement-linked secure client workspaces with explicit sender and staff membership.
+* Added governed workspace stages, sender-safe milestones, deliverables, document metadata, updates, and next steps.
+* Added controlled deliverable publication, acceptance, and change-request records.
+* Added workspace-specific Sender Portal messages, privacy export/redaction, audit history, reviewable templates, readiness, repairs, and Live Validation.
+* Added seven workspace tables; advanced database and platform versions to 1.5.0, Portal schema to 1.7.0, and introduced Workspace schema 1.0.0.
 
 = 1.4.1 =
 * Added synchronous proposal-response receipt commits with rollback.

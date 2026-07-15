@@ -10,6 +10,8 @@ $result_messages = array(
 	'portal_contact_updated'         => __( 'Contact preferences were updated.', 'sustainable-catalyst-engagement-intake' ),
 	'portal_scheduling_updated'      => __( 'Microsoft Teams scheduling preferences were updated. No meeting was booked automatically.', 'sustainable-catalyst-engagement-intake' ),
 	'portal_meeting_response_saved'  => __( 'Your meeting response was recorded. No external calendar event was created automatically.', 'sustainable-catalyst-engagement-intake' ),
+	'workspace_deliverable_response_saved' => __( 'Your deliverable response was recorded in the secure client workspace.', 'sustainable-catalyst-engagement-intake' ),
+	'workspace_message_saved' => __( 'Your secure workspace message was recorded.', 'sustainable-catalyst-engagement-intake' ),
 	'portal_proposal_response_saved' => __( 'Your proposal response was recorded. Acceptance is pending external contracting and is not an electronic signature.', 'sustainable-catalyst-engagement-intake' ),
 	'portal_privacy_request_created' => __( 'Your privacy request was recorded for identity and human review.', 'sustainable-catalyst-engagement-intake' ),
 	'portal_withdrawal_requested'    => __( 'Your withdrawal request was recorded. It does not erase records or bypass legal holds.', 'sustainable-catalyst-engagement-intake' ),
@@ -47,6 +49,12 @@ $error_messages = array(
 	'workflow_proposal_boundary_required'     => __( 'Acknowledge that portal acceptance is not an executed contract.', 'sustainable-catalyst-engagement-intake' ),
 	'workflow_proposal_note_required'         => __( 'Add a brief response note.', 'sustainable-catalyst-engagement-intake' ),
 	'workflow_proposal_response_invalid'      => __( 'Choose a valid proposal response.', 'sustainable-catalyst-engagement-intake' ),
+	'workspace_deliverable_unavailable' => __( 'That deliverable is no longer available for response.', 'sustainable-catalyst-engagement-intake' ),
+	'workspace_deliverable_decision_invalid' => __( 'Choose a valid deliverable response.', 'sustainable-catalyst-engagement-intake' ),
+	'workspace_deliverable_decision_conflict' => __( 'The deliverable changed before your response was recorded. Reload and try again.', 'sustainable-catalyst-engagement-intake' ),
+	'workspace_message_unavailable' => __( 'That workspace is not currently available for collaboration.', 'sustainable-catalyst-engagement-intake' ),
+	'workspace_message_required' => __( 'Enter a workspace message before submitting.', 'sustainable-catalyst-engagement-intake' ),
+	'workspace_message_save_failed' => __( 'The workspace message could not be recorded. Try again or use the general secure message area.', 'sustainable-catalyst-engagement-intake' ),
 	'workflow_proposal_conflict'              => __( 'The proposal changed before your response was recorded. Reload and try again.', 'sustainable-catalyst-engagement-intake' ),
 );
 $weekdays = json_decode( (string) $inquiry['preferred_weekdays'], true ) ?: array();
@@ -91,6 +99,7 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 				'meetings' => 'view_meetings',
 				'proposals' => 'view_proposals',
 				'engagement' => 'view_engagements',
+				'workspace' => 'view_workspace',
 				'preferences' => 'update_contact',
 				'privacy' => 'privacy_requests',
 				'access' => 'revoke_access',
@@ -119,6 +128,7 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 						<dt><?php esc_html_e( 'Active private documents', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $attachments ) ) ); ?></dd>
 						<dt><?php esc_html_e( 'Meeting records', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $meeting_offers ) ) ); ?></dd>
 						<dt><?php esc_html_e( 'Proposal records', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $proposals ) ) ); ?></dd>
+						<dt><?php esc_html_e( 'Client workspaces', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( number_format_i18n( count( $workspace_snapshot ) ) ); ?></dd>
 						<dt><?php esc_html_e( 'Withdrawal state', 'sustainable-catalyst-engagement-intake' ); ?></dt><dd><?php echo esc_html( SC_EI_Portal_Schema::label( SC_EI_Portal_Schema::withdrawal_statuses(), $inquiry['sender_withdrawal_status'] ) ); ?></dd>
 					</dl>
 					<?php if ( ! empty( $lifecycle_snapshot['summary'] ) ) : ?>
@@ -387,6 +397,35 @@ $scheduled = 'scheduled' === $inquiry['scheduling_status']
 					</article>
 				<?php endforeach; ?>
 			</div>
+		</section>
+
+	<?php elseif ( 'workspace' === $view ) : ?>
+		<section class="sc-ei-portal-card">
+			<h3><?php esc_html_e( 'Secure client workspace', 'sustainable-catalyst-engagement-intake' ); ?></h3>
+			<p><?php esc_html_e( 'This area contains only collaboration information deliberately published to your inquiry. Internal notes, assignments, private analysis, and unpublished work remain hidden.', 'sustainable-catalyst-engagement-intake' ); ?></p>
+			<?php if ( ! $workspace_snapshot ) : ?><p><?php esc_html_e( 'No active client workspace is available yet.', 'sustainable-catalyst-engagement-intake' ); ?></p><?php endif; ?>
+			<?php foreach ( $workspace_snapshot as $client_workspace ) : ?>
+				<article class="sc-ei-portal-card sc-ei-portal-workflow-card">
+					<header class="sc-ei-portal-workflow-header"><div><p class="sc-ei-portal__eyebrow"><?php echo esc_html( $client_workspace['workspace_number'] ); ?></p><h4><?php echo esc_html( $client_workspace['title'] ); ?></h4></div><span class="sc-ei-portal-workflow-state"><?php echo esc_html( ucwords( str_replace( '_', ' ', $client_workspace['status'] ) ) ); ?></span></header>
+					<?php if ( $client_workspace['summary'] ) : ?><p><?php echo nl2br( esc_html( $client_workspace['summary'] ) ); ?></p><?php endif; ?>
+					<?php if ( $client_workspace['next_step'] ) : ?><div class="sc-ei-portal-notice sc-ei-portal-notice--info"><strong><?php esc_html_e( 'Next step', 'sustainable-catalyst-engagement-intake' ); ?></strong><p><?php echo nl2br( esc_html( $client_workspace['next_step'] ) ); ?></p></div><?php endif; ?>
+					<h5><?php esc_html_e( 'Milestones', 'sustainable-catalyst-engagement-intake' ); ?></h5><div class="sc-ei-portal-documents"><?php foreach ( $client_workspace['milestones'] as $milestone ) : ?><article><strong><?php echo esc_html( $milestone['title'] ); ?></strong><span><?php echo esc_html( ucwords( str_replace( '_', ' ', $milestone['status'] ) ) ); ?><?php echo $milestone['due_date'] ? ' · ' . esc_html( $milestone['due_date'] ) : ''; ?></span><?php if($milestone['description']):?><p><?php echo nl2br(esc_html($milestone['description']));?></p><?php endif;?></article><?php endforeach; ?><?php if(!$client_workspace['milestones']):?><p><?php esc_html_e('No published milestones.','sustainable-catalyst-engagement-intake');?></p><?php endif;?></div>
+					<h5><?php esc_html_e( 'Deliverables', 'sustainable-catalyst-engagement-intake' ); ?></h5>
+					<?php foreach ( $client_workspace['deliverables'] as $deliverable ) : ?><article class="sc-ei-portal-notice"><strong><?php echo esc_html( $deliverable['title'] ); ?></strong><p><?php echo nl2br( esc_html( $deliverable['description'] ) ); ?></p><p><?php echo esc_html( ucwords( str_replace( '_', ' ', $deliverable['status'] ) ) ); ?> · <?php echo esc_html( sprintf( __( 'Version %d', 'sustainable-catalyst-engagement-intake' ), absint( $deliverable['current_version'] ) ) ); ?></p><?php if ( ! empty( $deliverable['approval_required'] ) && 'published' === $deliverable['status'] && ! empty( $permissions['respond_deliverables'] ) && ! $privacy_restricted ) : ?><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-portal-form"><input type="hidden" name="action" value="sc_ei_portal_respond_deliverable"><input type="hidden" name="portal_csrf" value="<?php echo esc_attr( $csrf_token ); ?>"><input type="hidden" name="deliverable_id" value="<?php echo esc_attr( $deliverable['id'] ); ?>"><label><span><?php esc_html_e('Response','sustainable-catalyst-engagement-intake');?></span><select name="deliverable_decision"><option value="accepted"><?php esc_html_e('Accept deliverable','sustainable-catalyst-engagement-intake');?></option><option value="changes_requested"><?php esc_html_e('Request changes','sustainable-catalyst-engagement-intake');?></option></select></label><label><span><?php esc_html_e('Note','sustainable-catalyst-engagement-intake');?></span><textarea name="deliverable_note" rows="3"></textarea></label><button class="sc-ei-button sc-ei-button--primary"><?php esc_html_e('Record response','sustainable-catalyst-engagement-intake');?></button></form><?php endif; ?></article><?php endforeach; ?>
+					<h5><?php esc_html_e( 'Shared document record', 'sustainable-catalyst-engagement-intake' ); ?></h5><div class="sc-ei-portal-documents"><?php foreach($client_workspace['documents'] as $document):?><article><strong><?php echo esc_html($document['title']?:$document['original_name']);?></strong><span><?php echo esc_html($document['version_label']);?><?php echo $document['size_bytes']?' · '.esc_html(size_format(absint($document['size_bytes']),2)):'';?></span></article><?php endforeach;?><?php if(!$client_workspace['documents']):?><p><?php esc_html_e('No sender-visible workspace documents.','sustainable-catalyst-engagement-intake');?></p><?php endif;?></div>
+					<?php if($client_workspace['messages']):?><h5><?php esc_html_e('Collaboration updates','sustainable-catalyst-engagement-intake');?></h5><?php foreach($client_workspace['messages'] as $update):?><div class="sc-ei-portal-message"><p><?php echo nl2br(esc_html($update['body_text']));?></p><small><?php echo esc_html(get_date_from_gmt($update['created_at'],'M j, Y g:i a'));?></small></div><?php endforeach;?><?php endif;?>
+					<?php if ( ! $privacy_restricted && ! empty( $permissions['send_messages'] ) && in_array( $client_workspace['status'], array( 'active', 'paused' ), true ) ) : ?>
+						<h5><?php esc_html_e( 'Send a secure workspace update', 'sustainable-catalyst-engagement-intake' ); ?></h5>
+						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sc-ei-portal-form">
+							<input type="hidden" name="action" value="sc_ei_portal_workspace_message">
+							<input type="hidden" name="portal_csrf" value="<?php echo esc_attr( $csrf_token ); ?>">
+							<input type="hidden" name="workspace_public_id" value="<?php echo esc_attr( $client_workspace['public_id'] ?? '' ); ?>">
+							<label><span><?php esc_html_e( 'Message', 'sustainable-catalyst-engagement-intake' ); ?></span><textarea name="workspace_message" rows="4" maxlength="5000" required></textarea></label>
+							<button class="sc-ei-button sc-ei-button--primary"><?php esc_html_e( 'Send Secure Update', 'sustainable-catalyst-engagement-intake' ); ?></button>
+						</form>
+					<?php endif; ?>
+				</article>
+			<?php endforeach; ?>
 		</section>
 	<?php elseif ( 'preferences' === $view ) : ?>
 		<?php if ( ! $privacy_restricted && ! empty( $permissions['update_contact'] ) && ! empty( $settings['portal_allow_contact_updates'] ) ) : ?>

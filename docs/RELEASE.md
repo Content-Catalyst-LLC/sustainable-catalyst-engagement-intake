@@ -1,29 +1,37 @@
-# Release Procedure — v1.4.1
+# Release Procedure — v1.5.0
 
-## Release identity
+## Identity
 
-- Plugin version: `1.4.1`
-- Database version: `1.4.0`
-- Platform evidence schema: `1.4.1`
-- Proposal-governance schema: `1.0.1`
-- Release: Proposal Versioning, Approval, and Engagement Conversion Reliability Patch
+- Plugin version: `1.5.0`
+- Database version: `1.5.0`
+- Platform evidence schema: `1.5.0`
+- Portal schema: `1.7.0`
+- Workspace schema: `1.0.0`
+- Release: Secure Client Workspace and Collaboration
 
-## Required validation
+## Release gate
 
 1. Lint all plugin and test PHP files.
-2. Run every repository suite, including executable approval-integrity checks.
-3. Check JavaScript syntax and scan for common secret formats.
-4. Generate and verify the release manifest and ZIP CRCs.
-5. Install over v1.4.0 on a backed-up WordPress site.
-6. Verify the base v1.4.0 migration and v1.4.1 patch journal.
-7. Run Live Validation and confirm idempotent approval and conversion replay.
-8. Test one proposal revision, one SOW approval, one sender proposal response, and one engagement conversion.
-9. Confirm no duplicate approval or engagement records are created.
+2. Run every repository test suite.
+3. Validate JavaScript syntax.
+4. Scan for common secret patterns.
+5. Regenerate and verify `release-manifest.json`.
+6. Package the installable and repository archives.
+7. Verify ZIP integrity and SHA-256 checksums.
+8. Re-extract the repository archive and rerun all tests.
+9. Confirm the plugin trees in both archives are identical.
+10. Test the Mac repository updater against a disposable Git remote.
 
-## Production gate
+## Live rollout
 
-Production requires 100% readiness, zero failures, zero warnings, valid immutable approval hashes, no missing sender or conversion receipts, no stale active SOWs, current version-bound evidence, and typed human promotion.
+1. Retain the v1.4.1 ZIP and current database and protected-storage backups.
+2. Install v1.5.0 over the current plugin.
+3. Verify the database and workspace migration journals.
+4. Run Live Validation.
+5. Create one controlled client workspace from an existing test engagement.
+6. Verify member isolation, milestone visibility, deliverable publication, sender response, workspace messaging, and document metadata.
+7. Confirm internal events and staff information remain absent from the Sender Portal.
+8. Re-record version-bound validation, inbox, backup, and pilot evidence.
+9. Require 100%, zero required failures, and zero warnings before Production.
 
-## Rollback
-
-Retain the v1.4.0 plugin ZIP and current database and protected-storage backups. v1.4.1 adds no tables or columns. Code rollback does not remove v1.4.1 migration evidence; do not delete proposal, SOW, approval, or engagement records during rollback.
+Code rollback does not remove migrated workspace tables or records. Do not delete workspace records during rollback.

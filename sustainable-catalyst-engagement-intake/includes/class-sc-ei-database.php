@@ -12,7 +12,7 @@ final class SC_EI_Database {
 	public static function table( string $name ): string {
 		global $wpdb;
 
-		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
+		$allowed = array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'client_workspaces', 'workspace_members', 'workspace_milestones', 'workspace_deliverables', 'workspace_messages', 'workspace_documents', 'workspace_events', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' );
 		if ( ! in_array( $name, $allowed, true ) ) {
 			throw new InvalidArgumentException( 'Unknown Engagement Intake table.' );
 		}
@@ -47,6 +47,13 @@ final class SC_EI_Database {
 		$statements_of_work = self::table( 'statements_of_work' );
 		$statement_of_work_versions = self::table( 'statement_of_work_versions' );
 		$change_requests = self::table( 'change_requests' );
+		$client_workspaces = self::table( 'client_workspaces' );
+		$workspace_members = self::table( 'workspace_members' );
+		$workspace_milestones = self::table( 'workspace_milestones' );
+		$workspace_deliverables = self::table( 'workspace_deliverables' );
+		$workspace_messages = self::table( 'workspace_messages' );
+		$workspace_documents = self::table( 'workspace_documents' );
+		$workspace_events = self::table( 'workspace_events' );
 		$workflow_events = self::table( 'workflow_events' );
 		$engagements = self::table( 'engagements' );
 		$engagement_snapshots = self::table( 'engagement_snapshots' );
@@ -1710,6 +1717,75 @@ final class SC_EI_Database {
 			KEY updated_at (updated_at)
 		) {$charset_collate};";
 
+
+		$sql_client_workspaces = "CREATE TABLE {$client_workspaces} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			public_id char(36) NOT NULL,
+			workspace_number varchar(40) NOT NULL,
+			inquiry_id bigint(20) unsigned NOT NULL,
+			engagement_id bigint(20) unsigned NOT NULL,
+			title varchar(255) NOT NULL DEFAULT '',
+			status varchar(30) NOT NULL DEFAULT 'draft',
+			owner_user_id bigint(20) unsigned NULL,
+			sender_summary longtext NULL,
+			sender_next_step longtext NULL,
+			sender_visible tinyint(1) unsigned NOT NULL DEFAULT 0,
+			row_version int(10) unsigned NOT NULL DEFAULT 0,
+			activated_at datetime NULL,
+			paused_at datetime NULL,
+			completed_at datetime NULL,
+			created_by bigint(20) unsigned NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY (id), UNIQUE KEY public_id (public_id), UNIQUE KEY workspace_number (workspace_number), UNIQUE KEY engagement_id (engagement_id),
+			KEY inquiry_id (inquiry_id), KEY status (status), KEY owner_user_id (owner_user_id), KEY sender_visible (sender_visible), KEY updated_at (updated_at)
+		) {$charset_collate};";
+
+		$sql_workspace_members = "CREATE TABLE {$workspace_members} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT, public_id char(36) NOT NULL, workspace_id bigint(20) unsigned NOT NULL, inquiry_id bigint(20) unsigned NOT NULL,
+			member_type varchar(30) NOT NULL DEFAULT 'sender', user_id bigint(20) unsigned NULL, email_hash char(64) NOT NULL DEFAULT '', display_name varchar(191) NOT NULL DEFAULT '', role_label varchar(120) NOT NULL DEFAULT '',
+			permissions_json longtext NULL, status varchar(20) NOT NULL DEFAULT 'active', invited_at datetime NULL, activated_at datetime NULL, revoked_at datetime NULL,
+			created_by bigint(20) unsigned NULL, created_at datetime NOT NULL, updated_at datetime NOT NULL,
+			PRIMARY KEY (id), UNIQUE KEY public_id (public_id), KEY workspace_id (workspace_id), KEY inquiry_id (inquiry_id), KEY member_type (member_type), KEY user_id (user_id), KEY email_hash (email_hash), KEY status (status)
+		) {$charset_collate};";
+
+		$sql_workspace_milestones = "CREATE TABLE {$workspace_milestones} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT, public_id char(36) NOT NULL, workspace_id bigint(20) unsigned NOT NULL, inquiry_id bigint(20) unsigned NOT NULL,
+			title varchar(255) NOT NULL DEFAULT '', description longtext NULL, status varchar(30) NOT NULL DEFAULT 'planned', due_date date NULL, sender_visible tinyint(1) unsigned NOT NULL DEFAULT 0, sort_order int(10) unsigned NOT NULL DEFAULT 0,
+			completed_by bigint(20) unsigned NULL, completed_at datetime NULL, created_by bigint(20) unsigned NULL, created_at datetime NOT NULL, updated_at datetime NOT NULL,
+			PRIMARY KEY (id), UNIQUE KEY public_id (public_id), KEY workspace_id (workspace_id), KEY inquiry_id (inquiry_id), KEY status (status), KEY due_date (due_date), KEY sender_visible (sender_visible)
+		) {$charset_collate};";
+
+		$sql_workspace_deliverables = "CREATE TABLE {$workspace_deliverables} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT, public_id char(36) NOT NULL, workspace_id bigint(20) unsigned NOT NULL, inquiry_id bigint(20) unsigned NOT NULL,
+			title varchar(255) NOT NULL DEFAULT '', description longtext NULL, status varchar(30) NOT NULL DEFAULT 'draft', due_date date NULL, sender_visible tinyint(1) unsigned NOT NULL DEFAULT 0,
+			approval_required tinyint(1) unsigned NOT NULL DEFAULT 0, sender_decision varchar(30) NOT NULL DEFAULT 'pending', sender_decision_note longtext NULL, decided_at datetime NULL,
+			current_version int(10) unsigned NOT NULL DEFAULT 1, attachment_id bigint(20) unsigned NULL, row_version int(10) unsigned NOT NULL DEFAULT 0,
+			created_by bigint(20) unsigned NULL, created_at datetime NOT NULL, updated_at datetime NOT NULL,
+			PRIMARY KEY (id), UNIQUE KEY public_id (public_id), KEY workspace_id (workspace_id), KEY inquiry_id (inquiry_id), KEY status (status), KEY due_date (due_date), KEY sender_visible (sender_visible), KEY sender_decision (sender_decision), KEY attachment_id (attachment_id)
+		) {$charset_collate};";
+
+		$sql_workspace_messages = "CREATE TABLE {$workspace_messages} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT, public_id char(36) NOT NULL, workspace_id bigint(20) unsigned NOT NULL, inquiry_id bigint(20) unsigned NOT NULL,
+			direction varchar(20) NOT NULL DEFAULT 'outbound', sender_type varchar(20) NOT NULL DEFAULT 'staff', body_text longtext NULL, sender_visible tinyint(1) unsigned NOT NULL DEFAULT 0,
+			related_deliverable_id bigint(20) unsigned NULL, created_by bigint(20) unsigned NULL, created_at datetime NOT NULL,
+			PRIMARY KEY (id), UNIQUE KEY public_id (public_id), KEY workspace_id (workspace_id), KEY inquiry_id (inquiry_id), KEY sender_visible (sender_visible), KEY related_deliverable_id (related_deliverable_id), KEY created_at (created_at)
+		) {$charset_collate};";
+
+		$sql_workspace_documents = "CREATE TABLE {$workspace_documents} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT, public_id char(36) NOT NULL, workspace_id bigint(20) unsigned NOT NULL, inquiry_id bigint(20) unsigned NOT NULL, attachment_id bigint(20) unsigned NOT NULL,
+			document_role varchar(40) NOT NULL DEFAULT 'shared_document', title varchar(255) NOT NULL DEFAULT '', version_label varchar(80) NOT NULL DEFAULT '', sender_visible tinyint(1) unsigned NOT NULL DEFAULT 0,
+			related_deliverable_id bigint(20) unsigned NULL, created_by bigint(20) unsigned NULL, created_at datetime NOT NULL,
+			PRIMARY KEY (id), UNIQUE KEY public_id (public_id), UNIQUE KEY workspace_attachment (workspace_id,attachment_id), KEY workspace_id (workspace_id), KEY inquiry_id (inquiry_id), KEY attachment_id (attachment_id), KEY sender_visible (sender_visible)
+		) {$charset_collate};";
+
+		$sql_workspace_events = "CREATE TABLE {$workspace_events} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT, public_id char(36) NOT NULL, workspace_id bigint(20) unsigned NOT NULL, inquiry_id bigint(20) unsigned NOT NULL,
+			event_type varchar(80) NOT NULL DEFAULT '', object_type varchar(40) NOT NULL DEFAULT '', object_id bigint(20) unsigned NULL, from_status varchar(30) NOT NULL DEFAULT '', to_status varchar(30) NOT NULL DEFAULT '',
+			actor_type varchar(20) NOT NULL DEFAULT 'system', actor_id bigint(20) unsigned NULL, context_json longtext NULL, created_at datetime NOT NULL,
+			PRIMARY KEY (id), UNIQUE KEY public_id (public_id), KEY workspace_id (workspace_id), KEY inquiry_id (inquiry_id), KEY event_type (event_type), KEY object_type (object_type), KEY object_id (object_id), KEY created_at (created_at)
+		) {$charset_collate};";
+
 		$sql_privacy_requests = "CREATE TABLE {$privacy_requests} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			public_id char(36) NOT NULL,
@@ -1901,6 +1977,13 @@ final class SC_EI_Database {
 		dbDelta( $sql_statements_of_work );
 		dbDelta( $sql_statement_of_work_versions );
 		dbDelta( $sql_change_requests );
+		dbDelta( $sql_client_workspaces );
+		dbDelta( $sql_workspace_members );
+		dbDelta( $sql_workspace_milestones );
+		dbDelta( $sql_workspace_deliverables );
+		dbDelta( $sql_workspace_messages );
+		dbDelta( $sql_workspace_documents );
+		dbDelta( $sql_workspace_events );
 		dbDelta( $sql_workflow_events );
 		dbDelta( $sql_engagements );
 		dbDelta( $sql_engagement_snapshots );
@@ -2070,7 +2153,7 @@ final class SC_EI_Database {
 		global $wpdb;
 
 		$result = array();
-		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
+		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'client_workspaces', 'workspace_members', 'workspace_milestones', 'workspace_deliverables', 'workspace_messages', 'workspace_documents', 'workspace_events', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
 			$table           = self::table( $name );
 			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$result[ $name ] = ( $found === $table );
@@ -2108,6 +2191,9 @@ final class SC_EI_Database {
 		}
 		foreach ( self::proposal_governance_columns_exist() as $key => $available ) {
 			$result[ 'proposal_governance.' . $key ] = $available;
+		}
+		foreach ( self::workspace_columns_exist() as $key => $available ) {
+			$result[ 'workspace.' . $key ] = $available;
 		}
 		return $result;
 	}
@@ -2235,6 +2321,23 @@ final class SC_EI_Database {
 				$result[ $table_name . '.' . $column ] = ( $found === $column );
 			}
 		}
+		return $result;
+	}
+
+
+	public static function workspace_columns_exist(): array {
+		global $wpdb;
+		$tables = array(
+			'client_workspaces' => array( 'public_id','workspace_number','inquiry_id','engagement_id','title','status','owner_user_id','sender_summary','sender_next_step','sender_visible','row_version','activated_at','paused_at','completed_at','created_by','created_at','updated_at' ),
+			'workspace_members' => array( 'public_id','workspace_id','inquiry_id','member_type','user_id','email_hash','display_name','role_label','permissions_json','status','invited_at','activated_at','revoked_at','created_by','created_at','updated_at' ),
+			'workspace_milestones' => array( 'public_id','workspace_id','inquiry_id','title','description','status','due_date','sender_visible','sort_order','completed_by','completed_at','created_by','created_at','updated_at' ),
+			'workspace_deliverables' => array( 'public_id','workspace_id','inquiry_id','title','description','status','due_date','sender_visible','approval_required','sender_decision','sender_decision_note','decided_at','current_version','attachment_id','row_version','created_by','created_at','updated_at' ),
+			'workspace_messages' => array( 'public_id','workspace_id','inquiry_id','direction','sender_type','body_text','sender_visible','related_deliverable_id','created_by','created_at' ),
+			'workspace_documents' => array( 'public_id','workspace_id','inquiry_id','attachment_id','document_role','title','version_label','sender_visible','related_deliverable_id','created_by','created_at' ),
+			'workspace_events' => array( 'public_id','workspace_id','inquiry_id','event_type','object_type','object_id','from_status','to_status','actor_type','actor_id','context_json','created_at' ),
+		);
+		$result=array();
+		foreach($tables as $table_name=>$columns){$table=self::table($table_name);foreach($columns as $column){$found=$wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM {$table} LIKE %s",$column));$result[$table_name.'.'.$column]=($found===$column);}}
 		return $result;
 	}
 
@@ -2771,7 +2874,7 @@ final class SC_EI_Database {
 	public static function drop_all(): void {
 		global $wpdb;
 
-		foreach ( array( 'audit_log', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'support_signals', 'support_case_links', 'support_case_events', 'support_cases', 'lifecycle_tasks', 'lifecycle_notes', 'lifecycle_events', 'platform_snapshots', 'platform_migrations', 'workflow_outbox', 'workflow_handoffs', 'workflow_commands', 'workflow_cases', 'engagement_events', 'engagement_requirements', 'engagement_snapshots', 'engagements', 'workflow_events', 'proposal_versions', 'proposals', 'graph_operations', 'meeting_reminders', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
+		foreach ( array( 'audit_log', 'workspace_events', 'workspace_documents', 'workspace_messages', 'workspace_deliverables', 'workspace_milestones', 'workspace_members', 'client_workspaces', 'retention_actions', 'retention_policies', 'legal_holds', 'consent_events', 'privacy_requests', 'support_signals', 'support_case_links', 'support_case_events', 'support_cases', 'lifecycle_tasks', 'lifecycle_notes', 'lifecycle_events', 'platform_snapshots', 'platform_migrations', 'workflow_outbox', 'workflow_handoffs', 'workflow_commands', 'workflow_cases', 'engagement_events', 'engagement_requirements', 'engagement_snapshots', 'engagements', 'workflow_events', 'proposal_versions', 'proposals', 'graph_operations', 'meeting_reminders', 'meeting_offers', 'portal_recovery_requests', 'portal_events', 'portal_sessions', 'portal_access', 'communication_events', 'communications', 'communication_templates', 'fit_assessment_reviews', 'fit_assessment_items', 'fit_assessments', 'reviews', 'attachments', 'inquiries' ) as $name ) {
 			$table = self::table( $name );
 			$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}

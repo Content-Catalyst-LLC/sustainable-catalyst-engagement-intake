@@ -25,6 +25,7 @@ final class SC_EI_Diagnostics {
 		$platform_columns      = SC_EI_Database::platform_columns_exist();
 		$lifecycle_columns     = SC_EI_Database::lifecycle_columns_exist();
 		$proposal_governance_columns = SC_EI_Database::proposal_governance_columns_exist();
+		$workspace_columns = SC_EI_Database::workspace_columns_exist();
 		$admin              = get_role( 'administrator' );
 		$settings           = wp_parse_args( get_option( 'sc_ei_settings', array() ), SC_EI_Admin::default_settings() );
 
@@ -60,6 +61,8 @@ final class SC_EI_Diagnostics {
 		$lifecycle_metrics = SC_EI_Lifecycle_Repository::metrics();
 		$proposal_governance_metrics = SC_EI_Proposal_Governance_Repository::metrics();
 		$proposal_governance_blockers = SC_EI_Proposal_Governance_Repository::operational_blockers();
+		$workspace_metrics = SC_EI_Workspace_Repository::metrics();
+		$workspace_blockers = SC_EI_Workspace_Repository::operational_blockers();
 		$hardening_metrics = SC_EI_Hardening_Repository::metrics();
 		$hardening_watchdog = SC_EI_Hardening_Repository::last_watchdog();
 		$workflow_core_metrics = SC_EI_Workflow_Core_Repository::metrics();
@@ -193,6 +196,15 @@ final class SC_EI_Diagnostics {
 				'owner_required_for_qualified' => ! empty( $settings['lifecycle_require_owner_for_qualified'] ),
 			),
 			'proposal_governance_schema_version' => SC_EI_PROPOSAL_SCHEMA_VERSION,
+			'workspace_schema_version' => SC_EI_WORKSPACE_SCHEMA_VERSION,
+			'workspace_columns' => $workspace_columns,
+			'workspace' => array(
+				'metrics' => $workspace_metrics,
+				'blockers' => $workspace_blockers,
+				'migration_key' => SC_EI_Workspace_Repository::MIGRATION_KEY,
+				'sender_projection_allowlisted' => true,
+				'private_internal_details_excluded' => true,
+			),
 			'proposal_governance_columns' => $proposal_governance_columns,
 			'proposal_governance' => array(
 				'metrics' => $proposal_governance_metrics,

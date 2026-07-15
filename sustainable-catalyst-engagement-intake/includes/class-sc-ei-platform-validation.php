@@ -86,6 +86,8 @@ final class SC_EI_Platform_Validation {
 		$sow_id = 0;
 		$change_request_id = 0;
 		$engagement_id = 0;
+		$workspace_id = 0;
+		$workspace_deliverable_id = 0;
 		$relative_path = '';
 		$temp_path = '';
 		$cleanup_ok = true;
@@ -98,7 +100,8 @@ final class SC_EI_Platform_Validation {
 		$support_columns = SC_EI_Database::support_columns_exist();
 		$calendar_columns = SC_EI_Database::calendar_columns_exist();
 		$proposal_columns = SC_EI_Database::proposal_governance_columns_exist();
-		self::add( $checks, 'database_contract', __( 'Database tables, platform, lifecycle, support, calendar, and proposal-governance schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ) && ! in_array( false, $inquiry_columns, true ) && ! in_array( false, $lifecycle_columns, true ) && ! in_array( false, $support_columns, true ) && ! in_array( false, $calendar_columns, true ) && ! in_array( false, $proposal_columns, true ), sprintf( '%d/%d tables; %d/%d platform columns; %d/%d inquiry columns; %d/%d lifecycle columns; %d/%d support columns; %d/%d calendar columns; %d/%d proposal-governance columns', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ), count( array_filter( $inquiry_columns ) ), count( $inquiry_columns ), count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ), count( array_filter( $support_columns ) ), count( $support_columns ), count( array_filter( $calendar_columns ) ), count( $calendar_columns ), count( array_filter( $proposal_columns ) ), count( $proposal_columns ) ) );
+		$workspace_columns = SC_EI_Database::workspace_columns_exist();
+		self::add( $checks, 'database_contract', __( 'Database tables, platform, lifecycle, support, calendar, proposal-governance, and client-workspace schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $tables, true ) && ! in_array( false, $columns, true ) && ! in_array( false, $inquiry_columns, true ) && ! in_array( false, $lifecycle_columns, true ) && ! in_array( false, $support_columns, true ) && ! in_array( false, $calendar_columns, true ) && ! in_array( false, $proposal_columns, true ) && ! in_array( false, $workspace_columns, true ), sprintf( '%d/%d tables; %d/%d platform columns; %d/%d inquiry columns; %d/%d lifecycle columns; %d/%d support columns; %d/%d calendar columns; %d/%d proposal-governance columns; %d/%d workspace columns', count( array_filter( $tables ) ), count( $tables ), count( array_filter( $columns ) ), count( $columns ), count( array_filter( $inquiry_columns ) ), count( $inquiry_columns ), count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ), count( array_filter( $support_columns ) ), count( $support_columns ), count( array_filter( $calendar_columns ) ), count( $calendar_columns ), count( array_filter( $proposal_columns ) ), count( $proposal_columns ), count( array_filter( $workspace_columns ) ), count( $workspace_columns ) ) );
 		$lifecycle_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Lifecycle_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		self::add( $checks, 'lifecycle_migration', __( 'v1.1.0 advisory lifecycle migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $lifecycle_migration, (string) ( $lifecycle_migration ?: 'missing' ) );
 		$support_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Support_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -112,6 +115,8 @@ final class SC_EI_Platform_Validation {
 		$proposal_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Proposal_Governance_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		self::add( $checks, 'proposal_governance_migration', __( 'v1.4.0 proposal, Statement of Work, approval, and change-request migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $proposal_migration, (string) ( $proposal_migration ?: 'missing' ) );
 		$proposal_patch_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Proposal_Governance_Repository::PATCH_MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$workspace_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Workspace_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::add( $checks, 'workspace_migration', __( 'v1.5.0 secure client workspace and collaboration migration', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $workspace_migration && SC_EI_WORKSPACE_SCHEMA_VERSION === (string) get_option( 'sc_ei_workspace_schema_version', '' ), (string) ( $workspace_migration ?: 'missing' ) . ' / ' . (string) get_option( 'sc_ei_workspace_schema_version', 'missing' ) );
 		self::add( $checks, 'proposal_reliability_patch', __( 'v1.4.1 proposal-versioning, approval, and engagement-conversion reliability journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $proposal_patch_migration, (string) ( $proposal_patch_migration ?: 'missing' ) );
 		$timezone_runtime = SC_EI_Calendar_Repository::timezone_runtime_evidence();
 		self::add( $checks, 'calendar_timezone_runtime', __( 'Strict daylight-saving time validation', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $timezone_runtime, true ), wp_json_encode( $timezone_runtime ) );
@@ -152,7 +157,7 @@ final class SC_EI_Platform_Validation {
 					'inquiry_type'    => 'general',
 					'contact_name'    => 'Platform Validation',
 					'contact_email'   => $validation_email,
-					'subject'         => '[TEST] v1.4.1 live validation',
+					'subject'         => '[TEST] v1.5.0 live validation',
 					'message'         => 'Temporary administrator-generated validation record. Safe to remove.',
 					'form_variant'    => 'advanced',
 					'source_page'     => 'platform-validation',
@@ -365,6 +370,54 @@ final class SC_EI_Platform_Validation {
 			}
 
 
+			if ( $portal_ok && $engagement_id ) {
+				$workspace = SC_EI_Workspace_Repository::create_for_engagement(
+					$engagement_id,
+					array(
+						'title'            => '[TEST] Secure client workspace',
+						'owner_user_id'    => $actor_user_id,
+						'sender_summary'   => 'Temporary sender-visible workspace summary.',
+						'sender_next_step' => 'Review the temporary validation deliverable.',
+						'sender_visible'   => true,
+					),
+					$actor_user_id
+				);
+				if ( ! is_wp_error( $workspace ) ) {
+					$workspace_id = absint( $workspace['id'] ?? 0 );
+					$activated_workspace = SC_EI_Workspace_Repository::transition( $workspace_id, 'active', 'ACTIVE ' . strtoupper( (string) $workspace['workspace_number'] ), 'Temporary Live Validation activation.', $actor_user_id );
+					$milestone = ! is_wp_error( $activated_workspace ) ? SC_EI_Workspace_Repository::add_milestone( $workspace_id, array( 'title' => 'Validation milestone', 'description' => 'Temporary sender-visible milestone.', 'status' => 'in_progress', 'due_date' => gmdate( 'Y-m-d', time() + DAY_IN_SECONDS ), 'sender_visible' => true ), $actor_user_id ) : $activated_workspace;
+					$deliverable = ! is_wp_error( $milestone ) ? SC_EI_Workspace_Repository::add_deliverable( $workspace_id, array( 'title' => 'Validation deliverable', 'description' => 'Temporary sender-visible deliverable.', 'due_date' => gmdate( 'Y-m-d', time() + DAY_IN_SECONDS ), 'sender_visible' => true, 'approval_required' => true ), $actor_user_id ) : $milestone;
+					if ( ! is_wp_error( $deliverable ) ) {
+						$workspace_deliverable_id = absint( $deliverable['id'] ?? 0 );
+					}
+					$published_deliverable = $workspace_deliverable_id ? SC_EI_Workspace_Repository::publish_deliverable( $workspace_deliverable_id, true, $actor_user_id ) : $deliverable;
+					$sender_decision = ! is_wp_error( $published_deliverable ) ? SC_EI_Workspace_Repository::record_sender_deliverable_decision( $workspace_deliverable_id, 'accepted', 'Temporary sender acceptance.', $inquiry_id ) : $published_deliverable;
+					$staff_message = ! is_wp_error( $sender_decision ) ? SC_EI_Workspace_Repository::add_message( $workspace_id, 'Temporary reviewed staff update.', true, $actor_user_id, $workspace_deliverable_id ) : $sender_decision;
+					$sender_message = ! is_wp_error( $staff_message ) ? SC_EI_Workspace_Repository::add_sender_message( $workspace_id, $inquiry_id, 'Temporary sender collaboration response.' ) : $staff_message;
+					$workspace_snapshot = SC_EI_Workspace_Repository::sender_snapshot( $inquiry_id );
+					$workspace_members = SC_EI_Workspace_Repository::members( $workspace_id );
+					$workspace_projection_keys = $workspace_snapshot ? array_keys( $workspace_snapshot[0] ) : array();
+					$unsafe_workspace_keys = array_diff( $workspace_projection_keys, SC_EI_Workspace_Schema::sender_projection_keys() );
+					$workspace_ok = ! is_wp_error( $activated_workspace )
+						&& ! is_wp_error( $milestone )
+						&& ! is_wp_error( $published_deliverable )
+						&& ! is_wp_error( $sender_decision )
+						&& ! is_wp_error( $staff_message )
+						&& ! is_wp_error( $sender_message )
+						&& ! empty( $workspace_snapshot[0]['deliverables'] )
+						&& 'accepted' === (string) ( $workspace_snapshot[0]['deliverables'][0]['sender_decision'] ?? '' )
+						&& count( $workspace_snapshot[0]['messages'] ?? array() ) >= 2
+						&& count( $workspace_members ) >= 2
+						&& empty( $unsafe_workspace_keys );
+				} else {
+					$workspace_ok = false;
+				}
+				self::add( $checks, 'client_workspace_collaboration', __( 'Secure client workspace, membership isolation, milestones, deliverables, sender decisions, and collaboration messages', 'sustainable-catalyst-engagement-intake' ), $workspace_ok, $workspace_ok ? 'temporary engagement workspace activated; staff and sender membership recorded; milestone and deliverable published; sender decision and two-way collaboration recorded through an explicit projection allowlist' : ( is_wp_error( $workspace ) ? $workspace->get_error_message() : 'secure client workspace validation failed' ) );
+			} else {
+				self::add( $checks, 'client_workspace_collaboration', __( 'Secure client workspace, membership isolation, milestones, deliverables, sender decisions, and collaboration messages', 'sustainable-catalyst-engagement-intake' ), false, 'A validated Sender Portal invitation and converted engagement are required for workspace validation.' );
+			}
+
+
 			if ( $portal_ok ) {
 				$timezone = SC_EI_Teams::valid_timezone( wp_timezone_string() ) ? wp_timezone_string() : 'America/Chicago';
 				$zone = new DateTimeZone( $timezone );
@@ -459,6 +512,7 @@ final class SC_EI_Platform_Validation {
 			$wpdb->delete( SC_EI_Database::table( 'meeting_offers' ), array( 'id' => $meeting_id ), array( '%d' ) );
 		}
 		if ( $inquiry_id ) {
+			SC_EI_Workspace_Repository::cleanup_for_inquiry( $inquiry_id );
 			$wpdb->delete( SC_EI_Database::table( 'change_requests' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
 			$wpdb->delete( SC_EI_Database::table( 'proposal_approvals' ), array( 'inquiry_id' => $inquiry_id ), array( '%d' ) );
 			$sow_ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM " . SC_EI_Database::table( 'statements_of_work' ) . " WHERE inquiry_id = %d", $inquiry_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -499,7 +553,7 @@ final class SC_EI_Platform_Validation {
 
 		$failures = array_values( array_filter( $checks, static fn( array $check ): bool => 'pass' !== $check['status'] ) );
 		$result = array(
-			'schema'         => 'sc-contact-engagement-live-validation/1.7',
+			'schema'         => 'sc-contact-engagement-live-validation/1.8',
 			'plugin_version' => SC_EI_VERSION,
 			'passed'         => empty( $failures ),
 			'score'          => $checks ? (int) round( 100 * ( count( $checks ) - count( $failures ) ) / count( $checks ) ) : 0,

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.0 — Secure Client Workspace and Collaboration
+
+- Added engagement-linked secure client workspaces with explicit sender and staff membership.
+- Added governed workspace stages, sender-safe summaries, next steps, milestones, deliverables, collaboration updates, and protected-document relationships.
+- Added controlled deliverable publication, sender acceptance, and sender change-request records.
+- Added workspace-specific Sender Portal messages using public workspace identifiers and an explicit allowlist.
+- Added Client Workspace administration, event history, privacy export/redaction, retention integration, reviewable communication templates, readiness checks, repair actions, and Live Validation coverage.
+- Added seven nondestructive workspace tables and advanced database and platform versions to 1.5.0, Portal schema to 1.7.0, and introduced Workspace schema 1.0.0.
+
 ## 1.4.1 — Proposal Versioning, Approval, and Engagement Conversion Reliability Patch
 
 - Made Sender Portal proposal responses commit with an immutable approval receipt or compensate by restoring the previous proposal state.

@@ -1,55 +1,61 @@
 # Sustainable Catalyst Contact and Engagement Platform
 
-**Version:** 1.4.1  
-**Release:** Proposal Versioning, Approval, and Engagement Conversion Reliability Patch
+**Version:** 1.5.0  
+**Release:** Secure Client Workspace and Collaboration
 
-v1.4.1 hardens the governed proposal-to-engagement path introduced in v1.4.0. Sender decisions now commit with immutable receipts or roll back, Statement of Work approvals remain bound to the current proposal version, proposal and SOW revisions use bounded retry, and engagement conversion can repair partial receipt or status evidence without creating duplicate engagements.
+v1.5.0 extends the governed contact-to-engagement platform with engagement-linked client workspaces. Authorized staff can publish selected milestones, deliverables, collaboration updates, and protected-document metadata to the existing Sender Portal while keeping assignments, internal reasoning, audit context, and private operational details outside the sender boundary.
 
 ## Major capabilities
 
-- synchronous proposal-response and immutable-receipt commits with compensating rollback
-- replay-safe sender proposal and Statement of Work approvals
-- current-version SOW enforcement and stale SOW reconciliation
-- bounded proposal and SOW version creation retries
-- recoverable, idempotent engagement conversion and conversion-receipt repair
-- approval-integrity and conversion-consistency metrics in Production Readiness
-- governed proposal lifecycle with current-version enforcement
-- immutable sender action receipts with integrity hashes
-- versioned Statements of Work with internal approval and sender review
-- typed change requests with scope, schedule, and fee impact
-- sender-safe proposal and SOW projection
-- idempotent conversion from a contracted proposal and sender-approved SOW into an engagement
-- reviewable proposal and engagement communication templates
-- privacy export, approved redaction, retention, REST export, readiness, and Live Validation coverage
+- Engagement-linked secure client workspaces with explicit sender and staff membership
+- Governed Draft, Active, Paused, Completed, and Archived workspace stages
+- Sender-safe milestones, deliverables, updates, next steps, and document metadata
+- Deliverable publication, acceptance, and change-request records
+- Workspace-specific Sender Portal replies
+- Protected document relationships limited to the same canonical inquiry
+- Workspace event history, optimistic locking, privacy export, approved redaction, and retention support
+- Production Readiness and Live Validation coverage for schema, migration, sender isolation, collaboration, and cleanup
 
-## Human-control boundary
+## Existing platform layers retained
 
-The platform does not create contracts, electronic signatures, invoices, payments, proposal acceptances, or engagement activations automatically. A Sender Portal response is an auditable workflow record. Any legally operative contract or signature remains external and must be recorded separately before conversion.
+- Public contact and product-support intake
+- Advisory lifecycle and private support cases
+- Microsoft Teams and calendar coordination
+- Governed proposals, Statements of Work, approvals, and engagement conversion
+- Secure Sender Portal, communications, protected uploads, privacy, retention, reliability, and launch governance
 
-## Migration
+## Public entry points
 
-The v1.4.1 patch migration is nondestructive:
+```text
+[sc_contact_engagement_platform]
+[sc_support_request]
+[sc_sender_portal]
+```
 
-- plugin version: `1.4.1`
-- database version: `1.4.0`
-- platform evidence schema: `1.4.1`
-- proposal-governance schema: `1.0.1`
-- base migration journal: `v1_4_0_proposals_statements_of_work_engagement_approvals`
-- patch migration journal: `v1_4_1_proposal_versioning_approval_reliability`
+Client workspaces are not a separate public registration system. A workspace is created only from an existing governed engagement and becomes visible only after an authorized administrator activates and publishes it.
 
-It adds no tables or columns. It records reliability evidence and preserves all existing inquiries, support cases, meetings, proposals, SOWs, approvals, engagements, documents, communications, and portal access.
+## Release identity
 
-## Upgrade
+- Plugin version: `1.5.0`
+- Database version: `1.5.0`
+- Platform evidence schema: `1.5.0`
+- Portal schema: `1.7.0`
+- Workspace schema: `1.0.0`
+- Migration: `v1_5_0_secure_client_workspace_collaboration`
 
-1. Back up the WordPress database and protected engagement storage.
-2. Install the v1.4.1 ZIP over the existing plugin.
+## Installation and validation
+
+1. Back up the WordPress database and protected engagement-document storage.
+2. Install the v1.5.0 ZIP over the current plugin.
 3. Clear WordPress, object, host, CDN, browser, and PHP opcode caches.
 4. Open **Contact & Engagement → Platform Overview**.
-5. Run the v1.4.1 proposal-reliability patch repair if shown.
-6. Open **Contact & Engagement → Proposal Governance**.
-7. Run Live Validation.
-8. Test a proposal revision, SOW approval, sender decision, external-contract record, engagement conversion, and change request.
-9. Re-record version-bound backup, inbox, validation, and pilot evidence.
-10. Promote only at 100%, zero required failures, and zero warnings.
+5. Repair the database contract and verify the v1.5.0 workspace migration if requested.
+6. Open **Contact & Engagement → Client Workspace**.
+7. Run Live Validation and confirm the temporary workspace, members, milestones, deliverables, messages, sender projection, and cleanup checks pass.
+8. Test one controlled engagement workspace through the Sender Portal.
+9. Re-record version-bound inbox, backup, validation, and pilot evidence.
+10. Require 100%, zero required failures, and zero warnings before Production.
 
-See `docs/PROPOSAL-VERSIONING-APPROVAL-RELIABILITY.md`, `docs/MIGRATION-v1.4.1.md`, and `docs/RELEASE.md`.
+Repository tests and archive verification do not replace live validation on the WordPress host.
+
+See `docs/SECURE-CLIENT-WORKSPACE-COLLABORATION.md`, `docs/MIGRATION-v1.5.0.md`, and `docs/RELEASE.md`.

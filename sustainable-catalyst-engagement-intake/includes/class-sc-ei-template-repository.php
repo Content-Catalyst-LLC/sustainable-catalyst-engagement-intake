@@ -202,6 +202,8 @@ final class SC_EI_Template_Repository {
 		$first_name = $contact_name ? preg_split( '/\s+/', $contact_name )[0] : '';
 		$timezone = (string) ( $inquiry['scheduled_timezone'] ?: $inquiry['timezone'] ?? '' );
 		$support_case = ! empty( $inquiry['id'] ) ? SC_EI_Support_Repository::for_inquiry( absint( $inquiry['id'] ) ) : null;
+		$workspace_records = ! empty( $inquiry['id'] ) ? SC_EI_Workspace_Repository::sender_snapshot( absint( $inquiry['id'] ) ) : array();
+		$workspace_record = $workspace_records ? reset( $workspace_records ) : array();
 		$calendar_meetings = ! empty( $inquiry['id'] ) ? SC_EI_Workflow_Repository::meeting_offers_for_inquiry( absint( $inquiry['id'] ), false ) : array();
 		$calendar_meeting = $calendar_meetings ? reset( $calendar_meetings ) : array();
 		$scheduled_start = '';
@@ -254,6 +256,10 @@ final class SC_EI_Template_Repository {
 			'{support_component}'     => (string) ( $support_case['component'] ?? '' ),
 			'{support_status}'        => $support_case ? SC_EI_Support_Schema::public_stage( (string) $support_case['workflow_stage'] ) : '',
 			'{support_next_step}'     => (string) ( $support_case['sender_next_step'] ?? '' ),
+			'{workspace_number}'      => (string) ( $workspace_record['workspace_number'] ?? '' ),
+			'{workspace_title}'       => (string) ( $workspace_record['title'] ?? '' ),
+			'{workspace_status}'      => isset( $workspace_record['status'] ) ? ucwords( str_replace( '_', ' ', (string) $workspace_record['status'] ) ) : '',
+			'{workspace_next_step}'   => (string) ( $workspace_record['next_step'] ?? '' ),
 		);
 
 		$subject = strtr( (string) $template['subject_template'], $variables );

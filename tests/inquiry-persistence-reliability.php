@@ -14,10 +14,10 @@ $readme = file_get_contents( $plugin . '/readme.txt' );
 $migration = file_get_contents( $root . '/docs/MIGRATION-v1.1.1.md' );
 
 $checks = array(
-    'v1.1.1 identity with unchanged database schema' => false !== strpos( $main, 'Version:     1.4.1' )
-        && false !== strpos( $main, "SC_EI_VERSION', '1.4.1'" )
-        && false !== strpos( $main, "SC_EI_DB_VERSION', '1.4.0'" )
-        && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '1.4.1'" ),
+    'v1.1.1 identity with unchanged database schema' => false !== strpos( $main, 'Version:     1.5.0' )
+        && false !== strpos( $main, "SC_EI_VERSION', '1.5.0'" )
+        && false !== strpos( $main, "SC_EI_DB_VERSION', '1.5.0'" )
+        && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '1.5.0'" ),
     'qualification score uses non-null database default' => false !== strpos( $inquiry, "'qualification_score'      => 0" )
         && false === strpos( $inquiry, "'qualification_score'      => null" )
         && false !== strpos( $db, 'qualification_score smallint(5) unsigned NOT NULL DEFAULT 0' ),
@@ -33,12 +33,12 @@ $checks = array(
         && false !== strpos( $platform, "'persistence_patch_migration_journal'" ),
     'live validation includes inquiry write-path columns' => false !== strpos( $validation, 'SC_EI_Database::inquiry_columns_exist()' )
         && false !== strpos( $validation, '%d/%d inquiry columns' )
-        && false !== strpos( $validation, "'[TEST] v1.4.1 live validation'" ),
+        && false !== strpos( $validation, "'[TEST] v1.5.0 live validation'" ),
     'watchdog includes inquiry and lifecycle columns' => false !== strpos( $hardening, "checks['inquiry_columns']" )
         && false !== strpos( $hardening, "checks['lifecycle_columns']" ),
     'nondestructive migration documentation' => false !== strpos( $migration, 'nondestructive' )
         && false !== strpos( $migration, 'database schema version remains `1.1.0`' ),
-    'WordPress stable tag updated' => false !== strpos( $readme, 'Stable tag: 1.4.1' ),
+    'WordPress stable tag updated' => false !== strpos( $readme, 'Stable tag: 1.5.0' ),
 );
 $failed = array_keys( array_filter( $checks, static fn( $value ) => ! $value ) );
 if ( $failed ) {

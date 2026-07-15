@@ -105,6 +105,35 @@ final class SC_EI_Privacy {
 				);
 			}
 
+
+			$workspace = SC_EI_Workspace_Repository::export_for_inquiry( $inquiry_id );
+			foreach ( (array) ( $workspace['workspaces'] ?? array() ) as $record ) {
+				$data[] = array(
+					'group_id' => 'sc-engagement-intake-client-workspaces',
+					'group_label' => __( 'Secure Client Workspaces', 'sustainable-catalyst-engagement-intake' ),
+					'item_id' => 'sc-ei-workspace-' . $record['id'],
+					'data' => self::export_fields( $record, array( 'workspace_number' => 'Workspace number', 'engagement_id' => 'Engagement ID', 'title' => 'Workspace title', 'status' => 'Workspace status', 'sender_summary' => 'Published sender summary', 'sender_next_step' => 'Published sender next step', 'sender_visible' => 'Sender visible', 'activated_at' => 'Activated at', 'paused_at' => 'Paused at', 'completed_at' => 'Completed at', 'created_at' => 'Created at', 'updated_at' => 'Updated at' ) ),
+				);
+			}
+			foreach ( (array) ( $workspace['members'] ?? array() ) as $record ) {
+				$data[] = array( 'group_id' => 'sc-engagement-intake-workspace-members', 'group_label' => __( 'Client Workspace Membership', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-workspace-member-' . $record['id'], 'data' => self::export_fields( $record, array( 'member_type' => 'Member type', 'email_hash' => 'Email hash', 'display_name' => 'Display name', 'role_label' => 'Role', 'permissions_json' => 'Permissions', 'status' => 'Membership status', 'invited_at' => 'Invited at', 'activated_at' => 'Activated at', 'revoked_at' => 'Revoked at' ) ) );
+			}
+			foreach ( (array) ( $workspace['milestones'] ?? array() ) as $record ) {
+				$data[] = array( 'group_id' => 'sc-engagement-intake-workspace-milestones', 'group_label' => __( 'Client Workspace Milestones', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-workspace-milestone-' . $record['id'], 'data' => self::export_fields( $record, array( 'title' => 'Milestone title', 'description' => 'Description', 'status' => 'Status', 'due_date' => 'Due date', 'sender_visible' => 'Sender visible', 'completed_at' => 'Completed at', 'created_at' => 'Created at', 'updated_at' => 'Updated at' ) ) );
+			}
+			foreach ( (array) ( $workspace['deliverables'] ?? array() ) as $record ) {
+				$data[] = array( 'group_id' => 'sc-engagement-intake-workspace-deliverables', 'group_label' => __( 'Client Workspace Deliverables', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-workspace-deliverable-' . $record['id'], 'data' => self::export_fields( $record, array( 'title' => 'Deliverable title', 'description' => 'Description', 'status' => 'Status', 'due_date' => 'Due date', 'sender_visible' => 'Sender visible', 'approval_required' => 'Sender decision required', 'sender_decision' => 'Sender decision', 'sender_decision_note' => 'Sender decision note', 'decided_at' => 'Decision time', 'current_version' => 'Current version', 'created_at' => 'Created at', 'updated_at' => 'Updated at' ) ) );
+			}
+			foreach ( (array) ( $workspace['messages'] ?? array() ) as $record ) {
+				$data[] = array( 'group_id' => 'sc-engagement-intake-workspace-messages', 'group_label' => __( 'Client Workspace Collaboration Messages', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-workspace-message-' . $record['id'], 'data' => self::export_fields( $record, array( 'direction' => 'Direction', 'sender_type' => 'Sender type', 'body_text' => 'Message', 'sender_visible' => 'Sender visible', 'related_deliverable_id' => 'Related deliverable', 'created_at' => 'Created at' ) ) );
+			}
+			foreach ( (array) ( $workspace['documents'] ?? array() ) as $record ) {
+				$data[] = array( 'group_id' => 'sc-engagement-intake-workspace-documents', 'group_label' => __( 'Client Workspace Document Relationships', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-workspace-document-' . $record['id'], 'data' => self::export_fields( $record, array( 'attachment_id' => 'Private attachment ID', 'document_role' => 'Document role', 'title' => 'Document title', 'version_label' => 'Version label', 'sender_visible' => 'Sender visible', 'related_deliverable_id' => 'Related deliverable', 'created_at' => 'Created at' ) ) );
+			}
+			foreach ( (array) ( $workspace['events'] ?? array() ) as $record ) {
+				$data[] = array( 'group_id' => 'sc-engagement-intake-workspace-events', 'group_label' => __( 'Client Workspace Audit Events', 'sustainable-catalyst-engagement-intake' ), 'item_id' => 'sc-ei-workspace-event-' . $record['id'], 'data' => self::export_fields( $record, array( 'event_type' => 'Event type', 'object_type' => 'Object type', 'object_id' => 'Object ID', 'from_status' => 'Previous status', 'to_status' => 'New status', 'actor_type' => 'Actor type', 'context_json' => 'Event context', 'created_at' => 'Created at' ) ) );
+			}
+
 			$proposal_governance = SC_EI_Proposal_Governance_Repository::export_for_inquiry( $inquiry_id );
 			foreach ( (array) ( $proposal_governance['statements_of_work'] ?? array() ) as $sow ) {
 				$data[] = array(

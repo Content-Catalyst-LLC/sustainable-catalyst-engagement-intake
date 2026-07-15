@@ -304,11 +304,14 @@ final class SC_EI_Platform_Repository {
 		$support_columns = SC_EI_Database::support_columns_exist();
 		$calendar_columns = SC_EI_Database::calendar_columns_exist();
 		$proposal_columns = SC_EI_Database::proposal_governance_columns_exist();
+		$workspace_columns = SC_EI_Database::workspace_columns_exist();
 		$lifecycle_metrics = SC_EI_Lifecycle_Repository::metrics();
 		$support_metrics = SC_EI_Support_Repository::metrics();
 		$calendar_metrics = SC_EI_Calendar_Repository::metrics();
 		$proposal_metrics = SC_EI_Proposal_Governance_Repository::metrics();
 		$proposal_blockers = SC_EI_Proposal_Governance_Repository::operational_blockers();
+		$workspace_metrics = SC_EI_Workspace_Repository::metrics();
+		$workspace_blockers = SC_EI_Workspace_Repository::operational_blockers();
 		$hardening = SC_EI_Hardening_Repository::metrics();
 		$core = SC_EI_Workflow_Core_Repository::metrics();
 		$portal_url = self::effective_url( 'platform_portal_page_url', 'portal_page_url' );
@@ -339,6 +342,7 @@ final class SC_EI_Platform_Repository {
 		$checks[] = self::check( 'lifecycle_columns', 'data', __( 'Advisory lifecycle schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $lifecycle_columns, true ), true, sprintf( '%d/%d', count( array_filter( $lifecycle_columns ) ), count( $lifecycle_columns ) ), 'repair_database' );
 		$checks[] = self::check( 'support_columns', 'data', __( 'Product support operations schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $support_columns, true ), true, sprintf( '%d/%d', count( array_filter( $support_columns ) ), count( $support_columns ) ), 'repair_database' );
 		$checks[] = self::check( 'calendar_columns', 'data', __( 'Microsoft Teams and calendar-coordination schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $calendar_columns, true ), true, sprintf( '%d/%d', count( array_filter( $calendar_columns ) ), count( $calendar_columns ) ), 'repair_database' );
+		$checks[] = self::check( 'workspace_columns', 'data', __( 'Secure client workspace and collaboration schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $workspace_columns, true ), true, sprintf( '%d/%d', count( array_filter( $workspace_columns ) ), count( $workspace_columns ) ), 'repair_database' );
 		$checks[] = self::check( 'proposal_governance_columns', 'data', __( 'Proposal, Statement of Work, approval, and change-request schema', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $proposal_columns, true ), true, sprintf( '%d/%d', count( array_filter( $proposal_columns ) ), count( $proposal_columns ) ), 'repair_database' );
 		$checks[] = self::check( 'migration_journal', 'data', __( 'v1.0 base migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::MIGRATION_KEY ), true, self::MIGRATION_KEY, 'verify_migration' );
 		$checks[] = self::check( 'patch_migration_journal', 'data', __( 'v1.0.2 upgrade journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( self::PATCH_MIGRATION_KEY ), true, self::PATCH_MIGRATION_KEY, 'verify_patch_migration' );
@@ -350,9 +354,13 @@ final class SC_EI_Platform_Repository {
 		$checks[] = self::check( 'calendar_migration_journal', 'data', __( 'v1.3.0 Teams and calendar-coordination migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Calendar_Repository::MIGRATION_KEY ), true, SC_EI_Calendar_Repository::MIGRATION_KEY, 'verify_calendar_migration' );
 		$checks[] = self::check( 'calendar_reliability_patch_journal', 'data', __( 'v1.3.1 scheduling and time-zone reliability journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Calendar_Repository::PATCH_MIGRATION_KEY ), true, SC_EI_Calendar_Repository::PATCH_MIGRATION_KEY, 'verify_calendar_reliability_patch' );
 		$checks[] = self::check( 'proposal_governance_migration_journal', 'data', __( 'v1.4.0 proposal-governance migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Proposal_Governance_Repository::MIGRATION_KEY ), true, SC_EI_Proposal_Governance_Repository::MIGRATION_KEY, 'verify_proposal_governance_migration' );
+		$checks[] = self::check( 'workspace_migration_journal', 'data', __( 'v1.5.0 secure client workspace migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Workspace_Repository::MIGRATION_KEY ), true, SC_EI_Workspace_Repository::MIGRATION_KEY, 'verify_workspace_migration' );
 		$checks[] = self::check( 'proposal_reliability_patch_journal', 'data', __( 'v1.4.1 proposal reliability migration journal', 'sustainable-catalyst-engagement-intake' ), self::migration_completed( SC_EI_Proposal_Governance_Repository::PATCH_MIGRATION_KEY ), true, SC_EI_Proposal_Governance_Repository::PATCH_MIGRATION_KEY, 'verify_proposal_reliability_patch' );
 		$approval_contract_ok = SC_EI_Proposal_Governance_Schema::APPROVAL_SCHEMA === 'sc-proposal-approval/1.0' && ! empty( $proposal_columns['proposal_approvals.immutable_hash'] ) && ! in_array( 'immutable_hash', SC_EI_Proposal_Governance_Schema::sender_projection_keys(), true );
 		$checks[] = self::check( 'proposal_approval_contract', 'integrations', __( 'Immutable proposal and Statement of Work approval contract', 'sustainable-catalyst-engagement-intake' ), $approval_contract_ok, true, SC_EI_Proposal_Governance_Schema::APPROVAL_SCHEMA, 'review_proposals' );
+		$workspace_contract_ok = SC_EI_Workspace_Schema::HANDOFF_SCHEMA === 'sc-client-workspace/1.0' && ! in_array( 'owner_user_id', SC_EI_Workspace_Schema::sender_projection_keys(), true ) && ! in_array( 'created_by', SC_EI_Workspace_Schema::sender_projection_keys(), true );
+		$checks[] = self::check( 'workspace_sender_contract', 'integrations', __( 'Secure client workspace sender-isolation contract', 'sustainable-catalyst-engagement-intake' ), $workspace_contract_ok, true, SC_EI_Workspace_Schema::HANDOFF_SCHEMA, 'review_client_workspaces' );
+		$checks[] = self::check( 'workspace_operational_blockers', 'operations', __( 'Client workspace operational blockers', 'sustainable-catalyst-engagement-intake' ), 0 === count( $workspace_blockers ), true, wp_json_encode( $workspace_blockers ), 'review_client_workspaces' );
 		$checks[] = self::check( 'support_handoff_contract', 'integrations', __( 'Product-support handoff privacy contract', 'sustainable-catalyst-engagement-intake' ), SC_EI_Support_Schema::HANDOFF_SCHEMA === 'sc-product-support-handoff/1.0' && is_wp_error( SC_EI_Support_Schema::signal_payload( array( 'product' => 'workbench', 'email' => 'private@example.com' ) ) ), true, SC_EI_Support_Schema::HANDOFF_SCHEMA, 'review_support' );
 		$checks[] = self::check( 'support_handoff_reliability', 'integrations', __( 'Cross-product handoff reliability', 'sustainable-catalyst-engagement-intake' ), 0 === absint( $support_metrics['handoff_reliability_open'] ?? 0 ), true, sprintf( '%d historical failure(s); last failure %s; last success %s', absint( $support_metrics['failed_handoffs'] ?? 0 ), (string) get_option( 'sc_ei_support_last_handoff_failure_at', 'not recorded' ), (string) get_option( 'sc_ei_support_last_handoff_at', 'not recorded' ) ), 'review_support' );
 		$checks[] = self::check( 'support_product_context', 'operations', __( 'Open support product context', 'sustainable-catalyst-engagement-intake' ), 0 === absint( $support_metrics['missing_product'] ?? 0 ), true, sprintf( '%d missing product; %d missing version; %d missing component', absint( $support_metrics['missing_product'] ?? 0 ), absint( $support_metrics['missing_version'] ?? 0 ), absint( $support_metrics['missing_component'] ?? 0 ) ), 'review_support' );
@@ -604,6 +612,7 @@ final class SC_EI_Platform_Repository {
 			'lifecycle'     => SC_EI_LIFECYCLE_SCHEMA_VERSION,
 			'support'       => SC_EI_SUPPORT_SCHEMA_VERSION,
 			'proposal_governance' => SC_EI_PROPOSAL_SCHEMA_VERSION,
+			'workspace' => SC_EI_WORKSPACE_SCHEMA_VERSION,
 		);
 	}
 
@@ -682,7 +691,7 @@ final class SC_EI_Platform_Repository {
 				break;
 			case 'repair_database':
 				SC_EI_Database::maybe_upgrade();
-				$result = ! in_array( false, SC_EI_Database::tables_exist(), true ) && ! in_array( false, SC_EI_Database::platform_columns_exist(), true ) && ! in_array( false, SC_EI_Database::inquiry_columns_exist(), true ) && ! in_array( false, SC_EI_Database::lifecycle_columns_exist(), true ) && ! in_array( false, SC_EI_Database::support_columns_exist(), true ) && ! in_array( false, SC_EI_Database::calendar_columns_exist(), true ) && ! in_array( false, SC_EI_Database::proposal_governance_columns_exist(), true );
+				$result = ! in_array( false, SC_EI_Database::tables_exist(), true ) && ! in_array( false, SC_EI_Database::platform_columns_exist(), true ) && ! in_array( false, SC_EI_Database::inquiry_columns_exist(), true ) && ! in_array( false, SC_EI_Database::lifecycle_columns_exist(), true ) && ! in_array( false, SC_EI_Database::support_columns_exist(), true ) && ! in_array( false, SC_EI_Database::calendar_columns_exist(), true ) && ! in_array( false, SC_EI_Database::proposal_governance_columns_exist(), true ) && ! in_array( false, SC_EI_Database::workspace_columns_exist(), true );
 				break;
 			case 'verify_migration':
 				$result = self::run_migrations( (string) get_option( 'sc_ei_version_previous', '' ) );
@@ -714,6 +723,9 @@ final class SC_EI_Platform_Repository {
 				break;
 			case 'verify_proposal_reliability_patch':
 				$result = SC_EI_Proposal_Governance_Repository::record_patch_migration( (string) get_option( 'sc_ei_proposal_governance_schema_version_previous', '' ) );
+				break;
+			case 'verify_workspace_migration':
+				$result = SC_EI_Workspace_Repository::record_migration( (string) get_option( 'sc_ei_workspace_schema_version_previous', '' ) );
 				break;
 			case 'repair_calendar_reliability':
 				$result = SC_EI_Calendar_Repository::repair_reminder_state();
@@ -886,6 +898,8 @@ final class SC_EI_Platform_Repository {
 			'verify_calendar_migration' => __( 'Verify v1.3.0 calendar migration', 'sustainable-catalyst-engagement-intake' ),
 			'verify_calendar_reliability_patch' => __( 'Verify v1.3.1 calendar reliability patch', 'sustainable-catalyst-engagement-intake' ),
 			'verify_proposal_governance_migration' => __( 'Verify v1.4.0 proposal-governance migration', 'sustainable-catalyst-engagement-intake' ),
+			'verify_workspace_migration' => __( 'Verify v1.5.0 client workspace migration', 'sustainable-catalyst-engagement-intake' ),
+			'review_client_workspaces' => __( 'Review secure client workspaces', 'sustainable-catalyst-engagement-intake' ),
 			'verify_proposal_reliability_patch' => __( 'Verify v1.4.1 proposal reliability patch', 'sustainable-catalyst-engagement-intake' ),
 			'review_proposals'      => __( 'Open Proposal Governance', 'sustainable-catalyst-engagement-intake' ),
 			'repair_calendar_reliability' => __( 'Repair calendar reminder state', 'sustainable-catalyst-engagement-intake' ),
