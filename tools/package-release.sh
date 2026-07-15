@@ -3,11 +3,11 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-VERSION="1.3.0"
+VERSION="1.3.1"
 SLUG="sustainable-catalyst-engagement-intake"
 REPO_ROOT="${SLUG}-v${VERSION}-repo"
 DIST="${ROOT}/dist"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v130-package.XXXXXX")"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v131-package.XXXXXX")"
 TEST_LOG="${WORK}/tests.log"
 
 cleanup() { rm -rf "$WORK"; }
@@ -32,7 +32,7 @@ if command -v node >/dev/null 2>&1; then
 fi
 
 bash -n "$0"
-bash -n PUSH_ENGAGEMENT_INTAKE_V130_CLEAN.sh
+bash -n PUSH_ENGAGEMENT_INTAKE_V131_CLEAN.sh
 python3 -m json.tool composer.json >/dev/null
 
 printf 'Scanning for common secret material...\n'
@@ -59,7 +59,7 @@ for path in sorted(root.rglob('*')):
 manifest = {
     'name': 'Sustainable Catalyst Contact and Engagement Platform',
     'version': version,
-    'release': 'Microsoft Teams and Calendar Coordination',
+    'release': 'Scheduling, Reminder, and Time-Zone Reliability Patch',
     'plugin_slug': 'sustainable-catalyst-engagement-intake',
     'text_domain': 'sustainable-catalyst-engagement-intake',
     'requires_wordpress': '6.5',
@@ -68,8 +68,8 @@ manifest = {
     'schemas': {
         'review': '1.0.0', 'communication': '1.0.0', 'privacy': '1.0.0', 'fit': '1.0.0',
         'portal': '1.5.0', 'workflow': '1.2.0', 'graph': '1.0.0', 'engagement': '1.1.0',
-        'analytics': '1.0.0', 'hardening': '1.0.0', 'workflow_core': '1.0.0', 'platform': '1.3.0',
-        'lifecycle': '1.0.0', 'support': '1.0.1', 'calendar': '1.0.0'
+        'analytics': '1.0.0', 'hardening': '1.0.0', 'workflow_core': '1.0.0', 'platform': '1.3.1',
+        'lifecycle': '1.0.0', 'support': '1.0.1', 'calendar': '1.0.1'
     },
     'migration_keys': [
         'v1_0_0_unified_contact_engagement_platform',
@@ -79,7 +79,8 @@ manifest = {
         'v1_1_1_inquiry_persistence_lifecycle_reliability',
         'v1_2_0_support_operations_product_intelligence',
         'v1_2_1_support_operations_cross_product_reliability',
-        'v1_3_0_microsoft_teams_calendar_coordination'
+        'v1_3_0_microsoft_teams_calendar_coordination',
+        'v1_3_1_scheduling_reminder_timezone_reliability'
     ],
     'recommended_shortcode': '[sc_contact_engagement_platform]',
     'routed_entries': [
@@ -117,7 +118,8 @@ manifest = {
         'support reliability artifact cleanup',
         'calendar schema and migration contract', 'real Teams meeting invitation and slot acceptance',
         'sender-safe calendar projection', 'rescheduling history and reminder idempotency',
-        'meeting cancellation and join-link revocation', 'calendar artifact cleanup'
+        'meeting cancellation and join-link revocation', 'strict DST gap and overlap rejection',
+        'cancellation reminder review eligibility and stale reminder closure', 'calendar artifact cleanup'
     ],
     'lifecycle': {
         'stages': ['new_inquiry', 'under_review', 'needs_information', 'qualified', 'meeting_requested',
@@ -151,7 +153,7 @@ manifest = {
         'recoverable_public_case_persistence': True
     },
     'calendar_coordination': {
-        'schema': 'sc-calendar-coordination/1.0',
+        'schema': 'sc-calendar-coordination/1.0.1',
         'tables': ['meeting_offers', 'meeting_reminders'],
         'meeting_types': ['advisory_discovery', 'ai_assurance_review', 'support_troubleshooting',
             'research_collaboration', 'institutional', 'media_interview', 'workshop_planning',
@@ -164,6 +166,10 @@ manifest = {
         'canceled_links_revoked': True,
         'reschedule_history': True,
         'reminder_idempotency': True,
+        'dst_gap_rejection': True,
+        'dst_overlap_rejection': True,
+        'reviewed_communication_required': True,
+        'compensating_reschedule': True,
         'post_meeting_follow_up': True
     },
     'pilot_checklist': [
@@ -182,7 +188,7 @@ manifest = {
         'php_files_including_tests_linted': sum(1 for base in [root/'sustainable-catalyst-engagement-intake', root/'tests'] for p in base.rglob('*.php')),
         'javascript_bundles_checked': sum(1 for p in (root/'sustainable-catalyst-engagement-intake').rglob('*.js')),
         'test_suites': sum(1 for p in (root/'tests').glob('*.php')),
-        'explicit_pass_assertions': sum(1 for line in test_log.read_text(encoding='utf-8').splitlines() if line.startswith('PASS:')),
+        'explicit_pass_assertions': (lambda lines: sum(1 for line in lines if line.startswith('PASS:')) + sum(int(__import__('re').search(r'\((\d+) assertions\)', line).group(1)) for line in lines if not line.startswith('PASS:') and __import__('re').search(r'\((\d+) assertions\)', line)))(test_log.read_text(encoding='utf-8').splitlines()),
         'secret_scan': True,
         'push_script_bash_syntax': True,
         'zip_crc_verified': True

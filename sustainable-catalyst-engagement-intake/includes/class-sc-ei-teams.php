@@ -135,19 +135,67 @@ final class SC_EI_Teams {
 	}
 
 	public static function local_to_utc( string $value, string $timezone ): ?string {
-		$value    = sanitize_text_field( $value );
-		$timezone = sanitize_text_field( $timezone );
+		$parsed = self::parse_local_datetime( $value, $timezone );
+		return is_wp_error( $parsed ) ? null : (string) $parsed['utc'];
+	}
 
-		if ( '' === $value || ! self::valid_timezone( $timezone ) ) {
-			return null;
+
+	/**
+	 * Parse a local civil time without silently normalizing DST gaps or repeated hours.
+	 *
+	 * @return array{local:string,utc:string,timezone:string}|WP_Error
+	 */
+	public static function parse_local_datetime( string $value, string $timezone ) {
+		$value    = sanitize_text_field( trim( $value ) );
+		$timezone = sanitize_text_field( trim( $timezone ) );
+
+		if ( '' === $value ) {
+			return new WP_Error( 'calendar_local_datetime_required', __( 'Enter a local date and time.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		if ( ! self::valid_timezone( $timezone ) ) {
+			return new WP_Error( 'calendar_timezone_invalid', __( 'Choose a valid IANA timezone.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		if ( ! preg_match( '/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})(?::(\d{2}))?$/', $value, $matches ) ) {
+			return new WP_Error( 'calendar_local_datetime_invalid', __( 'Enter the date and time in a supported format.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 
-		try {
-			$local = new DateTimeImmutable( $value, new DateTimeZone( $timezone ) );
-			return $local->setTimezone( new DateTimeZone( 'UTC' ) )->format( 'Y-m-d H:i:s' );
-		} catch ( Throwable $exception ) {
-			return null;
+		$normalized = $matches[1] . ' ' . $matches[2] . ':' . ( $matches[3] ?? '00' );
+		$zone       = new DateTimeZone( $timezone );
+		$local      = DateTimeImmutable::createFromFormat( '!Y-m-d H:i:s', $normalized, $zone );
+		$errors     = DateTimeImmutable::getLastErrors();
+		if ( false === $local || ( is_array( $errors ) && ( $errors['warning_count'] || $errors['error_count'] ) ) ) {
+			return new WP_Error( 'calendar_local_datetime_invalid', __( 'The local date and time is invalid.', 'sustainable-catalyst-engagement-intake' ) );
 		}
+
+		// PHP normalizes skipped spring-forward times. Reject instead of changing the meeting time.
+		if ( $local->format( 'Y-m-d H:i:s' ) !== $normalized ) {
+			return new WP_Error( 'calendar_local_datetime_nonexistent', __( 'That local time does not exist because of a daylight-saving transition. Choose another time.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+
+		// Detect repeated fall-back hours. A local clock value in the overlap has two UTC meanings.
+		$naive = strtotime( $normalized . ' UTC' );
+		foreach ( (array) $zone->getTransitions( $naive - 2 * DAY_IN_SECONDS, $naive + 2 * DAY_IN_SECONDS ) as $index => $transition ) {
+			if ( 0 === $index ) {
+				$previous = $transition;
+				continue;
+			}
+			$old_offset = (int) $previous['offset'];
+			$new_offset = (int) $transition['offset'];
+			if ( $new_offset < $old_offset ) {
+				$overlap_start = (int) $transition['ts'] + $new_offset;
+				$overlap_end   = (int) $transition['ts'] + $old_offset;
+				if ( $naive >= $overlap_start && $naive < $overlap_end ) {
+					return new WP_Error( 'calendar_local_datetime_ambiguous', __( 'That local time occurs twice because of a daylight-saving transition. Choose another time.', 'sustainable-catalyst-engagement-intake' ) );
+				}
+			}
+			$previous = $transition;
+		}
+
+		return array(
+			'local'    => $normalized,
+			'utc'      => $local->setTimezone( new DateTimeZone( 'UTC' ) )->format( 'Y-m-d H:i:s' ),
+			'timezone' => $timezone,
+		);
 	}
 
 	public static function format_utc_for_input( ?string $value, string $timezone ): string {

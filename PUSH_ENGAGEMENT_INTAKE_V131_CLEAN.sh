@@ -1,0 +1,188 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+IFS=$'\n\t'
+
+VERSION="1.3.1"
+SLUG="sustainable-catalyst-engagement-intake"
+REPO_URL="${SC_EI_REPO_URL:-git@github.com:Content-Catalyst-LLC/${SLUG}.git}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+ZIP_PATH="${SC_EI_ZIP_PATH:-$SCRIPT_DIR/${SLUG}-v${VERSION}-repo.zip}"
+REPO_DIR="${SC_EI_REPO_DIR:-}"
+SKIP_PUSH="${SC_EI_SKIP_PUSH:-0}"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v131-push.XXXXXX")"
+BACKUP_ROOT="${SC_EI_BACKUP_DIR:-$HOME/Downloads/${SLUG}-local-backups}"
+TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+
+cleanup() { rm -rf "$WORK"; }
+trap cleanup EXIT
+trap 'rc=$?; echo; echo "ERROR: v1.3.1 repository update failed on line $LINENO (exit $rc)." >&2; exit $rc' ERR
+say() { printf '\n==> %s\n' "$1"; }
+fail() { echo "ERROR: $1" >&2; exit 1; }
+
+for command_name in git unzip rsync grep find mktemp php python3; do
+  command -v "$command_name" >/dev/null 2>&1 || fail "Missing required command: $command_name"
+done
+[[ -f "$ZIP_PATH" ]] || fail "Repository ZIP not found: $ZIP_PATH"
+
+if [[ -z "$REPO_DIR" ]]; then
+  for candidate in \
+    "$HOME/Downloads/$SLUG" \
+    "$HOME/Downloads/${SLUG}-repo" \
+    "$HOME/GitHub/$SLUG" \
+    "$HOME/github/$SLUG" \
+    "$HOME/github-repos/$SLUG" \
+    "$HOME/Documents/GitHub/$SLUG" \
+    "$HOME/Documents/GitHub Repos/$SLUG" \
+    "$HOME/Desktop/GitHub/$SLUG"; do
+    if [[ -d "$candidate/.git" ]]; then REPO_DIR="$candidate"; break; fi
+  done
+fi
+[[ -n "$REPO_DIR" ]] || REPO_DIR="$HOME/Downloads/$SLUG"
+
+say "Extracting v$VERSION repository archive"
+unzip -tq "$ZIP_PATH" >/dev/null
+unzip -q "$ZIP_PATH" -d "$WORK"
+SRC="$WORK/${SLUG}-v${VERSION}-repo"
+[[ -d "$SRC/$SLUG" ]] || fail "Invalid repository ZIP: plugin directory missing."
+MAIN="$SRC/$SLUG/$SLUG.php"
+README="$SRC/$SLUG/readme.txt"
+LIFECYCLE="$SRC/$SLUG/includes/class-sc-ei-lifecycle-repository.php"
+LIFECYCLE_SCHEMA="$SRC/$SLUG/includes/class-sc-ei-lifecycle-schema.php"
+LIFECYCLE_ADMIN="$SRC/$SLUG/includes/class-sc-ei-lifecycle-admin.php"
+SUPPORT="$SRC/$SLUG/includes/class-sc-ei-support-repository.php"
+SUPPORT_SCHEMA="$SRC/$SLUG/includes/class-sc-ei-support-schema.php"
+SUPPORT_ADMIN="$SRC/$SLUG/includes/class-sc-ei-support-admin.php"
+CALENDAR="$SRC/$SLUG/includes/class-sc-ei-calendar-repository.php"
+CALENDAR_SCHEMA="$SRC/$SLUG/includes/class-sc-ei-calendar-schema.php"
+CALENDAR_ADMIN="$SRC/$SLUG/includes/class-sc-ei-calendar-admin.php"
+DATABASE="$SRC/$SLUG/includes/class-sc-ei-database.php"
+PLATFORM="$SRC/$SLUG/includes/class-sc-ei-platform-repository.php"
+PORTAL="$SRC/$SLUG/public/views/sender-portal.php"
+[[ -f "$MAIN" && -f "$README" && -f "$LIFECYCLE" && -f "$LIFECYCLE_SCHEMA" && -f "$LIFECYCLE_ADMIN" && -f "$DATABASE" && -f "$PLATFORM" && -f "$PORTAL" && -f "$SUPPORT" && -f "$SUPPORT_SCHEMA" && -f "$SUPPORT_ADMIN" && -f "$CALENDAR" && -f "$CALENDAR_SCHEMA" && -f "$CALENDAR_ADMIN" ]] || fail "Required v1.3.1 files are missing."
+grep -Fq "Version:     $VERSION" "$MAIN" || fail "Plugin version marker is not $VERSION."
+grep -Fq "SC_EI_DB_VERSION', '1.3.0'" "$MAIN" || fail "Database version marker is not 1.3.0."
+grep -Fq "SC_EI_PLATFORM_SCHEMA_VERSION', '1.3.1'" "$MAIN" || fail "Platform evidence schema marker is not 1.3.1."
+grep -Fq "SC_EI_LIFECYCLE_SCHEMA_VERSION', '1.0.0'" "$MAIN" || fail "Lifecycle schema marker is missing."
+grep -Fq "SC_EI_SUPPORT_SCHEMA_VERSION', '1.0.1'" "$MAIN" || fail "Support schema marker is not 1.0.1."
+grep -Fq "Stable tag: $VERSION" "$README" || fail "WordPress stable tag is not $VERSION."
+grep -Fq "MIGRATION_KEY = 'v1_1_0_advisory_operations_engagement_lifecycle'" "$LIFECYCLE" || fail "v1.1.0 lifecycle migration is missing."
+grep -Fq "PERSISTENCE_PATCH_MIGRATION_KEY = 'v1_1_1_inquiry_persistence_lifecycle_reliability'" "$PLATFORM" || fail "v1.1.1 persistence patch migration is missing."
+grep -Fq "'qualification_score'      => 0" "$SRC/$SLUG/includes/class-sc-ei-inquiry-repository.php" || fail "Non-null qualification score fix is missing."
+grep -Fq "allowed_transitions" "$LIFECYCLE_SCHEMA" || fail "Governed transition map is missing."
+grep -Fq "MOVE ' . strtoupper" "$LIFECYCLE_ADMIN" || fail "Typed human transition confirmation is missing."
+grep -Fq "lifecycle_events" "$DATABASE" || fail "Lifecycle event table contract is missing."
+grep -Fq "lifecycle_notes" "$DATABASE" || fail "Lifecycle note table contract is missing."
+grep -Fq "lifecycle_tasks" "$DATABASE" || fail "Lifecycle task table contract is missing."
+grep -Fq "lifecycle_operations" "$PLATFORM" || fail "Lifecycle production-readiness gate is missing."
+grep -Fq "lifecycle_snapshot" "$PORTAL" || fail "Sender-safe lifecycle projection is missing."
+grep -Fq "MIGRATION_KEY = 'v1_2_0_support_operations_product_intelligence'" "$SUPPORT" || fail "v1.2.0 support migration is missing."
+grep -Fq "PATCH_MIGRATION_KEY = 'v1_2_1_support_operations_cross_product_reliability'" "$SUPPORT" || fail "v1.2.1 support reliability patch migration is missing."
+grep -Fq "handoff_id" "$SUPPORT_SCHEMA" || fail "Stable cross-product handoff identifier is missing."
+grep -Fq "source_systems" "$SUPPORT_SCHEMA" || fail "Registered handoff source systems are missing."
+grep -Fq "rollback_public_create" "$SRC/$SLUG/includes/class-sc-ei-inquiry-repository.php" || fail "Recoverable public support persistence is missing."
+grep -Fq "HANDOFF_SCHEMA = 'sc-product-support-handoff/1.0'" "$SUPPORT_SCHEMA" || fail "Typed support handoff schema is missing."
+grep -Fq "signal_payload" "$SUPPORT_SCHEMA" || fail "Privacy-safe support signal validator is missing."
+grep -Fq "support_cases" "$DATABASE" || fail "Support case table contract is missing."
+grep -Fq "support_case_events" "$DATABASE" || fail "Support event table contract is missing."
+grep -Fq "support_case_links" "$DATABASE" || fail "Support relationship table contract is missing."
+grep -Fq "support_signals" "$DATABASE" || fail "Support intelligence signal table contract is missing."
+grep -Fq "support_operations" "$PLATFORM" || fail "Support operations production gate is missing."
+grep -Fq "support_snapshot" "$PORTAL" || fail "Sender-safe support projection is missing."
+grep -Fq "SC_EI_CALENDAR_SCHEMA_VERSION', '1.0.1'" "$MAIN" || fail "Calendar schema marker is not 1.0.1."
+grep -Fq "MIGRATION_KEY = 'v1_3_0_microsoft_teams_calendar_coordination'" "$CALENDAR" || fail "v1.3.0 calendar migration is missing."
+grep -Fq "PATCH_MIGRATION_KEY = 'v1_3_1_scheduling_reminder_timezone_reliability'" "$CALENDAR" || fail "v1.3.1 calendar reliability patch migration is missing."
+grep -Fq "calendar_local_datetime_nonexistent" "$SRC/$SLUG/includes/class-sc-ei-teams.php" || fail "DST-gap rejection is missing."
+grep -Fq "calendar_local_datetime_ambiguous" "$SRC/$SLUG/includes/class-sc-ei-teams.php" || fail "Repeated-time rejection is missing."
+grep -Fq "calendar_reminder_integrity" "$PLATFORM" || fail "Calendar reminder readiness contract is missing."
+grep -Fq "REMINDER_HOOK = 'sc_ei_calendar_process_reminders'" "$CALENDAR" || fail "Calendar reminder schedule is missing."
+grep -Fq "calendar_no_public_booking" "$CALENDAR_SCHEMA" || fail "No-public-booking safeguard is missing."
+grep -Fq "calendar_auto_send_reminders" "$CALENDAR_SCHEMA" || fail "No-auto-send reminder safeguard is missing."
+grep -Fq "sender_snapshot" "$CALENDAR" || fail "Sender-safe calendar projection is missing."
+grep -Fq "reschedule" "$CALENDAR_ADMIN" || fail "Calendar rescheduling administration is missing."
+grep -Fq "meeting_reminders" "$DATABASE" || fail "Meeting reminder table is missing."
+
+
+say "Preparing local Git repository"
+if [[ -d "$REPO_DIR/.git" ]]; then
+  origin_url="$(git -C "$REPO_DIR" remote get-url origin 2>/dev/null || true)"
+  [[ "$origin_url" == *"$SLUG"* ]] || fail "Detected checkout has an unexpected origin: $origin_url"
+else
+  rm -rf "$REPO_DIR"
+  git clone "$REPO_URL" "$REPO_DIR"
+fi
+
+mkdir -p "$BACKUP_ROOT"
+BACKUP_DIR="$BACKUP_ROOT/${SLUG}-before-v${VERSION}-$TIMESTAMP"
+mkdir -p "$BACKUP_DIR"
+rsync -a --exclude='.git/' "$REPO_DIR/" "$BACKUP_DIR/"
+git -C "$REPO_DIR" status --short > "$BACKUP_DIR/git-status.txt" || true
+git -C "$REPO_DIR" diff > "$BACKUP_DIR/uncommitted.patch" || true
+
+if git -C "$REPO_DIR" rev-parse --verify HEAD >/dev/null 2>&1; then
+  git -C "$REPO_DIR" reset --hard HEAD >/dev/null
+  git -C "$REPO_DIR" clean -fd >/dev/null
+fi
+git -C "$REPO_DIR" fetch origin
+if git -C "$REPO_DIR" show-ref --verify --quiet refs/remotes/origin/main; then
+  git -C "$REPO_DIR" checkout -B main origin/main
+else
+  git -C "$REPO_DIR" checkout -B main
+fi
+
+say "Replacing repository contents while preserving .git"
+rsync -a --delete --exclude='.git/' "$SRC/" "$REPO_DIR/"
+cd "$REPO_DIR"
+
+say "Validating repository"
+php_count=0
+while IFS= read -r file; do
+  php -l "$file" >/dev/null
+  php_count=$((php_count + 1))
+done < <(find "$SLUG" tests -type f -name '*.php' | sort)
+
+test_count=0
+assertion_count=0
+for test_file in tests/*.php; do
+  output="$(php "$test_file")"
+  pass_count="$(printf '%s\n' "$output" | grep -c '^PASS:' || true)"
+  if [[ "$pass_count" -gt 0 ]]; then
+    assertion_count=$((assertion_count + pass_count))
+  else
+    declared_count="$(printf '%s\n' "$output" | grep -Eo '\([0-9]+ assertions\)' | grep -Eo '[0-9]+' | tail -1 || true)"
+    assertion_count=$((assertion_count + ${declared_count:-0}))
+  fi
+  test_count=$((test_count + 1))
+done
+
+if command -v node >/dev/null 2>&1; then
+  while IFS= read -r js_file; do node --check "$js_file"; done < <(find "$SLUG" -type f -name '*.js' | sort)
+else
+  echo "Node.js is unavailable; JavaScript checks were skipped locally."
+fi
+
+python3 -m json.tool release-manifest.json >/dev/null
+
+echo "PHP syntax passed: $php_count files"
+echo "Release suites passed: $test_count"
+echo "Explicit assertions passed: $assertion_count"
+
+say "Reviewing and committing changes"
+git status --short
+git add -A
+if git diff --cached --quiet; then
+  echo "No changes detected. Nothing to commit."
+else
+  git commit -m "Build v1.3.1 Scheduling, Reminder, and Time-Zone Reliability Patch"
+fi
+
+if [[ "$SKIP_PUSH" == "1" ]]; then
+  echo "Push skipped because SC_EI_SKIP_PUSH=1."
+else
+  say "Pushing main to GitHub"
+  git push origin main
+fi
+
+say "Complete"
+echo "Repository: $REPO_DIR"
+echo "Backup:     $BACKUP_DIR"
+echo "Version:    $VERSION"

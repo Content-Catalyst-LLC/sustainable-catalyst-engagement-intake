@@ -102,6 +102,10 @@ final class SC_EI_Platform_Validation {
 		self::add( $checks, 'support_reliability_patch', __( 'v1.2.1 support reliability migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $support_patch_migration, (string) ( $support_patch_migration ?: 'missing' ) );
 		$calendar_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Calendar_Repository::MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		self::add( $checks, 'calendar_migration', __( 'v1.3.0 Microsoft Teams and calendar coordination migration journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $calendar_migration, (string) ( $calendar_migration ?: 'missing' ) );
+		$calendar_patch_migration = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM " . SC_EI_Database::table( 'platform_migrations' ) . " WHERE migration_key = %s LIMIT 1", SC_EI_Calendar_Repository::PATCH_MIGRATION_KEY ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::add( $checks, 'calendar_reliability_patch', __( 'v1.3.1 scheduling, reminder, and time-zone reliability journal', 'sustainable-catalyst-engagement-intake' ), 'completed' === (string) $calendar_patch_migration, (string) ( $calendar_patch_migration ?: 'missing' ) );
+		$timezone_runtime = SC_EI_Calendar_Repository::timezone_runtime_evidence();
+		self::add( $checks, 'calendar_timezone_runtime', __( 'Strict daylight-saving time validation', 'sustainable-catalyst-engagement-intake' ), ! in_array( false, $timezone_runtime, true ), wp_json_encode( $timezone_runtime ) );
 
 		$page_evidence = SC_EI_Platform_Repository::page_contract_evidence();
 		self::add( $checks, 'public_page_contracts', __( 'Published public-entry and portal page contracts', 'sustainable-catalyst-engagement-intake' ), ! empty( $page_evidence['public_entry']['passed'] ) && ! empty( $page_evidence['portal']['passed'] ), (string) ( $page_evidence['summary'] ?? '' ) );
@@ -139,7 +143,7 @@ final class SC_EI_Platform_Validation {
 					'inquiry_type'    => 'general',
 					'contact_name'    => 'Platform Validation',
 					'contact_email'   => $validation_email,
-					'subject'         => '[TEST] v1.3.0 live validation',
+					'subject'         => '[TEST] v1.3.1 live validation',
 					'message'         => 'Temporary administrator-generated validation record. Safe to remove.',
 					'form_variant'    => 'advanced',
 					'source_page'     => 'platform-validation',
@@ -298,16 +302,22 @@ final class SC_EI_Platform_Validation {
 					}
 					$unsafe = array_intersect( array_keys( $snapshot ), array( 'organizer_email', 'participant_emails_json', 'post_meeting_internal_notes', 'decisions', 'open_questions', 'created_by' ) );
 					$canceled = ! is_wp_error( $rescheduled ) ? SC_EI_Calendar_Repository::cancel( $meeting_id, 'Temporary validation cancellation.', $actor_user_id ) : $rescheduled;
+					if ( ! is_wp_error( $canceled ) ) { SC_EI_Calendar_Repository::process_due_reminders(); }
 					$reminders = $meeting_id ? SC_EI_Calendar_Repository::reminders_for_meeting( $meeting_id ) : array();
+					$cancellation_ready = false; $stale_open = false;
+					foreach ( $reminders as $reminder ) {
+						if ( 'canceled' === (string) $reminder['reminder_type'] && 'ready_for_review' === (string) $reminder['status'] ) { $cancellation_ready = true; }
+						if ( in_array( (string) $reminder['reminder_type'], array( 'invitation', 'twenty_four_hour', 'one_hour', 'rescheduled' ), true ) && in_array( (string) $reminder['status'], array( 'pending', 'ready_for_review' ), true ) ) { $stale_open = true; }
+					}
 					$calendar_ok = ! is_wp_error( $accepted ) && 'scheduled' === (string) ( $accepted['status'] ?? '' )
 						&& ! is_wp_error( $coordination ) && ! is_wp_error( $rescheduled ) && absint( $rescheduled['reschedule_count'] ?? 0 ) === 1
 						&& ! empty( $snapshot['agenda'] ) && empty( $unsafe )
 						&& ! is_wp_error( $canceled ) && 'canceled' === (string) ( $canceled['status'] ?? '' ) && empty( $canceled['teams_url'] )
-						&& count( $reminders ) >= 3;
+						&& $cancellation_ready && ! $stale_open && count( $reminders ) >= 3;
 				} else {
 					$calendar_ok = false;
 				}
-				self::add( $checks, 'calendar_coordination', __( 'Microsoft Teams scheduling, rescheduling, reminder idempotency, cancellation safety, and Sender Portal isolation', 'sustainable-catalyst-engagement-intake' ), $calendar_ok, $calendar_ok ? 'temporary Teams meeting scheduled, rescheduled with history, projected through a sender allowlist, canceled with join link revoked, and reminder records retained for review' : ( is_wp_error( $meeting ) ? $meeting->get_error_message() : 'calendar coordination validation failed' ) );
+				self::add( $checks, 'calendar_coordination', __( 'Microsoft Teams scheduling, rescheduling, reminder idempotency, cancellation safety, and Sender Portal isolation', 'sustainable-catalyst-engagement-intake' ), $calendar_ok, $calendar_ok ? 'temporary Teams meeting scheduled, rescheduled with strict time-zone handling, projected through a sender allowlist, canceled with join link revoked, stale reminders closed, and cancellation notice moved to review' : ( is_wp_error( $meeting ) ? $meeting->get_error_message() : 'calendar coordination validation failed' ) );
 			} else {
 				self::add( $checks, 'calendar_coordination', __( 'Microsoft Teams scheduling, rescheduling, reminder idempotency, cancellation safety, and Sender Portal isolation', 'sustainable-catalyst-engagement-intake' ), false, 'Sender Portal access was unavailable for the temporary meeting record.' );
 			}
@@ -369,7 +379,7 @@ final class SC_EI_Platform_Validation {
 
 		$failures = array_values( array_filter( $checks, static fn( array $check ): bool => 'pass' !== $check['status'] ) );
 		$result = array(
-			'schema'         => 'sc-contact-engagement-live-validation/1.5',
+			'schema'         => 'sc-contact-engagement-live-validation/1.6',
 			'plugin_version' => SC_EI_VERSION,
 			'passed'         => empty( $failures ),
 			'score'          => $checks ? (int) round( 100 * ( count( $checks ) - count( $failures ) ) / count( $checks ) ) : 0,

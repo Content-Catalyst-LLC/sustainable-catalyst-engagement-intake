@@ -3,7 +3,7 @@ Contributors: content-catalyst
 Tags: contact, support, help desk, product support, advisory, engagement, sender portal, known issues, privacy
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -111,6 +111,13 @@ Repository validation does not replace live WordPress-host testing.
 11. Require 100%, zero failures, and zero warnings before Production.
 
 == Changelog ==
+
+= 1.3.1 =
+* Rejects nonexistent and ambiguous daylight-saving local times instead of silently normalizing meetings.
+* Repairs cancellation and post-meeting reminder eligibility, stale reminder state, and terminal notice evidence.
+* Requires a reviewed accepted outbound communication before a reminder can be marked sent.
+* Adds compensating reschedule and completion behavior so partial calendar updates do not become canonical.
+* Adds the nondestructive v1.3.1 scheduling, reminder, and time-zone reliability journal.
 
 = 1.3.0 =
 * Added governed Microsoft Teams and calendar coordination over the existing meeting-offer and Microsoft Graph foundation.

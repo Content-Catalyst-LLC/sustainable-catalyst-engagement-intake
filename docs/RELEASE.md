@@ -1,37 +1,35 @@
-# Release Procedure — v1.3.0
+# Release Procedure — v1.3.1
 
 ## Release identity
 
-- Plugin version: `1.3.0`
+- Plugin version: `1.3.1`
 - Database version: `1.3.0`
-- Platform evidence schema: `1.3.0`
-- Portal schema: `1.5.0`
-- Workflow schema: `1.2.0`
-- Calendar schema: `1.0.0`
+- Platform evidence schema: `1.3.1`
+- Calendar schema: `1.0.1`
 - Support schema: `1.0.1`
-- Release: Microsoft Teams and Calendar Coordination
+- Release: Scheduling, Reminder, and Time-Zone Reliability Patch
 
 ## Migration
 
-The v1.3.0 migration is nondestructive and idempotent. It expands the existing meeting-offer table, adds the meeting-reminder table, records `v1_3_0_microsoft_teams_calendar_coordination`, and preserves all existing inquiry, lifecycle, support, portal, document, proposal, engagement, communication, and Microsoft Graph records.
+The patch is nondestructive and idempotent. It records `v1_3_1_scheduling_reminder_timezone_reliability`, verifies the v1.3.0 calendar tables, repairs bounded reminder-state inconsistencies, and preserves all existing records. No database table or column is added or removed.
 
 ## Required validation
 
-1. Lint all plugin and test PHP files.
-2. Run every repository test suite.
+1. Lint every plugin and test PHP file.
+2. Run every repository suite, including executable daylight-saving tests.
 3. Check JavaScript syntax.
-4. Scan the release tree for common secret patterns.
+4. Scan for common secret formats.
 5. Generate and verify the release manifest.
-6. Verify installable and repository ZIP CRCs and file parity.
-7. Install over v1.2.1 or later on a backed-up WordPress site.
-8. Complete database and v1.3.0 calendar migration repairs if requested.
-9. Run Live Validation and verify meeting creation, slot acceptance, sender projection, rescheduling, reminder idempotency, cancellation, link revocation, and cleanup.
-10. Complete controlled advisory and support meeting tests, inbox confirmation, and backup evidence.
+6. Verify ZIP CRCs and exact plugin parity between archives.
+7. Install over v1.3.0 or later on a backed-up WordPress site.
+8. Run the v1.3.1 calendar reliability repair if requested.
+9. Run Live Validation and confirm strict time-zone evidence, rescheduling, cancellation, reviewed cancellation notice, stale-reminder closure, and cleanup.
+10. Complete controlled advisory and support meeting tests.
 
 ## Production gate
 
-Production requires 100% readiness, zero failures, zero warnings, current version-bound live validation, backup, inbox, and pilot evidence, no unresolved calendar or Graph blockers, and typed human promotion. Repository tests do not establish live-host readiness.
+Production requires 100% readiness, zero failures, zero warnings, current version-bound live validation, backup, inbox and pilot evidence, no reminder-integrity or Microsoft Graph blockers, and typed human promotion.
 
 ## Rollback
 
-Retain the prior plugin ZIP, database backup, and protected-storage backup. Code rollback to v1.2.1 requires review because v1.3.0 adds calendar fields and a reminder table. Do not drop or rewrite those records during rollback; restore code only after validating compatibility and retain the database backup for full recovery.
+Retain the v1.3.0 plugin ZIP and current database and protected-storage backups. Because v1.3.1 does not change the database schema, code rollback is possible after confirming no active v1.3.1 validation operation is running. Do not delete reminder or migration evidence during rollback.

@@ -1,16 +1,22 @@
 # Changelog
 
+## 1.3.1 — Scheduling, Reminder, and Time-Zone Reliability Patch
+
+- Rejects nonexistent and ambiguous daylight-saving local times instead of silently normalizing meeting times.
+- Adds deterministic UTC conversion evidence for valid local civil times.
+- Makes cancellation reminders eligible after cancellation and post-meeting reminders eligible after completion.
+- Closes stale pre-meeting and orphaned reminders through a bounded, nondestructive repair.
+- Requires a ready-for-review reminder and an accepted or recorded outbound communication for the same inquiry before marking it sent.
+- Adds compensating rollback when rescheduling cannot regenerate reminder evidence.
+- Stages post-meeting context and requested follow-up tasks before completion becomes canonical.
+- Adds reminder-integrity metrics, Production Readiness checks, and expanded Live Validation.
+- Keeps database version `1.3.0`; advances Platform evidence schema to `1.3.1` and Calendar schema to `1.0.1`.
+
 ## 1.3.0 — Microsoft Teams and Calendar Coordination
 
-- Added a governed calendar-coordination layer over the existing meeting-offer and Microsoft Graph foundations.
-- Added explicit meeting types, organizers, participant lists, agendas, preparation requests, sender-safe summaries, related-document identifiers, and external calendar references.
-- Added explicit IANA time-zone handling, UTC storage, rescheduling history, duplicate-event protections, and cancellation link revocation.
-- Added reviewable, idempotent invitation, 24-hour, one-hour, reschedule, cancellation, and post-meeting reminders without automatic sender delivery.
-- Added post-meeting internal notes, sender-visible summaries, decisions, open questions, no-show state, and linked follow-up tasks.
-- Added Calendar Coordination administration and Sender Portal allowlist projection while excluding organizer details, participants, private notes, decisions, and Graph internals.
-- Added calendar records to privacy export, approved redaction, data inventory, readiness, cron, migration, uninstall, and operational-blocker handling.
-- Expanded Live Validation to exercise invitation, sender acceptance, scheduling, rescheduling, reminder idempotency, sender projection, cancellation, join-link revocation, and cleanup.
-- Advanced database version to 1.3.0, Portal schema to 1.5.0, Workflow schema to 1.2.0, Platform schema to 1.3.0, and Calendar schema to 1.0.0.
+- Added governed Microsoft Teams scheduling, explicit IANA time zones, UTC storage, rescheduling history, reviewable reminders, cancellation safety, Sender Portal meeting projection, and post-meeting follow-up.
+- Added calendar-coordination fields to meeting offers and the meeting-reminders table.
+- Advanced database version to `1.3.0`, Platform evidence schema to `1.3.0`, and Calendar schema to `1.0.0`.
 
 ## 1.2.1 — Support Operations and Cross-Product Reliability Patch
 

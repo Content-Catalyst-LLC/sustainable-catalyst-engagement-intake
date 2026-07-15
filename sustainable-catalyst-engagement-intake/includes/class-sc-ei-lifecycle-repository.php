@@ -315,7 +315,7 @@ final class SC_EI_Lifecycle_Repository {
 			'task_details'    => sanitize_textarea_field( (string) ( $input['details'] ?? '' ) ),
 			'task_status'     => 'open',
 			'priority'        => SC_EI_Lifecycle_Schema::sanitize_priority( (string) ( $input['priority'] ?? 'normal' ) ),
-			'due_at'          => self::sanitize_datetime( (string) ( $input['due_at'] ?? '' ) ),
+			'due_at'          => array_key_exists( 'due_at_utc', $input ) ? self::sanitize_utc_datetime( (string) $input['due_at_utc'] ) : self::sanitize_datetime( (string) ( $input['due_at'] ?? '' ) ),
 			'assigned_user_id'=> absint( $input['assigned_user_id'] ?? 0 ) ?: null,
 			'reminder_policy' => sanitize_key( (string) ( $input['reminder_policy'] ?? 'daily_when_due' ) ),
 			'last_reminded_at'=> null,
@@ -595,6 +595,16 @@ final class SC_EI_Lifecycle_Repository {
 			}
 		}
 		return $result;
+	}
+
+
+	private static function sanitize_utc_datetime( string $value ): ?string {
+		$value = trim( sanitize_text_field( $value ) );
+		if ( '' === $value ) { return null; }
+		$date = DateTimeImmutable::createFromFormat( '!Y-m-d H:i:s', $value, new DateTimeZone( 'UTC' ) );
+		$errors = DateTimeImmutable::getLastErrors();
+		if ( false === $date || ( is_array( $errors ) && ( $errors['warning_count'] || $errors['error_count'] ) ) || $date->format('Y-m-d H:i:s') !== $value ) { return null; }
+		return $date->format( 'Y-m-d H:i:s' );
 	}
 
 	private static function sanitize_datetime( string $value ): ?string {

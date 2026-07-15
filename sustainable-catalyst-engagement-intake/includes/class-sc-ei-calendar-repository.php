@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class SC_EI_Calendar_Repository {
 
 	public const MIGRATION_KEY = 'v1_3_0_microsoft_teams_calendar_coordination';
+	public const PATCH_MIGRATION_KEY = 'v1_3_1_scheduling_reminder_timezone_reliability';
 	public const REMINDER_HOOK = 'sc_ei_calendar_process_reminders';
 
 	public static function register(): void {
@@ -41,6 +42,8 @@ final class SC_EI_Calendar_Repository {
 			}
 		}
 		self::record_migration( $stored );
+		self::record_patch_migration( $stored );
+		self::repair_reminder_state();
 		self::schedule();
 	}
 
@@ -101,6 +104,53 @@ final class SC_EI_Calendar_Repository {
 		);
 		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		return $ok ? $row : new WP_Error( 'calendar_schema_incomplete', __( 'The calendar-coordination schema requires repair.', 'sustainable-catalyst-engagement-intake' ), $row );
+	}
+
+
+	public static function record_patch_migration( string $from_schema = '' ) {
+		global $wpdb;
+		$table    = SC_EI_Database::table( 'platform_migrations' );
+		$existing = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE migration_key = %s LIMIT 1", self::PATCH_MIGRATION_KEY ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( $existing && 'completed' === (string) $existing['status'] ) {
+			return $existing;
+		}
+		$contract = SC_EI_Database::calendar_columns_exist();
+		$ok       = ! in_array( false, $contract, true );
+		$now      = current_time( 'mysql', true );
+		$data     = array(
+			'public_id'     => $existing['public_id'] ?? wp_generate_uuid4(),
+			'migration_key' => self::PATCH_MIGRATION_KEY,
+			'from_version'  => sanitize_text_field( $from_schema ),
+			'to_version'    => SC_EI_CALENDAR_SCHEMA_VERSION,
+			'status'        => $ok ? 'completed' : 'failed',
+			'schema_hash'   => hash( 'sha256', wp_json_encode( array( 'calendar' => SC_EI_CALENDAR_SCHEMA_VERSION, 'plugin' => SC_EI_VERSION ) ) ),
+			'context_json'  => wp_json_encode( array(
+				'release'                         => 'Scheduling, Reminder, and Time-Zone Reliability Patch',
+				'database_schema_changed'         => false,
+				'destructive'                     => false,
+				'dst_gap_and_overlap_rejection'   => true,
+				'reminder_state_repair'           => true,
+				'reviewed_communication_required' => true,
+				'compensating_updates'            => true,
+			), JSON_UNESCAPED_SLASHES ),
+			'started_at'    => $existing['started_at'] ?? $now,
+			'completed_at'  => $now,
+			'error_code'    => $ok ? '' : 'calendar_schema_incomplete',
+			'error_message' => $ok ? '' : 'The existing calendar schema is incomplete.',
+			'created_at'    => $existing['created_at'] ?? $now,
+			'updated_at'    => $now,
+		);
+		if ( $existing ) {
+			$result = $wpdb->update( $table, $data, array( 'id' => absint( $existing['id'] ) ), self::formats( $data, array() ), array( '%d' ) );
+			$id     = absint( $existing['id'] );
+		} else {
+			$result = $wpdb->insert( $table, $data, self::formats( $data, array() ) );
+			$id     = (int) $wpdb->insert_id;
+		}
+		if ( false === $result ) {
+			return new WP_Error( 'calendar_patch_migration_journal_failed', __( 'The v1.3.1 calendar reliability journal could not be recorded.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	public static function save_coordination( int $meeting_id, array $input, int $actor_user_id ) {
@@ -164,19 +214,20 @@ final class SC_EI_Calendar_Repository {
 			return new WP_Error( 'calendar_reschedule_unavailable', __( 'Only an accepted or scheduled meeting can be rescheduled.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 		$timezone = sanitize_text_field( $timezone );
-		if ( ! SC_EI_Teams::valid_timezone( $timezone ) ) {
-			return new WP_Error( 'calendar_timezone_invalid', __( 'Choose a valid IANA timezone.', 'sustainable-catalyst-engagement-intake' ) );
-		}
-		$start_utc = SC_EI_Teams::local_to_utc( $start_local, $timezone );
-		$end_utc = SC_EI_Teams::local_to_utc( $end_local, $timezone );
-		if ( ! $start_utc || ! $end_utc || strtotime( $start_utc . ' UTC' ) <= time() || strtotime( $end_utc . ' UTC' ) <= strtotime( $start_utc . ' UTC' ) ) {
+		$start     = SC_EI_Teams::parse_local_datetime( $start_local, $timezone );
+		$end       = SC_EI_Teams::parse_local_datetime( $end_local, $timezone );
+		if ( is_wp_error( $start ) ) { return $start; }
+		if ( is_wp_error( $end ) ) { return $end; }
+		$start_utc = (string) $start['utc'];
+		$end_utc   = (string) $end['utc'];
+		if ( strtotime( $start_utc . ' UTC' ) <= time() || strtotime( $end_utc . ' UTC' ) <= strtotime( $start_utc . ' UTC' ) ) {
 			return new WP_Error( 'calendar_reschedule_time_invalid', __( 'Provide a future start and a later end time.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 		$reason = sanitize_textarea_field( $reason );
 		if ( '' === trim( $reason ) ) {
 			return new WP_Error( 'calendar_reschedule_reason_required', __( 'Record why the meeting is being rescheduled.', 'sustainable-catalyst-engagement-intake' ) );
 		}
-		$now = current_time( 'mysql', true );
+		$now  = current_time( 'mysql', true );
 		$data = array(
 			'previous_start_utc'  => $meeting['selected_start_utc'],
 			'previous_end_utc'    => $meeting['selected_end_utc'],
@@ -196,7 +247,28 @@ final class SC_EI_Calendar_Repository {
 			return new WP_Error( 'calendar_reschedule_conflict', __( 'The meeting changed before the new time was saved.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 		self::cancel_open_reminders( $meeting_id, 'meeting_rescheduled' );
-		self::schedule_reminders( $meeting_id, true );
+		$reminders = self::schedule_reminders( $meeting_id, true );
+		if ( is_wp_error( $reminders ) ) {
+			$fresh = SC_EI_Workflow_Repository::find_meeting_offer( $meeting_id );
+			$rollback = array(
+				'selected_start_utc'  => $meeting['selected_start_utc'],
+				'selected_end_utc'    => $meeting['selected_end_utc'],
+				'selected_slot_key'   => $meeting['selected_slot_key'],
+				'timezone'            => $meeting['timezone'],
+				'previous_start_utc'  => $meeting['previous_start_utc'],
+				'previous_end_utc'    => $meeting['previous_end_utc'],
+				'reschedule_count'    => absint( $meeting['reschedule_count'] ),
+				'last_rescheduled_at' => $meeting['last_rescheduled_at'],
+				'last_rescheduled_by' => $meeting['last_rescheduled_by'],
+				'graph_sync_status'   => $meeting['graph_sync_status'],
+				'row_version'         => absint( $fresh['row_version'] ?? 0 ) + 1,
+				'updated_at'          => current_time( 'mysql', true ),
+			);
+			$wpdb->update( SC_EI_Database::table( 'meeting_offers' ), $rollback, array( 'id' => $meeting_id, 'row_version' => absint( $fresh['row_version'] ?? 0 ) ), self::formats( $rollback, array( 'reschedule_count', 'last_rescheduled_by', 'row_version' ) ), array( '%d', '%d' ) );
+			self::schedule_reminders( $meeting_id, false );
+			self::record_reliability_event( 'calendar_reschedule_reminder_rollback', 'Meeting reschedule was rolled back after reminder regeneration failed.', array( 'meeting_offer_id' => $meeting_id, 'error_code' => $reminders->get_error_code() ) );
+			return new WP_Error( 'calendar_reschedule_reminder_failed', __( 'The meeting time was not changed because reminder records could not be regenerated.', 'sustainable-catalyst-engagement-intake' ) );
+		}
 		$fresh = SC_EI_Workflow_Repository::find_meeting_offer( $meeting_id );
 		self::record_event( $meeting, 'meeting_rescheduled', (string) $meeting['status'], (string) $meeting['status'], $actor_user_id, array( 'previous_start_utc' => $meeting['selected_start_utc'], 'previous_end_utc' => $meeting['selected_end_utc'], 'new_start_utc' => $start_utc, 'new_end_utc' => $end_utc, 'timezone' => $timezone, 'reason' => $reason ) );
 		SC_EI_Audit_Log::record( 'calendar_meeting_rescheduled', 'Authorized staff rescheduled a Microsoft Teams meeting with explicit timezone and preserved history.', array( 'meeting_offer_id' => $meeting_id, 'previous_start_utc' => $meeting['selected_start_utc'], 'new_start_utc' => $start_utc, 'timezone' => $timezone, 'reason' => $reason ), absint( $meeting['inquiry_id'] ), null, $actor_user_id );
@@ -209,33 +281,31 @@ final class SC_EI_Calendar_Repository {
 		if ( ! $meeting || 'scheduled' !== (string) $meeting['status'] ) {
 			return new WP_Error( 'calendar_completion_unavailable', __( 'Only a scheduled meeting can be completed.', 'sustainable-catalyst-engagement-intake' ) );
 		}
-		$result = SC_EI_Workflow_Repository::change_meeting_status( $meeting_id, 'completed', '', $actor_user_id );
-		if ( is_wp_error( $result ) ) {
-			return $result;
+		$follow_up_due_at = null;
+		if ( '' !== trim( (string) ( $input['follow_up_due_at'] ?? '' ) ) ) {
+			$parsed = SC_EI_Teams::parse_local_datetime( (string) $input['follow_up_due_at'], (string) $meeting['timezone'] );
+			if ( is_wp_error( $parsed ) ) { return $parsed; }
+			$follow_up_due_at = (string) $parsed['utc'];
 		}
-		$follow_up_due_local = (string) ( $input['follow_up_due_at'] ?? '' );
-		$follow_up_due_at = self::sanitize_datetime( $follow_up_due_local, (string) $meeting['timezone'] );
 		$follow_up_owner = absint( $input['follow_up_owner_user_id'] ?? 0 );
-		$task_id = 0;
 		$follow_up_title = mb_substr( sanitize_text_field( (string) ( $input['follow_up_title'] ?? '' ) ), 0, 255 );
+		$task_id = 0;
 		if ( $follow_up_title ) {
-			$task = SC_EI_Lifecycle_Repository::add_task(
-				absint( $meeting['inquiry_id'] ),
-				array(
-					'title'            => $follow_up_title,
-					'details'          => sanitize_textarea_field( (string) ( $input['follow_up_details'] ?? '' ) ),
-					'priority'         => 'normal',
-					'due_at'           => $follow_up_due_local,
-					'assigned_user_id' => $follow_up_owner,
-					'reminder_policy'  => 'daily_when_due',
-				),
-				$actor_user_id
-			);
-			if ( ! is_wp_error( $task ) ) {
-				$task_id = absint( $task['id'] ?? 0 );
+			$task = SC_EI_Lifecycle_Repository::add_task( absint( $meeting['inquiry_id'] ), array(
+				'title' => $follow_up_title,
+				'details' => sanitize_textarea_field( (string) ( $input['follow_up_details'] ?? '' ) ),
+				'priority' => 'normal',
+				'due_at_utc' => $follow_up_due_at,
+				'assigned_user_id' => $follow_up_owner,
+				'reminder_policy' => 'daily_when_due',
+			), $actor_user_id );
+			if ( is_wp_error( $task ) ) {
+				return new WP_Error( 'calendar_follow_up_task_failed', __( 'The meeting was not completed because its requested follow-up task could not be created.', 'sustainable-catalyst-engagement-intake' ) );
 			}
+			$task_id = absint( $task['id'] ?? 0 );
 		}
-		$data = array(
+		$now = current_time( 'mysql', true );
+		$staged = array(
 			'post_meeting_internal_notes' => sanitize_textarea_field( (string) ( $input['internal_notes'] ?? '' ) ),
 			'post_meeting_sender_summary' => sanitize_textarea_field( (string) ( $input['sender_summary'] ?? '' ) ),
 			'decisions'                   => sanitize_textarea_field( (string) ( $input['decisions'] ?? '' ) ),
@@ -243,17 +313,35 @@ final class SC_EI_Calendar_Repository {
 			'follow_up_owner_user_id'     => $follow_up_owner ?: null,
 			'follow_up_due_at'            => $follow_up_due_at,
 			'follow_up_task_id'           => $task_id ?: null,
-			'row_version'                 => absint( $result['row_version'] ?? 0 ) + 1,
-			'updated_at'                  => current_time( 'mysql', true ),
+			'row_version'                 => absint( $meeting['row_version'] ) + 1,
+			'updated_at'                  => $now,
 		);
-		$updated = $wpdb->update( SC_EI_Database::table( 'meeting_offers' ), $data, array( 'id' => $meeting_id, 'row_version' => absint( $result['row_version'] ?? 0 ) ), self::formats( $data, array( 'follow_up_owner_user_id', 'follow_up_task_id', 'row_version' ) ), array( '%d', '%d' ) );
+		$updated = $wpdb->update( SC_EI_Database::table( 'meeting_offers' ), $staged, array( 'id' => $meeting_id, 'row_version' => absint( $meeting['row_version'] ) ), self::formats( $staged, array( 'follow_up_owner_user_id', 'follow_up_task_id', 'row_version' ) ), array( '%d', '%d' ) );
 		if ( 1 !== $updated ) {
-			return new WP_Error( 'calendar_completion_conflict', __( 'The meeting completed, but post-meeting coordination could not be saved. Review the meeting record.', 'sustainable-catalyst-engagement-intake' ) );
+			if ( $task_id ) { self::rollback_follow_up_task( $task_id, absint( $meeting['inquiry_id'] ) ); }
+			return new WP_Error( 'calendar_completion_conflict', __( 'The meeting changed before post-meeting coordination was saved.', 'sustainable-catalyst-engagement-intake' ) );
+		}
+		$result = SC_EI_Workflow_Repository::change_meeting_status( $meeting_id, 'completed', '', $actor_user_id );
+		if ( is_wp_error( $result ) ) {
+			$fresh = SC_EI_Workflow_Repository::find_meeting_offer( $meeting_id );
+			$rollback = array(
+				'post_meeting_internal_notes' => $meeting['post_meeting_internal_notes'],
+				'post_meeting_sender_summary' => $meeting['post_meeting_sender_summary'],
+				'decisions' => $meeting['decisions'], 'open_questions' => $meeting['open_questions'],
+				'follow_up_owner_user_id' => $meeting['follow_up_owner_user_id'], 'follow_up_due_at' => $meeting['follow_up_due_at'],
+				'follow_up_task_id' => $meeting['follow_up_task_id'], 'row_version' => absint( $fresh['row_version'] ?? 0 ) + 1, 'updated_at' => current_time( 'mysql', true ),
+			);
+			$wpdb->update( SC_EI_Database::table( 'meeting_offers' ), $rollback, array( 'id' => $meeting_id, 'row_version' => absint( $fresh['row_version'] ?? 0 ) ), self::formats( $rollback, array( 'follow_up_owner_user_id', 'follow_up_task_id', 'row_version' ) ), array( '%d', '%d' ) );
+			if ( $task_id ) { self::rollback_follow_up_task( $task_id, absint( $meeting['inquiry_id'] ) ); }
+			return $result;
 		}
 		self::cancel_open_reminders( $meeting_id, 'meeting_completed' );
-		self::create_reminder( $meeting_id, 'post_meeting', current_time( 'mysql', true ) );
+		$notice = self::create_reminder( $meeting_id, 'post_meeting', $now );
+		if ( is_wp_error( $notice ) ) {
+			self::record_reliability_event( 'calendar_post_meeting_reminder_failed', 'Meeting completed but its post-meeting reminder record could not be created.', array( 'meeting_offer_id' => $meeting_id, 'error_code' => $notice->get_error_code() ) );
+		}
 		$fresh = SC_EI_Workflow_Repository::find_meeting_offer( $meeting_id );
-		self::record_event( $meeting, 'meeting_followup_recorded', 'scheduled', 'completed', $actor_user_id, array( 'follow_up_task_id' => $task_id, 'follow_up_due_at' => $follow_up_due_at, 'sender_summary_published' => '' !== trim( (string) $data['post_meeting_sender_summary'] ) ) );
+		self::record_event( $meeting, 'meeting_followup_recorded', 'scheduled', 'completed', $actor_user_id, array( 'follow_up_task_id' => $task_id, 'follow_up_due_at' => $follow_up_due_at, 'sender_summary_published' => '' !== trim( (string) $staged['post_meeting_sender_summary'] ) ) );
 		return $fresh;
 	}
 
@@ -268,98 +356,79 @@ final class SC_EI_Calendar_Repository {
 			return new WP_Error( 'calendar_cancellation_reason_required', __( 'Record why the meeting is being canceled.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 		$result = SC_EI_Workflow_Repository::change_meeting_status( $meeting_id, 'canceled', $reason, $actor_user_id );
-		if ( is_wp_error( $result ) ) {
-			return $result;
-		}
+		if ( is_wp_error( $result ) ) { return $result; }
 		$now = current_time( 'mysql', true );
 		$data = array(
-			'teams_url'         => '',
-			'graph_join_url'    => '',
-			'join_url_revoked_at'=> $now,
-			'sender_next_step'  => __( 'This meeting was canceled. A new approved time will be shared if another meeting is needed.', 'sustainable-catalyst-engagement-intake' ),
-			'row_version'       => absint( $result['row_version'] ?? 0 ) + 1,
-			'updated_at'        => $now,
+			'teams_url' => '', 'graph_join_url' => '', 'join_url_revoked_at' => $now,
+			'sender_next_step' => __( 'This meeting was canceled. A new approved time will be shared if another meeting is needed.', 'sustainable-catalyst-engagement-intake' ),
+			'row_version' => absint( $result['row_version'] ?? 0 ) + 1, 'updated_at' => $now,
 		);
-		$wpdb->update( SC_EI_Database::table( 'meeting_offers' ), $data, array( 'id' => $meeting_id, 'row_version' => absint( $result['row_version'] ?? 0 ) ), self::formats( $data, array( 'row_version' ) ), array( '%d', '%d' ) );
+		$updated = $wpdb->update( SC_EI_Database::table( 'meeting_offers' ), $data, array( 'id' => $meeting_id, 'row_version' => absint( $result['row_version'] ?? 0 ) ), self::formats( $data, array( 'row_version' ) ), array( '%d', '%d' ) );
+		if ( 1 !== $updated ) {
+			self::record_reliability_event( 'calendar_cancellation_projection_failed', 'The meeting was canceled and links were revoked, but the sender-facing cancellation projection requires review.', array( 'meeting_offer_id' => $meeting_id ) );
+		}
 		self::cancel_open_reminders( $meeting_id, 'meeting_canceled' );
-		self::create_reminder( $meeting_id, 'canceled', $now );
+		$notice = self::create_reminder( $meeting_id, 'canceled', $now );
+		if ( is_wp_error( $notice ) ) {
+			self::record_reliability_event( 'calendar_cancellation_reminder_failed', 'The canceled meeting requires a reviewed cancellation communication, but its reminder record could not be created.', array( 'meeting_offer_id' => $meeting_id, 'error_code' => $notice->get_error_code() ) );
+		}
 		return SC_EI_Workflow_Repository::find_meeting_offer( $meeting_id );
 	}
 
-	public static function schedule_reminders( int $meeting_id, bool $rescheduled = false ): array {
+	public static function schedule_reminders( int $meeting_id, bool $rescheduled = false ) {
 		$meeting = SC_EI_Workflow_Repository::find_meeting_offer( $meeting_id );
-		if ( ! $meeting || 'scheduled' !== (string) $meeting['status'] || empty( $meeting['selected_start_utc'] ) ) {
-			return array();
+		if ( ! $meeting || 'scheduled' !== (string) $meeting['status'] || empty( $meeting['selected_start_utc'] ) ) { return array(); }
+		$settings = self::settings(); $start = strtotime( $meeting['selected_start_utc'] . ' UTC' ); $created = array();
+		$definitions = array();
+		if ( ! empty( $settings['calendar_create_confirmation_record'] ) ) { $definitions[] = array( $rescheduled ? 'rescheduled' : 'invitation', current_time( 'mysql', true ) ); }
+		if ( ! empty( $settings['calendar_create_24_hour_reminder'] ) && $start - DAY_IN_SECONDS > time() ) { $definitions[] = array( 'twenty_four_hour', gmdate( 'Y-m-d H:i:s', $start - DAY_IN_SECONDS ) ); }
+		if ( ! empty( $settings['calendar_create_1_hour_reminder'] ) && $start - HOUR_IN_SECONDS > time() ) { $definitions[] = array( 'one_hour', gmdate( 'Y-m-d H:i:s', $start - HOUR_IN_SECONDS ) ); }
+		foreach ( $definitions as $definition ) {
+			$record = self::create_reminder( $meeting_id, $definition[0], $definition[1] );
+			if ( is_wp_error( $record ) ) { return $record; }
+			$created[] = $record;
 		}
-		$settings = self::settings();
-		$start = strtotime( $meeting['selected_start_utc'] . ' UTC' );
-		$created = array();
-		if ( ! empty( $settings['calendar_create_confirmation_record'] ) ) {
-			$created[] = self::create_reminder( $meeting_id, $rescheduled ? 'rescheduled' : 'invitation', current_time( 'mysql', true ) );
-		}
-		if ( ! empty( $settings['calendar_create_24_hour_reminder'] ) && $start - DAY_IN_SECONDS > time() ) {
-			$created[] = self::create_reminder( $meeting_id, 'twenty_four_hour', gmdate( 'Y-m-d H:i:s', $start - DAY_IN_SECONDS ) );
-		}
-		if ( ! empty( $settings['calendar_create_1_hour_reminder'] ) && $start - HOUR_IN_SECONDS > time() ) {
-			$created[] = self::create_reminder( $meeting_id, 'one_hour', gmdate( 'Y-m-d H:i:s', $start - HOUR_IN_SECONDS ) );
-		}
-		return array_values( array_filter( $created ) );
+		return $created;
 	}
 
 	public static function create_reminder( int $meeting_id, string $reminder_type, string $due_at ) {
 		global $wpdb;
 		$meeting = SC_EI_Workflow_Repository::find_meeting_offer( $meeting_id );
-		if ( ! $meeting || ! isset( SC_EI_Calendar_Schema::reminder_types()[ $reminder_type ] ) ) {
-			return new WP_Error( 'calendar_reminder_invalid', __( 'The reminder could not be created.', 'sustainable-catalyst-engagement-intake' ) );
-		}
+		if ( ! $meeting || ! isset( SC_EI_Calendar_Schema::reminder_types()[ $reminder_type ] ) ) { return new WP_Error( 'calendar_reminder_invalid', __( 'The reminder could not be created.', 'sustainable-catalyst-engagement-intake' ) ); }
+		$timestamp = strtotime( sanitize_text_field( $due_at ) . ' UTC' );
+		if ( false === $timestamp ) { return new WP_Error( 'calendar_reminder_due_invalid', __( 'The reminder due time is invalid.', 'sustainable-catalyst-engagement-intake' ) ); }
+		$due_at = gmdate( 'Y-m-d H:i:s', $timestamp );
 		$idempotency_key = hash( 'sha256', implode( '|', array( $meeting_id, $reminder_type, (string) $meeting['selected_start_utc'], (string) $meeting['reschedule_count'] ) ) );
 		$table = SC_EI_Database::table( 'meeting_reminders' );
 		$existing = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE idempotency_key = %s LIMIT 1", $idempotency_key ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		if ( $existing ) {
+			if ( in_array( (string) $existing['status'], array( 'canceled', 'skipped', 'failed' ), true ) ) {
+				$now = current_time( 'mysql', true );
+				$wpdb->update( $table, array( 'status' => 'pending', 'due_at' => $due_at, 'communication_id' => null, 'last_error_code' => '', 'last_error_message' => '', 'ready_at' => null, 'sent_at' => null, 'canceled_at' => null, 'updated_at' => $now ), array( 'id' => absint( $existing['id'] ) ), array( '%s','%s','%d','%s','%s','%s','%s','%s','%s' ), array( '%d' ) );
+				return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", absint( $existing['id'] ) ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			}
 			return $existing;
 		}
 		$now = current_time( 'mysql', true );
-		$data = array(
-			'public_id'        => wp_generate_uuid4(),
-			'meeting_offer_id' => $meeting_id,
-			'inquiry_id'       => absint( $meeting['inquiry_id'] ),
-			'reminder_type'    => sanitize_key( $reminder_type ),
-			'audience'         => 'sender',
-			'status'           => 'pending',
-			'due_at'           => sanitize_text_field( $due_at ),
-			'idempotency_key'  => $idempotency_key,
-			'communication_id' => null,
-			'attempt_count'    => 0,
-			'last_error_code'  => '',
-			'last_error_message'=> '',
-			'ready_at'         => null,
-			'sent_at'          => null,
-			'canceled_at'      => null,
-			'created_at'       => $now,
-			'updated_at'       => $now,
-		);
-		$inserted = $wpdb->insert( $table, $data, self::formats( $data, array( 'meeting_offer_id', 'inquiry_id', 'communication_id', 'attempt_count' ) ) );
-		if ( false === $inserted ) {
-			return new WP_Error( 'calendar_reminder_save_failed', __( 'The reminder record could not be saved.', 'sustainable-catalyst-engagement-intake' ) );
-		}
+		$data = array( 'public_id'=>wp_generate_uuid4(),'meeting_offer_id'=>$meeting_id,'inquiry_id'=>absint($meeting['inquiry_id']),'reminder_type'=>sanitize_key($reminder_type),'audience'=>'sender','status'=>'pending','due_at'=>$due_at,'idempotency_key'=>$idempotency_key,'communication_id'=>null,'attempt_count'=>0,'last_error_code'=>'','last_error_message'=>'','ready_at'=>null,'sent_at'=>null,'canceled_at'=>null,'created_at'=>$now,'updated_at'=>$now );
+		$inserted = $wpdb->insert( $table, $data, self::formats( $data, array( 'meeting_offer_id','inquiry_id','communication_id','attempt_count' ) ) );
+		if ( false === $inserted ) { return new WP_Error( 'calendar_reminder_save_failed', __( 'The reminder record could not be saved.', 'sustainable-catalyst-engagement-intake' ) ); }
 		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", (int) $wpdb->insert_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	public static function process_due_reminders(): void {
 		global $wpdb;
-		$table = SC_EI_Database::table( 'meeting_reminders' );
-		$now = current_time( 'mysql', true );
+		$table = SC_EI_Database::table( 'meeting_reminders' ); $now = current_time( 'mysql', true );
 		$rows = (array) $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE status = 'pending' AND due_at <= %s ORDER BY due_at ASC, id ASC LIMIT 100", $now ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		foreach ( $rows as $row ) {
 			$meeting = SC_EI_Workflow_Repository::find_meeting_offer( absint( $row['meeting_offer_id'] ) );
-			if ( ! $meeting || in_array( (string) $meeting['status'], array( 'canceled', 'expired', 'superseded' ), true ) ) {
-				$wpdb->update( $table, array( 'status' => 'canceled', 'canceled_at' => $now, 'updated_at' => $now ), array( 'id' => absint( $row['id'] ), 'status' => 'pending' ), array( '%s', '%s', '%s' ), array( '%d', '%s' ) );
+			$eligibility = self::reminder_eligibility( $row, $meeting, $now );
+			if ( true !== $eligibility['eligible'] ) {
+				$wpdb->update( $table, array( 'status'=>$eligibility['status'],'canceled_at'=>$now,'last_error_code'=>$eligibility['reason'],'updated_at'=>$now ), array( 'id'=>absint($row['id']),'status'=>'pending' ), array('%s','%s','%s','%s'), array('%d','%s') );
 				continue;
 			}
-			$updated = $wpdb->update( $table, array( 'status' => 'ready_for_review', 'ready_at' => $now, 'attempt_count' => absint( $row['attempt_count'] ) + 1, 'updated_at' => $now ), array( 'id' => absint( $row['id'] ), 'status' => 'pending' ), array( '%s', '%s', '%d', '%s' ), array( '%d', '%s' ) );
-			if ( 1 === $updated ) {
-				do_action( 'sc_ei_calendar_reminder_due', $row, $meeting );
-			}
+			$updated = $wpdb->update( $table, array( 'status'=>'ready_for_review','ready_at'=>$now,'attempt_count'=>absint($row['attempt_count'])+1,'updated_at'=>$now ), array('id'=>absint($row['id']),'status'=>'pending'), array('%s','%s','%d','%s'), array('%d','%s') );
+			if ( 1 === $updated ) { do_action( 'sc_ei_calendar_reminder_due', $row, $meeting ); }
 		}
 		update_option( 'sc_ei_last_calendar_reminder_run', $now, false );
 	}
@@ -368,15 +437,16 @@ final class SC_EI_Calendar_Repository {
 		global $wpdb;
 		$table = SC_EI_Database::table( 'meeting_reminders' );
 		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $reminder_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		if ( ! $row || ! in_array( (string) $row['status'], array( 'pending', 'ready_for_review', 'failed' ), true ) ) {
-			return new WP_Error( 'calendar_reminder_unavailable', __( 'The reminder cannot be marked sent.', 'sustainable-catalyst-engagement-intake' ) );
+		if ( ! $row || 'ready_for_review' !== (string) $row['status'] ) { return new WP_Error( 'calendar_reminder_unavailable', __( 'Only a reminder ready for review can be marked sent.', 'sustainable-catalyst-engagement-intake' ) ); }
+		if ( $communication_id <= 0 ) { return new WP_Error( 'calendar_reminder_communication_required', __( 'Link the reminder to the reviewed outbound communication that was sent.', 'sustainable-catalyst-engagement-intake' ) ); }
+		$communication = SC_EI_Communication_Repository::find( $communication_id );
+		if ( ! $communication || absint( $communication['inquiry_id'] ) !== absint( $row['inquiry_id'] ) || 'outbound' !== (string) $communication['direction'] || ! in_array( (string) $communication['status'], array( 'accepted', 'recorded' ), true ) ) {
+			return new WP_Error( 'calendar_reminder_communication_invalid', __( 'The linked communication must be an accepted or recorded outbound message for the same inquiry.', 'sustainable-catalyst-engagement-intake' ) );
 		}
 		$now = current_time( 'mysql', true );
-		$updated = $wpdb->update( $table, array( 'status' => 'sent', 'communication_id' => $communication_id ?: null, 'sent_at' => $now, 'updated_at' => $now ), array( 'id' => $reminder_id ), array( '%s', '%d', '%s', '%s' ), array( '%d' ) );
-		if ( false === $updated ) {
-			return new WP_Error( 'calendar_reminder_update_failed', __( 'The reminder status could not be updated.', 'sustainable-catalyst-engagement-intake' ) );
-		}
-		SC_EI_Audit_Log::record( 'calendar_reminder_marked_sent', 'Authorized staff linked a reviewed meeting reminder to a communication record.', array( 'reminder_id' => $reminder_id, 'communication_id' => $communication_id ), absint( $row['inquiry_id'] ), null, $actor_user_id );
+		$updated = $wpdb->update( $table, array('status'=>'sent','communication_id'=>$communication_id,'sent_at'=>$now,'updated_at'=>$now), array('id'=>$reminder_id,'status'=>'ready_for_review'), array('%s','%d','%s','%s'), array('%d','%s') );
+		if ( 1 !== $updated ) { return new WP_Error( 'calendar_reminder_update_failed', __( 'The reminder changed before it could be marked sent.', 'sustainable-catalyst-engagement-intake' ) ); }
+		SC_EI_Audit_Log::record( 'calendar_reminder_marked_sent', 'Authorized staff linked a reviewed meeting reminder to an accepted outbound communication record.', array('reminder_id'=>$reminder_id,'communication_id'=>$communication_id), absint($row['inquiry_id']), null, $actor_user_id );
 		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $reminder_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
@@ -388,19 +458,60 @@ final class SC_EI_Calendar_Repository {
 
 	public static function metrics(): array {
 		global $wpdb;
-		$meetings = SC_EI_Database::table( 'meeting_offers' );
-		$reminders = SC_EI_Database::table( 'meeting_reminders' );
-		$now = current_time( 'mysql', true );
-		$week = gmdate( 'Y-m-d H:i:s', time() + 7 * DAY_IN_SECONDS );
+		$meetings=SC_EI_Database::table('meeting_offers'); $reminders=SC_EI_Database::table('meeting_reminders'); $now=current_time('mysql',true); $week=gmdate('Y-m-d H:i:s',time()+7*DAY_IN_SECONDS); $stale=gmdate('Y-m-d H:i:s',time()-6*HOUR_IN_SECONDS);
 		return array(
-			'scheduled'           => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$meetings} WHERE status = 'scheduled'" ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			'next_seven_days'     => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$meetings} WHERE status = 'scheduled' AND selected_start_utc BETWEEN %s AND %s", $now, $week ) ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			'reminders_ready'     => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$reminders} WHERE status = 'ready_for_review'" ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			'follow_up_overdue'   => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$meetings} WHERE status = 'completed' AND follow_up_due_at IS NOT NULL AND follow_up_due_at < %s AND (follow_up_task_id IS NULL OR follow_up_task_id = 0)", $now ) ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			'graph_reconcile_due' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$meetings} WHERE graph_sync_status IN ('reconcile_required','cancel_required')" ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			'missing_timezone'     => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$meetings} WHERE status = 'scheduled' AND (timezone = '' OR timezone IS NULL)" ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			'canceled_active_link' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$meetings} WHERE status = 'canceled' AND ((teams_url IS NOT NULL AND teams_url <> '') OR (graph_join_url IS NOT NULL AND graph_join_url <> ''))" ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			'scheduled'=>(int)$wpdb->get_var("SELECT COUNT(*) FROM {$meetings} WHERE status = 'scheduled'"),
+			'next_seven_days'=>(int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$meetings} WHERE status = 'scheduled' AND selected_start_utc BETWEEN %s AND %s",$now,$week)),
+			'reminders_ready'=>(int)$wpdb->get_var("SELECT COUNT(*) FROM {$reminders} WHERE status = 'ready_for_review'"),
+			'overdue_pending_reminders'=>(int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$reminders} WHERE status = 'pending' AND due_at < %s",$stale)),
+			'orphaned_reminders'=>(int)$wpdb->get_var("SELECT COUNT(*) FROM {$reminders} r LEFT JOIN {$meetings} m ON m.id=r.meeting_offer_id WHERE m.id IS NULL AND r.status IN ('pending','ready_for_review','failed')"),
+			'sent_without_communication'=>(int)$wpdb->get_var("SELECT COUNT(*) FROM {$reminders} WHERE status='sent' AND (communication_id IS NULL OR communication_id=0)"),
+			'stale_premeeting_reminders'=>(int)$wpdb->get_var("SELECT COUNT(*) FROM {$reminders} r INNER JOIN {$meetings} m ON m.id=r.meeting_offer_id WHERE r.reminder_type IN ('invitation','twenty_four_hour','one_hour','rescheduled') AND r.status IN ('pending','ready_for_review') AND m.status <> 'scheduled'"),
+			'missing_terminal_notice'=>(int)$wpdb->get_var("SELECT COUNT(*) FROM {$meetings} m WHERE (m.status='canceled' AND NOT EXISTS (SELECT 1 FROM {$reminders} r WHERE r.meeting_offer_id=m.id AND r.reminder_type='canceled')) OR (m.status='completed' AND NOT EXISTS (SELECT 1 FROM {$reminders} r WHERE r.meeting_offer_id=m.id AND r.reminder_type='post_meeting'))"),
+			'follow_up_overdue'=>(int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$meetings} WHERE status='completed' AND follow_up_due_at IS NOT NULL AND follow_up_due_at < %s AND (follow_up_task_id IS NULL OR follow_up_task_id=0)",$now)),
+			'graph_reconcile_due'=>(int)$wpdb->get_var("SELECT COUNT(*) FROM {$meetings} WHERE graph_sync_status IN ('reconcile_required','cancel_required')"),
+			'missing_timezone'=>(int)$wpdb->get_var("SELECT COUNT(*) FROM {$meetings} WHERE status='scheduled' AND (timezone='' OR timezone IS NULL)"),
+			'canceled_active_link'=>(int)$wpdb->get_var("SELECT COUNT(*) FROM {$meetings} WHERE status='canceled' AND ((teams_url IS NOT NULL AND teams_url<>'') OR (graph_join_url IS NOT NULL AND graph_join_url<>''))"),
 		);
+	}
+
+
+	public static function timezone_runtime_evidence(): array {
+		$valid = SC_EI_Teams::parse_local_datetime( '2026-07-15T10:30', 'America/Chicago' );
+		$gap = SC_EI_Teams::parse_local_datetime( '2026-03-08T02:30', 'America/Chicago' );
+		$overlap = SC_EI_Teams::parse_local_datetime( '2026-11-01T01:30', 'America/Chicago' );
+		return array(
+			'valid_conversion' => ! is_wp_error( $valid ) && '2026-07-15 15:30:00' === (string) ( $valid['utc'] ?? '' ),
+			'gap_rejected' => is_wp_error( $gap ) && 'calendar_local_datetime_nonexistent' === $gap->get_error_code(),
+			'overlap_rejected' => is_wp_error( $overlap ) && 'calendar_local_datetime_ambiguous' === $overlap->get_error_code(),
+		);
+	}
+
+	public static function repair_reminder_state(): array {
+		global $wpdb;
+		$meetings = SC_EI_Database::table( 'meeting_offers' ); $reminders = SC_EI_Database::table( 'meeting_reminders' ); $now=current_time('mysql',true);
+		$orphaned = (int)$wpdb->query($wpdb->prepare("UPDATE {$reminders} r LEFT JOIN {$meetings} m ON m.id=r.meeting_offer_id SET r.status='canceled', r.canceled_at=%s, r.last_error_code='meeting_missing', r.updated_at=%s WHERE m.id IS NULL AND r.status IN ('pending','ready_for_review','failed')",$now,$now));
+		$stale = (int)$wpdb->query($wpdb->prepare("UPDATE {$reminders} r INNER JOIN {$meetings} m ON m.id=r.meeting_offer_id SET r.status='skipped', r.canceled_at=%s, r.last_error_code='meeting_not_scheduled', r.updated_at=%s WHERE r.reminder_type IN ('invitation','twenty_four_hour','one_hour','rescheduled') AND r.status IN ('pending','ready_for_review') AND m.status <> 'scheduled'",$now,$now));
+		$terminal = (array)$wpdb->get_results("SELECT m.id,m.status FROM {$meetings} m WHERE (m.status='canceled' AND NOT EXISTS (SELECT 1 FROM {$reminders} r WHERE r.meeting_offer_id=m.id AND r.reminder_type='canceled')) OR (m.status='completed' AND NOT EXISTS (SELECT 1 FROM {$reminders} r WHERE r.meeting_offer_id=m.id AND r.reminder_type='post_meeting')) LIMIT 500",ARRAY_A);
+		$created=0;
+		foreach($terminal as $row){ $notice=self::create_reminder(absint($row['id']),'canceled'===$row['status']?'canceled':'post_meeting',$now); if(!is_wp_error($notice)){$created++;} }
+		return array('orphaned_canceled'=>$orphaned,'stale_skipped'=>$stale,'terminal_created'=>$created);
+	}
+
+	private static function reminder_eligibility( array $reminder, ?array $meeting, string $now ): array {
+		if ( ! $meeting ) { return array('eligible'=>false,'status'=>'canceled','reason'=>'meeting_missing'); }
+		$type=(string)$reminder['reminder_type']; $status=(string)$meeting['status'];
+		if ( 'canceled' === $type ) { return array('eligible'=>'canceled'===$status,'status'=>'skipped','reason'=>'meeting_not_canceled'); }
+		if ( 'post_meeting' === $type ) { return array('eligible'=>'completed'===$status,'status'=>'skipped','reason'=>'meeting_not_completed'); }
+		if ( 'scheduled' !== $status ) { return array('eligible'=>false,'status'=>'skipped','reason'=>'meeting_not_scheduled'); }
+		if ( in_array($type,array('twenty_four_hour','one_hour'),true) && !empty($meeting['selected_start_utc']) && strtotime($now.' UTC') > strtotime($meeting['selected_start_utc'].' UTC') + HOUR_IN_SECONDS ) { return array('eligible'=>false,'status'=>'skipped','reason'=>'meeting_time_passed'); }
+		return array('eligible'=>true,'status'=>'pending','reason'=>'');
+	}
+
+	private static function record_reliability_event( string $signature, string $message, array $context = array() ): void {
+		if ( class_exists( 'SC_EI_Hardening_Repository' ) && method_exists( 'SC_EI_Hardening_Repository', 'record_event' ) ) {
+			SC_EI_Hardening_Repository::record_event( 'cron', sanitize_key( $signature ), 'warning', sanitize_text_field( $message ), $context );
+		}
 	}
 
 	public static function sender_snapshot( int $inquiry_id ): array {
@@ -452,18 +563,18 @@ final class SC_EI_Calendar_Repository {
 		return false !== $meetings;
 	}
 
-	private static function cancel_open_reminders( int $meeting_id, string $reason ): void {
+	private static function cancel_open_reminders( int $meeting_id, string $reason ): bool {
+		global $wpdb; $now=current_time('mysql',true);
+		$result=$wpdb->query($wpdb->prepare("UPDATE ".SC_EI_Database::table('meeting_reminders')." SET status='canceled', canceled_at=%s, last_error_code=%s, updated_at=%s WHERE meeting_offer_id=%d AND status IN ('pending','ready_for_review','failed')",$now,sanitize_key($reason),$now,$meeting_id));
+		return false !== $result;
+	}
+
+
+	private static function rollback_follow_up_task( int $task_id, int $inquiry_id ): void {
 		global $wpdb;
-		$now = current_time( 'mysql', true );
-		$wpdb->query(
-			$wpdb->prepare(
-				"UPDATE " . SC_EI_Database::table( 'meeting_reminders' ) . " SET status = 'canceled', canceled_at = %s, last_error_code = %s, updated_at = %s WHERE meeting_offer_id = %d AND status IN ('pending','ready_for_review','failed')", // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-				$now,
-				sanitize_key( $reason ),
-				$now,
-				$meeting_id
-			)
-		);
+		$wpdb->delete( SC_EI_Database::table( 'lifecycle_tasks' ), array( 'id' => $task_id, 'inquiry_id' => $inquiry_id ), array( '%d', '%d' ) );
+		$like = '%"task_id":' . $wpdb->esc_like( (string) $task_id ) . '%';
+		$wpdb->query( $wpdb->prepare( "DELETE FROM " . SC_EI_Database::table( 'lifecycle_events' ) . " WHERE inquiry_id = %d AND event_type = 'lifecycle_task_created' AND context_json LIKE %s", $inquiry_id, $like ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
 
 	private static function record_event( array $meeting, string $event_type, string $from_status, string $to_status, int $actor_user_id, array $context ): void {
