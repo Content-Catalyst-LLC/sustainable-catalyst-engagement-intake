@@ -3,13 +3,15 @@ Contributors: content-catalyst
 Tags: contact, support, help desk, advisory, engagement, sender portal, client workspace, billing, analytics
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 An integrated advisory, product-support, and institutional engagement platform with canonical dossiers, secure collaboration, governed approvals, billing handoffs, analytics, privacy, and production controls.
 
 == Description ==
+
+Version 2.0.1 retains the v2.0 integrated platform and adds protected database recovery. It creates interrupted proposal-approval and platform-handoff tables before metadata checks, prevents missing-table log storms, and fails closed if database write access remains unavailable.
 
 Version 2.0.0 unifies the mature Contact and Engagement subsystems behind a canonical engagement dossier. Each inquiry can be related to its support case, lifecycle, meetings, proposals, Statements of Work, engagement, client workspace, protected files, communications, invoices, and privacy-safe cross-product handoffs without duplicating those underlying records.
 
@@ -68,6 +70,14 @@ Production remains unavailable until the existing gate reaches 100% with zero fa
 9. Require 100%, zero required failures, and zero warnings before Production.
 
 == Changelog ==
+
+= 2.0.1 =
+* Added protected recovery for missing `proposal_approvals` and `platform_handoffs` tables after interrupted or disk-full upgrades.
+* Creates recovery-critical tables with native `CREATE TABLE IF NOT EXISTS` before normal `dbDelta()` reconciliation.
+* Added table-existence guards so absent tables return failed contract evidence without issuing repeated `SHOW COLUMNS` errors.
+* Added a five-minute database-upgrade lock and a fail-closed runtime pause to prevent unbounded migration loops.
+* Activation now stops cleanly with an administrator-facing recovery message if database writes remain unavailable.
+* Database and platform schema versions remain 2.0.0; plugin version advances to 2.0.1.
 
 = 2.0.0 =
 * Added canonical engagement dossiers with route, phase, health, ownership, sender-safe summaries, and content hashes.

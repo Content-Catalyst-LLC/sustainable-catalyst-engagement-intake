@@ -3,11 +3,11 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-VERSION="2.0.0"
+VERSION="2.0.1"
 SLUG="sustainable-catalyst-engagement-intake"
 REPO_ROOT="${SLUG}-v${VERSION}-repo"
 DIST="$ROOT/dist"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v200-package.XXXXXX")"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/sc-ei-v201-package.XXXXXX")"
 TEST_LOG="$WORK/tests.log"
 
 cleanup(){ rm -rf "$WORK"; }
@@ -34,7 +34,7 @@ if command -v node >/dev/null; then
 fi
 
 bash -n "$0"
-bash -n PUSH_ENGAGEMENT_INTAKE_V200_CLEAN.sh
+bash -n PUSH_ENGAGEMENT_INTAKE_V201_CLEAN.sh
 python3 -m json.tool composer.json >/dev/null
 
 printf 'Scanning for common secret material...\n'
@@ -83,7 +83,7 @@ for block in text.split('=== '):
 manifest = {
     'name': 'Sustainable Catalyst Contact and Engagement Platform',
     'version': version,
-    'release': 'Integrated Advisory, Support, and Institutional Engagement Platform',
+    'release': 'Interrupted Migration and Database Recovery Patch',
     'plugin_slug': 'sustainable-catalyst-engagement-intake',
     'requires_wordpress': '6.5',
     'requires_php': '8.1',
@@ -127,6 +127,16 @@ manifest = {
         'v1_7_0_billing_invoicing_payment_handoffs',
         'v2_0_0_integrated_advisory_support_institutional_platform',
     ],
+    'database_recovery': {
+        'critical_tables': ['proposal_approvals', 'platform_handoffs'],
+        'native_create_if_missing': True,
+        'dbdelta_reconciliation': True,
+        'column_checks_fail_closed': True,
+        'upgrade_lock_seconds': 300,
+        'activation_fails_closed': True,
+        'runtime_pauses_on_failure': True,
+        'destructive_changes': False,
+    },
     'recommended_shortcode': '[sc_contact_engagement_platform]',
     'support_shortcode': '[sc_support_request]',
     'portal_shortcode': '[sc_sender_portal]',

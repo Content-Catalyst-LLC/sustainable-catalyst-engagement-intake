@@ -13,7 +13,7 @@ $view   = file_get_contents( $plugin . '/admin/views/platform-overview.php' );
 $uninstall = file_get_contents( $plugin . '/uninstall.php' );
 
 $checks = array(
-	'v1.1.1 identity and evidence schema' => false !== strpos( $main, 'Version:     2.0.0' )
+	'v1.1.1 identity and evidence schema' => false !== strpos( $main, 'Version:     2.0.1' )
 		&& false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '2.0.0'" )
 		&& false !== strpos( $main, 'class-sc-ei-platform-validation.php' ),
 	'nondestructive patch migration' => false !== strpos( $repo, "PATCH_MIGRATION_KEY = 'v1_0_2_production_readiness_live_validation'" )

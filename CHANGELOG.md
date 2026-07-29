@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.1 — Interrupted Migration and Database Recovery Patch
+
+- Added targeted recovery for the missing `proposal_approvals` and `platform_handoffs` tables observed after the hosting account exhausted its disk quota.
+- Creates recovery-critical tables with native `CREATE TABLE IF NOT EXISTS` before the normal WordPress `dbDelta()` reconciliation pass.
+- Added cached physical-table checks and fail-closed column probes so missing tables produce contract failures without repeated database errors.
+- Added a five-minute upgrade lock to prevent overlapping or request-by-request migration attempts.
+- Added activation and runtime guards: activation stops cleanly if the tables still cannot be created, while an already-active update pauses the plugin runtime and shows an administrator notice rather than generating an error-log storm.
+- Preserved all existing data and schemas. Plugin version advances to `2.0.1`; database, platform, proposal-governance, and unified-platform schema versions remain unchanged.
+
 ## 2.0.0 — Integrated Advisory, Support, and Institutional Engagement Platform
 
 - Added canonical engagement dossiers with route, phase, health, ownership, sender-safe summaries, activity counts, relationship counts, and SHA-256 content hashes.

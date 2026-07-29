@@ -24,6 +24,16 @@ final class SC_EI_Activator {
 		$previous_billing_schema = (string) get_option( 'sc_ei_billing_schema_version', '' );
 		$previous_unified_platform_schema = (string) get_option( 'sc_ei_unified_platform_schema_version', '' );
 		SC_EI_Database::install();
+		$critical_tables = SC_EI_Database::critical_tables_exist();
+		if ( in_array( false, $critical_tables, true ) ) {
+			$missing = implode( ', ', array_keys( array_filter( $critical_tables, static fn( bool $available ): bool => ! $available ) ) );
+			deactivate_plugins( SC_EI_BASENAME );
+			wp_die(
+				esc_html( sprintf( __( 'Activation stopped because required database tables could not be created: %s. Confirm database write access, then activate the plugin again.', 'sustainable-catalyst-engagement-intake' ), $missing ) ),
+				esc_html__( 'Database recovery required', 'sustainable-catalyst-engagement-intake' ),
+				array( 'back_link' => true )
+			);
+		}
 		SC_EI_Capabilities::install();
 		SC_EI_Storage::ensure();
 		SC_EI_Retention::schedule();
@@ -88,7 +98,7 @@ final class SC_EI_Activator {
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Sustainable Catalyst Contact and Engagement Platform v2.0.0 activated with canonical engagement dossiers, a unified activity timeline, typed cross-product handoffs, and integrated advisory, support, institutional, scheduling, proposal, workspace, billing, analytics, privacy, and production governance.',
+			'Sustainable Catalyst Contact and Engagement Platform v2.0.1 activated with canonical engagement dossiers, a unified activity timeline, typed cross-product handoffs, and integrated advisory, support, institutional, scheduling, proposal, workspace, billing, analytics, privacy, and production governance.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}

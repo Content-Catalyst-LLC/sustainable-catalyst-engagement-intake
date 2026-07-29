@@ -9,6 +9,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class SC_EI_Database {
 
+	/**
+	 * Cache physical table checks during one request so missing-table recovery
+	 * does not issue repeated metadata queries.
+	 *
+	 * @var array<string,bool>
+	 */
+	private static array $table_presence_cache = array();
+
 	public static function table( string $name ): string {
 		global $wpdb;
 
@@ -2185,6 +2193,13 @@ final class SC_EI_Database {
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
+		// Recovery-critical tables are created with native SQL first. dbDelta()
+		// still runs below for normal schema reconciliation, but a prior disk-full
+		// or interrupted upgrade can no longer leave these tables permanently
+		// absent while column probes run on every request.
+		self::create_table_if_missing( $proposal_approvals, $sql_proposal_approvals );
+		self::create_table_if_missing( $platform_handoffs, $sql_platform_handoffs );
+
 		dbDelta( $sql_inquiries );
 		dbDelta( $sql_attachments );
 		dbDelta( $sql_reviews );
@@ -2253,6 +2268,8 @@ final class SC_EI_Database {
 		dbDelta( $sql_retention_policies );
 		dbDelta( $sql_retention_actions );
 		dbDelta( $sql_audit );
+
+		self::$table_presence_cache = array();
 
 		self::backfill_review_defaults();
 		self::backfill_fit_defaults();
@@ -2383,22 +2400,89 @@ final class SC_EI_Database {
 
 	public static function maybe_upgrade(): void {
 		$current = (string) get_option( 'sc_ei_db_version', '' );
-		if ( version_compare( $current, SC_EI_DB_VERSION, '<' ) ) {
+		$critical = self::critical_tables_exist();
+		if ( ! version_compare( $current, SC_EI_DB_VERSION, '<' ) && ! in_array( false, $critical, true ) ) {
+			return;
+		}
+
+		$lock_key = 'sc_ei_database_upgrade_lock';
+		if ( get_transient( $lock_key ) ) {
+			return;
+		}
+
+		set_transient( $lock_key, time(), 5 * MINUTE_IN_SECONDS );
+		try {
 			self::install();
+		} finally {
+			delete_transient( $lock_key );
 		}
 	}
 
-	public static function tables_exist(): array {
-		global $wpdb;
+	/**
+	 * Return the two tables whose absence previously caused an unbounded
+	 * migration/error-log loop.
+	 *
+	 * @return array<string,bool>
+	 */
+	public static function critical_tables_exist(): array {
+		$result = array();
+		foreach ( array( 'proposal_approvals', 'platform_handoffs' ) as $name ) {
+			$result[ $name ] = self::physical_table_exists( self::table( $name ) );
+		}
+		return $result;
+	}
 
+	public static function tables_exist(): array {
 		$result = array();
 		foreach ( array( 'inquiries', 'attachments', 'reviews', 'fit_assessments', 'fit_assessment_items', 'fit_assessment_reviews', 'portal_access', 'portal_sessions', 'portal_events', 'portal_recovery_requests', 'meeting_offers', 'meeting_reminders', 'graph_operations', 'proposals', 'proposal_versions', 'proposal_approvals', 'statements_of_work', 'statement_of_work_versions', 'change_requests', 'client_workspaces', 'workspace_members', 'workspace_milestones', 'workspace_deliverables', 'workspace_messages', 'workspace_documents', 'workspace_events', 'workflow_events', 'engagements', 'engagement_snapshots', 'engagement_requirements', 'engagement_events', 'analytics_snapshots', 'service_intelligence_findings', 'service_intelligence_events', 'billing_profiles', 'invoices', 'invoice_items', 'invoice_versions', 'payment_handoffs', 'billing_events', 'engagement_dossiers', 'dossier_relationships', 'dossier_events', 'platform_handoffs', 'health_events', 'rate_limits', 'workflow_cases', 'workflow_commands', 'workflow_handoffs', 'workflow_outbox', 'platform_snapshots', 'platform_migrations', 'communications', 'communication_events', 'communication_templates', 'lifecycle_events', 'lifecycle_notes', 'lifecycle_tasks', 'support_cases', 'support_case_events', 'support_case_links', 'support_signals', 'privacy_requests', 'consent_events', 'legal_holds', 'retention_policies', 'retention_actions', 'audit_log' ) as $name ) {
-			$table           = self::table( $name );
-			$found           = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
-			$result[ $name ] = ( $found === $table );
+			$result[ $name ] = self::physical_table_exists( self::table( $name ) );
 		}
 
 		return $result;
+	}
+
+	private static function physical_table_exists( string $table ): bool {
+		global $wpdb;
+
+		if ( array_key_exists( $table, self::$table_presence_cache ) ) {
+			return self::$table_presence_cache[ $table ];
+		}
+
+		$pattern = method_exists( $wpdb, 'esc_like' ) ? $wpdb->esc_like( $table ) : $table;
+		$found   = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $pattern ) );
+		self::$table_presence_cache[ $table ] = ( $found === $table );
+		return self::$table_presence_cache[ $table ];
+	}
+
+	private static function column_exists( string $table, string $column ): bool {
+		global $wpdb;
+
+		if ( ! self::physical_table_exists( $table ) ) {
+			return false;
+		}
+
+		$found = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return $found === $column;
+	}
+
+	private static function create_table_if_missing( string $table, string $sql ): bool {
+		global $wpdb;
+
+		if ( self::physical_table_exists( $table ) ) {
+			return true;
+		}
+
+		$create_sql = preg_replace( '/^CREATE TABLE\s+/i', 'CREATE TABLE IF NOT EXISTS ', ltrim( $sql ), 1 );
+		if ( ! is_string( $create_sql ) || '' === $create_sql ) {
+			return false;
+		}
+
+		$previous_suppression = $wpdb->suppress_errors( true );
+		$wpdb->query( $create_sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.PreparedSQL.NotPrepared
+		$wpdb->suppress_errors( $previous_suppression );
+		unset( self::$table_presence_cache[ $table ] );
+
+		return self::physical_table_exists( $table );
 	}
 
 	/**
@@ -2565,8 +2649,7 @@ final class SC_EI_Database {
 		foreach ( $tables as $table_name => $columns ) {
 			$table = self::table( $table_name );
 			foreach ( $columns as $column ) {
-				$found = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$result[ $table_name . '.' . $column ] = ( $found === $column );
+				$result[ $table_name . '.' . $column ] = self::column_exists( $table, $column );
 			}
 		}
 		return $result;
@@ -2642,8 +2725,7 @@ final class SC_EI_Database {
 		foreach ( $tables as $table_name => $columns ) {
 			$table = self::table( $table_name );
 			foreach ( $columns as $column ) {
-				$found = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", $column ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$result[ $table_name . '.' . $column ] = ( $found === $column );
+				$result[ $table_name . '.' . $column ] = self::column_exists( $table, $column );
 			}
 		}
 		return $result;

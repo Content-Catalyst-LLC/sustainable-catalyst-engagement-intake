@@ -19,6 +19,13 @@ final class SC_EI_Plugin {
 		return self::$instance;
 	}
 
+	public static function database_recovery_notice(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		echo '<div class="notice notice-error"><p>' . esc_html__( 'Sustainable Catalyst Contact and Engagement Platform paused its runtime because required database tables could not be created. Confirm database write access and reactivate the plugin to retry the protected recovery migration.', 'sustainable-catalyst-engagement-intake' ) . '</p></div>';
+	}
+
 	public function boot(): void {
 		if ( $this->booted ) {
 			return;
@@ -32,6 +39,13 @@ final class SC_EI_Plugin {
 		);
 
 		SC_EI_Database::maybe_upgrade();
+		if ( in_array( false, SC_EI_Database::critical_tables_exist(), true ) ) {
+			if ( is_admin() ) {
+				add_action( 'admin_notices', array( __CLASS__, 'database_recovery_notice' ) );
+			}
+			return;
+		}
+
 		SC_EI_Lifecycle_Repository::maybe_upgrade();
 		SC_EI_Support_Repository::maybe_upgrade();
 		SC_EI_Calendar_Repository::maybe_upgrade();

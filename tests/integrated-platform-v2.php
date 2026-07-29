@@ -16,8 +16,8 @@ $rest = file_get_contents( $plugin . '/includes/class-sc-ei-rest.php' );
 $uninstall = file_get_contents( $plugin . '/uninstall.php' );
 $readme = file_get_contents( $plugin . '/readme.txt' );
 $checks = array(
-    'v2 identity and database contract' => false !== strpos( $main, 'Version:     2.0.0' ) && false !== strpos( $main, "SC_EI_DB_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_UNIFIED_PLATFORM_SCHEMA_VERSION', '2.0.0'" ),
-    'stable tag advances' => false !== strpos( $readme, 'Stable tag: 2.0.0' ),
+    'v2 identity and database contract' => false !== strpos( $main, 'Version:     2.0.1' ) && false !== strpos( $main, "SC_EI_DB_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_UNIFIED_PLATFORM_SCHEMA_VERSION', '2.0.0'" ),
+    'stable tag advances' => false !== strpos( $readme, 'Stable tag: 2.0.1' ),
     'unified classes loaded' => false !== strpos( $main, 'class-sc-ei-unified-platform-schema.php' ) && false !== strpos( $main, 'class-sc-ei-unified-platform-repository.php' ) && false !== strpos( $main, 'class-sc-ei-command-center-admin.php' ),
     'typed dossier contracts' => false !== strpos( $schema, "DOSSIER_SCHEMA = 'sc-engagement-dossier/2.0'" ) && false !== strpos( $schema, "HANDOFF_SCHEMA = 'sc-engagement-platform-handoff/2.0'" ) && false !== strpos( $schema, "EVENT_SCHEMA = 'sc-engagement-dossier-event/2.0'" ),
     'route and phase normalization' => false !== strpos( $schema, 'route_groups()' ) && false !== strpos( $schema, 'phases()' ) && false !== strpos( $schema, 'health_states()' ),

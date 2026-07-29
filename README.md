@@ -1,7 +1,11 @@
 # Sustainable Catalyst Contact and Engagement Platform
 
-**Version:** 2.0.0  
-**Release:** Integrated Advisory, Support, and Institutional Engagement Platform
+**Version:** 2.0.1  
+**Release:** Interrupted Migration and Database Recovery Patch
+
+v2.0.1 preserves the integrated v2.0 platform and repairs interrupted database migrations before the plugin runtime starts.
+
+The patch specifically recovers `proposal_approvals` and `platform_handoffs`, prevents repeated missing-table metadata queries, and fails closed if database write access remains unavailable.
 
 v2.0.0 unifies the platform’s mature contact, advisory, support, scheduling, proposal, secure workspace, billing, analytics, privacy, and Sender Portal capabilities behind a canonical engagement dossier and a stable v2 integration contract.
 
