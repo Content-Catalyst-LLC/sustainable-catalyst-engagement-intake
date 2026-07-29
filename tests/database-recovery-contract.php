@@ -10,8 +10,8 @@ $readme = file_get_contents( $plugin . '/readme.txt' );
 $migration = file_get_contents( $root . '/docs/MIGRATION-v2.0.1.md' );
 
 $checks = array(
-	'v2.0.1 plugin identity with unchanged database schema' => false !== strpos( $main, 'Version:     2.0.1' )
-		&& false !== strpos( $main, "SC_EI_VERSION', '2.0.1'" )
+	'v2.0.1 plugin identity with unchanged database schema' => false !== strpos( $main, 'Version:     2.0.2' )
+		&& false !== strpos( $main, "SC_EI_VERSION', '2.0.2'" )
 		&& false !== strpos( $main, "SC_EI_DB_VERSION', '2.0.0'" ),
 	'targeted critical table recovery precedes dbDelta' => false !== strpos( $db, 'create_table_if_missing( $proposal_approvals, $sql_proposal_approvals )' )
 		&& false !== strpos( $db, 'create_table_if_missing( $platform_handoffs, $sql_platform_handoffs )' )
@@ -31,7 +31,7 @@ $checks = array(
 		&& false !== strpos( $coordinator, "in_array( false, SC_EI_Database::critical_tables_exist(), true )" ),
 	'migration documentation is nondestructive' => false !== strpos( $migration, 'nondestructive' )
 		&& false !== strpos( $migration, 'No existing tables are dropped or renamed' ),
-	'WordPress stable tag updated' => false !== strpos( $readme, 'Stable tag: 2.0.1' ),
+	'WordPress stable tag updated' => false !== strpos( $readme, 'Stable tag: 2.0.2' ),
 );
 $failed = array_keys( array_filter( $checks, static fn( bool $passed ): bool => ! $passed ) );
 if ( $failed ) {

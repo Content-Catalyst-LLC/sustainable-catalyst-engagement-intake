@@ -98,7 +98,7 @@ final class SC_EI_Activator {
 
 		SC_EI_Audit_Log::record(
 			'plugin_activated',
-			'Sustainable Catalyst Contact and Engagement Platform v2.0.1 activated with canonical engagement dossiers, a unified activity timeline, typed cross-product handoffs, and integrated advisory, support, institutional, scheduling, proposal, workspace, billing, analytics, privacy, and production governance.',
+			'Sustainable Catalyst Contact and Engagement Platform v2.0.2 activated with canonical engagement dossiers, a unified activity timeline, typed cross-product handoffs, and integrated advisory, support, institutional, scheduling, proposal, workspace, billing, analytics, privacy, and production governance.',
 			array( 'version' => SC_EI_VERSION )
 		);
 	}

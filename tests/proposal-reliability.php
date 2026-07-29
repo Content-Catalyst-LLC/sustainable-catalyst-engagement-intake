@@ -11,7 +11,7 @@ $activator = file_get_contents( $plugin . '/includes/class-sc-ei-activator.php' 
 $readme = file_get_contents( $plugin . '/readme.txt' );
 
 $checks = array(
-    'v1.4.1 identity keeps database at 1.4.0' => false !== strpos( $main, 'Version:     2.0.1' ) && false !== strpos( $main, "SC_EI_VERSION', '2.0.1'" ) && false !== strpos( $main, "SC_EI_DB_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_PROPOSAL_SCHEMA_VERSION', '1.0.1'" ),
+    'v1.4.1 identity keeps database at 1.4.0' => false !== strpos( $main, 'Version:     2.0.2' ) && false !== strpos( $main, "SC_EI_VERSION', '2.0.2'" ) && false !== strpos( $main, "SC_EI_DB_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_PROPOSAL_SCHEMA_VERSION', '1.0.1'" ),
     'patch migration is separate and nondestructive' => false !== strpos( $repo, "PATCH_MIGRATION_KEY = 'v1_4_1_proposal_versioning_approval_reliability'" ) && false !== strpos( $repo, 'record_patch_migration' ) && false !== strpos( $repo, "'no_destructive_migration'" ),
     'sender response commits immutable receipt synchronously' => false !== strpos( $workflow, 'record_sender_action' ) && false !== strpos( $workflow, 'rollback_proposal_sender_response' ) && false !== strpos( $workflow, 'sc_ei_proposal_sender_response_committed' ),
     'proposal response rollback records reliability evidence' => false !== strpos( $workflow, 'proposal_sender_response_receipt_failed' ) && false !== strpos( $workflow, 'rollback_proposal_sender_response' ),
@@ -29,7 +29,7 @@ $checks = array(
     'production gate includes patch migration and consistency blockers' => false !== strpos( $platform, "'proposal_reliability_patch_journal'" ) && false !== strpos( $platform, "'verify_proposal_reliability_patch'" ) && false !== strpos( $platform, 'invalid_approval_hashes' ),
     'live validation tests replay and immutable receipt integrity' => false !== strpos( $validation, "'[TEST] v1.6.0 live validation'" ) && false !== strpos( $validation, '$sender_sow_replay' ) && false !== strpos( $validation, '$accepted_replay' ) && false !== strpos( $validation, '$conversion_replay' ) && false !== strpos( $validation, 'verify_approval_integrity' ),
     'activation records both proposal migrations and schema history' => false !== strpos( $activator, 'sc_ei_proposal_governance_schema_version_previous' ) && false !== strpos( $activator, 'record_patch_migration' ),
-    'stable tag advances to v1.4.1' => false !== strpos( $readme, 'Stable tag: 2.0.1' ),
+    'stable tag advances to v1.4.1' => false !== strpos( $readme, 'Stable tag: 2.0.2' ),
 );
 $failed = array_keys( array_filter( $checks, static fn( $passed ) => ! $passed ) );
 if ( $failed ) { fwrite( STDERR, 'Proposal reliability checks failed: ' . implode( ', ', $failed ) . PHP_EOL ); exit( 1 ); }

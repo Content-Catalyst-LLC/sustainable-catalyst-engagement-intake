@@ -876,7 +876,7 @@ final class SC_EI_Database {
 		$sql_proposal_approvals = "CREATE TABLE {$proposal_approvals} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			public_id char(36) NOT NULL,
-			schema varchar(80) NOT NULL DEFAULT 'sc-proposal-approval/1.0',
+			`schema` varchar(80) NOT NULL DEFAULT 'sc-proposal-approval/1.0',
 			inquiry_id bigint(20) unsigned NOT NULL,
 			proposal_id bigint(20) unsigned NOT NULL,
 			proposal_version_id bigint(20) unsigned NOT NULL,
@@ -1205,7 +1205,7 @@ final class SC_EI_Database {
 		$sql_service_intelligence_findings = "CREATE TABLE {$service_intelligence_findings} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			public_id char(36) NOT NULL,
-			schema varchar(80) NOT NULL DEFAULT 'sc-service-intelligence-finding/1.0',
+			`schema` varchar(80) NOT NULL DEFAULT 'sc-service-intelligence-finding/1.0',
 			finding_type varchar(60) NOT NULL DEFAULT 'service_demand',
 			severity varchar(20) NOT NULL DEFAULT 'watch',
 			status varchar(20) NOT NULL DEFAULT 'candidate',
@@ -1325,7 +1325,7 @@ final class SC_EI_Database {
 		) {$charset_collate};";
 
 		$sql_payment_handoffs = "CREATE TABLE {$payment_handoffs} (
-			id bigint(20) unsigned NOT NULL AUTO_INCREMENT, public_id char(36) NOT NULL, schema varchar(80) NOT NULL DEFAULT 'sc-payment-handoff/1.0', invoice_id bigint(20) unsigned NOT NULL, inquiry_id bigint(20) unsigned NOT NULL,
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT, public_id char(36) NOT NULL, `schema` varchar(80) NOT NULL DEFAULT 'sc-payment-handoff/1.0', invoice_id bigint(20) unsigned NOT NULL, inquiry_id bigint(20) unsigned NOT NULL,
 			provider varchar(40) NOT NULL DEFAULT 'manual', provider_reference varchar(191) NOT NULL DEFAULT '', checkout_url text NULL, status varchar(30) NOT NULL DEFAULT 'pending',
 			amount_minor bigint(20) unsigned NOT NULL DEFAULT 0, currency char(3) NOT NULL DEFAULT 'USD', idempotency_key char(64) NOT NULL,
 			expires_at datetime NULL, authorized_at datetime NULL, settled_at datetime NULL, failed_at datetime NULL, refunded_at datetime NULL, last_event_at datetime NULL,
@@ -1398,7 +1398,7 @@ final class SC_EI_Database {
 		$sql_platform_handoffs = "CREATE TABLE {$platform_handoffs} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			public_id char(36) NOT NULL,
-			schema varchar(100) NOT NULL DEFAULT 'sc-engagement-platform-handoff/2.0',
+			`schema` varchar(100) NOT NULL DEFAULT 'sc-engagement-platform-handoff/2.0',
 			handoff_key char(64) NOT NULL,
 			source_system varchar(80) NOT NULL DEFAULT 'manual',
 			target_module varchar(80) NOT NULL DEFAULT 'intake',
@@ -2198,6 +2198,8 @@ final class SC_EI_Database {
 		// or interrupted upgrade can no longer leave these tables permanently
 		// absent while column probes run on every request.
 		self::create_table_if_missing( $proposal_approvals, $sql_proposal_approvals );
+		self::create_table_if_missing( $service_intelligence_findings, $sql_service_intelligence_findings );
+		self::create_table_if_missing( $payment_handoffs, $sql_payment_handoffs );
 		self::create_table_if_missing( $platform_handoffs, $sql_platform_handoffs );
 
 		dbDelta( $sql_inquiries );
@@ -2426,7 +2428,7 @@ final class SC_EI_Database {
 	 */
 	public static function critical_tables_exist(): array {
 		$result = array();
-		foreach ( array( 'proposal_approvals', 'platform_handoffs' ) as $name ) {
+		foreach ( array( 'proposal_approvals', 'service_intelligence_findings', 'payment_handoffs', 'platform_handoffs' ) as $name ) {
 			$result[ $name ] = self::physical_table_exists( self::table( $name ) );
 		}
 		return $result;

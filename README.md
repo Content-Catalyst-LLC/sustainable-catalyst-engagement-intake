@@ -1,9 +1,9 @@
 # Sustainable Catalyst Contact and Engagement Platform
 
-**Version:** 2.0.1  
+**Version:** 2.0.2  
 **Release:** Interrupted Migration and Database Recovery Patch
 
-v2.0.1 preserves the integrated v2.0 platform and repairs interrupted database migrations before the plugin runtime starts.
+v2.0.2 preserves the integrated v2.0 platform and repairs the Bluehost MySQL reserved-identifier failure that prevented four required tables from being created.
 
 The patch specifically recovers `proposal_approvals` and `platform_handoffs`, prevents repeated missing-table metadata queries, and fails closed if database write access remains unavailable.
 

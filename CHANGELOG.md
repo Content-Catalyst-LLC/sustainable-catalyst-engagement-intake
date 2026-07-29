@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.2 — Reserved-Identifier Table Recovery
+
+- Quoted the MySQL reserved identifier `schema` in every affected table definition.
+- Added native recovery for `proposal_approvals`, `service_intelligence_findings`, `payment_handoffs`, and `platform_handoffs` before `dbDelta()` reconciliation.
+- Preserved fail-closed activation, the five-minute migration lock, and missing-table column guards.
+- Preserved all existing records and schema versions.
+
 ## 2.0.1 — Interrupted Migration and Database Recovery Patch
 
 - Added targeted recovery for the missing `proposal_approvals` and `platform_handoffs` tables observed after the hosting account exhausted its disk quota.

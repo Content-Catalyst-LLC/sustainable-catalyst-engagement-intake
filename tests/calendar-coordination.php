@@ -22,7 +22,7 @@ $types = array( 'advisory_discovery', 'ai_assurance_review', 'support_troublesho
 $all_types = true;
 foreach ( $types as $type ) { $all_types = $all_types && false !== strpos( $schema, "'{$type}'" ); }
 $checks = array(
-    'v1.3.0 identity and schema versions' => false !== strpos( $main, 'Version:     2.0.1' ) && false !== strpos( $main, "SC_EI_DB_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_CALENDAR_SCHEMA_VERSION', '1.0.1'" ) && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '2.0.0'" ),
+    'v1.3.0 identity and schema versions' => false !== strpos( $main, 'Version:     2.0.2' ) && false !== strpos( $main, "SC_EI_DB_VERSION', '2.0.0'" ) && false !== strpos( $main, "SC_EI_CALENDAR_SCHEMA_VERSION', '1.0.1'" ) && false !== strpos( $main, "SC_EI_PLATFORM_SCHEMA_VERSION', '2.0.0'" ),
     'calendar module loaded and registered' => false !== strpos( $main, 'class-sc-ei-calendar-schema.php' ) && false !== strpos( $main, 'class-sc-ei-calendar-repository.php' ) && false !== strpos( $main, 'class-sc-ei-calendar-admin.php' ),
     'meeting categories cover advisory support and institutional workflows' => $all_types,
     'no public booking and no automatic reminder sending defaults' => false !== strpos( $schema, "'calendar_no_public_booking'" ) && false !== strpos( $schema, "'calendar_auto_send_reminders'        => 0" ),
