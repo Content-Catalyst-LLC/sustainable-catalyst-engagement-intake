@@ -227,7 +227,7 @@ final class SC_EI_Unified_Platform_Repository {
 		);
 		foreach ( $specs as $spec ) {
 			$table = SC_EI_Database::table( $spec[0] );
-			$sql = sprintf( $spec[2], $table ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$sql = str_replace( '%s', $table, $spec[2] ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			$rows = $wpdb->get_results( $wpdb->prepare( $sql, $inquiry_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			if ( is_array( $rows ) ) {
 				$events = array_merge( $events, $rows );
