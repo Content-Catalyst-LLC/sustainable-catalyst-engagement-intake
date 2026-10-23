@@ -1,11 +1,24 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
+/**
+ * Aggregates intake funnel and operations metrics from the plugin's tables.
+ * The daily hook may persist a snapshot; dashboard reads alone do not grant
+ * authority to view individual private inquiries.
+ */
 final class SC_EI_Analytics_Repository {
  const DAILY_HOOK='sc_ei_analytics_daily_snapshot';
  public static function register(): void { add_action(self::DAILY_HOOK,array(__CLASS__,'daily_snapshot')); }
  public static function schedule(): void { if(!wp_next_scheduled(self::DAILY_HOOK)){wp_schedule_event(time()+HOUR_IN_SECONDS,'daily',self::DAILY_HOOK);} }
  public static function unschedule(): void { wp_clear_scheduled_hook(self::DAILY_HOOK); }
  public static function settings(): array { return wp_parse_args(get_option('sc_ei_settings',array()),SC_EI_Analytics_Schema::default_settings()); }
+ /**
+  * Build a bounded-period aggregate dashboard, excluding erased inquiries.
+  *
+  * @param int $days Lookback period sanitized by the analytics schema.
+  * @return array Aggregate funnel, timing, mix and operations fields.
+  * Small-cohort suppression follows the configured minimum; callers must
+  * still enforce WordPress capabilities before exposing this response.
+  */
  public static function dashboard(int $days=90): array {
   global $wpdb; $days=SC_EI_Analytics_Schema::sanitize_days($days); $s=self::settings(); $min=max(2,absint($s['analytics_minimum_cohort']));
   $from=gmdate('Y-m-d H:i:s',time()-$days*DAY_IN_SECONDS); $now=current_time('mysql',true);
