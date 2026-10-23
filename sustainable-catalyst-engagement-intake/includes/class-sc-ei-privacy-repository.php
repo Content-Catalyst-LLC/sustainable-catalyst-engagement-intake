@@ -13,6 +13,15 @@ final class SC_EI_Privacy_Repository {
 		add_action( 'sc_ei_public_inquiry_created', array( __CLASS__, 'capture_public_consent' ), 5, 2 );
 	}
 
+	/**
+	 * Record the privacy-notice acknowledgment after successful public intake.
+	 *
+	 * @param array $inquiry Persisted inquiry with ID and consent fields.
+	 * @param array $raw Original form fields used only for missing consent data.
+	 * @return void Writes consent history; a missing inquiry ID is ignored.
+	 * This records the submitted acknowledgment, not independent proof that
+	 * every downstream use has a valid legal basis.
+	 */
 	public static function capture_public_consent( array $inquiry, array $raw = array() ): void {
 		$inquiry_id = absint( $inquiry['id'] ?? 0 );
 		if ( ! $inquiry_id ) {
